@@ -1,0 +1,8 @@
+services:
+    bwctl: "http://ggf.org/ns/nmwg/tools/iperf/2.0"
+serviceDisplayName:
+    bwctl: "bandwidth(bwctl)"
+hosts:
+    localhost: "http://ps-lat.es.net:8085/perfSONAR_PS/services/pSB"
+
+

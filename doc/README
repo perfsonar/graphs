@@ -1,0 +1,113 @@
+			perfSONAR-serviceTest				
+
+----------------------------------------------------------------------------			
+About
+----------------------------------------------------------------------------
+The perfSONAR-serviceTest is a web interface that allows users to query an MA and look at the
+tests running in that MA. Users can also look at graphs for those test results.
+
+----------------------------------------------------------------------------	
+INSTALL
+----------------------------------------------------------------------------	
+
+Prerequisites:
+
+The serviceTest requires the following list of packages
+
+CGI
+Data::UUID
+Data::Validate::IP
+English
+Exporter
+FindBin
+HTML::Template
+IO::File
+JSON
+LWP::UserAgent
+Log::Log4perl
+Params::Validate
+Socket
+Statistics::Descriptive
+Template
+Time::HiRes
+Time::Local
+XML::LibXML
+YAML::XS
+
+In addition it also requires httpd to be running on the machine that it is deployed.
+
+
+Installation Instructions:
+
+
+1) RPM
+
+Download the perfSONAR-serviceTest RPM from 
+http://anonsvn.internet2.edu/svn/perfSONAR-PS/branches/sowmya-cgiscripts/perfSONAR_PS-serviceTest-GUI-general/perl-perfSONAR_PS-serviceTest-3.1-1.pSPS.noarch.rpm
+
+Run:
+rpm -i --nodeps <rpm-name>
+
+The rpm automatically configures your apache settings and restarts httpd.
+
+The serviceTest is now installed in /opt/perfsonar_ps/.
+
+
+----------------------------------------------------------------------------	
+CONFIGURATION
+----------------------------------------------------------------------------	
+
+If you are installing it on a toolkit, then you do not have to change the config file entries. The config file has been 
+pre configured to work on toolkits
+
+If you want to add hosts to the config file, you need to know the layout of the config file to make the necessary changes.
+
+Config file Layout
+
+The config file consists of 
+	a) services
+	b) serviceDisplayName
+	c) hosts
+	d) groups
+
+a) services
+The services category usually maps namespace to a short service name. You do not have to edit this
+
+b) serviceDisplayName
+This is the name that will be used to display on the web interface. For example, you can refer to owamp as One Way Delay or 
+One Way Latency and provide this mapping here.
+
+c) hosts
+Here, you can map host names to their url. List all the hosts that you wish to display to the user
+
+d) groups
+If you have more than one host, then use this to group the hosts. You will need to have a minimum of 1 group if you have more than 1 host.
+
+
+Example config file entries
+services:
+    owamp: "http://ggf.org/ns/nmwg/characteristic/delay/summary/20070921"
+
+serviceDisplayName:
+    owamp: "One Way Delay"
+
+hosts:
+    host1: "http://owamp-host1:8085/perfSONAR_PS/services/pSB"
+    host2: "http://owamp-host2:8085/perfSONAR_PS/services/pSB"
+    host3: "http://owamp-host3:8085/perfSONAR_PS/services/pSB"
+
+groups:
+    name: default
+    id: 1
+    type: "owamp"
+    members: ["host1", "host2", "host3"]
+
+
+----------------------------------------------------------------------------	
+TESTING
+----------------------------------------------------------------------------	
+The URL for the bwctl will be:
+http://hostname/serviceTest/cgi-bin/index.cgi?type=bwctl
+
+For owamp
+http://hostname/serviceTest/cgi-bin/index.cgi?type=owamp

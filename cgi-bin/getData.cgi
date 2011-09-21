@@ -1,0 +1,494 @@
+#!/usr/bin/perl
+
+use strict;
+
+use FindBin qw($RealBin);
+
+use lib ("$RealBin/../lib");
+use Statistics::Descriptive;
+use XML::LibXML;
+use Socket;
+use JSON;
+use CGI qw(:standard);
+use Data::Validate::IP qw(is_ipv4 is_ipv6);
+use perfSONAR_PS::Client::MA;
+use perfSONAR_PS::Utils::DNS qw(resolve_address reverse_dns);
+
+my $cgi       = new CGI;
+my $ma_url    = param("ma_url");
+my $eventType = param("eventType");
+
+unless ( $ma_url and $eventType ) {
+    print $cgi->header;
+    print
+"<h1>Missing parameters!!!! Please supply event and Ma_URL to contact</h1>";
+    exit -1;
+}
+
+my $resultHash = getData( $ma_url, $eventType );
+
+#separate into active and inactive datasets
+my $activeDataSets   = ();
+my $inactiveDataSets = ();
+my %chkHash=();
+foreach my $key ( keys %{$resultHash} ) {
+        if (   $eventType eq "http://ggf.org/ns/nmwg/tools/iperf/2.0" or $eventType eq "http://ggf.org/ns/nmwg/characteristics/bandwidth/achievable/2.0" ){
+            my $newkey ="$resultHash->{$key}{\"srcIP\"}-$resultHash->{$key}{\"dstIP\"}-$resultHash->{$key}{\"protocol\"}-$resultHash->{$key}{\"timeDuration\"}";
+            
+	    #check for duplicates
+	    if($activeDataSets->{$newkey}){#entry exists in active test
+		if($resultHash->{$key}{data}{active} eq "Yes"){
+			my $newnr = $resultHash->{$key}{data}{throughput}*$resultHash->{$key}{data}{datapoints}+$activeDataSets->{$newkey}->{data}{throughput}*$activeDataSets->{$newkey}->{data}{datapoints};
+			my $newdr = $activeDataSets->{$newkey}->{data}{datapoints}+$resultHash->{$key}{data}{datapoints};
+			my $newresult = $newnr/$newdr;
+	    		$activeDataSets->{$newkey}->{data}{throughput} = $newresult;
+			$activeDataSets->{$newkey}->{data}{datapoints}= $newdr;
+		}
+		#ignore inactive test if there is an active duplicate test
+	    }elsif($inactiveDataSets->{$newkey}){ #entry exists inactive tests
+		if($resultHash->{$key}{data}{active} eq "Yes"){
+			delete $inactiveDataSets->{$newkey};
+	    		$activeDataSets->{$newkey} = \%{ $resultHash->{$key} };
+	        }
+		# ignore inactive test if there is an inactive duplicate test
+            }else{#new test
+		if($resultHash->{$key}{data}{active} eq "Yes"){
+			$activeDataSets->{$newkey} = \%{ $resultHash->{$key} };
+	    	}else{
+			$inactiveDataSets->{$newkey} = \%{ $resultHash->{$key} };
+		}
+	    }
+	}
+        elsif ( $eventType eq "http://ggf.org/ns/nmwg/characteristic/delay/summary/20070921"
+            or $eventType eq "http://ggf.org/ns/nmwg/tools/owamp/2.0"
+            or $eventType eq "http://ggf.org/ns/nmwg/characteristic/delay/summary/20110317" )
+        {
+            my $newkey ="$resultHash->{$key}{\"srcIP\"}-$resultHash->{$key}{\"dstIP\"}-$resultHash->{$key}{\"count\"}-$resultHash->{$key}{\"bucket_width\"}-$resultHash->{$key}{\"schedule\"}";
+            #check for duplicates
+	    if($activeDataSets->{$newkey}){ #entry exists in active test
+		if($resultHash->{$key}{data}{active} eq "Yes"){
+			my $newminRtotal = $resultHash->{$key}{data}{min_delay}*$resultHash->{$key}{data}{datapoints}+$activeDataSets->{$newkey}->{data}{min_delay}*$activeDataSets->{$newkey}->{data}{datapoints};;
+			my $newmaxRtotal = $resultHash->{$key}{data}{max_delay}*$resultHash->{$key}{data}{datapoints}+$activeDataSets->{$newkey}->{data}{max_delay}*$activeDataSets->{$newkey}->{data}{datapoints};
+			my $newlossRtotal = $resultHash->{$key}{data}{loss}*$resultHash->{$key}{data}{datapoints}+$activeDataSets->{$newkey}->{data}{loss}*$activeDataSets->{$newkey}->{data}{datapoints};
+			my $newdr = $activeDataSets->{$newkey}->{data}{datapoints}+$resultHash->{$key}{data}{datapoints};
+	        	$activeDataSets->{$newkey}->{data}{min_delay} = $newminRtotal/$newdr;
+                	$activeDataSets->{$newkey}->{data}{max_delay} = $newmaxRtotal/$newdr;
+                	$activeDataSets->{$newkey}->{data}{loss} = $newlossRtotal/$newdr;
+                	$activeDataSets->{$newkey}->{data}{datapoints}= $newdr;
+   		}
+		#ignore inactive test if there is an active duplicate test
+	 }elsif($inactiveDataSets->{$newkey}){ #entry exists inactive tests
+		if($resultHash->{$key}{data}{active} eq "Yes"){
+                	delete $inactiveDataSets->{$newkey};
+                	$activeDataSets->{$newkey} = \%{ $resultHash->{$key} };
+            	}
+		#ignore inactive test if there is an inactive duplicate test
+	 }else{#new test
+	        if($resultHash->{$key}{data}{active} eq "Yes"){
+                        $activeDataSets->{$newkey} = \%{ $resultHash->{$key} };
+                }else{
+                        $inactiveDataSets->{$newkey} = \%{ $resultHash->{$key} };
+                }
+	}   
+      }
+}
+#find bidirectional tests
+my $activeDirectionalHash   = addDirectionDetails($activeDataSets);
+my $inactiveDirectionalHash = addDirectionDetails($inactiveDataSets);
+
+#Convert hash to sorted array (based on src)
+my $sortedActiveSet = ();
+my $ctr             = 0;
+foreach my $hashkey (
+    sort {
+        $activeDirectionalHash->{$a}{src} cmp $activeDirectionalHash->{$b}{src}
+    } keys %{$activeDirectionalHash}
+  )
+{
+    if (   $activeDirectionalHash->{$hashkey}{src}
+        && $activeDirectionalHash->{$hashkey}{dst} )
+    {
+        $sortedActiveSet->[$ctr] = $activeDirectionalHash->{$hashkey};
+        $ctr++;
+    }
+
+}
+
+$ctr = 0;
+my $sortedInactiveSet = ();
+foreach my $hashkey (
+    sort {
+        $inactiveDirectionalHash->{$a}{src}
+          cmp $inactiveDirectionalHash->{$b}{src}
+    } keys %{$inactiveDirectionalHash}
+  )
+{
+    if (   $inactiveDirectionalHash->{$hashkey}{src}
+        && $inactiveDirectionalHash->{$hashkey}{dst} )
+    {
+        $sortedInactiveSet->[$ctr] = $inactiveDirectionalHash->{$hashkey};
+        $ctr++;
+    }
+}
+
+#put in final dataset
+my %finalResultHash;
+
+$finalResultHash{"Active"}   = $sortedActiveSet;
+$finalResultHash{"Inactive"} = $sortedInactiveSet;
+
+#convert to JSON and return
+my $json = new JSON;
+my $json_result;
+
+my $json_text =
+  $json->pretty->allow_blessed->allow_nonref->allow_unknown->encode(
+    \%finalResultHash );
+
+print $cgi->header("application/json");
+print "\n", $json_text;
+
+exit 0;
+
+# AddDirectionDetails
+# This function determines of a test is bidirectional or not and adds the directional info to the hash
+
+sub addDirectionDetails {
+    my ($dataSetHashRef) = @_;
+
+    my %biDirectionCheck;
+
+    #for active data sets
+
+    foreach my $key ( keys %{$dataSetHashRef} ) {
+        my $revkey;
+
+        if (   $eventType eq "http://ggf.org/ns/nmwg/tools/iperf/2.0"
+            or $eventType eq
+            "http://ggf.org/ns/nmwg/characteristics/bandwidth/achievable/2.0" )
+        {
+            $revkey =
+"$dataSetHashRef->{$key}{\"dstIP\"}-$dataSetHashRef->{$key}{\"srcIP\"}-$dataSetHashRef->{$key}{\"protocol\"}-$dataSetHashRef->{$key}{\"timeDuration\"}";
+        }
+        elsif ( $eventType eq
+            "http://ggf.org/ns/nmwg/characteristic/delay/summary/20070921"
+            or $eventType eq "http://ggf.org/ns/nmwg/tools/owamp/2.0" )
+        {
+            $revkey =
+"$dataSetHashRef->{$key}{\"dstIP\"}-$dataSetHashRef->{$key}{\"srcIP\"}-$dataSetHashRef->{$key}{\"count\"}-$dataSetHashRef->{$key}{\"bucket_width\"}-$dataSetHashRef->{$key}{\"schedule\"}";
+        }
+
+        #check if tests is bidirectional or not
+        if ( defined $dataSetHashRef->{$revkey} ) {
+
+        #this if checks if entry already exists for forward or reverse direction
+            if (   !defined $biDirectionCheck{$key}
+                && !defined $biDirectionCheck{$revkey} )
+            {
+                $biDirectionCheck{$key} = 1;
+                $dataSetHashRef->{$key}{"bidirectional"} = "Yes";
+                $dataSetHashRef->{$key}{"dataR"} =
+                  \%{ $dataSetHashRef->{$revkey}{"data"} };
+                delete $dataSetHashRef->{$revkey};
+            }
+        }
+        else {
+            if ( defined $dataSetHashRef->{$key}{'dst'} ) {
+                $dataSetHashRef->{$key}{"bidirectional"} = "No";
+                $dataSetHashRef->{$key}{"dataR"}         = "";
+            }
+
+        }
+    }
+
+    return $dataSetHashRef;
+}
+
+# function getData begins. This function retrieves maKeys or data for owamp and bwctl data
+# Arguments - MA URL and the eventType
+# Returns a hash containing test details and results
+sub getData {
+
+    #get the input values
+    my ( $ma_url, $eventType ) = @_;
+
+    my $start;
+    my $end = time;
+    my $dataType;
+
+    #set the parameter list for tests based on eventType
+    my @parameterList;
+
+    if (   $eventType eq "http://ggf.org/ns/nmwg/tools/iperf/2.0"
+        or $eventType eq
+        "http://ggf.org/ns/nmwg/characteristics/bandwidth/achievable/2.0" )
+    {
+        push( @parameterList, "protocol" );
+        push( @parameterList, "timeDuration" );
+        $dataType = "bwctl";
+        $start    = $end - 7 * 24 * 60 * 60;    #Collect 1 week for bwctl
+    }
+    elsif ( $eventType eq
+        "http://ggf.org/ns/nmwg/characteristic/delay/summary/20070921"
+        or $eventType eq "http://ggf.org/ns/nmwg/tools/owamp/2.0" )
+    {
+        push( @parameterList, "count" );
+        push( @parameterList, "bucket_width" );
+        push( @parameterList, "schedule" );
+        $dataType = "owamp";
+        $start =
+          $end -
+          0.5 * 60 *
+          60;  #Collect 1/2 hour for owamp. 
+    }
+
+    # Create client
+    my $ma = new perfSONAR_PS::Client::MA( { instance => $ma_url } );
+
+    # Define a subject
+    my $subject = "<x:subject xmlns:x=\"$eventType\" id=\"subject\">\n";
+    $subject .=
+"    <nmwgt:endPointPair xmlns:nmwgt=\"http://ggf.org/ns/nmwg/topology/2.0/\" />\n";
+    $subject .= "</x:subject>\n";
+
+    # Set the eventType
+    my @eventTypes = ($eventType);
+
+# Send request depending on what type of data has been requested - (metadata or data)
+
+    my $result;
+
+    my %maKeysFinalHash;
+    $result = $ma->setupDataRequest(
+        {
+            subject    => $subject,
+            eventTypes => \@eventTypes,
+            start      => $start,
+            end        => $end
+        }
+    ) or die("Error contacting MA");
+
+    #Process result
+
+    #Get metadata
+    my $rsltHash = getMetadataHash( $result->{metadata}, \@parameterList );
+    my $dataHash;
+
+    #Process data
+    if ( $dataType eq "bwctl" ) {
+
+        #Call processBwctlPSData();
+        $dataHash = processBwctlPSData( $result->{data} );
+    }
+    elsif ( $dataType eq "owamp" ) {
+
+        #Call processOwampPSData();
+        $dataHash = processOwampPSData( $result->{data} );
+    }
+
+    #combine data and test details
+    foreach my $key ( keys %{$rsltHash} ) {
+        $rsltHash->{$key}{"data"} = \%{ $dataHash->{$key} };
+    }
+    return $rsltHash;
+
+}
+
+#Extracts the throughput values from bwctl XML tags, calculates average and returns a hash of the result
+#Arguments - Reference to the array of XML data tags
+# Returns reference to hash containing metadataId as key, throughput and active/inactive info
+sub processBwctlPSData {
+    my ($dataResult) = @_;
+    my %mdIdBwctlDataHash;
+    foreach my $data ( @{$dataResult} ) {
+        my %tmpHash;
+        my $parser = XML::LibXML->new();
+        my $doc;
+        eval { $doc = $parser->parse_string($data); };
+        if ($@) {
+            die("Error parsing MA response");
+        }
+        my $root  = $doc->getDocumentElement;
+        my $tmpID = $root->find("\@metadataIdRef");
+
+        my @childnodes = $root->findnodes(".//*[local-name()='datum']");
+
+        my $throughputStats = Statistics::Descriptive::Full->new();
+        for ( my $i = 0 ; $i < scalar @childnodes ; $i++ ) {
+            my $tmpval = $childnodes[$i]->getAttribute("throughput");
+            if ( $tmpval ne "" ) {
+                $throughputStats->add_data($tmpval);
+            }
+        }
+
+        my %finalval;
+        $finalval{"throughput"} = $throughputStats->mean();
+	$finalval{"datapoints"} = $throughputStats->count();
+        if ( $throughputStats->mean() == 0 || $throughputStats->mean() eq "" ) {
+            $finalval{"active"} = "No";
+        }
+        else {
+            $finalval{"active"} = "Yes";
+        }
+        $mdIdBwctlDataHash{$tmpID} = \%finalval;
+    }
+    return \%mdIdBwctlDataHash;
+
+}
+
+#Extracts the min, max values from Owamp XML tags, calcualtes average and returns a hash of the result
+#Arguments - Reference to the arrya of data XML tags
+# Returns reference to hash containing metadataId as key, min, max and active/inactive info
+sub processOwampPSData {
+    my ($dataResult) = @_;
+    my %mdIdOwampDataHash;
+    foreach my $data ( @{$dataResult} ) {
+        my %tmpHash;
+        my $parser = XML::LibXML->new();
+        my $doc;
+        eval { $doc = $parser->parse_string($data); };
+        if ($@) {
+            die("Error parsing MA response");
+        }
+        my $root  = $doc->getDocumentElement;
+        my $tmpID = $root->find("\@metadataIdRef");
+
+        my @childnodes = $root->findnodes(".//*[local-name()='datum']");
+        if ( scalar @childnodes != 0
+            && $childnodes[0]->textContent ne "Query returned 0 results" )
+        {
+
+      #used to calculate the four metrics - min_delay, max_delay, loss, maxError
+            my $minDelayStats = Statistics::Descriptive::Full->new();
+            my $maxDelayStats = Statistics::Descriptive::Full->new();
+            my $lossStats     = Statistics::Descriptive::Full->new();
+
+            #not all the data tags have both attributes
+            for ( my $i = 0 ; $i < scalar @childnodes ; $i++ ) {
+                my $tmpval = $childnodes[$i]->getAttribute("min_delay");
+                if ( $tmpval ne "" ) {
+                    $minDelayStats->add_data($tmpval);
+                }
+                $tmpval = $childnodes[$i]->getAttribute("max_delay");
+                if ( $tmpval ne "" ) {
+                    $maxDelayStats->add_data($tmpval);
+                }
+
+                my $loss = $childnodes[$i]->getAttribute("loss");
+                my $sent = $childnodes[$i]->getAttribute("sent");
+                if ( $loss ne "" and $sent ne "" ) {
+                    $lossStats->add_data($loss/$sent);
+                }
+            }
+            my %finalval;
+            $finalval{min_delay} = $minDelayStats->trimmed_mean(0.05) * 1000;
+            $finalval{max_delay} = $maxDelayStats->trimmed_mean(0.05) * 1000;
+            $finalval{loss}      = sprintf("%3.2f%%", $lossStats->trimmed_mean(0.05) * 100);
+	    $finalval{"datapoints"} = $minDelayStats->count();
+
+            if (   ( $finalval{min_delay} == 0 || $finalval{min_delay} eq "" )
+                && ( $finalval{max_delay} == 0 || $finalval{max_delay} eq "" ) )
+            {
+                $finalval{"active"} = "No";
+            }
+            else {
+                $finalval{"active"} = "Yes";
+            }
+
+            $mdIdOwampDataHash{$tmpID} = \%finalval;
+        }
+    }
+    return \%mdIdOwampDataHash
+
+}
+
+# Proceses metadata and returns a hash containing src, dst, srcIP, dstIP and the parameter details.
+# Arguments  - Reference to parameter list and array of metadataTags
+# Returns reference to hash contianing metadataId as key, test details
+sub getMetadataHash {
+    my ( $metadataResult, $parameterList ) = @_;
+    my %mdIdTestDetailsHash;
+    foreach my $metadata ( @{$metadataResult} ) {
+        my %tmpHash;
+        my $parser = XML::LibXML->new();
+        my $doc;
+        eval { $doc = $parser->parse_string($metadata); };
+        if ($@) {
+            die("Error parsing MA response");
+        }
+        my $root          = $doc->getDocumentElement;
+        my $tmpID         = $root->find("\@id");
+        my $srcaddressval = $root->find(".//*[local-name()='src']/\@value");
+        my $srcaddress    = "$srcaddressval";
+        my $srcRaw        = "$srcaddressval";
+        my $srcType       = get_endpoint_type($srcaddress);
+        my $src;
+        if ( $srcType eq "ipv4" or $srcType eq "ipv6" ) {
+            $src = reverse_dns($srcaddress);
+        }
+        elsif ( $srcType eq "hostname" ) {
+            my @ips = resolve_address($srcaddress);
+            my $ip = @ips[0];
+            $src        = $srcaddress;
+            $srcaddress = $ip;
+        }
+	$src = $srcaddress unless $src;
+	$srcaddress = $src unless $srcaddress;
+
+        my $dstaddressval = $root->find(".//*[local-name()='dst']/\@value");
+        my $dstaddress    = "$dstaddressval";
+        my $dstRaw        = "$dstaddressval";
+        my $dstType       = get_endpoint_type($dstaddress);
+        my $dst = $dstaddress;
+        if ( $dstType eq "ipv4" or $dstType eq "ipv6" ) {
+            $dst = reverse_dns($dstaddress);
+        }
+        elsif ( $dstType eq "hostname" ) {
+            my @ips = resolve_address($dstaddress);
+            my $ip = @ips[0];
+            $dst        = $dstaddress;
+            $dstaddress = $ip;
+        }
+	$dst = $dstaddress unless $dst;
+	$dstaddress = $dst unless $dstaddress;
+
+        $tmpHash{"src"}   = "$src";
+        $tmpHash{"dst"}   = "$dst";
+        $tmpHash{"srcIP"} = "$srcaddress";
+        $tmpHash{"dstIP"} = "$dstaddress";
+        $tmpHash{"srcRaw"}   = "$srcRaw";
+        $tmpHash{"dstRaw"}   = "$dstRaw";
+ 
+
+        foreach my $param ( @{$parameterList} ) {
+            my $paramvalue;
+
+            #schedule parameter alone has a child node
+            if ( $param eq "schedule" ) {
+                $paramvalue = $root->find(
+                    ".//*[local-name()='parameter'][\@name=\"$param\"]/interval"
+                );
+            }
+            else {
+                $paramvalue = $root->find(
+                    ".//*[local-name()='parameter'][\@name=\"$param\"]");
+            }
+            $tmpHash{$param} = "$paramvalue";
+        }
+
+        $mdIdTestDetailsHash{$tmpID} = \%tmpHash;
+    }
+    return \%mdIdTestDetailsHash;
+}
+
+sub get_endpoint_type {
+    my $endpoint = shift @_;
+    my $type     = "hostname";
+    if ( is_ipv4($endpoint) ) {
+        $type = "ipv4";
+    }
+    elsif ( is_ipv6($endpoint) ) {
+        $type = "ipv6";
+    }
+    return $type;
+}

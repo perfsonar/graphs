@@ -1,0 +1,81 @@
+[% INCLUDE header.tmpl %]
+	<script type='text/javascript' src='http://www.google.com/jsapi'></script>
+	<script type="text/javascript" src="JS/initService.js"></script>
+	<script type="text/javascript" src="JS/result.js"></script>
+	<script type="text/javascript" src="JS/bwctl-datadiv.js"></script>
+        <script type="text/javascript" src="JS/sorting.js"></script>
+        <script type="text/javascript" src="JS/displayElements.js"></script>
+        <div id="rContainer">	
+ 	<table id="bodylayout" width="700px" border="0">
+   			<tr>
+     			<td valign="top">
+     				 <div id="testsContainer">
+        				<h2 align='center'>perfSONAR-PS Tests</h2>
+					[% IF eventType %]
+						<h2 class="divheading"> Service type </h2>
+						<p> [% IF serviceDisplayName %] [% key=eventType %] [% serviceDisplayName.$key %]
+						    [% ELSE %] [% $key %]
+						    [% END %]
+					[% ELSE %]
+						<h2 class="divheading"> Choose Service type </h2>
+						[% FOREACH serviceType IN services.keys %]
+        						[% IF hosts.size==1 %]
+									[% FOREACH key IN hosts.keys %]
+										<input type="radio" name="servicetype" onchange="processSelectedRadioOption('[% hosts.$key %]','[% services.$serviceType %]')"  value="[% services.$serviceType %]"> [% serviceType %]
+									[%END%]
+							[% ELSE %]
+   									<input type="radio" name="servicetype" onchange="showTestGroups()" default='' value="[% services.$serviceType %]"> [% serviceType %]
+							[% END %]
+						[% END %] 	
+					[% END %]
+					[% IF groups.size %]
+						[% FOREACH serviceType IN services.keys %]
+							<div id="[% services.$serviceType %]" style='display:block'>
+								<ul>
+								[% FOREACH group IN groups %]
+							      		[% key=group.type %][% IF services.$key == services.$serviceType %]	
+							 			<p> [% group.name %] <select id="[% group.id %]">
+										[% FOREACH member IN group.members %]
+											<option value="[% hosts.$member %]"> [% member %] </option>
+										[% END %]
+										</select> <button name="GetResponse" value="Display" onClick="doclick('[% group.id %]','[% key=group.type %][% services.$key %]'); return false;"> Display</button>
+							     		[% END %]
+								[% END %]
+								</ul>
+							</div>
+						[% END %]	
+					[% END %]	       				
+					 <div id='testParametersDiv' style="display:none"><p><h3 class="divheading">Test Parameters:</h3></div>
+                    			 <br><div id='Progress' width="100px" height="25px" style="background-color: #3090C7; color: #FFFFFF; display: none;"> &nbsp; </div>
+					 <hr><br>
+
+ 					 <p><h3 class="divheading">Active Tests: </h3></p><p><img src="images/uparrow.png" width="9px" height="9px" align="left"/> - Sorted(asc) by that column. Click on column headings to sort
+					 <div id='Active' > &nbsp; </div>
+					 <br><hr><br>
+	
+					 <div id='datadisplay'>
+	                                        <p><h3 class="divheading">Graphs: </h3></p>					
+						<p><span id='resultDisplay'></span><img id='chartDisplay' style='visibility:hidden'></img></p>
+	                                        <br><hr><br>
+					 </div>
+
+					 <p><h3 class="divheading">Inactive Tests: </h3>
+					 </p><div id='Inactive' > &nbsp; </div>
+
+					 <br><hr/><br>
+
+				</div></div>
+
+</td>
+</tr>
+</div>
+[% IF eventType %] 
+	[% IF hosts.size==1 %]
+        	[% FOREACH key IN hosts.keys %]
+                	  <script type="text/javascript"> window.onload = processSelectedRadioOption('[% hosts.$key %]','[% key = eventType %][% services.$key %]'); </script>
+        	[%END%]
+ 	[% END %]
+[% END %]
+</div>
+[% INCLUDE footer.tmpl %]
+

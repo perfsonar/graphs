@@ -1,0 +1,15 @@
+services:
+    bandwidth(bwctl): "http://ggf.org/ns/nmwg/tools/iperf/2.0"
+    latency/loss(owamp): "http://ggf.org/ns/nmwg/characteristic/delay/summary/20070921"
+
+hosts:
+    localhost: "http://localhost:8085/perfSONAR_PS/services/pSB"
+
+groups:
+    - name: "BWCTL Tests"
+      type: "bandwidth(bwctl)"
+      members: ["localhost"]
+
+    - name: "OWAMP Tests"
+      type: "latency/loss(owamp)"
+      members: ["localhost"]

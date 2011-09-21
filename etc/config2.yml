@@ -1,0 +1,7 @@
+services:
+    latency/loss(owamp): "http://ggf.org/ns/nmwg/characteristic/delay/summary/20070921"
+
+hosts:
+    localhost: "http://localhost:8085/perfSONAR_PS/services/pSB"
+
+

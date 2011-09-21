@@ -1,0 +1,89 @@
+services:
+    owamp: "http://ggf.org/ns/nmwg/characteristic/delay/summary/20070921"
+    bwctl: "http://ggf.org/ns/nmwg/tools/iperf/2.0"
+
+
+hosts:
+    sunn-pt1: "http://sunn-pt1.es.net:8085/perfSONAR_PS/services/pSB"
+    chic-pt1: "http://chic-pt1.es.net:8085/perfSONAR_PS/services/pSB"
+    wash-pt1: "http://wash-pt1.es.net:8085/perfSONAR_PS/services/pSB"
+    hous-pt1: "http://hous-pt1.es.net:8085/perfSONAR_PS/services/pSB"
+    anl-pt1: "http://anl-pt1.es.net:8085/perfSONAR_PS/services/pSB"
+    bnl-pt1: "http://bnl-pt1.es.net:8085/perfSONAR_PS/services/pSB"
+    fnal-pt1: "http://fnal-pt1.es.net:8085/perfSONAR_PS/services/pSB"
+    jgi-pt1: "http://jgi-pt1.es.net:8085/perfSONAR_PS/services/pSB"
+    lbl-pt1: "http://lbl-pt1.es.net:8085/perfSONAR_PS/services/pSB"
+    llnl-pt1: "http://llnl-pt1.es.net:8085/perfSONAR_PS/services/pSB"
+    nersc-pt1: "http://nersc-pt1.es.net:8085/perfSONAR_PS/services/pSB"
+    nash-pt1: "http://nash-pt1.es.net:8085/perfSONAR_PS/services/pSB"
+    pnwg-pt1: "http://pnwg-pt1.es.net:8085/perfSONAR_PS/services/pSB"
+    snll-pt1: "http://snll-pt1.es.net:8085/perfSONAR_PS/services/pSB"
+    slac-pt1: "http://slac-pt1.es.net:8085/perfSONAR_PS/services/pSB"
+    albu-pt1: "http://albu-pt1.es.net:8085/perfSONAR_PS/services/pSB"
+    aofa-pt1: "http://aofa-pt1.es.net:8085/perfSONAR_PS/services/pSB"
+    atla-pt1: "http://atla-pt1.es.net:8085/perfSONAR_PS/services/pSB"
+    bois-pt1: "http://bois-pt1.es.net:8085/perfSONAR_PS/services/pSB"
+    bost-pt1: "http://bost-pt1.es.net:8085/perfSONAR_PS/services/pSB"
+    clev-pt1: "http://clev-pt1.es.net:8085/perfSONAR_PS/services/pSB"
+    denv-pt1: "http://denv-pt1.es.net:8085/perfSONAR_PS/services/pSB"
+    elpa-pt1: "http://elpa-pt1.es.net:8085/perfSONAR_PS/services/pSB"
+    kans-pt1: "http://kans-pt1.es.net:8085/perfSONAR_PS/services/pSB"
+    losa-pt1: "http://losa-pt1.es.net:8085/perfSONAR_PS/services/pSB"
+    newy-pt1: "http://newy-pt1.es.net:8085/perfSONAR_PS/services/pSB"
+    star-pt1: "http://star-pt1.es.net:8085/perfSONAR_PS/services/pSB"
+    sdsc-pt1: "http://sdsc-pt1-mgt.es.net:8085/perfSONAR_PS/services/pSB"
+    sunn-owamp: "http://sunn-owamp.es.net:8085/perfSONAR_PS/services/pSB"
+    chic-owamp: "http://chic-owamp.es.net:8085/perfSONAR_PS/services/pSB"
+    wash-owamp: "http://wash-owamp.es.net:8085/perfSONAR_PS/services/pSB"
+    hous-owamp: "http://hous-owamp.es.net:8085/perfSONAR_PS/services/pSB"
+    anl-owamp: "http://anl-owamp.es.net:8085/perfSONAR_PS/services/pSB"
+    bnl-owamp: "http://bnl-owamp.es.net:8085/perfSONAR_PS/services/pSB"
+    fnal-owamp: "http://fnal-owamp.es.net:8085/perfSONAR_PS/services/pSB"
+    jgi-owamp: "http://jgi-owamp.es.net:8085/perfSONAR_PS/services/pSB"
+    lbl-owamp: "http://lbl-owamp.es.net:8085/perfSONAR_PS/services/pSB"
+    llnl-owamp: "http://llnl-owamp.es.net:8085/perfSONAR_PS/services/pSB"
+    nash-owamp: "http://nash-owamp.es.net:8085/perfSONAR_PS/services/pSB"
+    nersc-owamp: "http://nersc-owamp.es.net:8085/perfSONAR_PS/services/pSB"
+    pnwg-owamp: "http://pnwg-owamp.es.net:8085/perfSONAR_PS/services/pSB"
+    sdsc-owamp: "http://sdsc-owamp.es.net:8085/perfSONAR_PS/services/pSB"
+    snll-owamp: "http://snll-owamp.es.net:8085/perfSONAR_PS/services/pSB"
+    slac-owamp: "http://slac-owamp.es.net:8085/perfSONAR_PS/services/pSB"
+    albu-owamp: "http://albu-owamp.es.net:8085/perfSONAR_PS/services/pSB"
+    aofa-owamp: "http://aofa-owamp.es.net:8085/perfSONAR_PS/services/pSB"
+    atla-owamp: "http://atla-owamp.es.net:8085/perfSONAR_PS/services/pSB"
+    bois-owamp: "http://bois-owamp.es.net:8085/perfSONAR_PS/services/pSB"
+    bost-owamp: "http://bost-owamp.es.net:8085/perfSONAR_PS/services/pSB"
+    clev-owamp: "http://clev-owamp.es.net:8085/perfSONAR_PS/services/pSB"
+    denv-owamp: "http://denv-owamp.es.net:8085/perfSONAR_PS/services/pSB"
+    elpa-owamp: "http://elpa-owamp.es.net:8085/perfSONAR_PS/services/pSB"
+    kans-owamp: "http://kans-owamp.es.net:8085/perfSONAR_PS/services/pSB"
+    losa-owamp: "http://losa-owamp.es.net:8085/perfSONAR_PS/services/pSB"
+    newy-owamp: "http://newy-owamp.es.net:8085/perfSONAR_PS/services/pSB"
+    star-owamp: "http://star-owamp.es.net:8085/perfSONAR_PS/services/pSB"
+
+
+groups:
+    - name: "Full Star configuration"
+      type: "bwctl"
+      members: ["sunn-pt1","chic-pt1","wash-pt1","hous-pt1"]
+    
+    - name: "DOE Site to Site bwctl testing"
+      type: "bwctl"
+      members: ["anl-pt1"," bnl-pt1","fnal-pt1","jgi-pt1","lbl-pt1","llnl-pt1","nash-pt1","nersc-pt1","pnwg-pt1","sdsc-pt1","snll-pt1","slac-pt1"]
+    
+    - name: "Mini star configuration"
+      type: "bwctl"
+      members: ["albu-pt1","aofa-pt1","atla-pt1","bois-pt1","clev-pt1","denv-pt1","elpa-pt1","kans-pt1","losa-pt1","newy-pt1","star-pt1"]
+    
+    - name: "Main hubs"
+      type: "owamp"
+      members: ["sunn-owamp","chic-owamp","wash-owamp","hous-owamp"]
+    
+    - name: "DOE site to site OWAMP testing"
+      type: "owamp"
+      members: ["anl-owamp","bnl-owamp","fnal-owamp","jgi-owamp","lbl-owamp","llnl-owamp","nash-owamp","nersc-owamp","pnwg-owamp","sdsc-owamp","snll-owamp","slac-owamp"]
+    
+    - name: "Other OWAMP testing"
+      type: "owamp"
+      members: ["albu-owamp","aofa-owamp","atla-owamp","bois-owamp","bost-owamp","clev-owamp","denv-owamp","elpa-owamp","kans-owamp","losa-owamp","newy-owamp","star-owamp"]
+    

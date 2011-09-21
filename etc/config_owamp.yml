@@ -1,0 +1,8 @@
+services:
+    owamp: "http://ggf.org/ns/nmwg/characteristic/delay/summary/20070921"
+serviceDisplayName:
+    owamp: "One Way Latency"
+hosts:
+    localhost: "http://lbl-owamp.es.net:8085/perfSONAR_PS/services/pSB"
+
+

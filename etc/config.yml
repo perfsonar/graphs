@@ -1,0 +1,7 @@
+services:
+    latency/loss(owamp): "http://ggf.org/ns/nmwg/characteristic/delay/summary/20070921"
+    bandwidth(bwctl): "http://ggf.org/ns/nmwg/tools/iperf/2.0"
+hosts:
+    localhost: "http://hous-owamp.es.net:8085/perfSONAR_PS/services/pSB"
+
+
