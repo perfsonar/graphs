@@ -16,6 +16,7 @@ doc/README
 etc/apache-serviceTest.conf
 etc/config_bwctl.yml
 etc/config_owamp.yml
+html/help.html
 images/header.gif
 images/logo.png
 images/uparrow.png
