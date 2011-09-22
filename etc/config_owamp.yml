@@ -3,6 +3,6 @@ services:
 serviceDisplayName:
     owamp: "One Way Latency"
 hosts:
-    localhost: "http://lbl-owamp.es.net:8085/perfSONAR_PS/services/pSB"
+    localhost: "http://localhost:8085/perfSONAR_PS/services/pSB"
 
 

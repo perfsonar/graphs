@@ -3,6 +3,6 @@ services:
 serviceDisplayName:
     bwctl: "bandwidth(bwctl)"
 hosts:
-    localhost: "http://ps-lat.es.net:8085/perfSONAR_PS/services/pSB"
+    localhost: "http://localhost:8085/perfSONAR_PS/services/pSB"
 
 
