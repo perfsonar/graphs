@@ -93,6 +93,7 @@ rm -rf $RPM_BUILD_ROOT
 
 %{install_base}/images/*
 %{install_base}/css/*
+%{install_base}/html/*
 /etc/httpd/conf.d/*
 
 %changelog
