@@ -273,8 +273,7 @@ sub getData() {
     	eval { $doc = $parser->parse_string( @{ $result->{data} } ); };
 
     	if ($@) {
-        	#my $returnmsg ="No results were returned from MA. Please check your URL parameters";
-        	#return $returnmsg;
+        	return "Error in MA response";
     	}
 
     	my $root       = $doc->getDocumentElement;
@@ -286,10 +285,9 @@ sub getData() {
 
         	if ( scalar @childnodes == 1 ) {
             		if (   $child->textContent =~ m/(E|e)rror/
-                		|| $child->textContent =~ m/Query returned 0 results/ )
+                		|| $child->textContent =~ m/returned 0 results/i )
             		{
-                		#my $returnmsg = "No results were returned from MA. \n Error: ". $child->textContent;
-                		#return $returnmsg;
+                		return;
             		}
         	}
         	my %tsresult     = ();
@@ -331,7 +329,12 @@ sub getData() {
                 		$tsresult{"min"} = undef;
             		}
             		if ( defined $loss and defined $sent_packets ) {
-                		$tsresult{"loss"} = $loss / $sent_packets * 100;
+            			if($sent_packets >0 ){
+            				$tsresult{"loss"} = $loss / $sent_packets * 100;
+            			}else{
+            				$tsresult{"loss"} = undef;
+            			}
+                		
             		}else {
                 		$tsresult{"loss"} = undef;
             		}

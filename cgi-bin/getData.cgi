@@ -20,12 +20,17 @@ my $eventType = param("eventType");
 
 unless ( $ma_url and $eventType ) {
     print $cgi->header;
-    print
-"<h1>Missing parameters!!!! Please supply event and Ma_URL to contact</h1>";
+    print "<h1>Missing parameters!!!! Please supply event and Ma_URL to contact</h1>";
     exit -1;
 }
 
 my $resultHash = getData( $ma_url, $eventType );
+
+if (!defined $resultHash){
+	print $cgi->header;
+    print "<h1>Error processing request. Please check if MA is functioning correctly</h1>";
+    exit -1;
+}
 
 #separate into active and inactive datasets
 my $activeDataSets   = ();
@@ -40,8 +45,12 @@ foreach my $key ( keys %{$resultHash} ) {
 		if($resultHash->{$key}{data}{active} eq "Yes"){
 			my $newnr = $resultHash->{$key}{data}{throughput}*$resultHash->{$key}{data}{datapoints}+$activeDataSets->{$newkey}->{data}{throughput}*$activeDataSets->{$newkey}->{data}{datapoints};
 			my $newdr = $activeDataSets->{$newkey}->{data}{datapoints}+$resultHash->{$key}{data}{datapoints};
-			my $newresult = $newnr/$newdr;
-	    		$activeDataSets->{$newkey}->{data}{throughput} = $newresult;
+			if($newdr > 0){
+				$activeDataSets->{$newkey}->{data}{throughput} = $newnr/$newdr;
+			}else{
+				$activeDataSets->{$newkey}->{data}{throughput} = $newnr;
+			}
+	    		
 			$activeDataSets->{$newkey}->{data}{datapoints}= $newdr;
 		}
 		#ignore inactive test if there is an active duplicate test
@@ -71,9 +80,16 @@ foreach my $key ( keys %{$resultHash} ) {
 			my $newmaxRtotal = $resultHash->{$key}{data}{max_delay}*$resultHash->{$key}{data}{datapoints}+$activeDataSets->{$newkey}->{data}{max_delay}*$activeDataSets->{$newkey}->{data}{datapoints};
 			my $newlossRtotal = $resultHash->{$key}{data}{loss}*$resultHash->{$key}{data}{datapoints}+$activeDataSets->{$newkey}->{data}{loss}*$activeDataSets->{$newkey}->{data}{datapoints};
 			my $newdr = $activeDataSets->{$newkey}->{data}{datapoints}+$resultHash->{$key}{data}{datapoints};
-	        	$activeDataSets->{$newkey}->{data}{min_delay} = $newminRtotal/$newdr;
+			if($newdr > 0){
+					$activeDataSets->{$newkey}->{data}{min_delay} = $newminRtotal/$newdr;
                 	$activeDataSets->{$newkey}->{data}{max_delay} = $newmaxRtotal/$newdr;
                 	$activeDataSets->{$newkey}->{data}{loss} = $newlossRtotal/$newdr;
+			}else{
+					$activeDataSets->{$newkey}->{data}{min_delay} = $newminRtotal;
+                	$activeDataSets->{$newkey}->{data}{max_delay} = $newmaxRtotal;
+                	$activeDataSets->{$newkey}->{data}{loss} = $newlossRtotal;
+			}
+	        	
                 	$activeDataSets->{$newkey}->{data}{datapoints}= $newdr;
    		}
 		#ignore inactive test if there is an active duplicate test
@@ -220,8 +236,7 @@ sub getData {
     my @parameterList;
 
     if (   $eventType eq "http://ggf.org/ns/nmwg/tools/iperf/2.0"
-        or $eventType eq
-        "http://ggf.org/ns/nmwg/characteristics/bandwidth/achievable/2.0" )
+        or $eventType eq "http://ggf.org/ns/nmwg/characteristics/bandwidth/achievable/2.0" )
     {
         push( @parameterList, "protocol" );
         push( @parameterList, "timeDuration" );
@@ -237,9 +252,7 @@ sub getData {
         push( @parameterList, "schedule" );
         $dataType = "owamp";
         $start =
-          $end -
-          0.5 * 60 *
-          60;  #Collect 1/2 hour for owamp. 
+          $end - 0.5 * 60 * 60;  #Collect 1/2 hour for owamp. 
     }
 
     # Create client
@@ -257,6 +270,8 @@ sub getData {
 # Send request depending on what type of data has been requested - (metadata or data)
 
     my $result;
+    my $rsltHash;
+    my $dataHash;
 
     my %maKeysFinalHash;
     $result = $ma->setupDataRequest(
@@ -266,32 +281,37 @@ sub getData {
             start      => $start,
             end        => $end
         }
-    ) or die("Error contacting MA");
+    );
 
     #Process result
-
+	
     #Get metadata
-    my $rsltHash = getMetadataHash( $result->{metadata}, \@parameterList );
-    my $dataHash;
-
-    #Process data
-    if ( $dataType eq "bwctl" ) {
-
-        #Call processBwctlPSData();
-        $dataHash = processBwctlPSData( $result->{data} );
+    if($result){
+    	$rsltHash = getMetadataHash( $result->{metadata}, \@parameterList );
     }
-    elsif ( $dataType eq "owamp" ) {
+    
+    #Process data - Only if metadata exists, process data
+    if (defined $rsltHash){
+    	if ( $dataType eq "bwctl" ) {
 
-        #Call processOwampPSData();
-        $dataHash = processOwampPSData( $result->{data} );
+        	#Call processBwctlPSData();
+        	$dataHash = processBwctlPSData( $result->{data} );
+    	}elsif ( $dataType eq "owamp" ) {
+
+        	#Call processOwampPSData();
+       	    $dataHash = processOwampPSData( $result->{data} );
+    	}
+		#combine data and test details
+		if(defined $dataHash){
+    		foreach my $key ( keys %{$rsltHash} ) {
+        		$rsltHash->{$key}{"data"} = \%{ $dataHash->{$key} };
+   	  		}
+		}
+		return $rsltHash;
+    }else{
+    	return;
     }
-
-    #combine data and test details
-    foreach my $key ( keys %{$rsltHash} ) {
-        $rsltHash->{$key}{"data"} = \%{ $dataHash->{$key} };
-    }
-    return $rsltHash;
-
+    
 }
 
 #Extracts the throughput values from bwctl XML tags, calculates average and returns a hash of the result
@@ -300,30 +320,35 @@ sub getData {
 sub processBwctlPSData {
     my ($dataResult) = @_;
     my %mdIdBwctlDataHash;
-    foreach my $data ( @{$dataResult} ) {
+    DATA: foreach my $data ( @{$dataResult} ) {
         my %tmpHash;
         my $parser = XML::LibXML->new();
         my $doc;
         eval { $doc = $parser->parse_string($data); };
         if ($@) {
-            die("Error parsing MA response");
+            next DATA;
         }
         my $root  = $doc->getDocumentElement;
+ 
         my $tmpID = $root->find("\@metadataIdRef");
 
         my @childnodes = $root->findnodes(".//*[local-name()='datum']");
-
         my $throughputStats = Statistics::Descriptive::Full->new();
-        for ( my $i = 0 ; $i < scalar @childnodes ; $i++ ) {
-            my $tmpval = $childnodes[$i]->getAttribute("throughput");
-            if ( $tmpval ne "" ) {
-                $throughputStats->add_data($tmpval);
-            }
-        }
+		if ( scalar @childnodes != 0){
+			if($childnodes[0]->textContent !~ m/returned 0 results/i){
+				for ( my $i = 0 ; $i < scalar @childnodes; $i++ ) {
+            		my $tmpval = $childnodes[$i]->getAttribute("throughput");
+            		if ( $tmpval ne "" ) {
+                		$throughputStats->add_data($tmpval);
+            		}
+        		}	
+			}
+		}
+ 
 
         my %finalval;
         $finalval{"throughput"} = $throughputStats->mean();
-	$finalval{"datapoints"} = $throughputStats->count();
+		$finalval{"datapoints"} = $throughputStats->count();
         if ( $throughputStats->mean() == 0 || $throughputStats->mean() eq "" ) {
             $finalval{"active"} = "No";
         }
@@ -342,49 +367,49 @@ sub processBwctlPSData {
 sub processOwampPSData {
     my ($dataResult) = @_;
     my %mdIdOwampDataHash;
-    foreach my $data ( @{$dataResult} ) {
+    DATA: foreach my $data ( @{$dataResult} ) {
         my %tmpHash;
         my $parser = XML::LibXML->new();
         my $doc;
         eval { $doc = $parser->parse_string($data); };
         if ($@) {
-            die("Error parsing MA response");
+            next DATA;
         }
         my $root  = $doc->getDocumentElement;
         my $tmpID = $root->find("\@metadataIdRef");
 
         my @childnodes = $root->findnodes(".//*[local-name()='datum']");
-        if ( scalar @childnodes != 0
-            && $childnodes[0]->textContent ne "Query returned 0 results" )
-        {
-
-      #used to calculate the four metrics - min_delay, max_delay, loss, maxError
+        if ( scalar @childnodes != 0){
+        	#used to calculate the four metrics - min_delay, max_delay, loss, maxError
             my $minDelayStats = Statistics::Descriptive::Full->new();
             my $maxDelayStats = Statistics::Descriptive::Full->new();
             my $lossStats     = Statistics::Descriptive::Full->new();
-
-            #not all the data tags have both attributes
-            for ( my $i = 0 ; $i < scalar @childnodes ; $i++ ) {
-                my $tmpval = $childnodes[$i]->getAttribute("min_delay");
-                if ( $tmpval ne "" ) {
-                    $minDelayStats->add_data($tmpval);
-                }
-                $tmpval = $childnodes[$i]->getAttribute("max_delay");
-                if ( $tmpval ne "" ) {
-                    $maxDelayStats->add_data($tmpval);
-                }
-
-                my $loss = $childnodes[$i]->getAttribute("loss");
-                my $sent = $childnodes[$i]->getAttribute("sent");
-                if ( $loss ne "" and $sent ne "" ) {
-                    $lossStats->add_data($loss/$sent);
-                }
-            }
+            
+			if($childnodes[0]->textContent !~ m/returned 0 results/i){
+				    #not all the data tags have both attributes
+            		for ( my $i = 0 ; $i < scalar @childnodes ; $i++ ) {
+                		my $tmpval = $childnodes[$i]->getAttribute("min_delay");
+                		if ( $tmpval ne "" ) {
+                    		$minDelayStats->add_data($tmpval);
+                		}
+                		$tmpval = $childnodes[$i]->getAttribute("max_delay");
+               			if ( $tmpval ne "" ) {
+                    		$maxDelayStats->add_data($tmpval);
+                		}
+                		my $loss = $childnodes[$i]->getAttribute("loss");
+                		my $sent = $childnodes[$i]->getAttribute("sent");
+                		if ( $loss ne "" and $sent ne "") {
+                			if($sent != 0){
+                				$lossStats->add_data($loss/$sent);
+                			}    
+                		}
+            		}
+			}
             my %finalval;
             $finalval{min_delay} = $minDelayStats->trimmed_mean(0.05) * 1000;
             $finalval{max_delay} = $maxDelayStats->trimmed_mean(0.05) * 1000;
             $finalval{loss}      = sprintf("%3.2f%%", $lossStats->trimmed_mean(0.05) * 100);
-	    $finalval{"datapoints"} = $minDelayStats->count();
+	    	$finalval{"datapoints"} = $minDelayStats->count();
 
             if (   ( $finalval{min_delay} == 0 || $finalval{min_delay} eq "" )
                 && ( $finalval{max_delay} == 0 || $finalval{max_delay} eq "" ) )
@@ -404,19 +429,28 @@ sub processOwampPSData {
 
 # Proceses metadata and returns a hash containing src, dst, srcIP, dstIP and the parameter details.
 # Arguments  - Reference to parameter list and array of metadataTags
-# Returns reference to hash contianing metadataId as key, test details
+# Returns reference to hash containing metadataId as key, test details
 sub getMetadataHash {
     my ( $metadataResult, $parameterList ) = @_;
     my %mdIdTestDetailsHash;
-    foreach my $metadata ( @{$metadataResult} ) {
+	METADATA:foreach my $metadata ( @{$metadataResult} ) {
         my %tmpHash;
         my $parser = XML::LibXML->new();
         my $doc;
         eval { $doc = $parser->parse_string($metadata); };
         if ($@) {
-            die("Error parsing MA response");
+            next METADATA;
         }
-        my $root          = $doc->getDocumentElement;
+        
+        my $root = $doc->getDocumentElement;
+        
+        my @eventType = $root->findnodes(".//*[local-name()='eventType']");
+        foreach my $event (@eventType){
+        	if ($event =~ m/error/i){
+        		next METADATA;
+        	}
+        }
+        
         my $tmpID         = $root->find("\@id");
         my $srcaddressval = $root->find(".//*[local-name()='src']/\@value");
         my $srcaddress    = "$srcaddressval";
@@ -432,8 +466,8 @@ sub getMetadataHash {
             $src        = $srcaddress;
             $srcaddress = $ip;
         }
-	$src = $srcaddress unless $src;
-	$srcaddress = $src unless $srcaddress;
+		$src = $srcaddress unless $src;
+		$srcaddress = $src unless $srcaddress;
 
         my $dstaddressval = $root->find(".//*[local-name()='dst']/\@value");
         my $dstaddress    = "$dstaddressval";
@@ -449,8 +483,8 @@ sub getMetadataHash {
             $dst        = $dstaddress;
             $dstaddress = $ip;
         }
-	$dst = $dstaddress unless $dst;
-	$dstaddress = $dst unless $dstaddress;
+		$dst = $dstaddress unless $dst;
+		$dstaddress = $dst unless $dstaddress;
 
         $tmpHash{"src"}   = "$src";
         $tmpHash{"dst"}   = "$dst";
@@ -462,7 +496,6 @@ sub getMetadataHash {
 
         foreach my $param ( @{$parameterList} ) {
             my $paramvalue;
-
             #schedule parameter alone has a child node
             if ( $param eq "schedule" ) {
                 $paramvalue = $root->find(

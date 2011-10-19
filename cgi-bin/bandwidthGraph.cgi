@@ -251,9 +251,7 @@ sub getData() {
     	eval { $doc = $parser->parse_string( @{ $result->{data} } ); };
 
     	if ($@) {
-        #	my $returnmsg =
-         # 	"No results were returned from MA. Please check your URL parameters";
-        #	return $returnmsg;
+        	return "Error in MA response";
     	}
 
     	my $root       = $doc->getDocumentElement;
