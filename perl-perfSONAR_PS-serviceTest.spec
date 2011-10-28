@@ -4,7 +4,7 @@
 # cron/apache entry are located in the 'etc' directory
 %define apacheconf apache-serviceTest.conf
 
-%define relnum 3
+%define relnum 5
 %define disttag pSPS
 
 Name:           perl-perfSONAR_PS-serviceTest
@@ -21,17 +21,25 @@ Requires:		perl(AnyEvent) >= 4.81
 Requires:		perl(AnyEvent::HTTP)
 Requires:		perl(CGI)
 Requires:		perl(Data::Validate::IP)
+Requires:               perl(Data::UUID)
 Requires:		perl(Exporter)
 Requires:		perl(Getopt::Long)
 Requires:		perl(HTML::Template)
 Requires:		perl(IO::File)
 Requires:               perl(JSON)
 Requires:               perl(LWP::UserAgent)
+Requires:               perl(Log::Log4perl)
+Requires:               perl(NetAddr::IP)
+Requires:               perl(Net::DNS)
 Requires:		perl(Params::Validate)
+Requires:               perl(Regexp::Common)
 Requires:               perl(Socket)
+Requires:               perl(Statistics::Descriptive)
+Requires:               perl(Template)
 Requires:		perl(Time::HiRes)
 Requires:		perl(Time::Local)
 Requires:		perl(XML::LibXML) >= 1.60
+Requires:               perl(YAML::Syck)
 #Requires:       perl(:MODULE_COMPAT_%(eval "`%{__perl} -V:version`"; echo $version))
 Requires:       perl
 Requires:       httpd
