@@ -40,6 +40,8 @@ my $dst      = $cgi->param('dst');
 my $srcIP    = $cgi->param('srcIP');
 my $dstIP    = $cgi->param('dstIP');
 my $domparam = $cgi->param('DOMloaded');
+my $bucketVal = $cgi->param('bucket_width');
+
 
 my $basetmpldir = "$RealBin/../templates";
 
@@ -270,14 +272,17 @@ sub getData() {
     	#parse XML response
     	my $parser = XML::LibXML->new();
     	my $doc;
+    	
     	eval { $doc = $parser->parse_string( @{ $result->{data} } ); };
+    	my $root       = $doc->getDocumentElement;
+    	
+    	my @childnodes = $root->findnodes("./*[local-name()='datum']");
 
     	if ($@) {
         	return "Error in MA response";
     	}
 
-    	my $root       = $doc->getDocumentElement;
-    	my @childnodes = $root->findnodes("./*[local-name()='datum']");
+  
 
     	#extract required data attributes
     	my $bktFlag;
@@ -343,10 +348,16 @@ sub getData() {
             		my $thirdq;
 
             		if ( scalar @summaryBuckets > 0 ) {
-                		$median = getPercentile( $sent_packets, 50, \%histogram ) / 10;
-                		$firstq = getPercentile( $sent_packets, 25, \%histogram ) / 10;
-                		$thirdq = getPercentile( $sent_packets, 75, \%histogram ) / 10;
-                		$tsresult{"buckets"} = "true";
+            			if($bucketVal > 0){
+            				$median = getPercentile( $sent_packets, 50, \%histogram ) * ($bucketVal/0.001);
+                			$firstq = getPercentile( $sent_packets, 25, \%histogram ) * ($bucketVal/0.001);
+                			$thirdq = getPercentile( $sent_packets, 75, \%histogram ) * ($bucketVal/0.001);
+                			$tsresult{"buckets"} = "true";
+            			}else{
+            				$tsresult{"buckets"} = "false";
+            			}
+                		
+                		
             		}else {
                 		$tsresult{"buckets"} = "false";
             		}
@@ -370,7 +381,7 @@ sub getData() {
             		}
             		$finalResult{$etimestamp} = \%tsresult;
         	}
-    }
+    	}
   }
 
     if ( scalar keys %finalResult >= 0 ) {

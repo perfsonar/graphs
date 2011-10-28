@@ -175,7 +175,7 @@ function getGraphURL(testType,testKey,timeRange){
                      		link = "./bandwidthGraph.cgi?url="+maKeyJson["ma_url"]+"&key="+maKeyJson["maKey"]+"&keyR="+maKeyJson["maKeyR"]+"&dstIP="+maKeyJson["dstIP"]+"&srcIP="+maKeyJson["srcIP"]+"&dst="+maKeyJson["dst"]+"&src="+maKeyJson["src"]+"&type=TCP&length="+timeRange;
                      		var  graphWindow = window.open(link,Math.random(),'height=800,width=1200,scrollbars=1,toolbar=1');
               	}else if((queryParameters["eventType"] == "http://ggf.org/ns/nmwg/characteristic/delay/summary/20070921") || (queryParameters["eventType"] == "http://ggf.org/ns/nmwg/tools/owamp/2.0")){
-                	     link = "./delayGraph.cgi?url="+maKeyJson["ma_url"]+"&key="+maKeyJson["maKey"]+"&keyR="+maKeyJson["maKeyR"]+"&dstIP="+maKeyJson["dstIP"]+"&srcIP="+maKeyJson["srcIP"]+"&dst="+maKeyJson["dst"]+"&src="+maKeyJson["src"]+"&type=TCP&length="+timeRange;
+                	     link = "./delayGraph.cgi?url="+maKeyJson["ma_url"]+"&key="+maKeyJson["maKey"]+"&keyR="+maKeyJson["maKeyR"]+"&dstIP="+maKeyJson["dstIP"]+"&srcIP="+maKeyJson["srcIP"]+"&dst="+maKeyJson["dst"]+"&src="+maKeyJson["src"]+"&type=TCP&length="+timeRange+"&bucket_width="+allTests[testType][testKey]["bucket_width"];
                      		var  graphWindow = window.open(link,Math.random(),'height=800,width=1200,scrollbars=1,toolbar=1');
              	 }
         	}
