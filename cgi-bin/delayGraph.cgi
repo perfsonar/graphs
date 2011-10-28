@@ -193,6 +193,7 @@ elsif ( defined $srcIP and defined $dstIP ) {
     $queryparameters .= "&srcIP=$srcIP&dstIP=$dstIP";
 }
 
+$queryparameters .= "&bucket_width=$bucketVal";
 #output
 if ( defined $domparam && $domparam eq "yes" ) {
     my $json = new JSON;
