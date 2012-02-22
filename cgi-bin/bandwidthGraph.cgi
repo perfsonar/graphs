@@ -26,6 +26,7 @@ use HTML::Template;
 use Time::Local;
 use JSON;
 use Statistics::Descriptive;
+use HTML::Entities;
 
 #print cgi-header
 my $cgi = new CGI;
@@ -185,13 +186,13 @@ else {
     my $htmlfile =
       HTML::Template->new( filename => "$basetmpldir/bw_pageDisplay.tmpl" );
     $htmlfile->param(
-        STARTTIME => $start,
-        ENDTIME   => $end,
-        MA_URL    => $ma_url,
-        TESTKEY   => $key,
-        TESTKEYR  => $keyR,
-        REVERSE   => $reverse,
-        FULLURL   => $queryparameters
+        STARTTIME => HTML::Entities::encode($start),
+        ENDTIME   => HTML::Entities::encode($end),
+        MA_URL    => HTML::Entities::encode($ma_url),
+        TESTKEY   => HTML::Entities::encode($key),
+        TESTKEYR  => HTML::Entities::encode($keyR),
+        REVERSE   => HTML::Entities::encode($reverse),
+        FULLURL   => HTML::Entities::encode($queryparameters)
     );
     print $htmlfile->output;
     my $jsfile = HTML::Template->new(
@@ -199,10 +200,10 @@ else {
         loop_context_vars => "true"
     );
     $jsfile->param(
-        TESTHOSTS => $pageHeading,
+        TESTHOSTS => HTML::Entities::encode($pageHeading),
         GRAPHDATA => \@sortedResult,
-        REVERSE   => $reverse,
-        STATS     => $stats
+        REVERSE   => HTML::Entities::encode($reverse),
+        STATS     => HTML::Entities::encode($stats)
     );
     print $jsfile->output;
 

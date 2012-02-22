@@ -11,15 +11,16 @@ use XML::LibXML;
 use Socket;
 use JSON;
 use CGI qw(:standard);
+use HTML::Entities;
 
 use perfSONAR_PS::Client::MA;
 use perfSONAR_PS::Utils::DNS qw(resolve_address reverse_dns);
 
 my $cgi       = new CGI;
-my $srcRaw    = param("srcRaw");
-my $dstRaw    = param("dstRaw");
-my $eventType = param("eventType");
-my $ma_url    = param("ma_url");
+my $srcRaw    = HTML::Entities::encode(param("srcRaw"));
+my $dstRaw    = HTML::Entities::encode(param("dstRaw"));
+my $eventType = HTML::Entities::encode(param("eventType"));
+my $ma_url    = HTML::Entities::encode(param("ma_url"));
 my %parameters;
 my %resultHash;
 my $maKeyHash;

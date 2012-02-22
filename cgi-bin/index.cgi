@@ -8,6 +8,7 @@ use lib ("$RealBin/../lib");
 use YAML::Syck;
 use Template;
 use CGI qw(:standard);
+use HTML::Entities;
 
 #print cgi-header
 my $cgi = new CGI;
@@ -56,10 +57,10 @@ if ( defined @{ %{$string}->{'groups'} } ) {
 }
 
 my %vars = (
-    services           => \%servicetypes,
-    hosts              => \%hostlist,
-    eventType          => $eventType,
-    serviceDisplayName => \%serviceDisplayName
+    services           => HTML::Entities::encode(\%servicetypes),
+    hosts              => HTML::Entities::encode(\%hostlist),
+    eventType          => HTML::Entities::encode($eventType),
+    serviceDisplayName => HTML::Entities::encode(\%serviceDisplayName)
 );
 if ( scalar @tests >= 1 ) {
     $vars{groups} = \@tests;
@@ -83,7 +84,7 @@ sub errorPage {
     my $html;
 
     my %vars = ();
-    $vars{error_msg} = $msg;
+    $vars{error_msg} = HTML::Entities::encode($msg);
 
     $tt->process( "serviceTest_error.tmpl", \%vars, \$html )
       or die $tt->error();

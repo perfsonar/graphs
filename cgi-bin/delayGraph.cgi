@@ -25,6 +25,7 @@ use XML::LibXML;
 use HTML::Template;
 use Time::Local;
 use JSON;
+use HTML::Entities;
 
 #print cgi-header
 my $cgi = new CGI;
@@ -211,14 +212,14 @@ else {
     my $htmlfile =
       HTML::Template->new( filename => "$basetmpldir/pageDisplay.tmpl" );
     $htmlfile->param(
-        BUCKETS    => $bucketsFlag,
-        STARTTIME  => $start,
-        ENDTIME    => $end,
-        MA_URL     => $ma_url,
-        TESTKEY    => $key,
-        FULLURL    => $queryparameters,
-        TESTHOSTS  => $pageHeading,
-        TESTKEYREV => $keyR,
+        BUCKETS    => HTML::Entities::encode($bucketsFlag),
+        STARTTIME  => HTML::Entities::encode($start),
+        ENDTIME    => HTML::Entities::encode($end),
+        MA_URL     => HTML::Entities::encode($ma_url),
+        TESTKEY    => HTML::Entities::encode($key),
+        FULLURL    => HTML::Entities::encode($queryparameters),
+        TESTHOSTS  => HTML::Entities::encode($pageHeading),
+        TESTKEYREV => HTML::Entities::encode($keyR),
     );
     print $htmlfile->output;
     my $jsfile = HTML::Template->new(
@@ -227,9 +228,9 @@ else {
         die_on_bad_params => 0
     );
     $jsfile->param(
-        BUCKETS   => $bucketsFlag,
-	NEGATIVELATENCY => $negLatChk,
-        GRAPHDATA => \@sortedResult
+        BUCKETS   => HTML::Entities::encode($bucketsFlag),
+	NEGATIVELATENCY => HTML::Entities::encode($negLatChk),
+        GRAPHDATA => HTML::Entities::encode(\@sortedResult)
     );
     print $jsfile->output;
 }
