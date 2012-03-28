@@ -13,6 +13,7 @@ cgi-bin/index.cgi
 cgi-bin/metaKeyReq.cgi
 css/style.css
 doc/README
+doc/LICENSE
 etc/apache-serviceTest.conf
 etc/config_bwctl.yml
 etc/config_owamp.yml
