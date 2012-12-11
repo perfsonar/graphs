@@ -50,7 +50,7 @@ if ( !defined $ma_url || !defined $key ) {
     print $cgi->header;
     my $errmsg =
 "Missing MA_URL and MA test key information. Please make sure the URL has url and key parameters";
-    my $errfile = HTML::Template->new( filename => "$basetmpldir/error.tmpl" );
+    my $errfile = HTML::Template->new( filename => "$basetmpldir/bw_error.tmpl" );
     $errfile->param( ERRORMSG => $errmsg );
     print $errfile->output;
     exit(1);
@@ -91,7 +91,7 @@ my $res = &getData( $ma_url, $key, $start, $end );
 unless ( ref($res) ) {
     print $cgi->header;
     my $errmsg = $res;
-    my $errfile = HTML::Template->new( filename => "$basetmpldir/error.tmpl" );
+    my $errfile = HTML::Template->new( filename => "$basetmpldir/bw_error.tmpl" );
     $errfile->param( ERRORMSG => $errmsg );
     print $errfile->output;
     exit(1);
@@ -268,6 +268,7 @@ sub getData() {
             	{
                 	#my $returnmsg = "No results were returned from MA. \n Error: ". $child->textContent;
                 	#return $returnmsg;
+                	
             	}
         	}
         	my %tsresult   = ();

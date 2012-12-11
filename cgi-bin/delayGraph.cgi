@@ -52,7 +52,7 @@ if ( !defined $ma_url and !defined $key ) {
     print $cgi->header;
     my $errmsg =
 "Missing MA_URL and MA test key information. Please make sure the URL has url and key parameters";
-    my $errfile = HTML::Template->new( filename => "$basetmpldir/error.tmpl" );
+    my $errfile = HTML::Template->new( filename => "$basetmpldir/delay_error.tmpl" );
     $errfile->param( ERRORMSG => $errmsg );
     print $errfile->output;
     exit(1);
@@ -90,7 +90,7 @@ my $res = &getData( $ma_url, $key, $start, $end );
 unless ( ref($res) ) {
     print $cgi->header;
     my $errmsg = $res;
-    my $errfile = HTML::Template->new( filename => "$basetmpldir/error.tmpl" );
+    my $errfile = HTML::Template->new( filename => "$basetmpldir/delay_error.tmpl" );
     $errfile->param( ERRORMSG => $errmsg );
     print $errfile->output;
     exit(1);
@@ -210,7 +210,7 @@ else {
 
     #print output
     my $htmlfile =
-      HTML::Template->new( filename => "$basetmpldir/pageDisplay.tmpl" );
+      HTML::Template->new( filename => "$basetmpldir/delay_pageDisplay.tmpl" );
     $htmlfile->param(
         BUCKETS    => HTML::Entities::encode($bucketsFlag),
         STARTTIME  => HTML::Entities::encode($start),
@@ -223,7 +223,7 @@ else {
     );
     print $htmlfile->output;
     my $jsfile = HTML::Template->new(
-        filename          => "$basetmpldir/graphing.tmpl",
+        filename          => "$basetmpldir/delay_graphing.tmpl",
         loop_context_vars => "true",
         die_on_bad_params => 0
     );
