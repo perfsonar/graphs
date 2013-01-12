@@ -107,5 +107,8 @@ chown -R apache:apache /opt/perfsonar_ps/serviceTest/etc
 /etc/httpd/conf.d/*
 
 %changelog
+* Fri Jan 11 2013 asides@es.net 3.3-1
+- 3.3 beta release
+
 * Thu May 23 2011 sowmya@es.net 3.1-1
 - Initial release as an RPM
