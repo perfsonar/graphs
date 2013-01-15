@@ -244,15 +244,15 @@ sub getData() {
     my ( $ma_url, $key, $startTime, $endTime ) = @_;
 
     my %finalResult;
-    # Create client
-    my $ma = new perfSONAR_PS::Client::MA( { instance => $ma_url } );
-
     my @eventTypes = ();
 
     my @keyList=();
     @keyList = split(/_/,$key);
 
     foreach my $k (@keyList){
+        # Create client
+        my $ma = new perfSONAR_PS::Client::MA( { instance => $ma_url } );
+        
     	#define the subject
     	my $subject = "  <nmwg:key id=\"key-1\">\n";
     	$subject .= "    <nmwg:parameters id=\"parameters-key-1\">\n";
