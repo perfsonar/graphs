@@ -80,7 +80,7 @@ chown perfsonar:perfsonar /var/log/perfsonar
 chown -R perfsonar:perfsonar /opt/perfsonar_ps/serviceTest
 chown -R apache:apache /opt/perfsonar_ps/serviceTest/etc
 
-/etc/init.d/httpd restart 2> /dev/null
+/etc/init.d/httpd restart &> /dev/null || :
 
 %files
 %defattr(-,perfsonar,perfsonar,-)
