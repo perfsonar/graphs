@@ -97,8 +97,13 @@ var chtdata = getChartData();
 var chttitle="Throughput test between "+"<TMPL_VAR NAME=TESTHOSTS>";
    <TMPL_IF NAME=REVERSE>
      var chart = new Dygraph(document.getElementById("chart_div"),chtdata, 
-						{       yAxisLabelFormatter: function(x) {return formatValue(x);},
-							yValueFormatter: function(x) {return formatValue(x)+"bps";},
+						{       
+							axes:{
+							    y:{
+								axisLabelFormatter: function(x) {return formatValue(x);},
+								valueFormatter: function(x) {return formatValue(x)+"bps";},
+							    }
+							},
 							labelsSeparateLines: true,
 							labels: ['Date','Throughput(Src-Dst)','Throughput(Dst-Src)'],
 							visibility: [true, true],
@@ -111,8 +116,12 @@ var chttitle="Throughput test between "+"<TMPL_VAR NAME=TESTHOSTS>";
    <TMPL_ELSE>
           var chart = new Dygraph(document.getElementById("chart_div"),chtdata, 
 						{    
-							yAxisLabelFormatter: function(x) {return formatValue(x);},
-							yValueFormatter: function(x) {return formatValue(x)+"bps";},
+							axes:{
+                                                            y:{
+                                                                axisLabelFormatter: function(x) {return formatValue(x);},
+                                                                valueFormatter: function(x) {return formatValue(x)+"bps";},
+                                                            }   
+                                                        },
 							labelsSeparateLines: true,
 							labels: ['Date','Throughput'],
 							visibility: [true], 

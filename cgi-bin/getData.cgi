@@ -195,8 +195,7 @@ sub addDirectionDetails {
         }
 
         #check if tests is bidirectional or not
-        if ( defined $dataSetHashRef->{$revkey} ) {
-
+ if ( ($revkey ne $key) && (defined $dataSetHashRef->{$revkey} )) {
         #this if checks if entry already exists for forward or reverse direction
             if (   !defined $biDirectionCheck{$key}
                 && !defined $biDirectionCheck{$revkey} )
