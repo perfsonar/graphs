@@ -251,7 +251,7 @@ sub getData() {
     	eval { $doc = $parser->parse_string( @{ $result->{data} } ); };
 
     	if ($@) {
-        	return "Error in MA response";
+        	next;
     	}
 
     	my $root       = $doc->getDocumentElement;
@@ -265,8 +265,7 @@ sub getData() {
             	if (   $child->textContent =~ m/(E|e)rror/
                 	|| $child->textContent =~ m/Query returned 0 results/ )
             	{
-                	#my $returnmsg = "No results were returned from MA. \n Error: ". $child->textContent;
-                	#return $returnmsg;
+                	next;
                 	
             	}
         	}

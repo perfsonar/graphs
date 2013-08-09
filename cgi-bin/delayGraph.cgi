@@ -281,7 +281,7 @@ sub getData() {
     	my @childnodes = $root->findnodes("./*[local-name()='datum']");
 
     	if ($@) {
-        	return "Error in MA response";
+        	next;
     	}
 
   
@@ -294,7 +294,7 @@ sub getData() {
             		if (   $child->textContent =~ m/(E|e)rror/
                 		|| $child->textContent =~ m/returned 0 results/i )
             		{
-                		return;
+                		next;
             		}
         	}
         	my %tsresult     = ();
