@@ -46,6 +46,8 @@ else {
 
 $src = $srcRaw unless $src;
 $srcIP = $srcIP unless $srcIP;
+#convert ipv6 to short form
+$srcIP =~ s/(:0+)+:/::/g;
 
 #do the above for dst also
 if ( get_endpoint_type($dstRaw) ne "hostname" ) {
@@ -62,6 +64,8 @@ else {
 
 $dst = $dstRaw unless $dst;
 $dstIP = $dstRaw unless $dst;
+#convert ipv6 to short form
+$dstIP =~ s/(:0+)+:/::/g;
 
 if (   $eventType eq "http://ggf.org/ns/nmwg/tools/iperf/2.0"
     or $eventType eq
