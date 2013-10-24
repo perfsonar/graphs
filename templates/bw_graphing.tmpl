@@ -95,45 +95,42 @@ function updateStats(initial,statistics){
 
 var chtdata = getChartData();
 var chttitle="Throughput test between "+"<TMPL_VAR NAME=TESTHOSTS>";
-   <TMPL_IF NAME=REVERSE>
-     var chart = new Dygraph(document.getElementById("chart_div"),chtdata, 
-						{       
-							axes:{
-							    y:{
-								axisLabelFormatter: function(x) {return formatValue(x);},
-								valueFormatter: function(x) {return formatValue(x)+"bps";},
-							    }
-							},
-							labelsSeparateLines: true,
-							drawPoints: true,
-							labels: ['Date','Throughput(Src-Dst)','Throughput(Dst-Src)'],
-							visibility: [true, true],
-							connectSeparatedPoints: 1, 
-							labelsDiv: 'labelsDiv',colors: ['#0000FF','#00FF00'],
-						        gridLineWidth: 0.1,
-                                                        xlabel:'Time', ylabel:'Throughput (bps)', title:chttitle, titleHeight: 24
-                                                }
-			);
-   <TMPL_ELSE>
-          var chart = new Dygraph(document.getElementById("chart_div"),chtdata, 
-						{    
-							axes:{
+var chart = new Dygraph(document.getElementById("chart_div"),chtdata,
+                                                {
+                                                        axes:{
                                                             y:{
                                                                 axisLabelFormatter: function(x) {return formatValue(x);},
                                                                 valueFormatter: function(x) {return formatValue(x)+"bps";},
-                                                            }   
+                                                            }
                                                         },
-							labelsSeparateLines: true,
-							drawPoints: true,
-							labels: ['Date','Throughput'],
-							visibility: [true], 
-							labelsDiv: 'labelsDiv',
-							colors: ['#0000FF'],
+                                                        labelsSeparateLines: true,
+                                                        connectSeparatedPoints: 1,
+                                                        drawPoints: true,
+                                                        labelsDiv: 'labelsDiv',
                                                         gridLineWidth: 0.1,
                                                         xlabel:'Time', ylabel:'Throughput (bps)', title:chttitle, titleHeight: 24
-						}
-			);
+                                                }
+                        );
+
+if(chtdata.length==1){
+        chart.updateOptions({
+                        pointSize: 5
+                        });
+}
+   <TMPL_IF NAME=REVERSE>
+     chart.updateOptions({
+                                visibility: [true, true],
+                                colors: ['#0000FF','#00FF00'],
+                                labels: ['Date','Throughput(Src-Dst)','Throughput(Dst-Src)']
+                        });
+   <TMPL_ELSE>
+   chart.updateOptions({
+                                labels: ['Date','Throughput'],
+                                visibility: [true],
+                                colors: ['#0000FF'],
+                        });
    </TMPL_IF>
+
   updateStats(true,null);
    
 function formatValue(x){
