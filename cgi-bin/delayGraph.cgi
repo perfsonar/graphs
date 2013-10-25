@@ -272,7 +272,7 @@ sub getData() {
     	);
 
     	#parse XML response
-    	my $parser = XML::LibXML->new();
+    	my $parser = XML::LibXML->new(ext_ent_handler => sub { return ""; });
     	my $doc;
     	
     	eval { $doc = $parser->parse_string( @{ $result->{data} } ); };

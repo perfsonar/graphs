@@ -13,10 +13,11 @@ use CGI qw(:standard);
 use Data::Validate::IP qw(is_ipv4 is_ipv6);
 use perfSONAR_PS::Client::MA;
 use perfSONAR_PS::Utils::DNS qw(resolve_address reverse_dns);
+use HTML::Entities;
 
 my $cgi       = new CGI;
-my $ma_url    = param("ma_url");
-my $eventType = param("eventType");
+my $ma_url    = HTML::Entities::encode(param("ma_url"));
+my $eventType = HTML::Entities::encode(param("eventType"));
 
 unless ( $ma_url and $eventType ) {
     print $cgi->header;
@@ -321,7 +322,7 @@ sub processBwctlPSData {
     my %mdIdBwctlDataHash;
     DATA: foreach my $data ( @{$dataResult} ) {
         my %tmpHash;
-        my $parser = XML::LibXML->new();
+        my $parser = XML::LibXML->new(ext_ent_handler => sub { return ""; });
         my $doc;
         eval { $doc = $parser->parse_string($data); };
         if ($@) {
@@ -368,7 +369,7 @@ sub processOwampPSData {
     my %mdIdOwampDataHash;
     DATA: foreach my $data ( @{$dataResult} ) {
         my %tmpHash;
-        my $parser = XML::LibXML->new();
+        my $parser = XML::LibXML->new(ext_ent_handler => sub { return ""; });
         my $doc;
         eval { $doc = $parser->parse_string($data); };
         if ($@) {
@@ -434,7 +435,7 @@ sub getMetadataHash {
     my %mdIdTestDetailsHash;
 	METADATA:foreach my $metadata ( @{$metadataResult} ) {
         my %tmpHash;
-        my $parser = XML::LibXML->new();
+        my $parser = XML::LibXML->new(ext_ent_handler => sub { return ""; });
         my $doc;
         eval { $doc = $parser->parse_string($metadata); };
         if ($@) {

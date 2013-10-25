@@ -215,7 +215,7 @@ sub getData() {
 
    my %tmpHash=();
     foreach my $metadata(@{$result->{metadata}}){
-	my $parser = XML::LibXML->new();
+	my $parser = XML::LibXML->new(ext_ent_handler => sub { return ""; });
         my $doc;
         eval { $doc = $parser->parse_string($metadata); };
         if ($@) {
