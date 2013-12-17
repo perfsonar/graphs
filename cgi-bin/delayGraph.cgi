@@ -26,6 +26,7 @@ use HTML::Template;
 use Time::Local;
 use JSON;
 use HTML::Entities;
+use perfSONAR_PS::Utils::GraphMetadataKey qw(lookupGraphKeys);
 
 #print cgi-header
 my $cgi = new CGI;
@@ -40,22 +41,36 @@ my $src      = $cgi->param('src');
 my $dst      = $cgi->param('dst');
 my $srcIP    = $cgi->param('srcIP');
 my $dstIP    = $cgi->param('dstIP');
-my $domparam = $cgi->param('DOMloaded');
-my $bucketVal = $cgi->param('bucket_width');
-
+my $domparam = $cgi->param('DOMloaded') ? $cgi->param('DOMloaded') : "no";
+my $bucketVal = $cgi->param('bucket_width') ? $cgi->param('bucket_width') : 0;
 
 my $basetmpldir = "$RealBin/../templates";
 
-if ( !defined $ma_url and !defined $key ) {
+if ( !defined $ma_url ) {
 
     #print error and exit
     print $cgi->header;
-    my $errmsg =
-"Missing MA_URL and MA test key information. Please make sure the URL has url and key parameters";
+    my $errmsg = "Missing MA_URL.";
     my $errfile = HTML::Template->new( filename => "$basetmpldir/delay_error.tmpl" );
     $errfile->param( ERRORMSG => $errmsg );
     print $errfile->output;
     exit(1);
+}
+
+if ( !defined $key ) {
+    my $parameters = {};
+    my $resultHash = lookupGraphKeys($src, $dst, "http://ggf.org/ns/nmwg/characteristic/delay/summary/20110317", $ma_url, $parameters);
+    $key = $resultHash->{'maKey'};
+    $keyR = $resultHash->{'maKeyR'} if(!$keyR);
+    if(!$key){
+         #print error and exit
+        print $cgi->header;
+        my $errmsg = "Unable to find matching MA key for provided parameters";
+        my $errfile = HTML::Template->new( filename => "$basetmpldir/delay_error.tmpl" );
+        $errfile->param( ERRORMSG => $errmsg );
+        print $errfile->output;
+        exit(1);
+    }
 }
 
 #calculate start and end time
@@ -194,7 +209,7 @@ elsif ( defined $srcIP and defined $dstIP ) {
     $queryparameters .= "&srcIP=$srcIP&dstIP=$dstIP";
 }
 
-$queryparameters .= "&bucket_width=$bucketVal";
+$queryparameters .= "&bucket_width=$bucketVal" if($bucketVal);
 #output
 if ( defined $domparam && $domparam eq "yes" ) {
     my $json = new JSON;
