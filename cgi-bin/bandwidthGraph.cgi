@@ -27,6 +27,7 @@ use Time::Local;
 use JSON;
 use Statistics::Descriptive;
 use HTML::Entities;
+use perfSONAR_PS::Utils::GraphMetadataKey qw(lookupGraphKeys);
 
 #print cgi-header
 my $cgi = new CGI;
@@ -42,18 +43,37 @@ my $dst         = $cgi->param('dst');
 my $srcIP       = $cgi->param('srcIP');
 my $dstIP       = $cgi->param('dstIP');
 my $domparam    = $cgi->param('DOMloaded');
+my $duration    = $cgi->param('timeDuration');
+my $protocol    = $cgi->param('protocol');
 my $basetmpldir = "$RealBin/../templates";
 
-if ( !defined $ma_url || !defined $key ) {
+if ( !defined $ma_url ) {
 
     #print error and exit
     print $cgi->header;
-    my $errmsg =
-"Missing MA_URL and MA test key information. Please make sure the URL has url and key parameters";
+    my $errmsg = "Missing MA_URL";
     my $errfile = HTML::Template->new( filename => "$basetmpldir/bw_error.tmpl" );
     $errfile->param( ERRORMSG => $errmsg );
     print $errfile->output;
     exit(1);
+}
+
+if ( !defined $key ) {
+    my $parameters = {};
+    $parameters->{'timeDuration'} = $duration if($duration);
+    $parameters->{'protocol'} = $protocol if($protocol);
+    my $resultHash = lookupGraphKeys($src, $dst, "http://ggf.org/ns/nmwg/tools/iperf/2.0", $ma_url, $parameters);
+    $key = $resultHash->{'maKey'};
+    $keyR = $resultHash->{'maKeyR'} if(!$keyR);
+    if(!$key){
+         #print error and exit
+        print $cgi->header;
+        my $errmsg = "Unable to find matching MA key for provided parameters";
+        my $errfile = HTML::Template->new( filename => "$basetmpldir/bw_error.tmpl" );
+        $errfile->param( ERRORMSG => $errmsg );
+        print $errfile->output;
+        exit(1);
+    }
 }
 
 #calculate start and end time
