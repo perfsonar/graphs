@@ -18,6 +18,9 @@ use HTML::Entities;
 my $cgi       = new CGI;
 my $ma_url    = HTML::Entities::encode(param("ma_url"));
 my $eventType = HTML::Entities::encode(param("eventType"));
+my $ma_host_type= HTML::Entities::encode(param("ma_host_type"));
+
+
 
 unless ( $ma_url and $eventType ) {
     print $cgi->header;

@@ -17,12 +17,12 @@ function createRequestObject() {
 // Make the XMLHttpRequest object 
 var http = createRequestObject(); 
 
-function processSelectedRadioOption(hostValue,serviceType){
+function processSelectedRadioOption(hostValue,serviceType,ma_host_type){
 	clearpage();
-	sendRequest(hostValue,serviceType);
+	sendRequest(hostValue,serviceType,ma_host_type);
 }	
 
-function sendRequest(ma_url,eventType) { 
+function sendRequest(ma_url,eventType,ma_host) { 
   	var now = new Date();
   	if(ma_url === "" || eventType === ""){
 	  	var testparamdiv = document.getElementById("testParametersDiv");
@@ -31,7 +31,11 @@ function sendRequest(ma_url,eventType) {
 	  
   	}else{
 	  	http = createRequestObject();
-	  	http.open('get', 'getData.cgi?ma_url='+ma_url+'&eventType='+eventType+'&nocache='+now.getTime());
+	  	if(ma_host=""){
+	  		http.open('get', 'getData.cgi?ma_url='+ma_url+'&eventType='+eventType+'&nocache='+now.getTime());
+	  	}else{
+	  		http.open('get', 'getData.cgi?ma_url='+ma_url+'&eventType='+eventType+'ma_host='+ma_host+'&nocache='+now.getTime());
+	  	}
 	  	queryParameters["ma_url"] = ma_url;
 	 	queryParameters["eventType"] = eventType;
 	  	document.getElementById("testParametersDiv").innerHTML = "<ul><li>MA_URL: "+ma_url+"</li></br><li>Service Test URL: "+eventType+"</li></ul>";
@@ -77,7 +81,7 @@ function doclick(selectboxname, eventType) {
   		var htmltext = "<br><br><h3> Invalid parameters!!";
   		testparamdiv.innerHTML = htmltext;
 		}else{
-  		sendRequest(ma_url,eventType);
+  		sendRequest(ma_url,eventType, ma_host_type);
 		}
 
 		return true;
