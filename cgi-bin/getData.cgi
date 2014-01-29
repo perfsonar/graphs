@@ -18,13 +18,7 @@ use HTML::Entities;
 my $cgi       = new CGI;
 my $ma_url    = HTML::Entities::encode(param("ma_url"));
 my $eventType = HTML::Entities::encode(param("eventType"));
-my $ma_host_type_param = param("ma_host_type");
-
-my $ma_host_type;
-if(defined $ma_host_type_param){
-	 $ma_host_type= HTML::Entities::encode(param("ma_host_type"));
-}
-
+my $ma_host_type = HTML::Entities::encode(param("ma_host_type"));
 
 
 unless ( $ma_url and $eventType ) {
@@ -45,6 +39,7 @@ if (!defined $resultHash){
 my $activeDataSets   = ();
 my $inactiveDataSets = ();
 my %chkHash=();
+
 foreach my $key ( keys %{$resultHash} ) {
         if (   $eventType eq "http://ggf.org/ns/nmwg/tools/iperf/2.0" or $eventType eq "http://ggf.org/ns/nmwg/characteristics/bandwidth/achievable/2.0" ){
             my $newkey ="$resultHash->{$key}{\"srcIP\"}-$resultHash->{$key}{\"dstIP\"}-$resultHash->{$key}{\"protocol\"}-$resultHash->{$key}{\"timeDuration\"}";
@@ -171,7 +166,7 @@ my $json_text =
     \%finalResultHash );
 
 print $cgi->header("application/json");
-print "\n", $json_text;
+print $json_text;
 
 exit 0;
 
