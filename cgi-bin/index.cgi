@@ -66,8 +66,8 @@ if ( scalar @tests >= 1 ) {
     $vars{groups} = \@tests;
 }
 
-if(defined $ma_type){
-	$vars{ma_host_type} = HTML::Entities::encode(\%ma_type)
+if(defined $ma_host_type){
+	$vars{ma_host_type} = HTML::Entities::encode($ma_host_type)
 
 }else{
 	$vars{ma_host_type}="";	

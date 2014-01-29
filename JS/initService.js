@@ -24,6 +24,7 @@ function processSelectedRadioOption(hostValue,serviceType,ma_host_type){
 
 function sendRequest(ma_url,eventType,ma_host) { 
   	var now = new Date();
+	console.log(ma_host);
   	if(ma_url === "" || eventType === ""){
 	  	var testparamdiv = document.getElementById("testParametersDiv");
 	  	var htmltext = "<br><br><h3> Error!Empty parameters";
@@ -31,10 +32,10 @@ function sendRequest(ma_url,eventType,ma_host) {
 	  
   	}else{
 	  	http = createRequestObject();
-	  	if(ma_host=""){
+	  	if(ma_host === ""){
 	  		http.open('get', 'getData.cgi?ma_url='+ma_url+'&eventType='+eventType+'&nocache='+now.getTime());
 	  	}else{
-	  		http.open('get', 'getData.cgi?ma_url='+ma_url+'&eventType='+eventType+'ma_host='+ma_host+'&nocache='+now.getTime());
+	  		http.open('get', 'getData.cgi?ma_url='+ma_url+'&eventType='+eventType+'&ma_host_type='+ma_host+'&nocache='+now.getTime());
 	  	}
 	  	queryParameters["ma_url"] = ma_url;
 	 	queryParameters["eventType"] = eventType;
@@ -71,7 +72,7 @@ function handleResponse() {
 }
 
 //comes here once the user selects MA and clicks the button
-function doclick(selectboxname, eventType) {
+function doclick(selectboxname, eventType,ma_host_type) {
 		clearpage();
 		var selectbox = document.getElementById(selectboxname);
 		ma_url = selectbox.options[selectbox.selectedIndex].value;

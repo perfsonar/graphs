@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/perl  
 
 use strict;
 
@@ -18,7 +18,12 @@ use HTML::Entities;
 my $cgi       = new CGI;
 my $ma_url    = HTML::Entities::encode(param("ma_url"));
 my $eventType = HTML::Entities::encode(param("eventType"));
-my $ma_host_type= HTML::Entities::encode(param("ma_host_type"));
+my $ma_host_type_param = param("ma_host_type");
+
+my $ma_host_type;
+if(defined $ma_host_type_param){
+	 $ma_host_type= HTML::Entities::encode(param("ma_host_type"));
+}
 
 
 
