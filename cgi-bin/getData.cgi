@@ -147,16 +147,16 @@ my $tempInitiator2 = "";
 			}elsif($tempInitiator2 eq $activeDirectionalHash->{$key}{src} || $tempInitiator2 eq $activeDirectionalHash->{$key}{dst}){
 				$initiator = $tempInitiator2;
 			}
-			break;
 		}
+		last if ($ctr>0);
 	}
 	
 	if(defined $initiator && $initiator ne ""){
-		for (my $key keys %{$activeDirectionalHash}){
+		foreach my $key (keys %{$activeDirectionalHash}){
 			if($activeDirectionalHash->{$key}{dst} eq $initiator){
 				my $tmpdst = $activeDirectionalHash->{$key}{dst};
 				my $tmpdstRaw = $activeDirectionalHash->{$key}{dstRaw};
-				my $tmpdstIp = $activeDirectionalHash->{$key}{dstIP};
+				my $tmpdstIP = $activeDirectionalHash->{$key}{dstIP};
 				
 				$activeDirectionalHash->{$key}{dst} = $activeDirectionalHash->{$key}{src};
 				$activeDirectionalHash->{$key}{dstRaw} = $activeDirectionalHash->{$key}{srcRaw};
@@ -180,7 +180,34 @@ my $tempInitiator2 = "";
 				$activeDirectionalHash->{$key}{direction} = "forward";
 			}
 		}	
-		for (my $key keys %{$inactiveDirectionalHash}){}	
+		foreach my $key (keys %{$inactiveDirectionalHash}){
+					if($inactiveDirectionalHash->{$key}{dst} eq $initiator){
+				my $tmpdst = $inactiveDirectionalHash->{$key}{dst};
+				my $tmpdstRaw = $inactiveDirectionalHash->{$key}{dstRaw};
+				my $tmpdstIP = $inactiveDirectionalHash->{$key}{dstIP};
+				
+				$inactiveDirectionalHash->{$key}{dst} = $inactiveDirectionalHash->{$key}{src};
+				$inactiveDirectionalHash->{$key}{dstRaw} = $inactiveDirectionalHash->{$key}{srcRaw};
+				$inactiveDirectionalHash->{$key}{dstIP} = $inactiveDirectionalHash->{$key}{srcIP};
+				
+				$inactiveDirectionalHash->{$key}{src}=$tmpdst;
+				$inactiveDirectionalHash->{$key}{srcRaw}=$tmpdstRaw;
+				$inactiveDirectionalHash->{$key}{srcIP}=$tmpdstIP;
+				
+				if($inactiveDirectionalHash->{$key}{bidirectional} eq "Yes"){
+					my $dataRef = $activeDirectionalHash->{$key}{data};
+					$inactiveDirectionalHash->{$key}{data} = $inactiveDirectionalHash->{$key}{dataR};
+					$inactiveDirectionalHash->{$key}{dataR} = $dataRef;
+				}else{
+					my $dataRef = $inactiveDirectionalHash->{$key}{data};
+					$inactiveDirectionalHash->{$key}{data} = $inactiveDirectionalHash->{$key}{dataR};
+					$inactiveDirectionalHash->{$key}{dataR} = $dataRef;
+					$inactiveDirectionalHash->{$key}{direction} = "reverse";
+				}
+			}else{
+				$inactiveDirectionalHash->{$key}{direction} = "forward";
+			}
+		}	
 	}
 }
 
