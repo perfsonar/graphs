@@ -53,7 +53,7 @@ my %chkHash=();
 my $commonElement = "";
 my $count=0;
 
-foreach my $key ( keys %{$resultHash} ) {\
+foreach my $key ( keys %{$resultHash} ) {
 	#To eliminate duplicates
     if (exists $bwctlEventType{$eventType}){
         my $newkey ="$resultHash->{$key}{\"srcIP\"}-$resultHash->{$key}{\"dstIP\"}-$resultHash->{$key}{\"protocol\"}-$resultHash->{$key}{\"timeDuration\"}";
@@ -136,16 +136,16 @@ if($ma_host_type eq "toolkit"){
 my $tempInitiator1 = "";
 my $tempInitiator2 = "";
 #find initiator
-	for (my $key keys %{$activeDirectionalHash}){
+	foreach my $key (keys %{$activeDirectionalHash}){
 		if($ctr==0){
 			$tempInitiator1 = $activeDirectionalHash->{$key}{src};
 			$tempInitiator1 = $activeDirectionalHash->{$key}{dst};
 			$ctr++;
 		}else{
-			if($tmpInitiator1 eq $activeDirectionalHash->{$key}{src} || $tempInitiator1 eq $activeDirectionalHash->{$a}{dst}){
-				$initiator = $tmpInitiator1;
-			}elsif($tmpInitiator2 eq $activeDirectionalHash->{$key}{src} || $tempInitiator2 eq $activeDirectionalHash->{$a}{dst}){
-				$initiator = $tmpInitiator2;
+			if($tempInitiator1 eq $activeDirectionalHash->{$key}{src} || $tempInitiator1 eq $activeDirectionalHash->{$key}{dst}){
+				$initiator = $tempInitiator1;
+			}elsif($tempInitiator2 eq $activeDirectionalHash->{$key}{src} || $tempInitiator2 eq $activeDirectionalHash->{$key}{dst}){
+				$initiator = $tempInitiator2;
 			}
 			break;
 		}
