@@ -3,6 +3,8 @@ var bwctlTableHeadings = ["Source","Destination","Bidirectional","Protocol","Dur
 var allTests = new Array();
 // draws the result table
 function drawTable(evtType){
+		var hostType = document.getElementById("ma_host_type");
+		
 		for (var i=0;i<divLayers.length;i++){
 			var testDiv = document.getElementById(divLayers[i]);
 			var myTable = document.createElement("table");
@@ -15,7 +17,11 @@ function drawTable(evtType){
 			var newTR = document.createElement("tr");
 			myTable.appendChild(newTR);
 			if((evtType == "http://ggf.org/ns/nmwg/tools/iperf/2.0") || (evtType == "http://ggf.org/ns/nmwg/characteristics/bandwidth/achievable/2.0")){
+				
 				for (var j=0;j<bwctlTableHeadings.length;j++){
+					if(hostType == "toolkit" && j==0){
+						continue;
+					}
 					var tmpTD = document.createElement("th");
 					tmpTD.align="center";	
 					if(j < bwctlTableHeadings.length-1){
@@ -28,6 +34,9 @@ function drawTable(evtType){
 				}
 			}else if((evtType == "http://ggf.org/ns/nmwg/characteristic/delay/summary/20070921") || (evtType == "http://ggf.org/ns/nmwg/tools/owamp/2.0")){
 				for (var j=0;j<owampTableHeadings.length;j++){
+					if(hostType == "toolkit" && j==0){
+						continue;
+					}
 					var tmpTD = document.createElement("th");
 					tmpTD.align="center";
 					if(j < owampTableHeadings.length-1){
@@ -55,14 +64,17 @@ function updateTable(data,testType,evtType){
 		allTests[testType][testKey] = tmpDir[testKey];
 		var tmpTR = document.createElement("tr");
 		var testDetails = tmpDir[testKey];
-				
-		var srcTD = document.createElement("td");
-	 	srcTD.innerHTML = '<span style="white-space: nowrap;">'+testDetails['src']+'</span>';
-  		srcTD.innerHTML += " ("+testDetails['srcIP']+")";
-		srcTD.align="center";
-		srcList[testDetails['src']]=1;
-		allHostsList[testDetails['src']]=1;
-		tmpTR.appendChild(srcTD);
+		
+		if(hostType !== "toolkit"){
+			var srcTD = document.createElement("td");
+			srcTD.innerHTML = '<span style="white-space: nowrap;">'+testDetails['src']+'</span>';
+			srcTD.innerHTML += " ("+testDetails['srcIP']+")";
+			srcTD.align="center";
+			srcList[testDetails['src']]=1;
+			allHostsList[testDetails['src']]=1;
+			tmpTR.appendChild(srcTD);
+		}		
+		
 				
 		var dstTD = document.createElement("td");
 		dstTD.innerHTML = '<span style="white-space: nowrap;">'+testDetails['dst']+'</span>';

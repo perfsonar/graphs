@@ -139,7 +139,7 @@ my $tempInitiator2 = "";
 	foreach my $key (keys %{$activeDirectionalHash}){
 		if($ctr==0){
 			$tempInitiator1 = $activeDirectionalHash->{$key}{src};
-			$tempInitiator1 = $activeDirectionalHash->{$key}{dst};
+			$tempInitiator2 = $activeDirectionalHash->{$key}{dst};
 			$ctr++;
 		}else{
 			if($tempInitiator1 eq $activeDirectionalHash->{$key}{src} || $tempInitiator1 eq $activeDirectionalHash->{$key}{dst}){
@@ -148,7 +148,7 @@ my $tempInitiator2 = "";
 				$initiator = $tempInitiator2;
 			}
 		}
-		last if ($ctr>0);
+		last if ($ctr>1);
 	}
 	
 	if(defined $initiator && $initiator ne ""){
