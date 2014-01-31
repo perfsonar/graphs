@@ -1,6 +1,6 @@
 var allTests = new Array();
 // draws the result table
-function drawTable(tableHeading){
+function drawTable(tableHeadings){
 		var hostType = document.getElementById("ma_host_type");
 		
 		for (var i=0;i<divLayers.length;i++){

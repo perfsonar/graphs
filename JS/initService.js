@@ -63,22 +63,22 @@ function sendRequest(ma_url,eventType,ma_host) {
 	  			drawTable(bwctlTableHeadings);
 	  		}
 	  	}
-	  	http.onreadystatechange = handleResponse; 
+	  	 http.onreadystatechange = function(){if(http.readyState ==4){handleResponse(http,ma_host)}};
 	  	http.send(null); 
 	  	setprogressTimerID = setInterval("setProgress()",200);
 	  	clearprogressTimerID = setInterval("blinkProgressDots()",400);
   	}
 }	 
      
-function handleResponse() { 
+function handleResponse(http, hostType) { 
   	if(http.readyState == 4 && http.status == 200){ 
    		response = http.responseText; // Text returned FROM perl script
     	var eType = queryParameters["eventType"]; 
     	if(response) {  
         	JSONData = eval("(" + response + ")");
-        	updateTable(response,"Active",eType);
-        	updateTable(response,"Inactive",eType);
-      		clearInterval(setprogressTimerID);
+            updateTable(response,"Active",eType,hostType);
+            updateTable(response,"Inactive",eType,hostType);
+		    clearInterval(setprogressTimerID);
       		clearInterval(clearprogressTimerID);
       		clearProgress();
       		createDataDisplayDiv(eType);
