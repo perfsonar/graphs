@@ -1,4 +1,11 @@
 var divLayers = ["Active","Inactive"];
+var owampTableHeadings = ["Source","Destination","Bidirectional","Forward&nbsp;Direction&nbsp;Loss (Past&nbsp;30&nbsp;minutes)","Reverse&nbsp;Direction&nbsp;Loss (Past&nbsp;30&nbsp;minutes)","Graph"];
+var bwctlTableHeadings = ["Source","Destination","Bidirectional","Protocol","Duration","1 week Avg Throughput Src-Dst (Gbps)","1 week Avg Throughput Dst-Src (Gbps)","Graph"];
+
+var toolkitOwampTableHeadings = ["Target","Bidirectional","Loss Sending&nbsp;(Past&nbsp;30&nbsp;minutes)","Loss Receiving&nbsp;(Past&nbsp;30&nbsp;minutes)","Graph"];
+var toolkitBwctlTableHeadings = ["Target","Bidirectional","Protocol","Duration","1 week Avg Outbound Throughput(Gbps)","1 week Avg Inbound Throughput (Gbps)","Graph"];
+
+
 var queryParameters = new Array();
 
 function createRequestObject() { 
@@ -40,7 +47,22 @@ function sendRequest(ma_url,eventType,ma_host) {
 	  	queryParameters["ma_url"] = ma_url;
 	 	queryParameters["eventType"] = eventType;
 	  	document.getElementById("testParametersDiv").innerHTML = "<ul><li>MA_URL: "+ma_url+"</li></br><li>Service Test URL: "+eventType+"</li></ul>";
-	  	drawTable(eventType);
+	  	if(ma_host == "toolkit"){
+	  		if(eventType == "http://ggf.org/ns/nmwg/characteristic/delay/summary/20070921" || eventType == "http://ggf.org/ns/nmwg/tools/owamp/2.0" || eventType == "http://ggf.org/ns/nmwg/characteristic/delay/summary/20110317"){		
+	  			drawTable(toolkitOwampTableHeadings);
+	  		}else if (eventType == "http://ggf.org/ns/nmwg/tools/iperf/2.0" || eventType == "http://ggf.org/ns/nmwg/characteristics/bandwidth/achievable/2.0"){
+	  		
+	  			drawTable(toolkitBwctlTableHeadings);
+	  		}
+	  	}else {
+	  		if(eventType == "http://ggf.org/ns/nmwg/characteristic/delay/summary/20070921" || eventType == "http://ggf.org/ns/nmwg/tools/owamp/2.0" || eventType == "http://ggf.org/ns/nmwg/characteristic/delay/summary/20110317"){
+	  			
+	  			drawTable(owampTableHeadings);
+	  		}else if (eventType == "http://ggf.org/ns/nmwg/tools/iperf/2.0" || eventType == "http://ggf.org/ns/nmwg/characteristics/bandwidth/achievable/2.0"){
+	  		
+	  			drawTable(bwctlTableHeadings);
+	  		}
+	  	}
 	  	http.onreadystatechange = handleResponse; 
 	  	http.send(null); 
 	  	setprogressTimerID = setInterval("setProgress()",200);

@@ -1,4 +1,5 @@
 [% INCLUDE header.tmpl %]
+	<input type="hidden" id="ma_host_type" value='[% ma_host_type %]'/>
 	<script type="text/javascript" src="JS/initService.js"></script>
 	<script type="text/javascript" src="JS/result.js"></script>
 	<script type="text/javascript" src="JS/bwctl-datadiv.js"></script>
@@ -81,7 +82,6 @@
 </td>
 </tr>
 </div>
-<input type="hidden" id="ma_host_type" value='[% ma_host_type %]'/>
 [% IF eventType %] 
 	[% IF hosts.size==1 %]
         	[% FOREACH key IN hosts.keys %]

@@ -1,8 +1,6 @@
-var owampTableHeadings = ["Source","Destination","Bidirectional","Forward&nbsp;Direction&nbsp;Loss (Past&nbsp;30&nbsp;minutes)","Reverse&nbsp;Direction&nbsp;Loss (Past&nbsp;30&nbsp;minutes)","Graph"];
-var bwctlTableHeadings = ["Source","Destination","Bidirectional","Protocol","Duration","1 week Avg Throughput Src-Dst (Gbps)","1 week Avg Throughput Dst-Src (Gbps)","Graph"];
 var allTests = new Array();
 // draws the result table
-function drawTable(evtType){
+function drawTable(tableHeading){
 		var hostType = document.getElementById("ma_host_type");
 		
 		for (var i=0;i<divLayers.length;i++){
@@ -16,46 +14,26 @@ function drawTable(evtType){
 			testDiv.appendChild(myTable);
 			var newTR = document.createElement("tr");
 			myTable.appendChild(newTR);
-			if((evtType == "http://ggf.org/ns/nmwg/tools/iperf/2.0") || (evtType == "http://ggf.org/ns/nmwg/characteristics/bandwidth/achievable/2.0")){
-				
-				for (var j=0;j<bwctlTableHeadings.length;j++){
-					if(hostType == "toolkit" && j==0){
-						continue;
-					}
+	
+				for (var j=0;j<tableHeadings.length;j++){
 					var tmpTD = document.createElement("th");
 					tmpTD.align="center";	
-					if(j < bwctlTableHeadings.length-1){
+					if(j < tableHeadings.length-1){
 						tmpTD.setAttribute('onclick',"return sortTable('"+tableName+"',"+j+",true);");
 			                        tmpTD.setAttribute('onmouseover',"return changeMousePointer(this)");
 					}
 					
-					tmpTD.innerHTML =bwctlTableHeadings[j]+" <img id=\""+tableName+j+"\" src=\"images/uparrow.png\" align=\"right\" width=\"9px\" height=\"9px\" style=\"display:none\"/>";
+					tmpTD.innerHTML =tableHeadings[j]+" <img id=\""+tableName+j+"\" src=\"images/uparrow.png\" align=\"right\" width=\"9px\" height=\"9px\" style=\"display:none\"/>";
 					newTR.appendChild(tmpTD);
 				}
-			}else if((evtType == "http://ggf.org/ns/nmwg/characteristic/delay/summary/20070921") || (evtType == "http://ggf.org/ns/nmwg/tools/owamp/2.0")){
-				for (var j=0;j<owampTableHeadings.length;j++){
-					if(hostType == "toolkit" && j==0){
-						continue;
-					}
-					var tmpTD = document.createElement("th");
-					tmpTD.align="center";
-					if(j < owampTableHeadings.length-1){
-                                                tmpTD.setAttribute('onclick',"return sortTable('"+tableName+"',"+j+",true);");
-                                                tmpTD.setAttribute('onmouseover',"return changeMousePointer(this)");					
-					}
-                                        tmpTD.innerHTML =owampTableHeadings[j]+"<img id=\""+tableName+j+"\" src=\"images/uparrow.png\" align=\"right\" width=\"9px\" height=\"9px\" style=\"display:none\"/>";
-					newTR.appendChild(tmpTD);
-				}		
-			}
+			
 			
 		toggleSortArrowSymbols(tableName,0,true);	
-		}
-
-						
+		}						
 }
 
 //fills the table with entries
-function updateTable(data,testType,evtType){
+function updateTable(data,testType,evtType,hostType){
 	table = document.getElementById("table"+testType);
 	var parsedData = eval("(" + data + ")");
 	allTests[testType] = new Array();
