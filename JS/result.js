@@ -139,7 +139,7 @@ function updateTable(data,testType,evtType,hostType){
 	}
 	if(hostType == "toolkit"){
 		initiator=document.getElementById("initiator");
-	        initiator.innerHTML = parsedData["initiator"];
+	        initiator.innerHTML = "Initiator: "+parsedData["initiator"]+"";
 
 	}
 	

@@ -13,10 +13,12 @@
         				<h2 align='center'>perfSONAR-PS Tests</h2>
         			
 					[% IF eventType %]
-						<h2 class="divheading"> Service type </h2>
-						<p> [% IF serviceDisplayName %] [% key=eventType %] [% serviceDisplayName.$key %]
+						<h4 class="divheading"> Service type: [% IF serviceDisplayName %] [% key=eventType %] [% serviceDisplayName.$key %]
 						    [% ELSE %] [% $key %]
-						    [% END %]
+						    [% END %] </h4>
+	                                        [% IF ma_host_type=='toolkit' %]
+             	                                   <h4 class="divheading"><p id="initiator"></p></h4>
+       	                                        [% END %]
 					[% ELSE %]
 						<h2 class="divheading"> Choose Service type </h2>
 						[% FOREACH serviceType IN services.keys %]
@@ -51,15 +53,15 @@
 					 <hr><br>
 
  					 <p><h3 class="divheading">Active Tests: </h3></p>
-		[% IF ma_host_type=='toolkit' %]
- 			<p id="initiator"><i><h4>Initiator: </h4></i></p>
- 		[% END %]	 	
 		[% IF eventType=='bwctl' %]
  					 <p><i><h4>The tests listed below have collected data within the last 7 days</h4></i></p>
  					 [% ELSIF eventType=='owamp' %]
  					  <p><i><h4>The tests listed below have collected data within the last 30 minutes</h4></i></p>
  					 [% END %]	
  					 <p><img src="images/uparrow.png" width="9px" height="9px" align="left"/> - Sorted(asc) by that column. Click on column headings to sort
+                                          [% IF ma_host_type=='toolkit' %]
+						<h4><p id="initiator"></p></h4>
+                                          [% END %]
 					 <div id='Active' > &nbsp; </div>
 					 <br><hr><br>
 	
