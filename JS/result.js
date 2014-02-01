@@ -51,7 +51,8 @@ function updateTable(data,testType,evtType,hostType){
 			srcList[testDetails['src']]=1;
 			allHostsList[testDetails['src']]=1;
 			tmpTR.appendChild(srcTD);
-		}		
+			
+		}
 		
 				
 		var dstTD = document.createElement("td");
@@ -107,21 +108,22 @@ function updateTable(data,testType,evtType,hostType){
 
             		graphTD.innerHTML = "<select type=\"button\" onChange=getGraphURL(\""+testType+"\",\""+testKey+"\",options[selectedIndex].value)> <option value=\"\"> Select </option> <option value=\"2592000\"> 1 month </option> <option value=\"7776000\"> 3 months </option> </select>";
    		}else if((evtType == "http://ggf.org/ns/nmwg/characteristic/delay/summary/20070921") || (evtType == "http://ggf.org/ns/nmwg/tools/owamp/2.0")){
-           		var fLossTD = document.createElement("td");
-           		if (testType=="Active"){	
-            			fLossTD.innerHTML = testDetails['data']['loss'];          	
-                	}else{
-                		fLossTD.innerHTML = "*";
-                	}
-           		fLossTD.align="center";
-           		tmpTR.appendChild(fLossTD);
+                        var fLossTD = document.createElement("td");
 
-            		var rLossTD = document.createElement("td");
-            		if (testDetails['bidirectional'] == "Yes" && testType=="Active"){	
-            			rLossTD.innerHTML = testDetails['dataR']['loss'];          	
-                	}else{
-                		rLossTD.innerHTML = "*";
-                	}
+                        if(testDetails['data'] !== null){
+                                fLossTD.innerHTML = testDetails['data']['loss'];
+                        }else{
+                                fLossTD.innerHTML = "*";
+                        }
+                        fLossTD.align="center";
+                        tmpTR.appendChild(fLossTD);
+
+                        var rLossTD = document.createElement("td");
+                        if (testDetails['dataR'] !== null){
+                              rLossTD.innerHTML = testDetails['dataR']['loss'];
+                        }else{
+                              rLossTD.innerHTML = "*";
+                        }
             		rLossTD.align="center";
             		tmpTR.appendChild(rLossTD);
  
@@ -134,6 +136,11 @@ function updateTable(data,testType,evtType,hostType){
    		graphTD.align="center";
    		tmpTR.appendChild(graphTD);
    		table.appendChild(tmpTR);
+	}
+	if(hostType == "toolkit"){
+		initiator=document.getElementById("initiator");
+	        initiator.innerHTML = parsedData["initiator"];
+
 	}
 	
 }

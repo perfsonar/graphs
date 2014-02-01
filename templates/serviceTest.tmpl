@@ -51,7 +51,10 @@
 					 <hr><br>
 
  					 <p><h3 class="divheading">Active Tests: </h3></p>
- 					 [% IF eventType=='bwctl' %]
+		[% IF ma_host_type=='toolkit' %]
+ 			<p id="initiator"><i><h4>Initiator: </h4></i></p>
+ 		[% END %]	 	
+		[% IF eventType=='bwctl' %]
  					 <p><i><h4>The tests listed below have collected data within the last 7 days</h4></i></p>
  					 [% ELSIF eventType=='owamp' %]
  					  <p><i><h4>The tests listed below have collected data within the last 30 minutes</h4></i></p>

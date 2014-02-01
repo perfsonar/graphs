@@ -253,7 +253,9 @@ my %finalResultHash;
 
 $finalResultHash{"Active"}   = $sortedActiveSet;
 $finalResultHash{"Inactive"} = $sortedInactiveSet;
-
+if($ma_host_type eq "toolkit"){
+	$finalResultHash{"initiator"} = $initiator;
+}
 #convert to JSON and return
 my $json = new JSON;
 my $json_result;
