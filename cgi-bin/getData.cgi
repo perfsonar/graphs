@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/perl  
 
 use strict;
 
@@ -13,10 +13,23 @@ use CGI qw(:standard);
 use Data::Validate::IP qw(is_ipv4 is_ipv6);
 use perfSONAR_PS::Client::MA;
 use perfSONAR_PS::Utils::DNS qw(resolve_address reverse_dns);
+use HTML::Entities;
+
+my %bwctlEventType = (
+			"http://ggf.org/ns/nmwg/tools/iperf/2.0" => 1,
+			"http://ggf.org/ns/nmwg/characteristics/bandwidth/achievable/2.0"  => 1
+);
+
+my %owampEventType = (
+			"http://ggf.org/ns/nmwg/characteristic/delay/summary/20070921" => 1,
+			"http://ggf.org/ns/nmwg/tools/owamp/2.0"  => 1,
+			"http://ggf.org/ns/nmwg/characteristic/delay/summary/20110317"  => 1
+);
 
 my $cgi       = new CGI;
-my $ma_url    = param("ma_url");
-my $eventType = param("eventType");
+my $ma_url    = HTML::Entities::encode(param("ma_url"));
+my $eventType = HTML::Entities::encode(param("eventType"));
+my $ma_host_type = HTML::Entities::encode(param("ma_host_type"));
 
 unless ( $ma_url and $eventType ) {
     print $cgi->header;
@@ -36,9 +49,14 @@ if (!defined $resultHash){
 my $activeDataSets   = ();
 my $inactiveDataSets = ();
 my %chkHash=();
+
+my $commonElement = "";
+my $count=0;
+
 foreach my $key ( keys %{$resultHash} ) {
-        if (   $eventType eq "http://ggf.org/ns/nmwg/tools/iperf/2.0" or $eventType eq "http://ggf.org/ns/nmwg/characteristics/bandwidth/achievable/2.0" ){
-            my $newkey ="$resultHash->{$key}{\"srcIP\"}-$resultHash->{$key}{\"dstIP\"}-$resultHash->{$key}{\"protocol\"}-$resultHash->{$key}{\"timeDuration\"}";
+	#To eliminate duplicates
+    if (exists $bwctlEventType{$eventType}){
+        my $newkey ="$resultHash->{$key}{\"srcIP\"}-$resultHash->{$key}{\"dstIP\"}-$resultHash->{$key}{\"protocol\"}-$resultHash->{$key}{\"timeDuration\"}";
             
 	    #check for duplicates
 	    if($activeDataSets->{$newkey}){#entry exists in active test
@@ -67,11 +85,7 @@ foreach my $key ( keys %{$resultHash} ) {
 			$inactiveDataSets->{$newkey} = \%{ $resultHash->{$key} };
 		}
 	    }
-	}
-        elsif ( $eventType eq "http://ggf.org/ns/nmwg/characteristic/delay/summary/20070921"
-            or $eventType eq "http://ggf.org/ns/nmwg/tools/owamp/2.0"
-            or $eventType eq "http://ggf.org/ns/nmwg/characteristic/delay/summary/20110317" )
-        {
+	}elsif ( exists $owampEventType{$eventType}  ){
             my $newkey ="$resultHash->{$key}{\"srcIP\"}-$resultHash->{$key}{\"dstIP\"}-$resultHash->{$key}{\"count\"}-$resultHash->{$key}{\"bucket_width\"}-$resultHash->{$key}{\"schedule\"}";
             #check for duplicates
 	    if($activeDataSets->{$newkey}){ #entry exists in active test
@@ -112,9 +126,96 @@ foreach my $key ( keys %{$resultHash} ) {
 my $activeDirectionalHash   = addDirectionDetails($activeDataSets);
 my $inactiveDirectionalHash = addDirectionDetails($inactiveDataSets);
 
-#Convert hash to sorted array (based on src)
-my $sortedActiveSet = ();
+
+
 my $ctr             = 0;
+
+my $initiator;
+
+if($ma_host_type eq "toolkit"){
+my $tempInitiator1 = "";
+my $tempInitiator2 = "";
+#find initiator
+	foreach my $key (keys %{$activeDirectionalHash}){
+		if($ctr==0){
+			$tempInitiator1 = $activeDirectionalHash->{$key}{src};
+			$tempInitiator2 = $activeDirectionalHash->{$key}{dst};
+			$ctr++;
+		}else{
+			if($tempInitiator1 eq $activeDirectionalHash->{$key}{src} || $tempInitiator1 eq $activeDirectionalHash->{$key}{dst}){
+				$initiator = $tempInitiator1;
+			}elsif($tempInitiator2 eq $activeDirectionalHash->{$key}{src} || $tempInitiator2 eq $activeDirectionalHash->{$key}{dst}){
+				$initiator = $tempInitiator2;
+			}
+		}
+		last if ($ctr>1);
+	}
+	
+	if(defined $initiator && $initiator ne ""){
+		foreach my $key (keys %{$activeDirectionalHash}){
+			if($activeDirectionalHash->{$key}{dst} eq $initiator){
+				my $tmpdst = $activeDirectionalHash->{$key}{dst};
+				my $tmpdstRaw = $activeDirectionalHash->{$key}{dstRaw};
+				my $tmpdstIP = $activeDirectionalHash->{$key}{dstIP};
+				
+				$activeDirectionalHash->{$key}{dst} = $activeDirectionalHash->{$key}{src};
+				$activeDirectionalHash->{$key}{dstRaw} = $activeDirectionalHash->{$key}{srcRaw};
+				$activeDirectionalHash->{$key}{dstIP} = $activeDirectionalHash->{$key}{srcIP};
+				
+				$activeDirectionalHash->{$key}{src}=$tmpdst;
+				$activeDirectionalHash->{$key}{srcRaw}=$tmpdstRaw;
+				$activeDirectionalHash->{$key}{srcIP}=$tmpdstIP;
+				
+				if($activeDirectionalHash->{$key}{bidirectional} eq "Yes"){
+					my $dataRef = $activeDirectionalHash->{$key}{data};
+					$activeDirectionalHash->{$key}{data} = $activeDirectionalHash->{$key}{dataR};
+					$activeDirectionalHash->{$key}{dataR} = $dataRef;
+				}else{
+					my $dataRef = $activeDirectionalHash->{$key}{data};
+					$activeDirectionalHash->{$key}{data} = $activeDirectionalHash->{$key}{dataR};
+					$activeDirectionalHash->{$key}{dataR} = $dataRef;
+					$activeDirectionalHash->{$key}{direction} = "reverse";
+				}
+			}else{
+				$activeDirectionalHash->{$key}{direction} = "forward";
+			}
+		}	
+		foreach my $key (keys %{$inactiveDirectionalHash}){
+					if($inactiveDirectionalHash->{$key}{dst} eq $initiator){
+				my $tmpdst = $inactiveDirectionalHash->{$key}{dst};
+				my $tmpdstRaw = $inactiveDirectionalHash->{$key}{dstRaw};
+				my $tmpdstIP = $inactiveDirectionalHash->{$key}{dstIP};
+				
+				$inactiveDirectionalHash->{$key}{dst} = $inactiveDirectionalHash->{$key}{src};
+				$inactiveDirectionalHash->{$key}{dstRaw} = $inactiveDirectionalHash->{$key}{srcRaw};
+				$inactiveDirectionalHash->{$key}{dstIP} = $inactiveDirectionalHash->{$key}{srcIP};
+				
+				$inactiveDirectionalHash->{$key}{src}=$tmpdst;
+				$inactiveDirectionalHash->{$key}{srcRaw}=$tmpdstRaw;
+				$inactiveDirectionalHash->{$key}{srcIP}=$tmpdstIP;
+				
+				if($inactiveDirectionalHash->{$key}{bidirectional} eq "Yes"){
+					my $dataRef = $activeDirectionalHash->{$key}{data};
+					$inactiveDirectionalHash->{$key}{data} = $inactiveDirectionalHash->{$key}{dataR};
+					$inactiveDirectionalHash->{$key}{dataR} = $dataRef;
+				}else{
+					my $dataRef = $inactiveDirectionalHash->{$key}{data};
+					$inactiveDirectionalHash->{$key}{data} = $inactiveDirectionalHash->{$key}{dataR};
+					$inactiveDirectionalHash->{$key}{dataR} = $dataRef;
+					$inactiveDirectionalHash->{$key}{direction} = "reverse";
+				}
+			}else{
+				$inactiveDirectionalHash->{$key}{direction} = "forward";
+			}
+		}	
+	}
+}
+
+
+$ctr=0;
+my $sortedActiveSet = ();
+my $sortedInactiveSet = ();
+#Convert hash to sorted array (based on src)
 foreach my $hashkey (
     sort {
         $activeDirectionalHash->{$a}{src} cmp $activeDirectionalHash->{$b}{src}
@@ -129,9 +230,8 @@ foreach my $hashkey (
     }
 
 }
-
 $ctr = 0;
-my $sortedInactiveSet = ();
+
 foreach my $hashkey (
     sort {
         $inactiveDirectionalHash->{$a}{src}
@@ -142,6 +242,7 @@ foreach my $hashkey (
     if (   $inactiveDirectionalHash->{$hashkey}{src}
         && $inactiveDirectionalHash->{$hashkey}{dst} )
     {
+
         $sortedInactiveSet->[$ctr] = $inactiveDirectionalHash->{$hashkey};
         $ctr++;
     }
@@ -152,7 +253,9 @@ my %finalResultHash;
 
 $finalResultHash{"Active"}   = $sortedActiveSet;
 $finalResultHash{"Inactive"} = $sortedInactiveSet;
-
+if($ma_host_type eq "toolkit"){
+	$finalResultHash{"initiator"} = $initiator;
+}
 #convert to JSON and return
 my $json = new JSON;
 my $json_result;
@@ -162,7 +265,7 @@ my $json_text =
     \%finalResultHash );
 
 print $cgi->header("application/json");
-print "\n", $json_text;
+print $json_text;
 
 exit 0;
 
@@ -234,17 +337,14 @@ sub getData {
     #set the parameter list for tests based on eventType
     my @parameterList;
 
-    if (   $eventType eq "http://ggf.org/ns/nmwg/tools/iperf/2.0"
-        or $eventType eq "http://ggf.org/ns/nmwg/characteristics/bandwidth/achievable/2.0" )
+    if (exists $bwctlEventType{$eventType} )
     {
         push( @parameterList, "protocol" );
         push( @parameterList, "timeDuration" );
         $dataType = "bwctl";
         $start    = $end - 7 * 24 * 60 * 60;    #Collect 1 week for bwctl
     }
-    elsif ( $eventType eq
-        "http://ggf.org/ns/nmwg/characteristic/delay/summary/20070921"
-        or $eventType eq "http://ggf.org/ns/nmwg/tools/owamp/2.0" )
+    elsif ( exists $owampEventType{$eventType} )
     {
         push( @parameterList, "count" );
         push( @parameterList, "bucket_width" );
@@ -294,18 +394,20 @@ sub getData {
     	if ( $dataType eq "bwctl" ) {
 
         	#Call processBwctlPSData();
-        	$dataHash = processBwctlPSData( $result->{data} );
+        	$dataHash = _processBwctlPSData( $result->{data} );
+
     	}elsif ( $dataType eq "owamp" ) {
 
         	#Call processOwampPSData();
-       	    $dataHash = processOwampPSData( $result->{data} );
+       	    $dataHash = _processOwampPSData( $result->{data} );
     	}
 		#combine data and test details
 		if(defined $dataHash){
     		foreach my $key ( keys %{$rsltHash} ) {
         		$rsltHash->{$key}{"data"} = \%{ $dataHash->{$key} };
-   	  		}
-		}
+		
+   	  	}
+	}
 		return $rsltHash;
     }else{
     	return;
@@ -316,12 +418,12 @@ sub getData {
 #Extracts the throughput values from bwctl XML tags, calculates average and returns a hash of the result
 #Arguments - Reference to the array of XML data tags
 # Returns reference to hash containing metadataId as key, throughput and active/inactive info
-sub processBwctlPSData {
+sub _processBwctlPSData {
     my ($dataResult) = @_;
     my %mdIdBwctlDataHash;
     DATA: foreach my $data ( @{$dataResult} ) {
         my %tmpHash;
-        my $parser = XML::LibXML->new();
+        my $parser = XML::LibXML->new(ext_ent_handler => sub { return ""; });
         my $doc;
         eval { $doc = $parser->parse_string($data); };
         if ($@) {
@@ -363,12 +465,12 @@ sub processBwctlPSData {
 #Extracts the min, max values from Owamp XML tags, calcualtes average and returns a hash of the result
 #Arguments - Reference to the arrya of data XML tags
 # Returns reference to hash containing metadataId as key, min, max and active/inactive info
-sub processOwampPSData {
+sub _processOwampPSData {
     my ($dataResult) = @_;
     my %mdIdOwampDataHash;
     DATA: foreach my $data ( @{$dataResult} ) {
         my %tmpHash;
-        my $parser = XML::LibXML->new();
+        my $parser = XML::LibXML->new(ext_ent_handler => sub { return ""; });
         my $doc;
         eval { $doc = $parser->parse_string($data); };
         if ($@) {
@@ -434,7 +536,7 @@ sub getMetadataHash {
     my %mdIdTestDetailsHash;
 	METADATA:foreach my $metadata ( @{$metadataResult} ) {
         my %tmpHash;
-        my $parser = XML::LibXML->new();
+        my $parser = XML::LibXML->new(ext_ent_handler => sub { return ""; });
         my $doc;
         eval { $doc = $parser->parse_string($metadata); };
         if ($@) {
@@ -454,7 +556,7 @@ sub getMetadataHash {
         my $srcaddressval = $root->find(".//*[local-name()='src']/\@value");
         my $srcaddress    = "$srcaddressval";
         my $srcRaw        = "$srcaddressval";
-        my $srcType       = get_endpoint_type($srcaddress);
+        my $srcType       = _get_endpoint_type($srcaddress);
         my $src;
         if ( $srcType eq "ipv4" or $srcType eq "ipv6" ) {
             $src = reverse_dns($srcaddress);
@@ -471,7 +573,7 @@ sub getMetadataHash {
         my $dstaddressval = $root->find(".//*[local-name()='dst']/\@value");
         my $dstaddress    = "$dstaddressval";
         my $dstRaw        = "$dstaddressval";
-        my $dstType       = get_endpoint_type($dstaddress);
+        my $dstType       = _get_endpoint_type($dstaddress);
         my $dst = $dstaddress;
         if ( $dstType eq "ipv4" or $dstType eq "ipv6" ) {
             $dst = reverse_dns($dstaddress);
@@ -513,7 +615,7 @@ sub getMetadataHash {
     return \%mdIdTestDetailsHash;
 }
 
-sub get_endpoint_type {
+sub _get_endpoint_type {
     my $endpoint = shift @_;
     my $type     = "hostname";
     if ( is_ipv4($endpoint) ) {

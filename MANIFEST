@@ -33,6 +33,7 @@ lib/perfSONAR_PS/Common.pm
 lib/perfSONAR_PS/Messages.pm
 lib/perfSONAR_PS/Transport.pm
 lib/perfSONAR_PS/Utils/DNS.pm
+lib/perfSONAR_PS/Utils/GraphMetadataKey.pm
 lib/perfSONAR_PS/Utils/NetLogger.pm
 lib/perfSONAR_PS/Utils/ParameterValidation.pm
 lib/perfSONAR_PS/XML/Document.pm

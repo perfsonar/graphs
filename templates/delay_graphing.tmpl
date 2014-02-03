@@ -124,8 +124,7 @@ function changeVisibility(el){
 }
 
 var chtdata = getChartData();
-   <TMPL_IF NAME=BUCKETS>
-     var chart = new Dygraph(document.getElementById("chart_div"),chtdata, 
+var chart = new Dygraph(document.getElementById("chart_div"),chtdata, 
 						{
 							axes:{
 							      y: {
@@ -140,53 +139,30 @@ var chtdata = getChartData();
               						     'loss': {
                 					     	axis: 'y2'
               						      },
-              						      'loss': {
+              						      'lossr': {
                 						axis: 'y2'
               						      }
             						},
-       							labelsSeparateLines: true,
-							labels: ['Date','max(ms)','min(ms)','loss', 'maxr(ms)','minr(ms)','lossr','thirdq(ms)','median(ms)','firstq(ms)','thirdqr(ms)','medianr(ms)','firstqr(ms)'],
-							visibility: [false, true, true, false, false, false, false, false,false,false,false,false], 
+       						labelsSeparateLines: true,
 							y2label: 'Loss(%)',
 							includeZero: true,
 							connectSeparatedPoints: true,
 							xlabel:'Time',
 							labelsDiv: 'labelsDiv',
-   							colors: ['#804000','#2554C7','#000000','#41A317','#FF8040','#C11B17','#FBB117','#FF0080','#00FF00','#461B7E','#617C58','#7D0541'],
-						}
-			);
+   							});
+			
+   <TMPL_IF NAME=BUCKETS>
+     chart.updateOptions({
+     						labels: ['Date','max(ms)','min(ms)','loss', 'maxr(ms)','minr(ms)','lossr','thirdq(ms)','median(ms)','firstq(ms)','thirdqr(ms)','medianr(ms)','firstqr(ms)'],
+							visibility: [false, true, true, false, false, false, false, false,false,false,false,false], 
+   							colors: ['#804000','#2554C7','#000000','#41A317','#FF8040','#C11B17','#FBB117','#FF0080','#00FF00','#461B7E','#617C58','#7D0541']
+						});
    <TMPL_ELSE>
-          var chart = new Dygraph(document.getElementById("chart_div"),chtdata, 
-						{    
-                                                       axes:{
-                                                             y: {
-                                                               axisLabelFormatter: function(x) {return Math.round(x*1000)/1000+' ms'}
-                                                             },
-                                                             y2: {
-                                                               axisLabelFormatter: function(x) {return Math.round(x*100)/100+'%'}
-                                                             }
-                                                       },
-                                                   series : {
-                                                             strokeWidth:0.0, drawPoints:true, pointSize:3, highlightCircleSize:4,
-                                                             'loss': {
-                                                                axis: 'y2'
-                                                              },
-                                                              'loss': {
-                                                                axis: 'y2'
-                                                              }
-                                                        },
-
-							labelsSeparateLines: true,
+          var chart.updateOptions({
 							labels: ['Date','max(ms)','min(ms)','loss', 'maxr(ms)','minr(ms)','lossr'],
 							visibility: [false, true, true, false, false,false], 
-							connectSeparatedLines: true,
-							includeZero: true,
-							xlabel:'Time',
-							labelsDiv: 'labelsDiv',
-							colors: ['#804000','#2554C7','#000000','#41A317','#FF8040','#C11B17'],
-
-						}
-			);
+							colors: ['#804000','#2554C7','#000000','#41A317','#FF8040','#C11B17']
+						});
    </TMPL_IF>
  <TMPL_IF NAME=NEGATIVELATENCY>
 	displayNegLatMsg(<TMPL_VAR NAME=NEGATIVELATENCY>);	

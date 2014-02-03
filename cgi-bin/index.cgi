@@ -23,6 +23,7 @@ my $string;
 
 my $eventType = param("eventType");
 my $ma_url    = param("ma_url");      # adding option to query MA directly
+my $ma_host_type    = param("ma_host_type");
 
 $eventType = "owamp" unless ($eventType);
 
@@ -42,8 +43,7 @@ $string = YAML::Syck::LoadFile($configfile);
 my %hostlist;
 if ( defined $ma_url and defined $eventType ) {
     $hostlist{"$ma_url"} = $ma_url;
-}
-else {
+}else {
     %hostlist = %{ $string->{'hosts'} };
 }
 my %servicetypes       = %{ $string->{'services'} };
@@ -60,10 +60,17 @@ my %vars = (
     services           => HTML::Entities::encode(\%servicetypes),
     hosts              => HTML::Entities::encode(\%hostlist),
     eventType          => HTML::Entities::encode($eventType),
-    serviceDisplayName => HTML::Entities::encode(\%serviceDisplayName)
-);
+    serviceDisplayName => HTML::Entities::encode(\%serviceDisplayName),
+    );
 if ( scalar @tests >= 1 ) {
     $vars{groups} = \@tests;
+}
+
+if(defined $ma_host_type){
+	$vars{ma_host_type} = HTML::Entities::encode($ma_host_type)
+
+}else{
+	$vars{ma_host_type}="";	
 }
 
 #open template
