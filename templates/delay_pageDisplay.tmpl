@@ -139,6 +139,113 @@
                                <td style="white-space:nowrap;" align="right"><a href="" class="timeseries" id="past" onclick="updateTimeSeriesData(this);return false;"> &lt;- 4 hours </a> <div id="pastTimeError" style="width: 50px; height: 50px;"></div></td>
                                <td align="center"><div id="timezone"><b> Timezone: </b></div></td>
                                <td style="white-space:nowrap;" align="left"><a href="" class="timeseries" id="future" onclick="updateTimeSeriesData(this); return false;"> 4 hours -&gt; </a> <div id="futureTimeError" style="width: 50px; height: 50px;" ></div></td>
+    	</TMPL_LOOP>	
+   <TMPL_ELSE>
+		<TMPL_LOOP NAME=GRAPHDATA>
+	 		 var ctr = <TMPL_VAR NAME="__counter__"> - 1;
+	    	 data[ctr] = new Array(7);
+	   		 msts = <TMPL_VAR NAME=timestamp>;
+       		 data[ctr][0] = new Date(parseInt(msts)*1000);
+        	 data[ctr][1] = <TMPL_VAR NAME=max>;
+        	 data[ctr][2] = <TMPL_VAR NAME=min>;
+        	 data[ctr][3] = <TMPL_VAR NAME=loss>;
+                 data[ctr][4] = <TMPL_VAR NAME=maxr>;
+                 data[ctr][5] = <TMPL_VAR NAME=minr>;
+                 data[ctr][6] = <TMPL_VAR NAME=lossr>;
+        </TMPL_LOOP>
+   </TMPL_IF>
+   
+    return data;
+}
+
+
+function showURL(){
+        var link = document.getElementById("urllink");
+        if(link.value == "Show"){
+                var urldiv = document.getElementById("url_div");
+                var urltext = urldiv.getElementsByTagName("textArea");
+                urldiv.style.visibility = "visible";
+                selectText(urltext[0].id);
+                link.value = "Hide";
+        }else{
+                var urldiv = document.getElementById("url_div");
+                urldiv.style.visibility = "hidden";
+                link.value = "Show";
+        }
+}
+
+function selectText(id){
+     document.getElementById(id).focus();
+     document.getElementById(id).select();
+}
+
+
+function updateUrl(url){
+	var urldiv = document.getElementById("url_div");
+	urldiv.innerHTML=url;
+}
+
+
+function changeVisibility(el){
+	var id = el.id;
+	var lineId = keyArray[id];
+	var toggleValue = el.checked;
+	chart.setVisibility(lineId, toggleValue);
+}
+
+var chtdata = getChartData();
+var chart = new Dygraph(document.getElementById("chart_div"),chtdata, 
+						{
+							axes:{
+							      y: {
+								axisLabelFormatter: function(x) {return Math.round(x*1000)/1000+' ms'}
+							      },
+							      y2: {
+								axisLabelFormatter: function(x) {return Math.round(x*100)/100+'%'}
+							      }
+							},
+							series : {
+							     strokeWidth:0.0, drawPoints:true, pointSize:3, highlightCircleSize:4,
+              						     'loss': {
+                					     	axis: 'y2'
+              						      },
+              						      'lossr': {
+                						axis: 'y2'
+              						      }
+            						},
+       						labelsSeparateLines: true,
+							y2label: 'Loss(%)',
+							includeZero: true,
+							connectSeparatedPoints: true,
+							xlabel:'Time',
+							labelsDiv: 'labelsDiv',
+   							});
+			
+   <TMPL_IF NAME=BUCKETS>
+     chart.updateOptions({
+     						labels: ['Date','max(ms)','min(ms)','loss', 'maxr(ms)','minr(ms)','lossr','thirdq(ms)','median(ms)','firstq(ms)','thirdqr(ms)','medianr(ms)','firstqr(ms)'],
+							visibility: [false, true, true, false, false, false, false, false,false,false,false,false], 
+   							colors: ['#804000','#2554C7','#000000','#41A317','#FF8040','#C11B17','#FBB117','#FF0080','#00FF00','#461B7E','#617C58','#7D0541']
+						});
+   <TMPL_ELSE>
+          var chart.updateOptions({
+							labels: ['Date','max(ms)','min(ms)','loss', 'maxr(ms)','minr(ms)','lossr'],
+							visibility: [false, true, true, false, false,false], 
+							colors: ['#804000','#2554C7','#000000','#41A317','#FF8040','#C11B17']
+						});
+   </TMPL_IF>
+ <TMPL_IF NAME=NEGATIVELATENCY>
+	displayNegLatMsg(<TMPL_VAR NAME=NEGATIVELATENCY>);	
+ </TMPL_IF>
+function changeYaxis(el){
+	var value = el.checked;
+	chart.updateOptions({includeZero: value});
+}
+
+function setCheckBoxOption(chid,value){
+ var checkbox=document.getElementById(chid);
+ chid.checked=value;
+} 
  
 	</tr>
 	<tr>
