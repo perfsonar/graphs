@@ -158,7 +158,7 @@ var chart = new Dygraph(document.getElementById("chart_div"),chtdata,
    							colors: ['#804000','#2554C7','#000000','#41A317','#FF8040','#C11B17','#FBB117','#FF0080','#00FF00','#461B7E','#617C58','#7D0541']
 						});
    <TMPL_ELSE>
-          var chart.updateOptions({
+          chart.updateOptions({
 							labels: ['Date','max(ms)','min(ms)','loss', 'maxr(ms)','minr(ms)','lossr'],
 							visibility: [false, true, true, false, false,false], 
 							colors: ['#804000','#2554C7','#000000','#41A317','#FF8040','#C11B17']
