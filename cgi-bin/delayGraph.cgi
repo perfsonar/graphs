@@ -271,7 +271,7 @@ sub getData() {
     	#define the subject
     	my $subject = "  <nmwg:key id=\"key-1\">\n";
     	$subject .= "    <nmwg:parameters id=\"parameters-key-1\">\n";
-   	$subject .="      <nmwg:parameter name=\"maKey\">" . $key . "</nmwg:parameter>\n";
+   	$subject .="      <nmwg:parameter name=\"maKey\">" . $k . "</nmwg:parameter>\n";
     	$subject .= "    </nmwg:parameters>\n";
    	$subject .= "  </nmwg:key>  \n";
 
