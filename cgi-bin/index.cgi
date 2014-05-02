@@ -9,6 +9,8 @@ use YAML::Syck;
 use Template;
 use CGI qw(:standard);
 use HTML::Entities;
+use perfSONAR_PS::Web::Sidebar qw(set_sidebar_vars);
+use Data::Dumper;
 
 #print cgi-header
 my $cgi = new CGI;
@@ -72,6 +74,7 @@ if(defined $ma_host_type){
 }else{
 	$vars{ma_host_type}="";	
 }
+set_sidebar_vars( { vars => \%vars } );
 
 #open template
 my $tt = Template->new( INCLUDE_PATH => "$templatedir" )
@@ -92,6 +95,8 @@ sub errorPage {
 
     my %vars = ();
     $vars{error_msg} = HTML::Entities::encode($msg);
+
+    set_sidebar_vars( { vars => \%vars } );
 
     $tt->process( "serviceTest_error.tmpl", \%vars, \$html )
       or die $tt->error();
