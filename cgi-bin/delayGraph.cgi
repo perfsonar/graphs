@@ -118,6 +118,7 @@ my @finalRes = ();
 my $bucketsFlag;
 my $chkcnt = 0;
 my $negLatChk=0;
+my $sentPackets=0;
 while ( my ( $k, $v ) = each %$res ) {
     if ( $chkcnt == 0 ) {
         if ( $v->{"buckets"} eq "true" && !defined $bucketsFlag ) {
@@ -126,6 +127,10 @@ while ( my ( $k, $v ) = each %$res ) {
         elsif ( $v->{"buckets"} eq "false" && !defined $bucketsFlag ) {
             $bucketsFlag = 0;
         }
+
+    if( $v->{"sent"} ){
+        $sentPackets = $v->{"sent"};
+    }
     }
 
     if ( defined $domparam && $domparam eq "yes" ) {
@@ -235,6 +240,7 @@ else {
         FULLURL    => HTML::Entities::encode($queryparameters),
         TESTHOSTS  => HTML::Entities::encode($pageHeading),
         TESTKEYREV => HTML::Entities::encode($keyR),
+        TESTSPECS  => HTML::Entities::encode($sentPackets)
     );
     print $htmlfile->output;
     my $jsfile = HTML::Template->new(
@@ -353,12 +359,15 @@ sub getData() {
             		if ( defined $loss and defined $sent_packets ) {
             			if($sent_packets >0 ){
             				$tsresult{"loss"} = $loss / $sent_packets * 100;
+                                        $tsresult{"sent"} = $sent_packets;
             			}else{
             				$tsresult{"loss"} = undef;
+                                        $tsresult{"sent"} = undef;
             			}
                 		
             		}else {
                 		$tsresult{"loss"} = undef;
+                                $tsresult{"sent"} = undef;
             		}
             		my $median;
             		my $firstq;
