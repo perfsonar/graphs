@@ -81,7 +81,7 @@ function handleResponse(http, hostType) {
 		    clearInterval(setprogressTimerID);
       		clearInterval(clearprogressTimerID);
       		clearProgress();
-      		createDataDisplayDiv(eType);
+//      		createDataDisplayDiv(eType);
     	}			 
   	}else if(http.status != 200){
 	  	var testparamdiv = document.getElementById("testParametersDiv");
