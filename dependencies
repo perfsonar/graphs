@@ -18,7 +18,9 @@ HTML::Entities
 HTML::Template
 HTTP::Response
 IO::File
+IO::Interface
 IO::Select
+IO::Socket
 IO::Socket::SSL
 IPC::Open3
 IPC::Run
@@ -32,6 +34,7 @@ Moose
 Net::DNS
 Net::IP
 Net::Interface
+Net::NTP
 Net::Traceroute
 NetAddr::IP
 POSIX
