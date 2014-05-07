@@ -18,9 +18,7 @@ HTML::Entities
 HTML::Template
 HTTP::Response
 IO::File
-IO::Interface
 IO::Select
-IO::Socket
 IO::Socket::SSL
 IPC::Open3
 IPC::Run
@@ -35,6 +33,7 @@ Net::DNS
 Net::IP
 Net::Interface
 Net::NTP
+Net::Ping
 Net::Traceroute
 NetAddr::IP
 POSIX
@@ -49,6 +48,7 @@ Symbol
 Template
 Time::HiRes
 Time::Local
+URI
 URI::Split
 XML::LibXML
 YAML::Syck
