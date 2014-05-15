@@ -1,0 +1,79 @@
+[% INCLUDE header.tmpl %]
+	<input type="hidden" id="ma_host_type" value='[% ma_host_type %]'/>
+	<script type="text/javascript" src="JS/initService.js"></script>
+	<script type="text/javascript" src="JS/result.js"></script>
+<!-- take out for now, getting an error and I think this is going away
+	<script type="text/javascript" src="JS/bwctl-datadiv.js"></script>
+-->
+    <script type="text/javascript" src="JS/sorting.js"></script>
+    <script type="text/javascript" src="JS/displayElements.js"></script>
+	<script type="text/javascript" charset="utf-8" src="JS/d3.v3.min.js"></script>
+	<script type="text/javascript" src="JS/crossfilter.min.js"></script>
+	<script type="text/javascript" src="JS/dc.js"></script>
+	<script type="text/javascript" src="JS/psGraph.js"></script>
+    <link rel="stylesheet" href="css/dc/bootstrap.min.css" type="text/css" media="screen" />
+    <link rel="stylesheet" href="css/dc/dc.css" type="text/css" media="screen" />
+    <link rel="stylesheet" href="/serviceTest/css/style.css" type="text/css" />
+    <link rel="stylesheet" href="/serviceTest/css/spinner.css" type="text/css" media="screen" />
+
+ <div id="body" class="dijitContentPane" dojotype="dijit.layout.ContentPane" widgetid="body">
+    <h1>perfSONAR-PS Tests</h1>
+    <p>Grey text indicates inactive test (tests that have not run in the last 7 days).</p>
+
+
+	<table id="summaryTable" class="table table-hover dc-data-table">
+     <thead>
+        <tr class="header">
+            <th id="sourceHeader" class="sortHeader">Source</th>
+            <th id="destHeader" class="sortHeader">Destination</th>
+            <th>Bidirectional</th>
+            <th>Protocol</th>
+            <th>Duration (s)</th>
+            <th colspan="2">Throughput (gbps)
+                </th>
+            <th colspan="2">Latency (ms)
+                </th>
+            <th colspan="2">Loss (%)
+                </th>
+        </tr>
+        <tr>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td>src-dst</td>
+            <td>dst-src</td>
+            <td>src-dst</td>
+            <td>dst-src</td>
+            <td>src-dst</td>
+            <td>dst-src</td>
+        </tr>
+      </thead>
+    </table>
+
+<div id="loading">
+    <div id="circularG">
+    <div id="circularG_1" class="circularG">
+    </div>
+    <div id="circularG_2" class="circularG">
+    </div>
+    <div id="circularG_3" class="circularG">
+    </div>
+    <div id="circularG_4" class="circularG">
+    </div>
+    <div id="circularG_5" class="circularG">
+    </div>
+    <div id="circularG_6" class="circularG">
+    </div>
+    <div id="circularG_7" class="circularG">
+    </div>
+    <div id="circularG_8" class="circularG">
+    </div>
+    </div> 
+    <h4>Loading ...</h4>
+</div>
+<!-- - See more at: http://cssload.net/#sthash.exGxzPML.dpuf -->
+</div> 
+[% INCLUDE footer.tmpl %]
+
