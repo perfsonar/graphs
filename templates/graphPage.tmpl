@@ -1,10 +1,17 @@
-[% INCLUDE header.tmpl %]
-	<input type="hidden" id="ma_host_type" value='[% ma_host_type %]'/>
+<html>
+<head>
+<title>Graph Page</title>
+</head>
+
+<body>
+
+
+</body>
+</html>
+
+    <input type="hidden" id="ma_host_type" value='[% ma_host_type %]'/>
 	<script type="text/javascript" src="JS/initService.js"></script>
 	<script type="text/javascript" src="JS/result.js"></script>
-<!-- take out for now, getting an error and I think this is going away
-	<script type="text/javascript" src="JS/bwctl-datadiv.js"></script>
--->
     <script type="text/javascript" src="JS/sorting.js"></script>
     <script type="text/javascript" src="JS/displayElements.js"></script>
 	<script type="text/javascript" charset="utf-8" src="JS/d3.v3.min.js"></script>
@@ -18,39 +25,6 @@
 
  <div id="body" class="dijitContentPane" dojotype="dijit.layout.ContentPane" widgetid="body">
     <h1>perfSONAR-PS Tests</h1>
-    <p>Grey text indicates inactive test (tests that have not run in the last 7 days).</p>
-
-
-	<table id="summaryTable" class="table table-hover dc-data-table">
-     <thead>
-        <tr class="header">
-            <th id="sourceHeader" class="sortHeader">Source</th>
-            <th id="destHeader" class="sortHeader">Destination</th>
-            <th>Bidirectional</th>
-            <th>Protocol</th>
-            <th>Duration (s)</th>
-            <th colspan="2">Throughput (gbps)
-                </th>
-            <th colspan="2">Latency (ms)
-                </th>
-            <th colspan="2">Loss (%)
-                </th>
-        </tr>
-        <tr>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td>src-dst</td>
-            <td>dst-src</td>
-            <td>src-dst</td>
-            <td>dst-src</td>
-            <td>src-dst</td>
-            <td>dst-src</td>
-        </tr>
-      </thead>
-    </table>
 
 <div id="loading">
     <div id="circularG">
@@ -77,8 +51,10 @@
 
 </div> <!-- end body div -->
 
-<div data-dojo-type="dojox/widget/DialogSimple" data-dojo-id="chartDialog" title="perfSONAR Charts" style="width:85%;height:85%;" href="/serviceTest/graphWidget.cgi">
-<!-- <div data-dojo-type="dijit/Dialog" data-dojo-id="chartDialog" title="perfSONAR Charts" style="width:85%;height:85%;" href="/serviceTest/graphWidget.cgi"> -->
+<div data-dojo-type="dijit/Dialog" data-dojo-id="chartDialog" title="perfSONAR Charts" style="width:85%;height:85%;">
+    <div id="chart">
+        <h2>Test Results</h2>
+         
+    </div>
 </div>
-[% INCLUDE footer.tmpl %]
 

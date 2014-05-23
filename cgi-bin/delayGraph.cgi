@@ -240,7 +240,7 @@ else {
         FULLURL    => HTML::Entities::encode($queryparameters),
         TESTHOSTS  => HTML::Entities::encode($pageHeading),
         TESTKEYREV => HTML::Entities::encode($keyR),
-        TESTSPECS  => HTML::Entities::encode($sentPackets)
+        #TESTSPECS  => HTML::Entities::encode($sentPackets)
     );
     print $htmlfile->output;
     my $jsfile = HTML::Template->new(

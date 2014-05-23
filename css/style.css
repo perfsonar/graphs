@@ -272,3 +272,9 @@ span.psgraph-val { font-family: "Lucida Console", Monaco, monospace; }
 #summaryTable th.sortHeader span.sort { width:13px; height:12px; display:inline-block; margin-left:5px; }
 #summaryTable th.sortHeader span.sort.asc { background:url(/serviceTest/images/uparrow.png); }
 #summaryTable th.sortHeader span.sort.desc { background:url(/serviceTest/images/downarrow.png); }
+/*#chart { width:80%; height:80%; } */
+/*.dijitDialogPaneContent {
+    width: 80% !important;
+    height: 80% !important;
+}*/
+

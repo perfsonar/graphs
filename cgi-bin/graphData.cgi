@@ -56,62 +56,205 @@ else {
 }
 
 sub get_data {
-    my @types  = $cgi->param('type');
-    error("Missing required parameter \"type\"") if (! @types);
+    #my @types  = $cgi->param('type');
+    #error("Missing required parameter \"type\"") if (! @types);
+    my @types = ('throughput', 'histogram-owdelay', 'packet-loss-rate');
+    #my @types = ('throughput');
+    my $summary_window = 86400;
 
-    my $url    = $cgi->param('url')   || error("Missing required parameter \"url\"");
-    my $src    = $cgi->param('src')   || error("Missing required parameter \"src\"");
-    my $dest   = $cgi->param('dest')  || error("Missing required parameter \"dest\"");
-    my $start  = $cgi->param('start') || error("Missing required parameter \"start\"");
-    my $end    = $cgi->param('end')   || error("Missing required parameter \"end\"");
-    
+    my $url     = $cgi->param('url')     || error("Missing required parameter \"url\"");
+    my $src     = $cgi->param('src')     || error("Missing required parameter \"src\"");
+    my $dest    = $cgi->param('dest')    || error("Missing required parameter \"dest\"");
+    my $start   = $cgi->param('start')   || error("Missing required parameter \"start\"");
+    my $end     = $cgi->param('end')     || error("Missing required parameter \"end\"");
+    my $flatten = 1;
+    $flatten = $cgi->param('flatten') if (defined $cgi->param('flatten'));
+
     my %results;
     
     foreach my $type (@types){
-	
-	foreach my $ordered ([$src, $dest], [$dest, $src]){
-	    
-	    my ($test_src, $test_dest) = @$ordered;
-	    
-	    my $filter = new perfSONAR_PS::Client::Esmond::ApiFilters();
-	    $filter->event_type($type);
-	    $filter->source($test_src);
-	    $filter->destination($test_dest);
-	    
-	    my $client = new perfSONAR_PS::Client::Esmond::ApiConnect(url     => $url,
-								      filters => $filter);
-	    
-	    my $metadata = $client->get_metadata();
-	    
-	    error($client->error) if ($client->error);
-	    
-	    my @data_points;
-	    
-	    #print "I found " . @$metadata . " points\n";
-	    
-	    foreach my $metadatum (@$metadata){
-		my $event = $metadatum->get_event_type($type);
+        my $real_type = $type;	
+        foreach my $ordered ([$src, $dest], [$dest, $src]){
 
-		$event->filters->time_start($start);
-		$event->filters->time_end($end);
+            my ($test_src, $test_dest) = @$ordered;
 
-		my $data  = $event->get_data();
-		
-		error($event->error) if($event->error); 
-		
-		#print all data
-		foreach my $datum (@$data){
-		    my $ts = $datum->ts;
-		    push(@data_points, [$ts, $datum->val]);		    
-		}
-	    }
-	    
-	    $results{$test_src}{$test_dest}{$type} = \@data_points;
-	}
+            my $filter = new perfSONAR_PS::Client::Esmond::ApiFilters();
+            $filter->event_type($type);
+            $filter->source($test_src);
+            $filter->destination($test_dest);
+
+            my $client = new perfSONAR_PS::Client::Esmond::ApiConnect(url     => $url,
+                filters => $filter);
+
+            my $metadata = $client->get_metadata();
+
+            error($client->error) if ($client->error);
+
+            my @data_points;
+
+            #print "I found " . @$metadata . " points\n";
+
+            foreach my $metadatum (@$metadata){
+                my $event = $metadatum->get_event_type($real_type);
+                warn "Type: $type";
+                $event->filters->time_start($start);
+                $event->filters->time_end($end);
+                $type = 'loss' if ($type eq 'packet-loss-rate');
+                $type = 'owdelay' if ($type eq 'histogram-owdelay');
+
+                my $data;
+                my $total = 0;
+                my $average;
+                my $min = undef;
+                my $max = undef; 
+
+                if ($type eq 'owdelay') {
+                    #$data = $event_type->get_data();
+                    my $stats_summ = $event->get_summary('statistics', $summary_window);
+                    error($event->error) if ($event->error);
+                    #warn "No $type summary found\n" unless $stats_summ;
+                    $data = $stats_summ->get_data() if defined $stats_summ;
+                    #warn "stats_data: " . Dumper $data;
+                    if (@$data > 0){
+                        foreach my $datum (@$data){
+                            $total += $datum->val->{mean};
+                            $max = $datum->val->{maximum} if !defined($max) || $datum->val->{maximum} > $max;
+                            $min = $datum->val->{minimum} if !defined($min) || $datum->val->{minimum} < $min;
+                        }
+                        $average = $total / @$data;
+                    }
+                } else {
+                    if ($type eq 'loss') {
+                        my $stats_summ = $event->get_summary('aggregation', $summary_window);
+                        error($event->error) if ($event->error);
+                        #warn "No $type summary found\n" unless $stats_summ;
+                        $data = $stats_summ->get_data() if defined $stats_summ;
+                    } else {
+                        $data = $event->get_data();
+                    }
+                    if (@$data > 0){
+                        foreach my $datum (@$data){
+                            $total += $datum->val;
+                            $max = $datum->val if !defined($max) || $datum->val > $max;
+                            $min = $datum->val if !defined($min) || $datum->val < $min;
+                        }
+                        $average = $total / @$data;
+                    }
+                } 
+
+                #my $data  = $event->get_data();
+
+                error($event->error) if($event->error); 
+
+                #print all data
+                foreach my $datum (@$data){
+                    my $ts = $datum->ts;
+                    my $val;
+                    if ($type eq 'owdelay') {
+                        $val = $datum->{val}->{mean};
+                    } else {    
+                        $val = $datum->val;
+                    }
+                    push(@data_points, {'ts' => $ts, 'val' => $val});		    
+                }
+            }
+
+            $results{$test_src}{$test_dest}{$type} = \@data_points;
+        }
+    }
+
+    # CONSOLIDATE BIDIRECTIONAL TESTS
+    my %res = ();
+    if (1) {
+        while (my ($src, $values) = each %results) {
+            while (my ($dst, $types) = each %$values) {
+                #warn "src: $src and dst: $dst\n";
+                while (my $type = each %$types) {
+                    warn "type: " . $type;
+                    $res{$src}{$dst}{$type} = ();
+                    foreach my $data (@{$results{$src}{$dst}{$type}}) {
+                        my $row = {};
+                        while (my ($key, $val) = each %$data) {
+                            $row->{'src_'.$key} = $val;
+                            #push @{$results{$src}{$dst}{$type}}, \%row;
+                        }
+                        push @{$res{$src}{$dst}{$type}}, $row;
+                    }
+                    if (exists($results{$dst}{$src}{$type})) {
+                        foreach my $data (@{$results{$dst}{$src}{$type}}) {
+                            #warn "got here dst src";
+                            my $row = {};
+                            while (my ($key, $val) = each %$data) {
+                                $row->{'dst_'.$key} = $val;
+                            }
+                            #warn Dumper $row;
+                            push @{$res{$src}{$dst}{$type}}, $row;
+                        }
+                    } 
+
+                }
+            }
+        }
+        %results = ();
+        %results = %res;
+    }
+    
+
+    # FLATTEN DATASTRUCTURE
+
+    my @results_arr;
+    my $results2 = {};
+    my $results_arr2 = [];
+    #my $min_ts;
+    #my $max_ts;
+    if ($flatten == 1) {
+        while (my ($src, $values) = each %results) {
+            while (my ($dst, $types) = each %$values) {
+                #warn "src: $src and dst: $dst\n";
+                while (my $type = each %$types) { 
+                    $results_arr2 = [];
+                    $results2->{$type} = [];
+                    foreach my $value (@{$results{$src}{$dst}{$type}}) {
+                        my $row = {};
+                        #my $min_ts = $ts if (!defined($min_ts) || $ts < $min_ts);
+                        #my $max_ts = $ts if (!defined($max_ts) || $ts > $max_ts);
+
+                        my $ts = $value->{src_ts};
+                        my $val = $value->{src_val};
+                        if (defined($ts) && defined($val) || 1) {
+                            $row->{"${type}_src_ts"} = $ts;
+                            $row->{"${type}_src_val"} = $val;
+                        }
+
+                        my $dst_ts = $value->{dst_ts};
+                        my $dst_val = $value->{dst_val};
+                        if (defined($dst_ts) && defined($dst_val) || 1) {
+                            $row->{"${type}_dst_ts"} = $dst_ts;
+                            $row->{"${type}_dst_val"} = $dst_val;
+                        }
+                        $row->{'source'} = $src;
+                        $row->{'destination'} = $dst;
+                        #$row->{'type'} = $type;
+                        #$results2{$type} = $row;
+                        push @results_arr, $row;
+                        push @$results_arr2, $row;
+                        push @{$results2->{$type}}, $row;
+                    }
+                    #warn "results_arr2 ${type}: " . Dumper $results_arr2;
+                    #$results2->{$type} = $results_arr2;
+                }
+            }
+        }
+
     }
 
     print $cgi->header('text/json');
-    print to_json(\%results);
+    if ($flatten == 1) {
+        print to_json(\@results_arr);
+        #print to_json($results2);
+    } else {
+        print to_json(\%results);
+    }
 }
 
 
@@ -232,32 +375,32 @@ sub get_tests {
 
     # CONSOLIDATE BIDIRECTIONAL TESTS
     if (1) {
-    while (my ($src, $values) = each %results) {
-        while (my ($dst, $types) = each %$values) {
-            #warn "src: $src and dst: $dst\n";
-            while (my $type = each %$types) { #{$results{$dst}{$src}}) {
-                my $bidirectional = 0;
-                if (exists($results{$dst}{$src}{$type})) {
-                    my $dst_res = $results{$dst}{$src}{$type};
-                    my $src_res = $results{$src}{$dst}{$type};
-                    my $average = undef; # = $dst_res->{'week_average'};# || 0;
-                    my $dst_average = $dst_res->{'week_average'};
-                    my $src_average = $src_res->{'week_average'};
-                    my $dst_min = $dst_res->{'week_min'};
-                    my $src_min = $src_res->{'week_min'};
-                    my $dst_max = $dst_res->{'week_max'};
-                    my $src_max = $src_res->{'week_max'};
-                    
-                    my $min = $dst_res->{'week_min'};
-                    my $max = $dst_res->{'week_max'};
-                    my $duration = $dst_res->{'duration'};
-                    my $last_update = $dst_res->{'last_update'} || 0;
-                    my $protocol = $dst_res->{'protocol'};
-                    #warn "src_res: " . Dumper $src_res;
-                    #warn "dst_res: " . Dumper $dst_res;
-                    my $source_host = $src_res->{'source_host'};
-                    my $destination_host = $src_res->{'destination_host'};
-                    $bidirectional = 1 if (defined ($results{$dst}{$src}{$type}->{'week_average'}) && defined ($results{$src}{$dst}{$type}->{'week_average'}) );
+        while (my ($src, $values) = each %results) {
+            while (my ($dst, $types) = each %$values) {
+                #warn "src: $src and dst: $dst\n";
+                while (my $type = each %$types) { #{$results{$dst}{$src}}) {
+                    my $bidirectional = 0;
+                    if (exists($results{$dst}{$src}{$type})) {
+                        my $dst_res = $results{$dst}{$src}{$type};
+                        my $src_res = $results{$src}{$dst}{$type};
+                        my $average = undef; # = $dst_res->{'week_average'};# || 0;
+                        my $dst_average = $dst_res->{'week_average'};
+                        my $src_average = $src_res->{'week_average'};
+                        my $dst_min = $dst_res->{'week_min'};
+                        my $src_min = $src_res->{'week_min'};
+                        my $dst_max = $dst_res->{'week_max'};
+                        my $src_max = $src_res->{'week_max'};
+
+                        my $min = $dst_res->{'week_min'};
+                        my $max = $dst_res->{'week_max'};
+                        my $duration = $dst_res->{'duration'};
+                        my $last_update = $dst_res->{'last_update'} || 0;
+                        my $protocol = $dst_res->{'protocol'};
+                        #warn "src_res: " . Dumper $src_res;
+                        #warn "dst_res: " . Dumper $dst_res;
+                        my $source_host = $src_res->{'source_host'};
+                        my $destination_host = $src_res->{'destination_host'};
+                        $bidirectional = 1 if (defined ($results{$dst}{$src}{$type}->{'week_average'}) && defined ($results{$src}{$dst}{$type}->{'week_average'}) );
 
                     # Now combine with the source values
                     $min = $src_res->{'week_min'} if (defined($src_res->{'week_min'}) && $src_res->{'week_min'} < $min);
@@ -306,30 +449,30 @@ sub get_tests {
 # FLATTEN DATASTRUCTURE
 my @results_arr;
 if ($flatten == 1) {
-while (my ($src, $values) = each %results) {
-    while (my ($dst, $types) = each %$values) {
-        #warn "src: $src and dst: $dst\n";
-        my $row = {};
-        while (my $type = each %$types) { #{$results{$dst}{$src}}) {
-            #my $row = {};
-            while (my ($key, $value) = each %{$results{$src}{$dst}{$type}}) {
-                #if ($key ne 'source_host' && $key ne 'destination_host') {
+    while (my ($src, $values) = each %results) {
+        while (my ($dst, $types) = each %$values) {
+            #warn "src: $src and dst: $dst\n";
+            my $row = {};
+            while (my $type = each %$types) { #{$results{$dst}{$src}}) {
+                #my $row = {};
+                while (my ($key, $value) = each %{$results{$src}{$dst}{$type}}) {
+                    #if ($key ne 'source_host' && $key ne 'destination_host') {
                     $row->{"${type}_$key"} = $value;
                     #} else {
                     #$row->{$key} = $value;
                     #}
-                #$row->{$key} = $value;
-            }
+                    #$row->{$key} = $value;
+                }
 
-            $row->{'source'} = $src;
-            $row->{'destination'} = $dst;
-            #$row->{'type'} = $type;
-            #$row->{'source_host'} = $results{$src}{$dst}{$type}->{'source_host'};
-            #$row->{'destination_host'} = $results{$src}{$dst}{$type}->{'destination_host'};
+                $row->{'source'} = $src;
+                $row->{'destination'} = $dst;
+                #$row->{'type'} = $type;
+                #$row->{'source_host'} = $results{$src}{$dst}{$type}->{'source_host'};
+                #$row->{'destination_host'} = $results{$src}{$dst}{$type}->{'destination_host'};
+            }
+            push @results_arr, $row;
         }
-        push @results_arr, $row;
     }
-}
 
 }
 #    my @results_arr;
@@ -341,16 +484,16 @@ while (my ($src, $values) = each %results) {
 #        
 #        push @results_arr, %row;
 #    }
-    warn "Total metadata time (s): $total_metadata\n";
-    warn "Total data time (s): $total_data\n";
-    warn "Total time: " . Time::HiRes::tv_interval($method_start_time);
+warn "Total metadata time (s): $total_metadata\n";
+warn "Total data time (s): $total_data\n";
+warn "Total time: " . Time::HiRes::tv_interval($method_start_time);
 
-    print $cgi->header('text/json');
-    if ($flatten == 1) {
-        print to_json(\@results_arr);
-    } else {
-        print to_json(\%results);
-    }
+print $cgi->header('text/json');
+if ($flatten == 1) {
+    print to_json(\@results_arr);
+} else {
+    print to_json(\%results);
+}
 
 }
 

@@ -1,0 +1,59 @@
+<style type="text/css">
+@import "/toolkit/content/dojo/dijit/themes/tundra/tundra.css";
+</style>
+
+<link rel="stylesheet" href="/toolkit/content/style.css" type="text/css" media="screen" />
+
+    <input type="hidden" id="ma_host_type" value='[% ma_host_type %]'/>
+	<script type="text/javascript" src="JS/initService.js"></script>
+	<script type="text/javascript" src="JS/result.js"></script>
+    <script type="text/javascript" src="JS/sorting.js"></script>
+    <script type="text/javascript" src="JS/displayElements.js"></script>
+	<script type="text/javascript" charset="utf-8" src="JS/d3.v3.min.js"></script>
+	<script type="text/javascript" src="JS/crossfilter.min.js"></script>
+	<script type="text/javascript" src="JS/dc.js"></script>
+	<script type="text/javascript" src="JS/graphWidget.js"></script>
+	<!-- <script type="text/javascript" src="JS/psGraph.js"></script> -->
+    <link rel="stylesheet" href="css/dc/bootstrap.min.css" type="text/css" media="screen" />
+    <link rel="stylesheet" href="css/dc/dc.css" type="text/css" media="screen" />
+    <link rel="stylesheet" href="/serviceTest/css/style.css" type="text/css" />
+    <link rel="stylesheet" href="/serviceTest/css/spinner.css" type="text/css" media="screen" />
+
+<!-- <div id="body" class="dijitContentPane" dojotype="dijit.layout.ContentPane" widgetid="body"> -->
+
+<!-- 
+<div id="loading">
+    <div id="circularG">
+    <div id="circularG_1" class="circularG">
+    </div>
+    <div id="circularG_2" class="circularG">
+    </div>
+    <div id="circularG_3" class="circularG">
+    </div>
+    <div id="circularG_4" class="circularG">
+    </div>
+    <div id="circularG_5" class="circularG">
+    </div>
+    <div id="circularG_6" class="circularG">
+    </div>
+    <div id="circularG_7" class="circularG">
+    </div>
+    <div id="circularG_8" class="circularG">
+    </div>
+    </div> 
+    <h4>Loading ...</h4>
+</div>
+-->
+<!-- - See more at: http://cssload.net/#sthash.exGxzPML.dpuf -->
+
+<!-- </div> --> <!-- end body div -->
+
+    <div id="chart">
+        <h4>perfSONAR-PS Test Results</h4>
+        Source: [% source %]  Destination: [% dest %]
+
+        <div class='line-graph span4' id='dc-line-chart'>
+            <!-- <h4>Test Results</h4> -->
+        </div>
+    </div>
+

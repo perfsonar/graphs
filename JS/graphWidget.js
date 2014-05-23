@@ -1,41 +1,43 @@
-require(["dijit/Dialog", "dijit/form/Button", "dojo/domReady!", "dojox/widget/DialogSimple"], function(Dialog, Button){
-//    var myDialog = new Dialog({
-//        title: "Programmatic Dialog Creation",
-//        style: "width: 300px"
-//    });
+//require(["dijit/Dialog", "dijit/form/Button", "dojo/domReady!"], function(Dialog, Button){
 
-    var dlg = new dojox.widget.DialogSimple({ 
-           title:"perfSONAR Charts", 
-           executeScripts:true, 
-           style: "width: 85%; height:85%",
-           href:"/serviceTest/graphWidget.cgi" }, 
-       'chartDialog');
+var src = '';
+var dst = '';
+var ma_url = '';
 
-//     dlg.startup();
-//     setTimeout(function(){
-//         dlg.show();
-//     }, 2000);
- 
-    var createDialog = function(source, dest) {
-        //chartDialog.set("content", '<div id="chart">source: ' + source + '<br>dest: ' + dest + '</div>');
-//        chartDialog.show(source, dest);
-        dlg.set('href', "/serviceTest/graphWidget.cgi?source="  + source + "&dest=" + dest);
-        dlg.show(source, dest);
-    };
 
-    var myButton = new Button({
-        label: "Click (programmatically)",
-        onClick: function(source, dest){
-            myDialog.set("content", "Hey, I wasn't there before, I was added at " + new Date() + "!");
-            myDialog.show();
-        }
-    }, "progbutton");
-
-var url = 'https://perfsonar-dev.grnoc.iu.edu/serviceTest/graphData.cgi?url=http%3A%2F%2Flbl-pt1.es.net%3A9085%2Fesmond%2Fperfsonar%2Farchive%2F&action=tests';
+var url = 'https://perfsonar-dev.grnoc.iu.edu/serviceTest/graphData.cgi?url=http%3A%2F%2Flbl-pt1.es.net%3A9085%2Fesmond%2Fperfsonar%2Farchive%2F&action=data&src=198.129.254.30&dest=198.124.238.66&end=1400270301&start=1399665501&type=throughput';
 
 //d3.json(encodeURI(url), function(error,ps_data) {
 d3.json(url, function(error,ps_data) {
+    var lineChart = dc.lineChart("#dc-line-chart");
     var ndx = crossfilter(ps_data);
+    var lineDimension = ndx.dimension(function (d) { return new Date( d.throughput_src_ts * 1000); });
+    //var lineDimension = ndx.dimension(function (d) { return d.throughput_ts; });
+    //var lineGroup = lineDimension.group(function (throughput_val) { return throughput_val; });
+    //var lineGroup = lineDimension.group(function (d) { return d.throughput_val; });
+    var lineGroup = lineDimension.group().reduceSum(function(d) { return d.throughput_src_val; });
+    //var lineGroup = lineDimension.group();
+    lineChart.dimension(lineDimension)
+        .width(600)
+        .height(400)
+        .group(lineGroup)
+        //.x(d3.scale.linear()
+        //    .domain([1399665501, 1400270301]))
+        //.x(d3.scale.linear(function(d) { return d.throughput_ts; }))
+        .x(d3.time.scale().domain(d3.extent(ps_data, function(d) { return new Date(d.throughput_src_ts * 1000); })))
+        .mouseZoomable(true)
+        .brushOn(false)        
+        .title(function(d){
+            return "Timestamp: " + d.key
+            + "\nThroughput: " + d.value;
+            })
+        //.valueAccessor(function(d) { return d.throughput_val; })
+        //.y(d3.scale.linear().domain([1366830000, 10366830000]))
+        .elasticY(true)
+        .xAxis();
+        //.x(d3.time.scale().domain(d3.extent(ps_data, function(d) { return d.throughput_ts; })))
+        //.elasticY(true);
+
     var tableDimension = ndx.dimension(function (d) { return d.source; });
     //var dataTable = dc.dataTable("#summaryTable");
     var dataTable = dc.dataTable(".dc-data-table");
@@ -281,4 +283,4 @@ d3.json(url, function(error,ps_data) {
 
     dc.renderAll();
 });
-}); // end dojo function
+//}); // end dojo require function
