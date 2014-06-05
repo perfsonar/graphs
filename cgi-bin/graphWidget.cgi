@@ -16,6 +16,7 @@ use CGI qw(:standard);
 use HTML::Entities;
 use perfSONAR_PS::Web::Sidebar qw(set_sidebar_vars);
 use Data::Dumper;
+use JSON;
 
 #print cgi-header
 my $cgi = new CGI;
@@ -33,6 +34,7 @@ my $ma_url    = param("ma_url");      # adding option to query MA directly
 my $ma_host_type    = param("ma_host_type");
 my $source = param("source");
 my $dest = param("dest");
+my $window = param('window');
 
 $eventType = "owamp" unless ($eventType);
 
@@ -71,7 +73,8 @@ my %vars = (
     eventType          => HTML::Entities::encode($eventType),
     serviceDisplayName => HTML::Entities::encode(\%serviceDisplayName),
     source             => $source,
-    dest               => $dest
+    dest               => $dest,
+    window             => $window
     );
 if ( scalar @tests >= 1 ) {
     $vars{groups} = \@tests;

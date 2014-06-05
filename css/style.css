@@ -277,4 +277,7 @@ span.psgraph-val { font-family: "Lucida Console", Monaco, monospace; }
     width: 80% !important;
     height: 80% !important;
 }*/
+.chart { clear:both; }
 
+#time-selector { text-align:right; margin-right:3em;  } 
+#time-selector a.active { color:#000000; } 

@@ -6,6 +6,10 @@ use warnings;
 use CGI;
 use Config::General;
 use JSON;
+use LWP::UserAgent;
+use HTTP::Request;
+use Params::Validate qw(:all);
+use JSON qw(from_json);
 use FindBin;
 use Time::HiRes;
 use Data::Dumper;
@@ -56,11 +60,20 @@ else {
 }
 
 sub get_data {
-    #my @types  = $cgi->param('type');
+    my @types  = $cgi->param('type');
     #error("Missing required parameter \"type\"") if (! @types);
-    my @types = ('throughput', 'histogram-owdelay', 'packet-loss-rate');
-    #my @types = ('throughput');
-    my $summary_window = 86400;
+    if (! @types) {
+        @types = ('throughput', 'histogram-owdelay', 'packet-loss-rate', 'packet-retransmits');
+        #my @types = ('throughput');
+        #my @types = ('histogram-owdelay');
+        #my @types = ('packet-loss-rate');
+    }
+    my $summary_window;
+    my $window = $cgi->param('window');
+    my @valid_windows = (60, 300, 3600, 86400);
+    $summary_window = 3600;
+    $summary_window = $window if ($window && (grep {$_ eq $window} @valid_windows));
+    #warn "Summary window: ${summary_window}; window: $window";
 
     my $url     = $cgi->param('url')     || error("Missing required parameter \"url\"");
     my $src     = $cgi->param('src')     || error("Missing required parameter \"src\"");
@@ -96,11 +109,13 @@ sub get_data {
 
             foreach my $metadatum (@$metadata){
                 my $event = $metadatum->get_event_type($real_type);
-                warn "Type: $type";
+                #warn "Type: $type";
                 $event->filters->time_start($start);
                 $event->filters->time_end($end);
+
                 $type = 'loss' if ($type eq 'packet-loss-rate');
                 $type = 'owdelay' if ($type eq 'histogram-owdelay');
+                $type = 'packet_retransmits' if ($type eq 'packet-retransmits');
 
                 my $data;
                 my $total = 0;
@@ -115,7 +130,7 @@ sub get_data {
                     #warn "No $type summary found\n" unless $stats_summ;
                     $data = $stats_summ->get_data() if defined $stats_summ;
                     #warn "stats_data: " . Dumper $data;
-                    if (@$data > 0){
+                    if (defined($data) && @$data > 0){
                         foreach my $datum (@$data){
                             $total += $datum->val->{mean};
                             $max = $datum->val->{maximum} if !defined($max) || $datum->val->{maximum} > $max;
@@ -130,9 +145,13 @@ sub get_data {
                         #warn "No $type summary found\n" unless $stats_summ;
                         $data = $stats_summ->get_data() if defined $stats_summ;
                     } else {
+                        #warn "event: " . Dumper $event;
                         $data = $event->get_data();
+                        #warn "data: " . Dumper $data;
+                        #error($event->error) if ($event->error);
                     }
-                    if (@$data > 0){
+                    #warn "data: " . Dumper $data;
+                    if (defined($data) && @$data > 0){
                         foreach my $datum (@$data){
                             $total += $datum->val;
                             $max = $datum->val if !defined($max) || $datum->val > $max;
@@ -144,9 +163,10 @@ sub get_data {
 
                 #my $data  = $event->get_data();
 
-                error($event->error) if($event->error); 
+                #error($event->error) if($event->error); 
 
                 #print all data
+                #warn "not here!";
                 foreach my $datum (@$data){
                     my $ts = $datum->ts;
                     my $val;
@@ -158,7 +178,7 @@ sub get_data {
                     push(@data_points, {'ts' => $ts, 'val' => $val});		    
                 }
             }
-
+            #warn "$type data_points: " . @data_points;
             $results{$test_src}{$test_dest}{$type} = \@data_points;
         }
     }
@@ -167,19 +187,22 @@ sub get_data {
     my %res = ();
     if (1) {
         while (my ($src, $values) = each %results) {
-            while (my ($dst, $types) = each %$values) {
+            while (my ($dst, $result_types) = each %$values) {
                 #warn "src: $src and dst: $dst\n";
-                while (my $type = each %$types) {
-                    warn "type: " . $type;
+                while (my $type = each %$result_types) {
+                    #warn "type: " . $type;
                     $res{$src}{$dst}{$type} = ();
-                    foreach my $data (@{$results{$src}{$dst}{$type}}) {
-                        my $row = {};
-                        while (my ($key, $val) = each %$data) {
-                            $row->{'src_'.$key} = $val;
-                            #push @{$results{$src}{$dst}{$type}}, \%row;
+                    #if (exists $results{$src}{$dst}{$type}) {
+                        foreach my $data (@{$results{$src}{$dst}{$type}}) {
+                            my $row = {};
+
+                            while (my ($key, $val) = each %$data) {
+                                $row->{'src_'.$key} = $val;
+                                #push @{$results{$src}{$dst}{$type}}, \%row;
+                            }
+                            push @{$res{$src}{$dst}{$type}}, $row;
                         }
-                        push @{$res{$src}{$dst}{$type}}, $row;
-                    }
+                        #}
                     if (exists($results{$dst}{$src}{$type})) {
                         foreach my $data (@{$results{$dst}{$src}{$type}}) {
                             #warn "got here dst src";
@@ -219,11 +242,20 @@ sub get_data {
                         #my $min_ts = $ts if (!defined($min_ts) || $ts < $min_ts);
                         #my $max_ts = $ts if (!defined($max_ts) || $ts > $max_ts);
 
+                            # Iterate over ALL types in the request
+                            foreach my $all_type (@types) {
+                                #warn "type (full): " . $all_type;
+                                $row->{$all_type.'_src_val'} = undef;
+                                $row->{$all_type.'_dst_val'} = undef;
+
+                            }
                         my $ts = $value->{src_ts};
                         my $val = $value->{src_val};
                         if (defined($ts) && defined($val) || 1) {
                             $row->{"${type}_src_ts"} = $ts;
                             $row->{"${type}_src_val"} = $val;
+                            $row->{ts} = $ts;
+                            $row->{ts_date} = localtime($ts) if $ts;
                         }
 
                         my $dst_ts = $value->{dst_ts};
@@ -231,6 +263,8 @@ sub get_data {
                         if (defined($dst_ts) && defined($dst_val) || 1) {
                             $row->{"${type}_dst_ts"} = $dst_ts;
                             $row->{"${type}_dst_val"} = $dst_val;
+                            $row->{ts} = $dst_ts if defined $dst_ts;
+                            $row->{ts_date} = localtime($dst_ts) if $dst_ts;
                         }
                         $row->{'source'} = $src;
                         $row->{'destination'} = $dst;
