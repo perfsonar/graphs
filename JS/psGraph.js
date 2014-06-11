@@ -1,4 +1,4 @@
-require(["dijit/Dialog", "dijit/form/Button", "dojo/domReady!", "dojox/widget/DialogSimple"], function(Dialog, Button){
+require(["dijit/Dialog", "dijit/form/Button", "dojo/domReady!", "dojox/widget/DialogSimple", "dojo/io-query"], function(Dialog, Button, ready, simple, ioQuery){
 //    var myDialog = new Dialog({
 //        title: "Programmatic Dialog Creation",
 //        style: "width: 300px"
@@ -19,7 +19,7 @@ require(["dijit/Dialog", "dijit/form/Button", "dojo/domReady!", "dojox/widget/Di
     var createDialog = function(source, dest) {
         //chartDialog.set("content", '<div id="chart">source: ' + source + '<br>dest: ' + dest + '</div>');
 //        chartDialog.show(source, dest);
-        dlg.set('href', "/serviceTest/graphWidget.cgi?source="  + source + "&dest=" + dest);
+        dlg.set('href', "/serviceTest/graphWidget.cgi?source="  + source + "&dest=" + dest + "&url=" + ma_url);
         dlg.show(source, dest);
     };
 
@@ -31,7 +31,18 @@ require(["dijit/Dialog", "dijit/form/Button", "dojo/domReady!", "dojox/widget/Di
         }
     }, "progbutton");
 
-var url = 'https://perfsonar-dev.grnoc.iu.edu/serviceTest/graphData.cgi?url=http%3A%2F%2Flbl-pt1.es.net%3A9085%2Fesmond%2Fperfsonar%2Farchive%2F&action=tests';
+var ma_url = 'http%3A%2F%2Flbl-pt1.es.net%3A9085%2Fesmond%2Fperfsonar%2Farchive%2F';
+var uri = document.URL;
+if (uri.indexOf('?') > -1) {
+    var query = uri.substring(uri.indexOf("?") + 1, uri.length);
+    var queryObject = ioQuery.queryToObject(query);
+    if (queryObject.url) {
+        ma_url = queryObject.url;
+    }
+} 
+//ma_url = encodeURI(ma_url);
+
+var url = 'https://perfsonar-dev.grnoc.iu.edu/serviceTest/graphData.cgi?url=' + ma_url + '&action=tests';
 
 //d3.json(encodeURI(url), function(error,ps_data) {
 d3.json(url, function(error,ps_data) {

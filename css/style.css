@@ -267,6 +267,8 @@ tr.dc-table-group { display:none;  }
 table.grid-value, table.grid-value tr, table.grid-value td { border:0; margin:0; padding: 0; }
 table.grid-value td { padding: 0 4px 0 0; } 
 table.grid-value.inactive, table.grid-value .inactive { color:#aaaaaa; }
+table.hosts { font-size:12px; }
+table.hosts td, table.hosts th { padding:0 10px; }
 /*table.grid-value .inactive:hover { background-color:#dddddd; }*/
 span.psgraph-val { font-family: "Lucida Console", Monaco, monospace; } 
 #summaryTable th.sortHeader span.sort { width:13px; height:12px; display:inline-block; margin-left:5px; }

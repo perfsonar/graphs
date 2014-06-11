@@ -1,8 +1,10 @@
 CGI
+Carp
 Config::General
 Data::Dumper
 Data::UUID
 Data::Validate::IP
+DateTime::Format::ISO8601
 English
 Exporter
 File::Basename
@@ -11,6 +13,7 @@ HTML::Entities
 HTML::Template
 IO::File
 JSON
+LWP
 LWP::UserAgent
 Log::Log4perl
 Net::CIDR
@@ -23,6 +26,7 @@ NetAddr::IP
 Params::Validate
 RPC::XML::Client
 Regexp::Common
+Scalar::Util
 Socket
 Socket6
 Statistics::Descriptive

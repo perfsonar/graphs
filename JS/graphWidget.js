@@ -1,7 +1,7 @@
 require(["dojo/dom", "dojo/on", "dojo/hash", "dojo/io-query"], function(theDom, theOn, theHash, ioQuery){
 
-var src = '';
-var dst = '';
+var src = source;
+var dst = dest;
 var ma_url = '';
 
 var timePeriod = ioQuery.queryToObject(theHash()).timeframe || '';  // get hash
@@ -39,8 +39,110 @@ if (time_diff != 0 ) {
     start_ts = end_ts - time_diff;
 }
 
-var base_url = 'https://perfsonar-dev.grnoc.iu.edu/serviceTest/graphData.cgi?url=http%3A%2F%2Flbl-pt1.es.net%3A9085%2Fesmond%2Fperfsonar%2Farchive%2F&action=data&src=198.129.254.30&dest=198.124.238.66';
-var url = 'https://perfsonar-dev.grnoc.iu.edu/serviceTest/graphData.cgi?url=http%3A%2F%2Flbl-pt1.es.net%3A9085%2Fesmond%2Fperfsonar%2Farchive%2F&action=data&src=198.129.254.30&dest=198.124.238.66&start=' + start_ts + '&end=' + end_ts + '&window=' + summary_window;
+//var ls_list_url = 'http://ps1.es.net:8096/lookup/activehosts.json';
+var ls_list_url = 'https://perfsonar-dev.grnoc.iu.edu/serviceTest/graphData.cgi?action=ls_hosts';
+var ls_query_url = 'https://perfsonar-dev.grnoc.iu.edu/serviceTest/graphData.cgi?action=interfaces';
+
+
+var src_capacity = 'n/a';
+var src_mtu = 'n/a';
+var dest_capacity = 'n/a';
+var dest_mtu = 'n/a';
+
+// Speed up calls to hasOwnProperty
+var hasOwnProperty = Object.prototype.hasOwnProperty;
+
+function isEmpty(obj) {
+
+    // null and undefined are "empty"
+    if (obj == null) return true;
+
+    // Assume if it has a length property with a non-zero value
+    // that that property is correct.
+    if (obj.length > 0)    return false;
+    if (obj.length === 0)  return true;
+
+    // Otherwise, does it have any properties of its own?
+    // Note that this doesn't handle
+    // toString and valueOf enumeration bugs in IE < 9
+    for (var key in obj) {
+        if (hasOwnProperty.call(obj, key)) return false;
+    }
+
+    return true;
+}
+
+d3.json(ls_list_url, function(error, ls_list_data) { 
+        //if (error) return console.warn(error);
+        //var data = ls_list_data;
+        var srcCapacity = d3.select('#source_capacity');
+        var srcMTU = d3.select('#source_mtu');
+        var destCapacity = d3.select('#dest_capacity');
+        var destMTU = d3.select('#dest_mtu');
+        var rows = [];
+        var ips = [source, dest];
+        var remaining = ls_list_data.length * ips.length;
+        for(var j in ips) {
+            for(var i in ls_list_data) {
+                var url = ls_list_data[i];
+                var ls = ls_query_url + '&ls_url=' + encodeURI(url) + '&interface=' + ips[j];
+                d3.json(ls, function(error, interface_data) {
+                    console.log(ls);
+                    console.log(interface_data.count);
+                    if(!isEmpty(interface_data)) {
+                        interface_data.ip = ips[j];
+                        rows.push(interface_data);
+                    }
+                    if (!--remaining) combineData();
+                });
+            }
+        }
+
+        function combineData() {
+            console.log('combining data'); 
+            console.log(rows);
+            for(var i in rows) {
+                var row = rows[i];
+                if (row.mtu) {
+                    if (row.ip == source) {
+                        src_mtu = row.mtu;
+                        srcMTU.html( src_mtu );
+                    }
+                    if (row.ip == dest) {
+                        dest_mtu = row.mtu;
+                        destMTU.html( dest_mtu );
+                    }
+
+                }
+                if (row.capacity) {
+                    if (row.ip == source) {
+                        src_capacity = row.capacity;
+                        srcCapacity.html( src_capacity );
+                    }
+                    if (row.ip == dest) {
+                        dest_capacity = row.capacity;
+                        destCapacity.html( d3.format('.2s')(dest_capacity) );
+                    }
+                }
+                console.log(row);
+            }
+        }
+
+    
+});
+
+var ma_url = 'http%3A%2F%2Flbl-pt1.es.net%3A9085%2Fesmond%2Fperfsonar%2Farchive%2F';
+var uri = document.URL;
+if (uri.indexOf('?') > -1) {
+    var query = uri.substring(uri.indexOf("?") + 1, uri.length);
+    var queryObject = ioQuery.queryToObject(query);
+    if (queryObject.url) {
+        ma_url = queryObject.url;
+    }
+} 
+
+var base_url = 'https://perfsonar-dev.grnoc.iu.edu/serviceTest/graphData.cgi?url=' + ma_url + '&action=data&src=' + source + '&dest=' + dest;
+var url = 'https://perfsonar-dev.grnoc.iu.edu/serviceTest/graphData.cgi?url=' + ma_url + '&action=data&src=' + source + '&dest=' + dest + '&start=' + start_ts + '&end=' + end_ts + '&window=' + summary_window;
 
 drawChart(url);
 function drawChart(url) {
@@ -49,6 +151,10 @@ d3.json(url, function(error,ps_data) {
 
     var start_date = new Date (start_ts);
     var end_date = new Date (end_ts);
+
+    //var capacityDiv = d3.select('#capacity');
+    //var cap = capacityDiv.html();
+    //capacityDiv.html( d3.format('s')(cap));
 
     timePeriod = ioQuery.queryToObject(theHash()).timeframe || '';  // get hash
     if (timePeriod != '') {
@@ -70,89 +176,42 @@ d3.json(url, function(error,ps_data) {
     var delayDimension = ndx.dimension(function (d) { return d.owdelay_src_val; });
     var lossDimension = ndx.dimension(function (d) { return d.loss_src_val; });
 
-    var throughputGroup = lineDimension.group().reduce(
-        // Add
-        function(p, v) {
-            if (v.throughput_src_val !== null) {
-                ++p.count;
-                p.sum += v.throughput_src_val;
-                p.avg = p.sum/p.count;
+    function make_functions(param) {
+        return [
+            // Add        
+            function(p, v) {
+                if (v[param] !== null) {
+                    ++p.count;
+                    p.sum += v[param];
+                    p.avg = p.sum/p.count;
+                } 
+                return p;
+            },
+
+            // Remove
+            function (p, v) {
+                if (v[param] !== null) {
+                    --p.count;
+                    p.sum -= v[param];
+                    p.avg = p.sum/p.count;
+                }
+                return p;
+            },
+
+            // Init
+            function() {
+                return { count: 0, sum: 0, avg: 0 };
             }
-            return p;
-        },
 
-        // Remove
-        function (p, v) {
-            if (v.throughput_src_val !== null) {
-                --p.count;
-                p.sum -= v.throughput_src_val;
-                p.avg = p.sum/p.count;
-            }
-            return p;
-        },
+        ];
+    }
 
-        // Init
-        function() {
-            return { count: 0, sum: 0, avg:0 };
-        }
+    var throughputGroup = lineDimension.group().reduce.apply(lineDimension, make_functions('throughput_src_val'));
+    var owdelayGroup = lineDimension.group().reduce.apply(lineDimension, make_functions('owdelay_src_val'));
+    var lossGroup = lineDimension.group().reduce.apply(lineDimension, make_functions('loss_src_val'));
 
-    );
-
-    var owdelayGroup = lineDimension.group().reduce(
-        // Add
-        function(p, v) {
-            if (v.owdelay_src_val !== null) {
-                ++p.count;
-                p.sum += v.owdelay_src_val;
-                p.avg = p.sum/p.count;
-            } 
-            return p;
-        },
-
-        // Remove
-        function (p, v) {
-            if (v.owdelay_src_val !== null) {
-                --p.count;
-                p.sum -= v.owdelay_src_val;
-                p.avg = p.sum/p.count;
-            }
-            return p;
-        },
-
-        // Init
-        function() {
-            return { count: 0, sum: 0, avg:0 };
-        }
-
-    );
-
-    var lossGroup = lineDimension.group().reduce(
-        // Add
-        function(p, v) {
-            if (v.loss_src_val !== null) {
-                ++p.count;
-                p.sum += v.loss_src_val;
-                p.avg = p.sum/p.count;
-            } 
-            return p;
-        },
-
-        // Remove
-        function (p, v) {
-            if (v.loss_src_val !== null) {
-                --p.count;
-                p.sum -= v.loss_src_val;
-                p.avg = p.sum/p.count;
-            }
-            return p;
-        },
-
-        // Init
-        function() {
-            return { count: 0, sum: 0, avg:0 };
-        }
-
-    );
+    var something = owdelayGroup.size();
+    var something2 = owdelayGroup.top(5);
 
     var avgOrder = function(p) { 
         return p.avg; 
@@ -161,8 +220,6 @@ d3.json(url, function(error,ps_data) {
     
     //var packetRetransGroup = lineDimension.group().reduceCount(function(d) { return d.packet_retransmits_src_val; } );
     var packetRetransGroup = lineDimension.group().reduceSum(function(d) { return d.packet_retransmits_src_val; } );
-
-    //var lossGroup = lineDimension.group().reduceSum(function(d) { return d.loss_src_val; });
 
     var format_throughput = function(d) { return d3.format('.3s')(d) + 'bps';  }
     var format_latency = function(d) { return d3.format('.3f')(d) + 'ms';  }
@@ -301,10 +358,13 @@ d3.json(url, function(error,ps_data) {
         .x(d3.time.scale().domain(d3.extent(ps_data, function(d) { return new Date(d.ts * 1000); })))
         .xAxisLabel('Date')
         .y(d3.scale.linear().domain([0, maxThroughput * axisScale]))
+        //.elasticY(true)
+        //.yAxisPadding('15%')
         .yAxisLabel('Throughput')
         .rightYAxisLabel('Latency (ms)')
-         .legend(dc.legend().x(400))
-         .rightY(d3.scale.linear().domain([0, maxDelay * axisScale]))
+        //.rightYAxisPadding('15%')
+        .legend(dc.legend().x(400))
+        .rightY(d3.scale.linear().domain([0, maxDelay * axisScale]))
         .xAxis();
     allTestsChart.yAxis().tickFormat(format_throughput);
     allTestsChart.margins().left = 90;
@@ -362,6 +422,7 @@ d3.json(url, function(error,ps_data) {
     var y1 = d3.scale.linear().range([412, 0]);
     var yAxisRight = d3.svg.axis().scale(y1)  // This is the new declaration for the 'Right', 'y1'
         .tickFormat(function(d) { return format_loss(d); })
+        //.tickFormat(function(d) { return (d <= 100 ? format_loss(d) : ''); })
         .orient("right").ticks(5);           // and includes orientation of the axis to the right.
     yAxisRight.scale(y1);
     // Set a default range, so we don't get a broken axis if there's no data
@@ -369,6 +430,7 @@ d3.json(url, function(error,ps_data) {
         y1.domain([0, 1]);
     } else {
         y1.domain([0, maxLoss * axisScale]);
+        //y1.domain([0, maxLoss]);
     }
     
     var svg = allTestsChart.svg(); // d3.select('#chart svg');

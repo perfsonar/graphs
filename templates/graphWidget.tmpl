@@ -6,6 +6,8 @@
 
 <script language="javascript">
 var summary_window = '[% window %]';
+var source = '[% source %]';
+var dest = '[% dest %]';
 </script>
 
 <script type="text/javascript" src="/toolkit/content/dojo/dojo/dojo.js" djConfig="parseOnLoad:true"></script>
@@ -60,7 +62,17 @@ var summary_window = '[% window %]';
     <div id="chart" style="width:790px;height:465px;">
         <div class="chartHeader">
             <h4>perfSONAR-PS Test Results</h4>
-            Source: [% source %]  Destination: [% dest %]
+            <table class="hosts">
+            <tr><th>Source: [% source %]</th><th>Destination: [% dest %]</th></tr>
+            <tr>
+                <td>Capacity: <span id="source_capacity">n/a</span></td>
+                <td>Capacity: <span id="dest_capacity">n/a</span></td>
+            </tr>
+            <tr>
+                <td>MTU: <span id="source_mtu">n/a</span></td>
+                <td>MTU: <span id="dest_mtu">n/a</span></td>
+            </tr>
+            </table>
             <div class="content"></div>
         </div>
 

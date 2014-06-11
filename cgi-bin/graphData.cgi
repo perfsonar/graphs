@@ -22,6 +22,14 @@ use lib "$FindBin::RealBin/../lib";
 use perfSONAR_PS::Client::Esmond::ApiFilters;
 use perfSONAR_PS::Client::Esmond::ApiConnect;
 
+# Lookup Service libraries
+use SimpleLookupService::Client::SimpleLS;
+use perfSONAR_PS::Client::LS::PSRecords::PSService;
+use perfSONAR_PS::Client::LS::PSRecords::PSInterface;
+use SimpleLookupService::Client::Bootstrap;
+use SimpleLookupService::Client::Query;
+use SimpleLookupService::QueryObjects::Network::InterfaceQueryObject;
+
 my $basedir = "$FindBin::Bin";
 
 # my $config_file = $basedir . '/etc/web_admin.conf';
@@ -55,8 +63,14 @@ if ($action eq 'data'){
 elsif ($action eq 'tests'){
     get_tests();
 }
+elsif ($action eq 'interfaces'){
+    get_interfaces();
+}
+elsif ($action eq 'ls_hosts'){
+    get_ls_hosts();
+}
 else {
-    error("Unknown action \"$action\", must specify either data or tests");
+    error("Unknown action \"$action\", must specify either data, tests, or interfaces");
 }
 
 sub get_data {
@@ -412,7 +426,7 @@ sub get_tests {
         while (my ($src, $values) = each %results) {
             while (my ($dst, $types) = each %$values) {
                 #warn "src: $src and dst: $dst\n";
-                while (my $type = each %$types) { #{$results{$dst}{$src}}) {
+                while (my $type = each %$types) { 
                     my $bidirectional = 0;
                     if (exists($results{$dst}{$src}{$type})) {
                         my $dst_res = $results{$dst}{$src}{$type};
@@ -436,100 +450,175 @@ sub get_tests {
                         my $destination_host = $src_res->{'destination_host'};
                         $bidirectional = 1 if (defined ($results{$dst}{$src}{$type}->{'week_average'}) && defined ($results{$src}{$dst}{$type}->{'week_average'}) );
 
-                    # Now combine with the source values
-                    $min = $src_res->{'week_min'} if (defined($src_res->{'week_min'}) && $src_res->{'week_min'} < $min);
-                    #warn "src_res min: " . $src_res->{'week_min'};
-                    #warn "src_res max: " . $src_res->{'week_max'};
-                    $max = $src_res->{'week_max'} if (defined($src_res->{'week_max'}) &&  $src_res->{'week_max'} > $max);
+                        # Now combine with the source values
+                        $min = $src_res->{'week_min'} if (defined($src_res->{'week_min'}) && (!defined($min) || $src_res->{'week_min'} < $min));
+                        $max = $src_res->{'week_max'} if (defined($src_res->{'week_max'}) && (!defined($max) || $src_res->{'week_max'} > $max));
+                        #warn "src_res min: " . $src_res->{'week_min'};
+                        #warn "src_res max: " . $src_res->{'week_max'};
 
-                    if (defined $src_average && defined($dst_average)) {
-                        $average = ($src_average + $dst_average) / 2;
-                    } elsif (defined $src_average) {
-                        $average = $src_average;
-                    } elsif (defined $dst_average) {
-                        $average = $dst_average;
+                        if (defined $src_average && defined($dst_average)) {
+                            $average = ($src_average + $dst_average) / 2;
+                        } elsif (defined $src_average) {
+                            $average = $src_average;
+                        } elsif (defined $dst_average) {
+                            $average = $dst_average;
+                        }
+
+                        $last_update = $src_res->{'last_update'} if (defined ($src_res->{'last_update'}) &&  $src_res->{'last_update'} > $last_update );
+                        $protocol = $src_res->{'protocol'} if !defined $protocol;
+                        $duration = $src_res->{'duration'} if !defined $duration;;
+    
+                        $results{$src}{$dst}{$type}->{'week_max'} = $max;
+                        $results{$src}{$dst}{$type}->{'week_min'} = $min;
+                        $results{$src}{$dst}{$type}->{'week_average'} = $average;
+                        $results{$src}{$dst}{$type}->{'last_update'} = $last_update;
+                        $results{$src}{$dst}{$type}->{'duration'} = $duration;
+                        $results{$src}{$dst}{$type}->{'protocol'} = $protocol;
+                        $results{$src}{$dst}{$type}->{'source_host'} = $source_host;
+                        $results{$src}{$dst}{$type}->{'destination_host'} = $destination_host;
+                        $results{$src}{$dst}{$type}->{'src_average'} = $src_average;
+                        $results{$src}{$dst}{$type}->{'dst_average'} = $dst_average;
+                        $results{$src}{$dst}{$type}->{'src_min'} = $src_min;
+                        $results{$src}{$dst}{$type}->{'dst_min'} = $dst_min;
+                        $results{$src}{$dst}{$type}->{'src_max'} = $src_max;
+                        $results{$src}{$dst}{$type}->{'dst_max'} = $dst_max;
+                        $results{$src}{$dst}{$type}->{'bidirectional'} = $bidirectional;
+
+                        delete $results{$dst}{$src}{$type};
                     }
+                    delete $results{$dst}{$src} if !%{$results{$dst}{$src}};
+                    delete $results{$dst} if !%{$results{$dst}};
 
-                    $last_update = $src_res->{'last_update'} if (defined ($src_res->{'last_update'}) &&  $src_res->{'last_update'} > $last_update );
-                    $protocol = $src_res->{'protocol'} if !defined $protocol;
-                    $duration = $src_res->{'duration'} if !defined $duration;;
-
-                    $results{$src}{$dst}{$type}->{'week_max'} = $max;
-                    $results{$src}{$dst}{$type}->{'week_min'} = $min;
-                    $results{$src}{$dst}{$type}->{'week_average'} = $average;
-                    $results{$src}{$dst}{$type}->{'last_update'} = $last_update;
-                    $results{$src}{$dst}{$type}->{'duration'} = $duration;
-                    $results{$src}{$dst}{$type}->{'protocol'} = $protocol;
-                    $results{$src}{$dst}{$type}->{'source_host'} = $source_host;
-                    $results{$src}{$dst}{$type}->{'destination_host'} = $destination_host;
-                    $results{$src}{$dst}{$type}->{'src_average'} = $src_average;
-                    $results{$src}{$dst}{$type}->{'dst_average'} = $dst_average;
-                    $results{$src}{$dst}{$type}->{'src_min'} = $src_min;
-                    $results{$src}{$dst}{$type}->{'dst_min'} = $dst_min;
-                    $results{$src}{$dst}{$type}->{'src_max'} = $src_max;
-                    $results{$src}{$dst}{$type}->{'dst_max'} = $dst_max;
-                    $results{$src}{$dst}{$type}->{'bidirectional'} = $bidirectional;
-
-                    delete $results{$dst}{$src}{$type};
                 }
-                delete $results{$dst}{$src} if !%{$results{$dst}{$src}};
-                delete $results{$dst} if !%{$results{$dst}};
-
             }
         }
     }
-}
 
-# FLATTEN DATASTRUCTURE
-my @results_arr;
-if ($flatten == 1) {
-    while (my ($src, $values) = each %results) {
-        while (my ($dst, $types) = each %$values) {
-            #warn "src: $src and dst: $dst\n";
-            my $row = {};
-            while (my $type = each %$types) { #{$results{$dst}{$src}}) {
-                #my $row = {};
-                while (my ($key, $value) = each %{$results{$src}{$dst}{$type}}) {
-                    #if ($key ne 'source_host' && $key ne 'destination_host') {
-                    $row->{"${type}_$key"} = $value;
-                    #} else {
-                    #$row->{$key} = $value;
-                    #}
-                    #$row->{$key} = $value;
+    # FLATTEN DATASTRUCTURE
+    my @results_arr;
+    if ($flatten == 1) {
+        while (my ($src, $values) = each %results) {
+            while (my ($dst, $types) = each %$values) {
+                #warn "src: $src and dst: $dst\n";
+                my $row = {};
+                while (my $type = each %$types) { 
+                    #my $row = {};
+                    while (my ($key, $value) = each %{$results{$src}{$dst}{$type}}) {
+                        $row->{"${type}_$key"} = $value;
+                    }
+                    $row->{'source'} = $src;
+                    $row->{'destination'} = $dst;
                 }
-
-                $row->{'source'} = $src;
-                $row->{'destination'} = $dst;
-                #$row->{'type'} = $type;
-                #$row->{'source_host'} = $results{$src}{$dst}{$type}->{'source_host'};
-                #$row->{'destination_host'} = $results{$src}{$dst}{$type}->{'destination_host'};
+                push @results_arr, $row;
             }
-            push @results_arr, $row;
         }
+
+    }
+    #warn "Total metadata time (s): $total_metadata\n";
+    #warn "Total data time (s): $total_data\n";
+    #warn "Total time: " . Time::HiRes::tv_interval($method_start_time);
+
+    print $cgi->header('text/json');
+    if ($flatten == 1) {
+        print to_json(\@results_arr);
+    } else {
+        print to_json(\%results);
     }
 
 }
-#    my @results_arr;
-#    while (my ($source, $destination, $type) = each %results) {
-#        my %row = $results{$source}{$destination}{$type};
-#        $row{'source'} = $source;
-#        $row{'destination'} = $destination;
-#        $row{'type'} = $type;
-#        
-#        push @results_arr, %row;
-#    }
-warn "Total metadata time (s): $total_metadata\n";
-warn "Total data time (s): $total_data\n";
-warn "Total time: " . Time::HiRes::tv_interval($method_start_time);
 
-print $cgi->header('text/json');
-if ($flatten == 1) {
-    print to_json(\@results_arr);
-} else {
+sub get_ls_hosts {
+    #my $source     = $cgi->param('source')     || error("Missing required parameter \"src\"");
+    my %hosts;
+
+    my %results;
+    my $ls_bootstrap_client = SimpleLookupService::Client::Bootstrap->new();
+    $ls_bootstrap_client->init();
+    my $urls = $ls_bootstrap_client->query_urls();
+    warn "urls: " . Dumper @$urls;
+
+    my $error_message;
+
+    print $cgi->header('text/json');
+    #print to_json(\%results);
+    print to_json($urls);
+
+}
+
+sub get_interfaces {
+    #my $url     = $cgi->param('url')     || error("Missing required parameter \"url\"");
+    my $source     = $cgi->param('source'); #    || error("Missing required parameter \"src\"");
+    my $dest       = $cgi->param('dest'); #    || error("Missing required parameter \"dest\"");
+    my $interface  = $cgi->param('interface'); #    || error("Missing required parameter \"interface\"");
+    my $ls_url      = $cgi->param('ls_url')    || error("Missing required parameter \"ls_url\"");
+    my %hosts;
+    $hosts{source} = $source;
+    $hosts{dest} = $dest;
+    my $ip = $interface;
+    my %results;
+
+    #while (my ($type, $ip) = each(%hosts)) {
+        # Bring in info from LS
+
+        #my $hostname = "ps4.es.net";
+        #my $port = 9095;
+        #my $hostname = "ndb1.internet2.edu";
+        my $hostname = 'ps-west.es.net';
+        my $port = 8090;
+
+        my $server = SimpleLookupService::Client::SimpleLS->new();
+        $server->init( { host => $hostname, port => $port } );
+        $server->setUrl($ls_url);
+        $server->connect();
+
+        #my $ls_bootstrap_client = SimpleLookupService::Client::Bootstrap->new();
+        #$ls_bootstrap_client->init();
+        #my @urls = $ls_bootstrap_client->query_urls();
+        #warn "urls: " . Dumper @urls;
+
+        my $query_object = SimpleLookupService::QueryObjects::Network::InterfaceQueryObject->new();
+        $query_object->init();
+        # querying with [$source, $dest] won't work because this is an AND operation
+        #$query_object->setInterfaceAddresses( [ $source, $dest ] );
+        $query_object->setInterfaceAddresses( $ip );
+
+        my $query = new SimpleLookupService::Client::Query;
+        $query->init( { server => $server } );
+
+        my ($resCode, $res) = $query->query( $query_object );
+
+        my $capacity = 0;
+        my $mtu = 0;
+        if ($res && @$res > 0) {
+            $res = shift @$res;
+            warn "res: " . Dumper $res;
+            $capacity = $res->getInterfaceCapacity();
+            $capacity = shift @$capacity;
+            my $mtu = $res->getInterfaceMTU();
+            $mtu = shift @$mtu;
+            $results{'capacity'} = $capacity if (defined($capacity));
+            $results{'mtu'} = $mtu if (defined($mtu));        
+        }
+
+        #}
+    #my $interface = new perfSONAR_PS::Client::LS::PSRecords::PSInterface();
+    #add a check to see if server status is "alive" and the do the registration.
+
+    #my $service = new perfSONAR_PS::Client::LS::PSRecords::PSService();
+    #$service->init(
+    #    serviceLocator => "200.237.193.37",
+    #);
+    #my $ls_client = new SimpleLookupService::Client::Query->new();
+
+    #$ls_client->init({server => $server});
+
+    #my ($resCode, $res) = $ls_client->register();
+
+    print $cgi->header('text/json');
     print to_json(\%results);
-}
 
 }
+
 
 sub error {
     my $err = shift;

@@ -21,6 +21,9 @@ use JSON;
 #print cgi-header
 my $cgi = new CGI;
 print $cgi->header;
+#print $cgi->header(-type=>'text/html',
+#        '-Access-Control-Allow-Origin'=>'*'
+#    );
 
 my $basedir     = "$RealBin/";
 my $templatedir = "$basedir/../templates";
@@ -67,6 +70,8 @@ if ( defined @{ %{$string}->{'groups'} } ) {
     @tests = @{ %{$string}->{'groups'} };
 }
 
+
+
 my %vars = (
     services           => HTML::Entities::encode(\%servicetypes),
     hosts              => HTML::Entities::encode(\%hostlist),
@@ -75,6 +80,8 @@ my %vars = (
     source             => $source,
     dest               => $dest,
     window             => $window
+    #source_capacity => $source_capacity,
+    #source_mtu      => $source_mtu
     );
 if ( scalar @tests >= 1 ) {
     $vars{groups} = \@tests;
@@ -114,3 +121,6 @@ sub errorPage {
 
     return $html;
 }
+
+
+
