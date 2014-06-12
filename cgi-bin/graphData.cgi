@@ -328,10 +328,12 @@ sub get_tests {
 
     my %results;
 
-    my $summary_window = 86400; # try 0 or 86400
+    #my $summary_window = 86400; # try 0 or 86400
+    my $summary_window = 3600; # try 0 or 86400
 
     my $now = time;
     my $total_data = 0;
+    my $all_types = [];
 
     foreach my $metadatum (@$metadata){
 
@@ -352,6 +354,7 @@ sub get_tests {
             my $type        = $event_type->event_type();
             my $last_update = $event_type->time_updated(); 
 
+
             # TEMP HACK
             next unless ($type eq 'throughput' || $type eq 'packet-loss-rate' || $type eq 'histogram-owdelay');
 
@@ -361,6 +364,8 @@ sub get_tests {
             # now grab the last 1 weeks worth of data to generate a high level view
             $event_type->filters->time_start($now - 86400 * 7);
             $event_type->filters->time_end($now);
+            $event_type->filters->source($src); # TODO: CHECK THIS
+            $event_type->filters->destination($dst);
 
             $start_time = [Time::HiRes::gettimeofday()];
             my $data;
@@ -377,6 +382,7 @@ sub get_tests {
                 $data = $stats_summ->get_data() if defined $stats_summ;
                 #warn "stats_data: " . Dumper $data;
                 if (@$data > 0){
+                    push @$all_types, $type if (!grep {$_ eq $type} @$all_types);
                     foreach my $datum (@$data){
                         $total += $datum->val->{mean};
                         $max = $datum->val->{maximum} if !defined($max) || $datum->val->{maximum} > $max;
@@ -394,6 +400,7 @@ sub get_tests {
                     $data = $event_type->get_data();
                 }
                 if (@$data > 0){
+                    push @$all_types, $type if (!grep {$_ eq $type} @$all_types);
                     foreach my $datum (@$data){
                         $total += $datum->val;
                         $max = $datum->val if !defined($max) || $datum->val > $max;
@@ -403,21 +410,23 @@ sub get_tests {
                 }
             }
             $total_data += Time::HiRes::tv_interval($start_time);
-            warn "Time elapsed getting data: " . Time::HiRes::tv_interval($start_time);
+            #warn "Time elapsed getting data: " . Time::HiRes::tv_interval($start_time);
 
             error($event_type->error) if ($event_type->error);
-
-            $results{$src}{$dst}{$type} = {last_update  => $last_update,
-                week_average => $average,
-                week_min     => $min,
-                week_max     => $max,
-                duration     => $duration,
-                protocol     => $protocol,
-                src          => $src,
-                dst           => $dst,
-                source_host  => $source_host,
-                destination_host => $destination_host,
-                bidirectional => 0};
+        
+            if (@$data > 0 ) {
+                $results{$src}{$dst}{$type} = {last_update  => $last_update,
+                    week_average => $average,
+                    week_min     => $min,
+                    week_max     => $max,
+                    duration     => $duration,
+                    protocol     => $protocol,
+                    src          => $src,
+                    dst           => $dst,
+                    source_host  => $source_host,
+                    destination_host => $destination_host,
+                    bidirectional => 0};
+            }
         }
     }
 
@@ -426,28 +435,37 @@ sub get_tests {
         while (my ($src, $values) = each %results) {
             while (my ($dst, $types) = each %$values) {
                 #warn "src: $src and dst: $dst\n";
-                while (my $type = each %$types) { 
+                #while (my $type = each %$types) { }
+                foreach my $type (@$all_types) {
                     my $bidirectional = 0;
-                    if (exists($results{$dst}{$src}{$type})) {
-                        my $dst_res = $results{$dst}{$src}{$type};
-                        my $src_res = $results{$src}{$dst}{$type};
-                        my $average = undef; # = $dst_res->{'week_average'};# || 0;
-                        my $dst_average = $dst_res->{'week_average'};
-                        my $src_average = $src_res->{'week_average'};
-                        my $dst_min = $dst_res->{'week_min'};
-                        my $src_min = $src_res->{'week_min'};
-                        my $dst_max = $dst_res->{'week_max'};
-                        my $src_max = $src_res->{'week_max'};
+                    my ($src_res, $src_average, $src_min, $src_max, $source_host);
+                    my ($dst_res, $dst_average, $dst_min, $dst_max, $destination_host);
+                    my ($average, $min, $max, $duration, $last_update, $protocol);
+                    if (exists($results{$src}{$dst}{$type})) {
+                        $src_res = $results{$src}{$dst}{$type};
+                        $src_average = $src_res->{'week_average'};
+                        $src_min = $src_res->{'week_min'};
+                        $src_max = $src_res->{'week_max'};
+                        $source_host = $src_res->{'source_host'};
+                        $protocol = $src_res->{'protocol'};
+                        $destination_host = $src_res->{'destination_host'};
 
-                        my $min = $dst_res->{'week_min'};
-                        my $max = $dst_res->{'week_max'};
-                        my $duration = $dst_res->{'duration'};
-                        my $last_update = $dst_res->{'last_update'} || 0;
-                        my $protocol = $dst_res->{'protocol'};
+                    }
+                    if (exists($results{$dst}{$src}{$type})) {
+                        $dst_res = $results{$dst}{$src}{$type};
+                        $average = undef; # = $dst_res->{'week_average'};# || 0;
+                        $dst_average = $dst_res->{'week_average'};
+                        $dst_min = $dst_res->{'week_min'};
+                        $dst_max = $dst_res->{'week_max'};
+
+                        $min = $dst_res->{'week_min'};
+                        $max = $dst_res->{'week_max'};
+                        $duration = $dst_res->{'duration'};
+                        $last_update = $dst_res->{'last_update'} || 0;
+                        $protocol = $dst_res->{'protocol'};
                         #warn "src_res: " . Dumper $src_res;
                         #warn "dst_res: " . Dumper $dst_res;
-                        my $source_host = $src_res->{'source_host'};
-                        my $destination_host = $src_res->{'destination_host'};
+                        $destination_host = $dst_res->{'destination_host'}; # TODO: DOUBLE-CHECK THIS
                         $bidirectional = 1 if (defined ($results{$dst}{$src}{$type}->{'week_average'}) && defined ($results{$src}{$dst}{$type}->{'week_average'}) );
 
                         # Now combine with the source values
@@ -468,6 +486,8 @@ sub get_tests {
                         $protocol = $src_res->{'protocol'} if !defined $protocol;
                         $duration = $src_res->{'duration'} if !defined $duration;;
     
+                        delete $results{$dst}{$src}{$type};
+                    }
                         $results{$src}{$dst}{$type}->{'week_max'} = $max;
                         $results{$src}{$dst}{$type}->{'week_min'} = $min;
                         $results{$src}{$dst}{$type}->{'week_average'} = $average;
@@ -484,8 +504,6 @@ sub get_tests {
                         $results{$src}{$dst}{$type}->{'dst_max'} = $dst_max;
                         $results{$src}{$dst}{$type}->{'bidirectional'} = $bidirectional;
 
-                        delete $results{$dst}{$src}{$type};
-                    }
                     delete $results{$dst}{$src} if !%{$results{$dst}{$src}};
                     delete $results{$dst} if !%{$results{$dst}};
 
@@ -501,7 +519,8 @@ sub get_tests {
             while (my ($dst, $types) = each %$values) {
                 #warn "src: $src and dst: $dst\n";
                 my $row = {};
-                while (my $type = each %$types) { 
+                #while (my $type = each %$types) { }
+                foreach my $type (@$all_types) {
                     #my $row = {};
                     while (my ($key, $value) = each %{$results{$src}{$dst}{$type}}) {
                         $row->{"${type}_$key"} = $value;
