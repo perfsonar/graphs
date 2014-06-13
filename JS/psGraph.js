@@ -4,6 +4,7 @@ require(["dijit/Dialog", "dijit/form/Button", "dojo/domReady!", "dojox/widget/Di
 //        style: "width: 300px"
 //    });
 
+    var showExtra = true;
     var dlg = new dojox.widget.DialogSimple({ 
            title:"perfSONAR Charts", 
            executeScripts:true, 
@@ -128,15 +129,15 @@ d3.json(url, function(error,ps_data) {
         .columns([
             function(d) { return '<span class="psgraph-val">' + format_host(d, 'source') + '</span>'; }, 
             function(d) { return '<span class="psgraph-val">' + format_host(d, 'destination') + '</span>'; },
-            function(d) { return format_bidirectional(d); },
-            function(d) { return format_test_values(d, 'protocol'); },
-            function(d) { return format_test_values(d, 'duration'); },
             function(d) { return format_stats(d, 'throughput_src'); }, 
             function(d) { return format_stats(d, 'throughput_dst'); }, 
             function(d) { return format_stats(d, 'owdelay_src'); }, 
             function(d) { return format_stats(d, 'owdelay_dst'); }, 
             function(d) { return format_stats(d, 'loss_src'); }, 
             function(d) { return format_stats(d, 'loss_dst'); }, 
+            function(d) { if (showExtra) return format_bidirectional(d); },
+            function(d) { if (showExtra) return format_test_values(d, 'protocol'); },
+            function(d) { if (showExtra) return format_test_values(d, 'duration'); },
         ]);
 
     var format_stats = function(d, prefix) {
@@ -175,7 +176,7 @@ d3.json(url, function(error,ps_data) {
         var data = new Array();
         data[0] = new Object();
         data[0].label = 'avg';
-        data[0].value = (avg !== null ? (d3.format(format_str)(avg) + suffix) : 'n/a');
+        data[0].value = (avg !== null && !isNaN(avg) ? (d3.format(format_str)(avg) + suffix) : 'n/a');
         if (d[prefix+'_last_update'] < inactive_threshold) {
             data[0].inactive = true;
         } else {
@@ -183,7 +184,7 @@ d3.json(url, function(error,ps_data) {
         }
         data[1] = new Object();
         data[1].label = 'min';
-        data[1].value = (min !== null ? (d3.format(format_str)(min) + suffix) : 'n/a');
+        data[1].value = (min !== null && !isNaN(min) ? (d3.format(format_str)(min) + suffix) : 'n/a');
         if (d[prefix+'_last_update'] < inactive_threshold) {
             data[1].inactive = true;
         } else {
@@ -191,7 +192,7 @@ d3.json(url, function(error,ps_data) {
         }
         data[2] = new Object();
         data[2].label = 'max';
-        data[2].value = (max !== null ? (d3.format(format_str)(max) + suffix): 'n/a');
+        data[2].value = (max !== null  && !isNaN(max) ? (d3.format(format_str)(max) + suffix): 'n/a');
         if (d[prefix+'_last_update'] < inactive_threshold) {
             data[2].inactive = true;
         } else {
@@ -211,7 +212,13 @@ d3.json(url, function(error,ps_data) {
             inactive_class = '';
             if (data[d].inactive) { inactive_class = ' inactive'; }
             ret += '<tr class="' + inactive_class + '">';
-            ret += '<td>' + data[d].label + ':</td><td><span class="psgraph-val">' + data[d].value + '</span></td>';
+            ret += '<td>' + data[d].label + ':</td><td><span class="psgraph-val">' + 
+                ((data[d].value !== null 
+                  && typeof data[d].value !== 'undefined') 
+                 ? data[d].value 
+                 : 'n/a ') 
+                //+ data[d].value 
+                +  '</span></td>';
             ret += '</tr>';
         }
         return ret;
@@ -221,7 +228,7 @@ d3.json(url, function(error,ps_data) {
         var ret = '';
         var data = new Array();
         data[0] = new Object();
-        data[0].label = 'bwctl';
+        data[0].label = 'throughput';
         data[0].value = d["throughput_" + suffix];
         if (d["throughput_last_update"] < inactive_threshold) {
             data[0].inactive = true;
@@ -229,7 +236,7 @@ d3.json(url, function(error,ps_data) {
             data[0].inactive = false;
         }
         data[1] = new Object();
-        data[1].label = 'owamp';
+        data[1].label = 'latency';
         data[1].value = d["owdelay_" + suffix];
         if (d["owdelay_last_update"] < inactive_threshold) {
             data[1].inactive = true;
@@ -267,10 +274,10 @@ d3.json(url, function(error,ps_data) {
         var ret = '';
         var data = new Array();
         data[0] = new Object();
-        data[0].label = 'bwctl';
+        data[0].label = 'throughput';
         data[0].value = format_boolean(d.throughput_bidirectional);
         data[1] = new Object();
-        data[1].label = 'owamp';
+        data[1].label = 'latency';
         data[1].value = format_boolean(d.owdelay_bidirectional);
         data[2] = new Object();
         data[2].label = 'loss';

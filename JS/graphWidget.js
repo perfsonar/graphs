@@ -4,7 +4,7 @@ var src = source;
 var dst = dest;
 var ma_url = '';
 
-var timePeriod = ioQuery.queryToObject(theHash()).timeframe || '';  // get hash
+var timePeriod = ioQuery.queryToObject(theHash()).timeframe || '1w';  // get hash
 var time_diff = 0;
 var summary_window = 0;
 
