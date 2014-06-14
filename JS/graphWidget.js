@@ -450,38 +450,59 @@ d3.json(url, function(error,ps_data) {
     };
 
     dc.renderAll();
+
     // 3rd y axis
-    var y1 = d3.scale.linear().range([412, 0]);
-    var yAxisRight = d3.svg.axis().scale(y1)  // This is the new declaration for the 'Right', 'y1'
-        .tickFormat(function(d) { return format_loss(d); })
-        //.tickFormat(function(d) { return (d <= 100 ? format_loss(d) : ''); })
-        .orient("right").ticks(5);           // and includes orientation of the axis to the right.
-    yAxisRight.scale(y1);
-    // Set a default range, so we don't get a broken axis if there's no data
-    if(maxLoss == 0) {
-        y1.domain([0, 1]);
-    } else {
-        y1.domain([0, maxLoss * axisScale]);
-        //y1.domain([0, maxLoss]);
-    }
-    
-    var svg = allTestsChart.svg(); // d3.select('#chart svg');
+    addAxis(maxLoss, "Loss", function(d) { return d3.format('.2%')(d); }, "#ff0000");
+    // Packet retransmissions axis
+    addAxis(maxPacketRetrans, "Packet Retransmissions", function(d) { return d; }, "#ff00ff");
 
-    svg.attr("viewbox", "0 0 750 465")
-        .attr("width", "810px")
-        .attr("height", "100%");
+      function addAxis(maxVal, label, axisFormat, color) {
+          var axisWidth = 60;
+          var y1 = d3.scale.linear().range([412, 0]);
+          var yAxisRight = d3.svg.axis().scale(y1)  // This is the new declaration for the 'Right', 'y1'
+              //.tickFormat(function(d) { return d3.format('.2%')(d); } )
+              .tickFormat(axisFormat)
+              .orient("right").ticks(5);           // and includes orientation of the axis to the right.
+          yAxisRight.scale(y1);
+          // Set a default range, so we don't get a broken axis if there's no data
+          if(maxVal == 0) {
+              y1.domain([0, 1]);
+          } else {
+              y1.domain([0, maxVal * axisScale]);
+              //y1.domain([0, maxLoss]);
+          }
 
-      svg.append("g")             
-        .attr("class", "axis yr")    
-        .attr("transform", "translate(" + '760' + " ,10)")
-        .style("fill", "red")   
-        .call(yAxisRight);  
+          var svg = allTestsChart.svg(); // d3.select('#chart svg');
+          console.log(svg.attr("width"));
+          var svgWidth = svg.attr('width');
+          var svgHeight = svg.attr('height');
+          var origWidth = 750;
+          var origHeight = 465;
 
-      svg.append("text")
-          .text("Loss")
-          .attr("class", "yr-label")
-          .attr("text-anchor", "end")
-          .attr("transform", "translate(" + '800' + " ,225) rotate(90)");
-});
+          svg.attr("viewbox", "0 0 750 465")
+              .attr("width", (+svgWidth + axisWidth) )
+              .attr("height", "100%");
+
+          svg.append("g")             
+              .attr("class", "axis yr")    
+              .attr("transform", "translate(" + (+svgWidth + 10) + " ,10)")
+              .style("fill", color)   
+              .call(yAxisRight);  
+
+          var svgLabel = svg.append("text")
+              .text(label)
+              .attr("class", "yr-label")
+              .attr("text-anchor", "middle")
+              .attr("width", svgHeight)
+              .attr("transform", "translate(" + (+svgWidth + 50) + " , " + origHeight/2 + ") rotate(90)");
+              //.attr("transform", "translate(" + (+svgWidth + 50) + " , 225) rotate(90)");
+//
+
+        //var labelHeight = svgLabel.attr("height");
+        //svgLabel.attr("transform", "translate(" + (+svgWidth + 50) + " , " + +labelHeight/2 + ") rotate(90)");
+          console.log(svg.attr("width"));
+
+      }
+}); // end d3.json call
 }; // end drawChart() function
 }); // end dojo require function
