@@ -1,12 +1,12 @@
-require(["dojo/dom", "dojo/on", "dojo/hash", "dojo/io-query"], function(theDom, theOn, theHash, ioQuery){
-
-var src = source;
+require(["dojo/dom", "dojo/on", "dojo/hash", "dojo/io-query", "dojo/domReady!"], function(theDom, theOn, theHash, ioQuery){
 var dst = dest;
 var ma_url = '';
+var now = Math.round(new Date().getTime() / 1000);
 
 var timePeriod = ioQuery.queryToObject(theHash()).timeframe || '1w';  // get hash
 var time_diff = 0;
 var summary_window = 0;
+
 
 var setTimeVars = function (period) {
 
@@ -44,10 +44,10 @@ var ls_list_url = 'https://perfsonar-dev.grnoc.iu.edu/serviceTest/graphData.cgi?
 var ls_query_url = 'https://perfsonar-dev.grnoc.iu.edu/serviceTest/graphData.cgi?action=interfaces';
 
 
-var src_capacity = 'n/a';
-var src_mtu = 'n/a';
-var dest_capacity = 'n/a';
-var dest_mtu = 'n/a';
+var src_capacity = 'Unknown';
+var src_mtu = 'Unknown';
+var dest_capacity = 'Unknown';
+var dest_mtu = 'Unknown';
 
 // Speed up calls to hasOwnProperty
 var hasOwnProperty = Object.prototype.hasOwnProperty;
@@ -87,8 +87,6 @@ d3.json(ls_list_url, function(error, ls_list_data) {
                 var url = ls_list_data[i];
                 var ls = ls_query_url + '&ls_url=' + encodeURI(url) + '&interface=' + ips[j];
                 d3.json(ls, function(error, interface_data) {
-                    console.log(ls);
-                    console.log(interface_data.count);
                     if(!isEmpty(interface_data)) {
                         interface_data.ip = ips[j];
                         rows.push(interface_data);
@@ -99,8 +97,6 @@ d3.json(ls_list_url, function(error, ls_list_data) {
         }
 
         function combineData() {
-            console.log('combining data'); 
-            console.log(rows);
             for(var i in rows) {
                 var row = rows[i];
                 if (row.mtu) {
@@ -124,7 +120,6 @@ d3.json(ls_list_url, function(error, ls_list_data) {
                         destCapacity.html( d3.format('.2s')(dest_capacity) );
                     }
                 }
-                console.log(row);
             }
         }
 
@@ -138,25 +133,58 @@ if (uri.indexOf('?') > -1) {
     var queryObject = ioQuery.queryToObject(query);
     if (queryObject.url) {
         ma_url = queryObject.url;
+        // remove #whatever from ma_url, if applicable
+        if (ma_url.indexOf('#') > -1) {
+            ma_url = ma_url.substring(0, ma_url.indexOf('#'));
+        }
     }
 } 
+
 
 var base_url = 'https://perfsonar-dev.grnoc.iu.edu/serviceTest/graphData.cgi?url=' + ma_url + '&action=data&src=' + source + '&dest=' + dest;
 var url = 'https://perfsonar-dev.grnoc.iu.edu/serviceTest/graphData.cgi?url=' + ma_url + '&action=data&src=' + source + '&dest=' + dest + '&start=' + start_ts + '&end=' + end_ts + '&window=' + summary_window;
 
+var loading = d3.select('#chart #loading');
+
 drawChart(url);
+
 function drawChart(url) {
 
+    //var chart = d3.select('#chart');
+    //chart.style('display', 'none');
+    loading.style('display', 'block');
+
+
 d3.json(url, function(error,ps_data) {
+    //var loading = d3.select('#chart #loading');
+    loading.style('display', 'none');
 
-    var start_date = new Date (start_ts);
-    var end_date = new Date (end_ts);
+    var prevLink = d3.selectAll('.ps-timerange-nav .prev');
+    prevLink.on("click", function() { 
+        d3.event.preventDefault(); 
+        end_ts = end_ts - time_diff;
+        start_ts = start_ts - time_diff;
+        url = 'https://perfsonar-dev.grnoc.iu.edu/serviceTest/graphData.cgi?url=' + ma_url + '&action=data&src=' + source + '&dest=' + dest + '&start=' + start_ts + '&end=' + end_ts + '&window=' + summary_window;
+        drawChart(url);
+        if (end_ts < now ) {
+            nextLink.style('display', 'block');
+        }
+    });
+    var nextLink = d3.selectAll('.ps-timerange-nav .next');
+    prevLink.html('<a href="#">Previous ' + timePeriod + '</a>');
+    nextLink.html('<a href="#">Next ' + timePeriod + '</a>');
+    nextLink.on("click", function() { 
+        d3.event.preventDefault(); 
+        end_ts = end_ts + time_diff;
+        start_ts = start_ts + time_diff;
+        url = 'https://perfsonar-dev.grnoc.iu.edu/serviceTest/graphData.cgi?url=' + ma_url + '&action=data&src=' + source + '&dest=' + dest + '&start=' + start_ts + '&end=' + end_ts + '&window=' + summary_window;
+        drawChart(url);
+    });
+    if (end_ts >= now ) {
+        nextLink.style('display', 'none');
+    }
 
-    //var capacityDiv = d3.select('#capacity');
-    //var cap = capacityDiv.html();
-    //capacityDiv.html( d3.format('s')(cap));
-
-    timePeriod = ioQuery.queryToObject(theHash()).timeframe || '';  // get hash
+    timePeriod = ioQuery.queryToObject(theHash()).timeframe || '1w';  // get hash
     if (timePeriod != '') {
         dojo.query('#ps-all-tests #time-selector a.zoomLink').removeClass('active');
         dojo.query('#ps-all-tests #time-selector a.zoomLink').forEach(function(node, index, nodelist) {
@@ -165,6 +193,10 @@ d3.json(url, function(error,ps_data) {
             }
         });
     }
+
+    var start_date = new Date (start_ts);
+    var end_date = new Date (end_ts);
+
     var allTestsChart = dc.compositeChart("#ps-all-tests");
     var throughputChart = dc.psLineChart(allTestsChart);
     var owdelayChart = dc.psLineChart(allTestsChart);
@@ -234,8 +266,8 @@ d3.json(url, function(error,ps_data) {
     var axisScale = 1.25;
 
     var setHeader = function() { 
-        var rangeLabel = 'From ' + format_ts_header(new Date(1000 * start_ts)) + ' to ' + format_ts_header(new Date(1000 * end_ts));
-        var chartHeader = d3.select('#chart .chartHeader .content').html( rangeLabel );
+        var rangeLabel = 'Date range: ' + format_ts_header(new Date(1000 * start_ts)) + ' to ' + format_ts_header(new Date(1000 * end_ts));
+        var chartHeader = d3.select('.chartHeader .content').html( rangeLabel );
     };
 
     setHeader();
@@ -402,7 +434,7 @@ d3.json(url, function(error,ps_data) {
             ndx.remove();
         }
 
-        d3.selectAll(".chart").selectAll("svg").remove();
+        d3.selectAll("#chart").selectAll("svg").remove();
         if (allTestsChart !== null) {
             allTestsChart.resetSvg(); 
         }

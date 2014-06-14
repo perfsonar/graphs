@@ -32,49 +32,29 @@ var dest = '[% dest %]';
 
 <!-- <div id="body" class="dijitContentPane" dojotype="dijit.layout.ContentPane" widgetid="body"> -->
 
-<!-- 
-<div id="loading">
-    <div id="circularG">
-    <div id="circularG_1" class="circularG">
-    </div>
-    <div id="circularG_2" class="circularG">
-    </div>
-    <div id="circularG_3" class="circularG">
-    </div>
-    <div id="circularG_4" class="circularG">
-    </div>
-    <div id="circularG_5" class="circularG">
-    </div>
-    <div id="circularG_6" class="circularG">
-    </div>
-    <div id="circularG_7" class="circularG">
-    </div>
-    <div id="circularG_8" class="circularG">
-    </div>
-    </div> 
-    <h4>Loading ...</h4>
-</div>
--->
+ 
+
 <!-- - See more at: http://cssload.net/#sthash.exGxzPML.dpuf -->
 
 <!-- </div> --> <!-- end body div -->
 
-    <div id="chart" style="width:790px;height:465px;">
         <div class="chartHeader">
             <h4>perfSONAR-PS Test Results</h4>
             <table class="hosts">
             <tr><th>Source: [% source %]</th><th>Destination: [% dest %]</th></tr>
             <tr>
-                <td>Capacity: <span id="source_capacity">n/a</span></td>
-                <td>Capacity: <span id="dest_capacity">n/a</span></td>
+                <td>Capacity: <span id="source_capacity">Unknown</span></td>
+                <td>Capacity: <span id="dest_capacity">Unknown</span></td>
             </tr>
             <tr>
-                <td>MTU: <span id="source_mtu">n/a</span></td>
-                <td>MTU: <span id="dest_mtu">n/a</span></td>
+                <td>MTU: <span id="source_mtu">Unknown</span></td>
+                <td>MTU: <span id="dest_mtu">Unknown</span></td>
             </tr>
             </table>
-            <div class="content"></div>
+            <div class="content">Date range: </div>
         </div>
+
+    <div id="chart" style="width:790px;height:465px;">
 
         <div id="ps-all-tests" class="chart"><h4>all tests</h4>
             <div id="time-selector">
@@ -85,6 +65,28 @@ var dest = '[% dest %]';
                 <a href="#" id="1mLink" class="zoomLink" name="1m">1m</a> 
                 <a href="#" id="1yLink" class="zoomLink" name="1y">1y</a>
             </div> 
+        <div id="loading">
+            <div id="circularG">
+            <div id="circularG_1" class="circularG">
+            </div>
+            <div id="circularG_2" class="circularG">
+            </div>
+            <div id="circularG_3" class="circularG">
+            </div>
+            <div id="circularG_4" class="circularG">
+            </div>
+            <div id="circularG_5" class="circularG">
+            </div>
+            <div id="circularG_6" class="circularG">
+            </div>
+            <div id="circularG_7" class="circularG">
+            </div>
+            <div id="circularG_8" class="circularG">
+            </div>
+            </div> 
+            <h4>Loading ...</h4>
         </div>
+        </div>
+        <div class="ps-timerange-nav"><div class="prev"><a href="#">Previous</a></div><div class="next"><a href="#">Next</a></div></div>
     </div>
 
