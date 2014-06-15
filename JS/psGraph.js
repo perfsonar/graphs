@@ -39,6 +39,9 @@ if (uri.indexOf('?') > -1) {
     var queryObject = ioQuery.queryToObject(query);
     if (queryObject.url) {
         ma_url = queryObject.url;
+        if (ma_url.indexOf('#') > -1) {
+            ma_url = ma_url.substring(0, ma_url.indexOf('#'));
+        }
     }
 } 
 //ma_url = encodeURI(ma_url);

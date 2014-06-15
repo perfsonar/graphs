@@ -175,6 +175,7 @@ d3.json(url, function(error,ps_data) {
         end_ts = end_ts - time_diff;
         start_ts = start_ts - time_diff;
         url = 'https://perfsonar-dev.grnoc.iu.edu/serviceTest/graphData.cgi?url=' + ma_url + '&action=data&src=' + source + '&dest=' + dest + '&start=' + start_ts + '&end=' + end_ts + '&window=' + summary_window;
+        d3.selectAll("#chart").selectAll("svg").remove();
         drawChart(url);
         if (end_ts < now ) {
             nextLink.style('display', 'block');
@@ -188,6 +189,7 @@ d3.json(url, function(error,ps_data) {
         end_ts = end_ts + time_diff;
         start_ts = start_ts + time_diff;
         url = 'https://perfsonar-dev.grnoc.iu.edu/serviceTest/graphData.cgi?url=' + ma_url + '&action=data&src=' + source + '&dest=' + dest + '&start=' + start_ts + '&end=' + end_ts + '&window=' + summary_window;
+        d3.selectAll("#chart").selectAll("svg").remove();
         drawChart(url);
     });
     if (end_ts >= now ) {
@@ -236,7 +238,7 @@ d3.json(url, function(error,ps_data) {
                     --p.count;
                     p.sum -= v[param];
                     p.avg = p.sum/p.count;
-                }
+                } 
                 return p;
             },
 
@@ -273,7 +275,8 @@ d3.json(url, function(error,ps_data) {
     var maxDelay = owdelayGroup.order(avgOrder).top(1)[0].value.avg;
     var maxLoss = lossGroup.order(avgOrder).top(1)[0].value.avg; 
     var maxPacketRetrans = packetRetransGroup.top(1)[0].value; 
-    var axisScale = 1.25;
+    var axisScale = 1.25; // Scale the axes so we have some padding at the top
+    var yAxisMax = 100; // All right Y axes will be scaled to max out at this value
 
     var setHeader = function() { 
         var rangeLabel = 'Date range: ' + format_ts_header(new Date(1000 * start_ts)) + ' to ' + format_ts_header(new Date(1000 * end_ts));
@@ -281,29 +284,20 @@ d3.json(url, function(error,ps_data) {
     };
 
     setHeader();
-
+    
     throughputChart.dimension(lineDimension)
         .group(throughputGroup, "Throughput")
         .mouseZoomable(true)
         //.renderDataPoints(true)
         //.interpolate('bundle')
-        /*
-        .defined(function(d) { 
-                return (!isNaN(d.data.value.avg)); 
-                //return (d.data.value !== 0); 
-        })
-        */
+        
+        //.defined(function(d) { 
+        //        return (!isNaN(d.data.value.avg)); 
+        //})
+        
     
         .valueAccessor(function (d) {
             return d.value.avg; 
-/*
-            if (d.value !== 0) {
-                lastThroughputVal = d.value;
-                return d.value;
-            } else {
-                return lastThroughputVal;
-            }
-*/
         })
         
         
@@ -322,6 +316,7 @@ d3.json(url, function(error,ps_data) {
         throughputChart.y(d3.scale.linear().domain([0, 1000]))
     }
 
+    
     owdelayChart.dimension(lineDimension)
         .group(owdelayGroup, "Latency")
         //.renderDataPoints(true)
@@ -332,7 +327,7 @@ d3.json(url, function(error,ps_data) {
                 })
 
         .valueAccessor(function (d) {
-            return d.value.avg; 
+            return yAxisMax * d.value.avg / maxDelay ; 
         })
         //.interpolate('bundle')
         .brushOn(false)        
@@ -353,7 +348,8 @@ d3.json(url, function(error,ps_data) {
         .brushOn(false)       
         .valueAccessor(function(d) {
             if (d.value.avg != 0) { 
-                return d.value.avg * maxDelay / maxLoss; 
+                return yAxisMax * d.value.avg / maxLoss; 
+
             } else {
                 return 0.01; // TODO: fix: hacky -- so we see "0" values
             }
@@ -365,7 +361,7 @@ d3.json(url, function(error,ps_data) {
             })
         .colors("#ff0000")
         //.elasticY(true)
-        .useRightYAxis(true)                                
+        .useRightYAxis(true) 
         .xAxis();
 
     packetRetransChart.dimension(lineDimension)
@@ -377,7 +373,7 @@ d3.json(url, function(error,ps_data) {
     
         .valueAccessor(function (d) {
             if (d.value !== 0) {
-                return d.value * maxDelay / maxPacketRetrans; 
+                return yAxisMax * d.value / maxPacketRetrans; 
             } else {
                 return 0;
             }
@@ -391,25 +387,42 @@ d3.json(url, function(error,ps_data) {
             })
         ;
 
+        //maxThroughput = 1;
     allTestsChart.width(750)
         .height(465)
         .brushOn(false)
         .mouseZoomable(true)
         .shareTitle(false)
+        //.compose([throughputChart, lossChart])
+        //.compose([owdelayChart, lossChart, packetRetransChart])
         .compose([throughputChart, owdelayChart, lossChart, packetRetransChart])
         .x(d3.time.scale().domain(d3.extent(ps_data, function(d) { return new Date(d.ts * 1000); })))
         .xAxisLabel('Date')
-        .y(d3.scale.linear().domain([0, maxThroughput * axisScale]))
+        .y(d3.scale.linear().domain([0, axis_value( maxThroughput, 1000000000)]))
         //.elasticY(true)
         //.yAxisPadding('15%')
         .yAxisLabel('Throughput')
         .rightYAxisLabel('Latency (ms)')
         //.rightYAxisPadding('15%')
         .legend(dc.legend().x(400))
-        .rightY(d3.scale.linear().domain([0, maxDelay * axisScale]))
+        //.rightY(d3.scale.linear().domain([0, axis_value(maxDelay, 50)]))
+        .rightY(d3.scale.linear().domain([0, yAxisMax * axisScale]).nice())
+        //.y(d3.scale.linear().domain([0, maxLoss * axisScale]))
         .xAxis();
     allTestsChart.yAxis().tickFormat(format_throughput);
+    if (maxDelay > 0) {
+        allTestsChart.rightYAxis().ticks(5)
+                     .tickFormat(function(d) { return d3.format()(Math.round(d * maxDelay / yAxisMax)) });
+    }
     allTestsChart.margins().left = 90;
+
+    function axis_value(d, defaultValue) {
+        if (d !== 0) {
+            return d * axisScale;
+        } else {
+            return defaultValue;
+        }
+    }
 
     // Handle zoom events
     dojo.query('#ps-all-tests #time-selector a.zoomLink').onclick(function(e){ 
@@ -461,7 +474,7 @@ d3.json(url, function(error,ps_data) {
 
     dc.renderAll();
 
-    // 3rd y axis
+    // Loss axis
     addAxis(maxLoss, "Loss", function(d) { return d3.format('.2%')(d); }, "#ff0000");
     // Packet retransmissions axis
     addAxis(maxPacketRetrans, "Packet Retransmissions", function(d) { return d; }, "#ff00ff");
