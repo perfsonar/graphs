@@ -41,7 +41,7 @@ var dest = '[% dest %]';
         <div class="chartHeader">
             <h4>perfSONAR-PS Test Results</h4>
             <table class="hosts">
-            <tr><th>Source: [% source %]</th><th>Destination: [% dest %]</th></tr>
+            <tr><th>Source: <span id="source_host"></span> ([% source %])</th><th>Destination: <span id="dest_host"></span> ([% dest %])</th></tr>
             <tr>
                 <td>Capacity: <span id="source_capacity">Unknown</span></td>
                 <td>Capacity: <span id="dest_capacity">Unknown</span></td>

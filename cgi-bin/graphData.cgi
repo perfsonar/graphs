@@ -69,8 +69,11 @@ elsif ($action eq 'interfaces'){
 elsif ($action eq 'ls_hosts'){
     get_ls_hosts();
 }
+elsif ($action eq 'hosts'){
+    get_host_info();
+}
 else {
-    error("Unknown action \"$action\", must specify either data, tests, or interfaces");
+    error("Unknown action \"$action\", must specify either data, tests, hosts, or interfaces");
 }
 
 sub get_data {
@@ -126,6 +129,9 @@ sub get_data {
                 #warn "Type: $type";
                 $event->filters->time_start($start);
                 $event->filters->time_end($end);
+                my $source_host = $metadatum->input_source();
+                my $destination_host = $metadatum->input_destination();
+                #warn "metadatum: " . Dumper $metadatum;
 
                 $type = 'loss' if ($type eq 'packet-loss-rate');
                 $type = 'owdelay' if ($type eq 'histogram-owdelay');
@@ -322,7 +328,7 @@ sub get_tests {
     my $method_start_time = [Time::HiRes::gettimeofday()];
     $start_time = [Time::HiRes::gettimeofday()];
     my $metadata = $client->get_metadata();
-    warn "Time elapsed getting metadata: " . Time::HiRes::tv_interval($start_time);
+    #warn "Time elapsed getting metadata: " . Time::HiRes::tv_interval($start_time);
     $total_metadata += Time::HiRes::tv_interval($start_time);
     error($client->error) if ($client->error);
 
@@ -554,7 +560,7 @@ sub get_ls_hosts {
     my $ls_bootstrap_client = SimpleLookupService::Client::Bootstrap->new();
     $ls_bootstrap_client->init();
     my $urls = $ls_bootstrap_client->query_urls();
-    warn "urls: " . Dumper @$urls;
+    #warn "urls: " . Dumper @$urls;
 
     my $error_message;
 
@@ -610,7 +616,7 @@ sub get_interfaces {
         my $mtu = 0;
         if ($res && @$res > 0) {
             $res = shift @$res;
-            warn "res: " . Dumper $res;
+            warn "\n\nres: " .  Dumper($res) . "\n\n";
             $capacity = $res->getInterfaceCapacity();
             $capacity = shift @$capacity;
             my $mtu = $res->getInterfaceMTU();
@@ -636,6 +642,44 @@ sub get_interfaces {
     print $cgi->header('text/json');
     print to_json(\%results);
 
+}
+
+sub get_host_info {
+    my $url     = $cgi->param('url')     || error("Missing required parameter \"url\"");
+    my $src     = $cgi->param('src')     || error("Missing required parameter \"src\"");
+    my $dest    = $cgi->param('dest')    || error("Missing required parameter \"dest\"");
+
+    my @types = ('throughput', 'histogram-owdelay', 'packet-loss-rate', 'packet-retransmits');
+
+    my %results;
+
+    foreach my $type (@types) {   
+ 
+    my $filter = new perfSONAR_PS::Client::Esmond::ApiFilters();
+    $filter->event_type($type);
+    $filter->source($src);
+    $filter->destination($dest);
+
+    my $client = new perfSONAR_PS::Client::Esmond::ApiConnect(url     => $url,
+        filters => $filter);
+
+    my $metadata = $client->get_metadata();
+
+    error($client->error) if ($client->error);
+
+    foreach my $metadatum (@$metadata) {
+        my $source_host = $metadatum->input_source();
+        my $destination_host = $metadatum->input_destination();
+        $results{'source_host'} = $source_host;
+        $results{'dest_host'} = $destination_host;
+        #warn "source: ${source_host} dest: ${destination_host} type: $type";
+        #last if ((defined($results{'source_host'}) && $results{'source_host'} ne '') 
+        #            && (defined($results{'dest_host'}) && $results{'dest_host'} ne ''));
+    } 
+    }
+
+    print $cgi->header('text/json');
+    print to_json(\%results);
 }
 
 

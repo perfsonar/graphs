@@ -144,6 +144,16 @@ if (uri.indexOf('?') > -1) {
 var base_url = 'https://perfsonar-dev.grnoc.iu.edu/serviceTest/graphData.cgi?url=' + ma_url + '&action=data&src=' + source + '&dest=' + dest;
 var url = 'https://perfsonar-dev.grnoc.iu.edu/serviceTest/graphData.cgi?url=' + ma_url + '&action=data&src=' + source + '&dest=' + dest + '&start=' + start_ts + '&end=' + end_ts + '&window=' + summary_window;
 
+d3.json('https://perfsonar-dev.grnoc.iu.edu/serviceTest/graphData.cgi?url=' + ma_url + '&src=' + source + '&dest=' + dest +  '&action=hosts', function(error, hosts) {
+   //var srcCapacity = d3.select('#source_capacity');
+    var source_host = d3.select('#source_host');
+    source_host.html(hosts.source_host);
+    var dest_host = d3.select('#dest_host');
+    dest_host.html(hosts.dest_host);
+
+});
+
+
 var loading = d3.select('#chart #loading');
 
 drawChart(url);
