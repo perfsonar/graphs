@@ -209,10 +209,12 @@ sub get_data {
         while (my ($src, $values) = each %results) {
             while (my ($dst, $result_types) = each %$values) {
                 #warn "src: $src and dst: $dst\n";
-                while (my $type = each %$result_types) {
+                #while (my $type = each %$result_types) {
+                foreach my $type (@types) {
+                    #my $row = {};
                     #warn "type: " . $type;
                     $res{$src}{$dst}{$type} = ();
-                    #if (exists $results{$src}{$dst}{$type}) {
+                    if (exists $results{$src}{$dst}{$type}) {
                         foreach my $data (@{$results{$src}{$dst}{$type}}) {
                             my $row = {};
 
@@ -222,7 +224,7 @@ sub get_data {
                             }
                             push @{$res{$src}{$dst}{$type}}, $row;
                         }
-                        #}
+                    }
                     if (exists($results{$dst}{$src}{$type})) {
                         foreach my $data (@{$results{$dst}{$src}{$type}}) {
                             #warn "got here dst src";
@@ -233,7 +235,11 @@ sub get_data {
                             #warn Dumper $row;
                             push @{$res{$src}{$dst}{$type}}, $row;
                         }
+                        delete $results{$dst}{$src}{$type};
                     } 
+                    delete $results{$dst}{$src} if !%{$results{$dst}{$src}};
+                    delete $results{$dst} if !%{$results{$dst}};
+                    #push @{$res{$src}{$dst}{$type}}, $row;
 
                 }
             }
@@ -252,9 +258,10 @@ sub get_data {
     #my $max_ts;
     if ($flatten == 1) {
         while (my ($src, $values) = each %results) {
-            while (my ($dst, $types) = each %$values) {
+            while (my ($dst, $val_types) = each %$values) {
                 #warn "src: $src and dst: $dst\n";
-                while (my $type = each %$types) { 
+                #while (my $type = each %$types) { 
+                foreach my $type(@types) {
                     $results_arr2 = [];
                     $results2->{$type} = [];
                     foreach my $value (@{$results{$src}{$dst}{$type}}) {
