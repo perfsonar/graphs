@@ -13,6 +13,7 @@ use JSON qw(from_json);
 use FindBin;
 use Time::HiRes;
 use Data::Dumper;
+use Socket; 
 
 use Log::Log4perl qw(get_logger :easy :levels);
 
@@ -269,13 +270,13 @@ sub get_data {
                         #my $min_ts = $ts if (!defined($min_ts) || $ts < $min_ts);
                         #my $max_ts = $ts if (!defined($max_ts) || $ts > $max_ts);
 
-                            # Iterate over ALL types in the request
-                            foreach my $all_type (@types) {
-                                #warn "type (full): " . $all_type;
-                                $row->{$all_type.'_src_val'} = undef;
-                                $row->{$all_type.'_dst_val'} = undef;
+                        # Iterate over ALL types in the request
+                        foreach my $all_type (@types) {
+                            #warn "type (full): " . $all_type;
+                            $row->{$all_type.'_src_val'} = undef;
+                            $row->{$all_type.'_dst_val'} = undef;
+                        }
 
-                            }
                         my $ts = $value->{src_ts};
                         my $val = $value->{src_val};
                         if (defined($ts) && defined($val) || 1) {
@@ -308,9 +309,19 @@ sub get_data {
         }
 
     }
+    
 
     print $cgi->header('text/json');
     if ($flatten == 1) {
+        # Sort by ts
+        @results_arr = sort by_ts @results_arr;
+        my $last_ts = 0;
+        for(my $i=0; $i<@results_arr; $i++) {
+            my $row = $results_arr[$i];
+            warn "less than " . $row->{ts} . " last: " . $last_ts if $row->{ts} <= $last_ts;
+            $last_ts = $row->{ts};
+
+        }
         print to_json(\@results_arr);
         #print to_json($results2);
     } else {
@@ -357,10 +368,13 @@ sub get_tests {
 
         my $protocol = $metadatum->get_field('ip-transport-protocol');
         my $duration = $metadatum->get_field('time-duration');
-        #my $source_host = $metadatum->get_field('input-source');
-        #my $destination_host = $metadatum->get_field('input-destination');
-        my $source_host = $metadatum->input_source();
-        my $destination_host = $metadatum->input_destination();
+        #my $source_host = $metadatum->input_source();
+        #my $destination_host = $metadatum->input_destination();
+        my $hostnames = host_info( {src => $src, dest => $dst} );
+        my $source_host = $hostnames->{source_host};
+        my $destination_host = $hostnames->{dest_host};
+        warn "source: ${source_host} dest: ${destination_host}";
+
 
         foreach my $event_type (@$event_types){
 
@@ -459,8 +473,8 @@ sub get_tests {
                         $src_average = $src_res->{'week_average'};
                         $src_min = $src_res->{'week_min'};
                         $src_max = $src_res->{'week_max'};
-                        $source_host = $src_res->{'source_host'};
                         $protocol = $src_res->{'protocol'};
+                        $source_host = $src_res->{'source_host'};
                         $destination_host = $src_res->{'destination_host'};
 
                     }
@@ -478,7 +492,8 @@ sub get_tests {
                         $protocol = $dst_res->{'protocol'};
                         #warn "src_res: " . Dumper $src_res;
                         #warn "dst_res: " . Dumper $dst_res;
-                        $destination_host = $dst_res->{'destination_host'}; # TODO: DOUBLE-CHECK THIS
+                        $source_host = $dst_res->{'destination_host'}; # TODO: DOUBLE-CHECK THIS
+                        $destination_host = $dst_res->{'source_host'}; # TODO: DOUBLE-CHECK THIS
                         $bidirectional = 1 if (defined ($results{$dst}{$src}{$type}->{'week_average'}) && defined ($results{$src}{$dst}{$type}->{'week_average'}) );
 
                         # Now combine with the source values
@@ -652,41 +667,30 @@ sub get_interfaces {
 }
 
 sub get_host_info {
-    my $url     = $cgi->param('url')     || error("Missing required parameter \"url\"");
     my $src     = $cgi->param('src')     || error("Missing required parameter \"src\"");
     my $dest    = $cgi->param('dest')    || error("Missing required parameter \"dest\"");
-
-    my @types = ('throughput', 'histogram-owdelay', 'packet-loss-rate', 'packet-retransmits');
-
-    my %results;
-
-    foreach my $type (@types) {   
- 
-    my $filter = new perfSONAR_PS::Client::Esmond::ApiFilters();
-    $filter->event_type($type);
-    $filter->source($src);
-    $filter->destination($dest);
-
-    my $client = new perfSONAR_PS::Client::Esmond::ApiConnect(url     => $url,
-        filters => $filter);
-
-    my $metadata = $client->get_metadata();
-
-    error($client->error) if ($client->error);
-
-    foreach my $metadatum (@$metadata) {
-        my $source_host = $metadatum->input_source();
-        my $destination_host = $metadatum->input_destination();
-        $results{'source_host'} = $source_host;
-        $results{'dest_host'} = $destination_host;
-        #warn "source: ${source_host} dest: ${destination_host} type: $type";
-        #last if ((defined($results{'source_host'}) && $results{'source_host'} ne '') 
-        #            && (defined($results{'dest_host'}) && $results{'dest_host'} ne ''));
-    } 
-    }
+   
+    my $results = host_info( { src => $src, dest => $dest} );
 
     print $cgi->header('text/json');
-    print to_json(\%results);
+    print to_json($results);
+}
+
+sub host_info {
+    my $parameters = validate( @_, { src => 1, dest => 1 });
+    my $src       = $parameters->{src};
+    my $dest      = $parameters->{dest};
+
+    my $src_addr = inet_aton($src); 
+    my $dest_addr = inet_aton($dest); 
+    my $source_host = gethostbyaddr($src_addr, AF_INET);
+    my $dest_host = gethostbyaddr($dest_addr, AF_INET);
+
+    my $results  = {};
+    $results->{'source_host'} = $source_host;
+    $results->{'dest_host'} = $dest_host;
+
+    return $results;
 }
 
 
@@ -699,5 +703,6 @@ sub error {
     exit 1;
 }
 
-
-
+sub by_ts {
+    $a->{ts} <=> $b->{ts};
+}

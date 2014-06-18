@@ -281,6 +281,7 @@ span.psgraph-val { font-family: "Lucida Console", Monaco, monospace; }
 }*/
 .chart { clear:both; }
 /*#summaryTable th.extra, #summaryTable td.extra { display:none; } */
+#chartDialog { overflow: auto;  }
 
 #time-selector { text-align:right; margin-right:3em;  } 
 #time-selector a.active { color:#000000; } 

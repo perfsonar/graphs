@@ -43,9 +43,8 @@ if (time_diff != 0 ) {
 }
 
 //var ls_list_url = 'http://ps1.es.net:8096/lookup/activehosts.json';
-var ls_list_url = 'https://perfsonar-dev2.grnoc.iu.edu/serviceTest/graphData.cgi?action=ls_hosts';
-var ls_query_url = 'https://perfsonar-dev2.grnoc.iu.edu/serviceTest/graphData.cgi?action=interfaces';
-
+var ls_list_url = '/serviceTest/graphData.cgi?action=ls_hosts';
+var ls_query_url = '/serviceTest/graphData.cgi?action=interfaces';
 
 var src_capacity = 'Unknown';
 var src_mtu = 'Unknown';
@@ -143,11 +142,12 @@ if (uri.indexOf('?') > -1) {
     }
 } 
 
+var chartStates = [];
 
-var base_url = 'https://perfsonar-dev2.grnoc.iu.edu/serviceTest/graphData.cgi?url=' + ma_url + '&action=data&src=' + source + '&dest=' + dest;
-var url = 'https://perfsonar-dev2.grnoc.iu.edu/serviceTest/graphData.cgi?url=' + ma_url + '&action=data&src=' + source + '&dest=' + dest + '&start=' + start_ts + '&end=' + end_ts + '&window=' + summary_window;
+var base_url = '/serviceTest/graphData.cgi?url=' + ma_url + '&action=data&src=' + source + '&dest=' + dest;
+var url = '/serviceTest/graphData.cgi?url=' + ma_url + '&action=data&src=' + source + '&dest=' + dest + '&start=' + start_ts + '&end=' + end_ts + '&window=' + summary_window;
 
-d3.json('https://perfsonar-dev2.grnoc.iu.edu/serviceTest/graphData.cgi?url=' + ma_url + '&src=' + source + '&dest=' + dest +  '&action=hosts', function(error, hosts) {
+d3.json('/serviceTest/graphData.cgi?src=' + source + '&dest=' + dest +  '&action=hosts', function(error, hosts) {
    //var srcCapacity = d3.select('#source_capacity');
     var source_host = d3.select('#source_host');
     source_host.html(hosts.source_host);
@@ -163,13 +163,10 @@ drawChart(url);
 
 function drawChart(url) {
 
-    //var chart = d3.select('#chart');
-    //chart.style('display', 'none');
     loading.style('display', 'block');
 
 
 d3.json(url, function(error,ps_data) {
-    //var loading = d3.select('#chart #loading');
     loading.style('display', 'none');
 
     var prevLink = d3.selectAll('.ps-timerange-nav .prev');
@@ -177,7 +174,7 @@ d3.json(url, function(error,ps_data) {
         d3.event.preventDefault(); 
         end_ts = end_ts - time_diff;
         start_ts = start_ts - time_diff;
-        url = 'https://perfsonar-dev2.grnoc.iu.edu/serviceTest/graphData.cgi?url=' + ma_url + '&action=data&src=' + source + '&dest=' + dest + '&start=' + start_ts + '&end=' + end_ts + '&window=' + summary_window;
+        url = '/serviceTest/graphData.cgi?url=' + ma_url + '&action=data&src=' + source + '&dest=' + dest + '&start=' + start_ts + '&end=' + end_ts + '&window=' + summary_window;
         d3.selectAll("#chart").selectAll("svg").remove();
         drawChart(url);
         if (end_ts < now ) {
@@ -191,7 +188,7 @@ d3.json(url, function(error,ps_data) {
         d3.event.preventDefault(); 
         end_ts = end_ts + time_diff;
         start_ts = start_ts + time_diff;
-        url = 'https://perfsonar-dev2.grnoc.iu.edu/serviceTest/graphData.cgi?url=' + ma_url + '&action=data&src=' + source + '&dest=' + dest + '&start=' + start_ts + '&end=' + end_ts + '&window=' + summary_window;
+        url = '/serviceTest/graphData.cgi?url=' + ma_url + '&action=data&src=' + source + '&dest=' + dest + '&start=' + start_ts + '&end=' + end_ts + '&window=' + summary_window;
         d3.selectAll("#chart").selectAll("svg").remove();
         drawChart(url);
     });
@@ -292,7 +289,7 @@ d3.json(url, function(error,ps_data) {
     var maxRevLoss = revLossGroup.order(avgOrder).top(1)[0].value.avg; 
     var maxPacketRetrans = packetRetransGroup.top(1)[0].value; 
     var maxRevPacketRetrans = revPacketRetransGroup.top(1)[0].value; 
-    var axisScale = 1.25; // Scale the axes so we have some padding at the top
+    var axisScale = 1.1; // Scale the axes so we have some padding at the top
     var yAxisMax = 100; // All right Y axes will be scaled to max out at this value
 
     var setHeader = function() { 
@@ -448,7 +445,7 @@ d3.json(url, function(error,ps_data) {
             return "Reverse Loss: " + format_loss(d.value.avg) + "\n"
                 + format_ts(d.key);
             })
-        .colors("#ffff00")
+        .colors("#FF704D")
         .dashStyle([3, 3]) 
         //.elasticY(true)
         .useRightYAxis(true) 
@@ -500,7 +497,10 @@ d3.json(url, function(error,ps_data) {
             })
         ;
 
-        //maxThroughput = 1;
+    var allCharts = [throughputChart, revThroughputChart, owdelayChart, revOwdelayChart, lossChart, revLossChart, packetRetransChart, revPacketRetransChart];
+    var activeCharts = [throughputChart, revThroughputChart, owdelayChart, revOwdelayChart, lossChart, revLossChart, packetRetransChart, revPacketRetransChart];
+
+
     allTestsChart.width(750)
         .height(465)
         .brushOn(false)
@@ -508,7 +508,8 @@ d3.json(url, function(error,ps_data) {
         .shareTitle(false)
         //.compose([throughputChart, lossChart])
         //.compose([owdelayChart, lossChart, packetRetransChart])
-        .compose([throughputChart, revThroughputChart, owdelayChart, revOwdelayChart, lossChart, revLossChart, packetRetransChart, revPacketRetransChart])
+        //.compose([throughputChart, revThroughputChart, owdelayChart, revOwdelayChart, lossChart, revLossChart, packetRetransChart, revPacketRetransChart])
+        .compose(activeCharts)
         .x(d3.time.scale().domain(d3.extent(ps_data, function(d) { return new Date(d.ts * 1000); })))
         .xAxisLabel('Date')
         .y(d3.scale.linear().domain([0, axis_value( maxThroughput, 1000000000)]))
@@ -580,6 +581,10 @@ d3.json(url, function(error,ps_data) {
 
     dc.renderAll();
 
+    postRenderTasks();
+
+    function postRenderTasks() {
+
     var svg = allTestsChart.svg(); // d3.select('#chart svg');
           var svgWidth = svg.attr('width');
           var svgHeight = svg.attr('height');
@@ -592,9 +597,45 @@ d3.json(url, function(error,ps_data) {
 //              .attr("height", "100%");
 
     // Loss axis
-    addAxis(maxLoss, "Loss", function(d) { return d3.format('.2%')(d); }, "#ff0000");
+    var lossAxis = addAxis(maxLoss, "Loss", function(d) { return d3.format('.2%')(d); }, "#ff0000");
     // Packet retransmissions axis
-    addAxis(maxPacketRetrans, "Packet Retransmissions", function(d) { return d; }, "#ff00ff");
+    var retransAxis = addAxis(maxPacketRetrans, "Packet Retransmissions", function(d) { return d; }, "#ff00ff");
+
+    var svgSel = allTestsChart.svg();
+    //var svgSel = d3.select('#chart svg');
+    var dcLegendEvents = svgSel.selectAll('.dc-legend-item').on('click', function(e, i) {
+        if (chartStates[i] === undefined || chartStates[i] === true) {
+            e.chart.defined(function(d) { return false; });
+            chartStates[i] = false;
+            d3.event.target.style.fill = 'gray';
+        } else {
+            e.chart.defined(function(d) { return true; });
+            chartStates[i] = true;
+            d3.event.target.style.fill = 'black';
+        }
+        
+        //e.hidden = true;
+
+        //e.chart.filter(false);
+        //e.chart.filter(function (d) { return false; } );
+        //e.chart.filters.apply();
+        //e.chart.render();
+        //allTestsChart.compose([revThroughputChart, owdelayChart, revOwdelayChart, lossChart, revLossChart, packetRetransChart, revPacketRetransChart])
+        //allTestsChart.redraw();
+        //allTestsChart.legend(dc.legend().x(40).y(470).itemHeight(13).gap(5).legendWidth(600).horizontal(true).itemWidth(150))
+        allTestsChart.render();
+        postRenderTasks();
+        //dc.renderAll();
+
+        //.attr("fill", "red");
+        //alert(e);
+    });
+
+    //var dcLegendItems = svgSel.selectAll('.dc-legend-item') {
+
+    //}
+
+    } // end function postRenderTasks()
 
       function addAxis(maxVal, label, axisFormat, color) {
           var axisWidth = 60;
@@ -634,13 +675,10 @@ d3.json(url, function(error,ps_data) {
               .attr("text-anchor", "middle")
               .attr("width", svgHeight)
               .attr("transform", "translate(" + (+svgWidth + 50) + " , " + origHeight/2 + ") rotate(90)");
-              //.attr("transform", "translate(" + (+svgWidth + 50) + " , 225) rotate(90)");
-//
+        return yAxisRight;
+    }
 
-        //var labelHeight = svgLabel.attr("height");
-        //svgLabel.attr("transform", "translate(" + (+svgWidth + 50) + " , " + +labelHeight/2 + ") rotate(90)");
-
-      }
+      
 }); // end d3.json call
 }; // end drawChart() function
 }); // end dojo require function
