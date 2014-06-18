@@ -123,8 +123,6 @@ sub get_data {
 
             my @data_points;
 
-            #print "I found " . @$metadata . " points\n";
-
             foreach my $metadatum (@$metadata){
                 my $event = $metadatum->get_event_type($real_type);
                 #warn "Type: $type";
@@ -132,7 +130,11 @@ sub get_data {
                 $event->filters->time_end($end);
                 my $source_host = $metadatum->input_source();
                 my $destination_host = $metadatum->input_destination();
-                #warn "metadatum: " . Dumper $metadatum;
+                my $tool_name = $metadatum->tool_name();
+
+                # we MAY want to skip bwctl/ping results
+                # for now, we won't. Uncomment to skip them.
+                next if ($tool_name eq 'bwctl/ping');
 
                 $type = 'loss' if ($type eq 'packet-loss-rate');
                 $type = 'owdelay' if ($type eq 'histogram-owdelay');
@@ -312,15 +314,21 @@ sub get_data {
     
 
     print $cgi->header('text/json');
-    if ($flatten == 1) {
-        # Sort by ts
-        @results_arr = sort by_ts @results_arr;
-        my $last_ts = 0;
-        for(my $i=0; $i<@results_arr; $i++) {
-            my $row = $results_arr[$i];
-            warn "less than " . $row->{ts} . " last: " . $last_ts if $row->{ts} <= $last_ts;
-            $last_ts = $row->{ts};
 
+    if ($flatten == 1) {
+        
+        # This code will consolidate based on same timestamp, and make adjustments to better display stray points
+        # Not finished yet, as of 06/18/2014 - Michael Johnson
+        if (0) {
+            # Sort by ts
+            @results_arr = sort by_ts @results_arr;
+            my $last_ts = 0;
+            for(my $i=0; $i<@results_arr; $i++) {
+                my $row = $results_arr[$i];
+                warn "less than " . $row->{ts} . " last: " . $last_ts if $row->{ts} <= $last_ts;
+                $last_ts = $row->{ts};
+
+            }
         }
         print to_json(\@results_arr);
         #print to_json($results2);

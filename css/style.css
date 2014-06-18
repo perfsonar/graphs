@@ -290,4 +290,5 @@ span.psgraph-val { font-family: "Lucida Console", Monaco, monospace; }
 .ps-timerange-nav .next { float:right; }
 #chart #loading { position:relative; top:250px;  }
 div.dc-chart { float:none; }
+.chartHeader { margin-top:10px; }
 .chartHeader .content { padding:8px; }
