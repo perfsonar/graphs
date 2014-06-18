@@ -46,7 +46,7 @@ if (uri.indexOf('?') > -1) {
 } 
 //ma_url = encodeURI(ma_url);
 
-var url = 'https://perfsonar-dev.grnoc.iu.edu/serviceTest/graphData.cgi?url=' + ma_url + '&action=tests';
+var url = 'https://perfsonar-dev2.grnoc.iu.edu/serviceTest/graphData.cgi?url=' + ma_url + '&action=tests';
 
 //d3.json(encodeURI(url), function(error,ps_data) {
 d3.json(url, function(error,ps_data) {

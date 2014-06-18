@@ -43,8 +43,8 @@ if (time_diff != 0 ) {
 }
 
 //var ls_list_url = 'http://ps1.es.net:8096/lookup/activehosts.json';
-var ls_list_url = 'https://perfsonar-dev.grnoc.iu.edu/serviceTest/graphData.cgi?action=ls_hosts';
-var ls_query_url = 'https://perfsonar-dev.grnoc.iu.edu/serviceTest/graphData.cgi?action=interfaces';
+var ls_list_url = 'https://perfsonar-dev2.grnoc.iu.edu/serviceTest/graphData.cgi?action=ls_hosts';
+var ls_query_url = 'https://perfsonar-dev2.grnoc.iu.edu/serviceTest/graphData.cgi?action=interfaces';
 
 
 var src_capacity = 'Unknown';
@@ -144,10 +144,10 @@ if (uri.indexOf('?') > -1) {
 } 
 
 
-var base_url = 'https://perfsonar-dev.grnoc.iu.edu/serviceTest/graphData.cgi?url=' + ma_url + '&action=data&src=' + source + '&dest=' + dest;
-var url = 'https://perfsonar-dev.grnoc.iu.edu/serviceTest/graphData.cgi?url=' + ma_url + '&action=data&src=' + source + '&dest=' + dest + '&start=' + start_ts + '&end=' + end_ts + '&window=' + summary_window;
+var base_url = 'https://perfsonar-dev2.grnoc.iu.edu/serviceTest/graphData.cgi?url=' + ma_url + '&action=data&src=' + source + '&dest=' + dest;
+var url = 'https://perfsonar-dev2.grnoc.iu.edu/serviceTest/graphData.cgi?url=' + ma_url + '&action=data&src=' + source + '&dest=' + dest + '&start=' + start_ts + '&end=' + end_ts + '&window=' + summary_window;
 
-d3.json('https://perfsonar-dev.grnoc.iu.edu/serviceTest/graphData.cgi?url=' + ma_url + '&src=' + source + '&dest=' + dest +  '&action=hosts', function(error, hosts) {
+d3.json('https://perfsonar-dev2.grnoc.iu.edu/serviceTest/graphData.cgi?url=' + ma_url + '&src=' + source + '&dest=' + dest +  '&action=hosts', function(error, hosts) {
    //var srcCapacity = d3.select('#source_capacity');
     var source_host = d3.select('#source_host');
     source_host.html(hosts.source_host);
@@ -177,7 +177,7 @@ d3.json(url, function(error,ps_data) {
         d3.event.preventDefault(); 
         end_ts = end_ts - time_diff;
         start_ts = start_ts - time_diff;
-        url = 'https://perfsonar-dev.grnoc.iu.edu/serviceTest/graphData.cgi?url=' + ma_url + '&action=data&src=' + source + '&dest=' + dest + '&start=' + start_ts + '&end=' + end_ts + '&window=' + summary_window;
+        url = 'https://perfsonar-dev2.grnoc.iu.edu/serviceTest/graphData.cgi?url=' + ma_url + '&action=data&src=' + source + '&dest=' + dest + '&start=' + start_ts + '&end=' + end_ts + '&window=' + summary_window;
         d3.selectAll("#chart").selectAll("svg").remove();
         drawChart(url);
         if (end_ts < now ) {
@@ -191,7 +191,7 @@ d3.json(url, function(error,ps_data) {
         d3.event.preventDefault(); 
         end_ts = end_ts + time_diff;
         start_ts = start_ts + time_diff;
-        url = 'https://perfsonar-dev.grnoc.iu.edu/serviceTest/graphData.cgi?url=' + ma_url + '&action=data&src=' + source + '&dest=' + dest + '&start=' + start_ts + '&end=' + end_ts + '&window=' + summary_window;
+        url = 'https://perfsonar-dev2.grnoc.iu.edu/serviceTest/graphData.cgi?url=' + ma_url + '&action=data&src=' + source + '&dest=' + dest + '&start=' + start_ts + '&end=' + end_ts + '&window=' + summary_window;
         d3.selectAll("#chart").selectAll("svg").remove();
         drawChart(url);
     });
@@ -282,7 +282,7 @@ d3.json(url, function(error,ps_data) {
     var format_latency = function(d) { return d3.format('.3f')(d) + 'ms';  }
     var format_loss = function(d) { return d3.format('.3%')(d);  }
     var format_ts = function(d) { return d3.time.format('%X %x')(d); }
-    var format_ts_header = function(d) { return d3.time.format('%x %X')(d); }
+    var format_ts_header = function(d) { return d3.time.format('%c')(d); }
 
     var maxThroughput = throughputGroup.order(avgOrder).top(1)[0].value.avg;
     var maxRevThroughput = revThroughputGroup.order(avgOrder).top(1)[0].value.avg;
@@ -296,8 +296,8 @@ d3.json(url, function(error,ps_data) {
     var yAxisMax = 100; // All right Y axes will be scaled to max out at this value
 
     var setHeader = function() { 
-        var rangeLabel = 'Date range: ' + format_ts_header(new Date(1000 * start_ts)) + ' to ' + format_ts_header(new Date(1000 * end_ts));
-        var chartHeader = d3.select('.chartHeader .content').html( rangeLabel );
+        var rangeLabel = format_ts_header(new Date(1000 * start_ts)) + ' -- ' + format_ts_header(new Date(1000 * end_ts));
+        var chartHeader = d3.select('.chartTimeRange').html( rangeLabel );
     };
 
     setHeader();
