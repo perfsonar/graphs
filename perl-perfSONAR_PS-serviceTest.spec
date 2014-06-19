@@ -95,7 +95,10 @@ chown -R apache:apache /opt/perfsonar_ps/serviceTest/etc
 %{install_base}/templates/delay_error.tmpl
 %{install_base}/templates/delay_graphing.tmpl
 %{install_base}/templates/delay_pageDisplay.tmpl
+%{install_base}/templates/graphPage.tmpl
+%{install_base}/templates/graphWidget.tmpl
 %{install_base}/templates/serviceTest_error.tmpl
+%{install_base}/templates/serviceTest_new.tmpl
 %{install_base}/templates/serviceTest.tmpl
 %config %{install_base}/templates/header.tmpl
 %config %{install_base}/templates/footer.tmpl
