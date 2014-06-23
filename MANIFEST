@@ -45,6 +45,17 @@ JS/ps-dc.js
 JS/psGraph.js
 lib/Net/NTP.pm
 lib/perfSONAR_PS/Client/Echo.pm
+lib/perfSONAR_PS/Client/Esmond/ApiConnect.pm
+lib/perfSONAR_PS/Client/Esmond/ApiFilters.pm
+lib/perfSONAR_PS/Client/Esmond/BaseDataNode.pm
+lib/perfSONAR_PS/Client/Esmond/BaseNode.pm
+lib/perfSONAR_PS/Client/Esmond/DataConnect.pm
+lib/perfSONAR_PS/Client/Esmond/DataPayload.pm
+lib/perfSONAR_PS/Client/Esmond/EventType.pm
+lib/perfSONAR_PS/Client/Esmond/EventTypeBulkPost.pm
+lib/perfSONAR_PS/Client/Esmond/Metadata.pm
+lib/perfSONAR_PS/Client/Esmond/Summary.pm
+lib/perfSONAR_PS/Client/Esmond/Utils.pm
 lib/perfSONAR_PS/Client/LS.pm
 lib/perfSONAR_PS/Client/LS/PSKeywords/PSKeyNames.pm
 lib/perfSONAR_PS/Client/LS/PSKeywords/PSKeyValues.pm
