@@ -128,7 +128,7 @@ d3.json(ls_list_url, function(error, ls_list_data) {
     
 });
 
-var ma_url = 'http%3A%2F%2Flbl-pt1.es.net%3A9085%2Fesmond%2Fperfsonar%2Farchive%2F';
+var ma_url = 'http%3A%2F%2Flocalhost%2Fesmond%2Fperfsonar%2Farchive%2F';
 var uri = document.URL;
 if (uri.indexOf('?') > -1) {
     var query = uri.substring(uri.indexOf("?") + 1, uri.length);
