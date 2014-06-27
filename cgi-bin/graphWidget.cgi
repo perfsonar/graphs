@@ -67,7 +67,7 @@ my $hostCount          = scalar keys %hostlist;
 
 my @tests = ();
 if ( defined @{ %{$string}->{'groups'} } ) {
-    @tests = @{ %{$string}->{'groups'} };
+    @tests = @{ ${$string}->{'groups'} };
 }
 
 

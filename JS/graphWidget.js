@@ -83,44 +83,42 @@ d3.json(ls_list_url, function(error, ls_list_data) {
         var destMTU = d3.select('#dest_mtu');
         var rows = [];
         var ips = [source, dest];
-        var remaining = ls_list_data.length * ips.length;
-        for(var j in ips) {
-            for(var i in ls_list_data) {
-                var url = ls_list_data[i];
-                var ls = ls_query_url + '&ls_url=' + encodeURI(url) + '&interface=' + ips[j];
-                d3.json(ls, function(error, interface_data) {
+        //var remaining = ls_list_data.length * ips.length;
+        var remaining = ls_list_data.length;
+        //for(var j in ips) {
+            for(var ls_index in ls_list_data) {
+                var url = ls_list_data[ls_index];
+                var ls = ls_query_url + '&ls_url=' + encodeURI(url) + '&source=' + source + '&dest=' + dest;
+                d3.json(ls, function(ls_error, interface_data) {
+                    if (ls_error) {
+                    }
                     if(!isEmpty(interface_data)) {
-                        interface_data.ip = ips[j];
+                        //interface_data.ip = ips[j];
                         rows.push(interface_data);
                     }
                     if (!--remaining) combineData();
                 });
             }
-        }
+        //}
 
         function combineData() {
             for(var i in rows) {
                 var row = rows[i];
-                if (row.mtu) {
-                    if (row.ip == source) {
-                        src_mtu = row.mtu;
-                        srcMTU.html( src_mtu );
-                    }
-                    if (row.ip == dest) {
-                        dest_mtu = row.mtu;
-                        destMTU.html( dest_mtu );
-                    }
-
+                if (row.source_mtu) {
+                    src_mtu = row.source_mtu;
+                    srcMTU.html( src_mtu );
                 }
-                if (row.capacity) {
-                    if (row.ip == source) {
-                        src_capacity = row.capacity;
-                        srcCapacity.html( src_capacity );
-                    }
-                    if (row.ip == dest) {
-                        dest_capacity = row.capacity;
-                        destCapacity.html( d3.format('.2s')(dest_capacity) );
-                    }
+                if (row.dest_mtu) {
+                    dest_mtu = row.dest_mtu;
+                    destMTU.html( dest_mtu );
+                }
+                if (row.source_capacity) {
+                    src_capacity = row.source_capacity;
+                    srcCapacity.html( d3.format('.2s')(src_capacity) );
+                }
+                if (row.dest_capacity) {
+                    dest_capacity = row.dest_capacity;
+                    destCapacity.html( d3.format('.2s')(dest_capacity) );
                 }
             }
         }

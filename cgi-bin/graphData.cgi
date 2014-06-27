@@ -79,12 +79,8 @@ else {
 
 sub get_data {
     my @types  = $cgi->param('type');
-    #error("Missing required parameter \"type\"") if (! @types);
     if (! @types) {
         @types = ('throughput', 'histogram-owdelay', 'packet-loss-rate', 'packet-retransmits');
-        #my @types = ('throughput');
-        #my @types = ('histogram-owdelay');
-        #my @types = ('packet-loss-rate');
     }
     my $summary_window;
     my $window = $cgi->param('window');
@@ -325,7 +321,7 @@ sub get_data {
             my $last_ts = 0;
             for(my $i=0; $i<@results_arr; $i++) {
                 my $row = $results_arr[$i];
-                warn "less than " . $row->{ts} . " last: " . $last_ts if $row->{ts} <= $last_ts;
+                #warn "less than " . $row->{ts} . " last: " . $last_ts if $row->{ts} <= $last_ts;
                 $last_ts = $row->{ts};
 
             }
@@ -381,7 +377,7 @@ sub get_tests {
         my $hostnames = host_info( {src => $src, dest => $dst} );
         my $source_host = $hostnames->{source_host};
         my $destination_host = $hostnames->{dest_host};
-        warn "source: ${source_host} dest: ${destination_host}";
+        #warn "source: ${source_host} dest: ${destination_host}";
 
 
         foreach my $event_type (@$event_types){
@@ -601,7 +597,6 @@ sub get_ls_hosts {
 }
 
 sub get_interfaces {
-    #my $url     = $cgi->param('url')     || error("Missing required parameter \"url\"");
     my $source     = $cgi->param('source'); #    || error("Missing required parameter \"src\"");
     my $dest       = $cgi->param('dest'); #    || error("Missing required parameter \"dest\"");
     my $interface  = $cgi->param('interface'); #    || error("Missing required parameter \"interface\"");
@@ -612,62 +607,51 @@ sub get_interfaces {
     my $ip = $interface;
     my %results;
 
-    #while (my ($type, $ip) = each(%hosts)) {
-        # Bring in info from LS
+    my $hostname = 'ps-west.es.net';
+    my $port = 8090;
 
-        #my $hostname = "ps4.es.net";
-        #my $port = 9095;
-        #my $hostname = "ndb1.internet2.edu";
-        my $hostname = 'ps-west.es.net';
-        my $port = 8090;
+    my $server = SimpleLookupService::Client::SimpleLS->new();
+    $server->init( { host => $hostname, port => $port } );
+    $server->setUrl($ls_url);
+    $server->connect();
 
-        my $server = SimpleLookupService::Client::SimpleLS->new();
-        $server->init( { host => $hostname, port => $port } );
-        $server->setUrl($ls_url);
-        $server->connect();
+    my $query_object = SimpleLookupService::QueryObjects::Network::InterfaceQueryObject->new();
+    $query_object->init();
+    if ($source && $dest) {
+        $query_object->setInterfaceAddresses( [ $source, $dest ] );
+    } elsif ($source) { # If only source is provided, only query source
+        $query_object->setInterfaceAddresses( $source );
+    }
+    $query_object->setKeyOperator( { key => 'interface-addresses', operator => 'any' } );
 
-        #my $ls_bootstrap_client = SimpleLookupService::Client::Bootstrap->new();
-        #$ls_bootstrap_client->init();
-        #my @urls = $ls_bootstrap_client->query_urls();
-        #warn "urls: " . Dumper @urls;
+    my $query = new SimpleLookupService::Client::Query;
+    $query->init( { server => $server } );
 
-        my $query_object = SimpleLookupService::QueryObjects::Network::InterfaceQueryObject->new();
-        $query_object->init();
-        # querying with [$source, $dest] won't work because this is an AND operation
-        #$query_object->setInterfaceAddresses( [ $source, $dest ] );
-        $query_object->setInterfaceAddresses( $ip );
+    my ($resCode, $result) = $query->query( $query_object );
 
-        my $query = new SimpleLookupService::Client::Query;
-        $query->init( { server => $server } );
-
-        my ($resCode, $res) = $query->query( $query_object );
-
-        my $capacity = 0;
-        my $mtu = 0;
-        if ($res && @$res > 0) {
-            $res = shift @$res;
-            warn "\n\nres: " .  Dumper($res) . "\n\n";
-            $capacity = $res->getInterfaceCapacity();
-            $capacity = shift @$capacity;
-            my $mtu = $res->getInterfaceMTU();
-            $mtu = shift @$mtu;
-            $results{'capacity'} = $capacity if (defined($capacity));
-            $results{'mtu'} = $mtu if (defined($mtu));        
+    my $capacity = 0;
+    my $mtu = 0;
+    foreach my $res (@$result) {
+        $capacity = $res->getInterfaceCapacity();
+        $capacity = shift @$capacity;
+        my $mtu = $res->getInterfaceMTU();
+        $mtu = shift @$mtu;
+        my $addresses = $res->getInterfaceAddresses();
+        foreach my $address (@$addresses) {
+            if ($address eq $source) {
+                $results{'source_capacity'} = $capacity if defined $capacity;
+                $results{'source_mtu'} = $mtu if defined $mtu;
+                $results{'source_ip'} = $source;
+                $results{'source_addresses'} = $addresses;
+            } elsif ($dest && $address eq $dest) {
+                $results{'dest_capacity'} = $capacity if defined $capacity;
+                $results{'dest_mtu'} = $mtu if defined $mtu;
+                $results{'dest_ip'} = $dest;
+                $results{'dest_addresses'} = $addresses;
+            }
         }
+    }
 
-        #}
-    #my $interface = new perfSONAR_PS::Client::LS::PSRecords::PSInterface();
-    #add a check to see if server status is "alive" and the do the registration.
-
-    #my $service = new perfSONAR_PS::Client::LS::PSRecords::PSService();
-    #$service->init(
-    #    serviceLocator => "200.237.193.37",
-    #);
-    #my $ls_client = new SimpleLookupService::Client::Query->new();
-
-    #$ls_client->init({server => $server});
-
-    #my ($resCode, $res) = $ls_client->register();
 
     print $cgi->header('text/json');
     print to_json(\%results);
