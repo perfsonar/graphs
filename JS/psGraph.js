@@ -262,11 +262,11 @@ d3.json(url, function(error,ps_data) {
 
     var format_host = function(d, type) {
         var ret = '';
-        if (d['throughput_' + type + '_host'] !== null) {
+        if (d['throughput_' + type + '_host'] !== undefined && d['throughput_' + type + '_host'] !== null) {
             ret = d['throughput_' + type + '_host'];
-        } else if (d['owdelay_' + type + '_host'] !== null) {
+        } else if (d['owdelay_' + type + '_host'] !== undefined && d['owdelay_' + type + '_host'] !== null) {
             ret = d['owdelay_' + type + '_host'];
-        } else if (d['loss_' + type + '_host'] !== null) {
+        } else if (d['loss_' + type + '_host'] !== undefined && d['loss_' + type + '_host'] !== null) {
             ret = d['loss_' + type + '_host']; 
         }
         ret += '<br>(' + d[type]  + ')';
