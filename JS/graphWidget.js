@@ -260,15 +260,14 @@ d3.json(url, function(error,ps_data) {
     var revOwdelayGroup = lineDimension.group().reduce.apply(lineDimension, make_functions('owdelay_dst_val'));
     var lossGroup = lineDimension.group().reduce.apply(lineDimension, make_functions('loss_src_val'));
     var revLossGroup = lineDimension.group().reduce.apply(lineDimension, make_functions('loss_dst_val'));
-    //var packetRetransGroup = lineDimension.group().reduceCount(function(d) { return d.packet_retransmits_src_val; } );
     var packetRetransGroup = lineDimension.group().reduceSum(function(d) { return d.packet_retransmits_src_val; } );
     var revPacketRetransGroup = lineDimension.group().reduceSum(function(d) { return d.packet_retransmits_dst_val; } );
 
-    var something = owdelayGroup.size();
-    var something2 = owdelayGroup.top(5);
-
     var avgOrder = function(p) { 
         return p.avg; 
+    };
+    var avgOrderInv = function(p) { 
+        return -p.avg; 
     };
     var valOrder = function(p) { return p; };
     
@@ -281,14 +280,45 @@ d3.json(url, function(error,ps_data) {
 
     var maxThroughput = throughputGroup.order(avgOrder).top(1)[0].value.avg;
     var maxRevThroughput = revThroughputGroup.order(avgOrder).top(1)[0].value.avg;
+    var minThroughput = throughputGroup.order(avgOrderInv).top(1)[0].value.avg;
+    var minRevThroughput = revThroughputGroup.order(avgOrderInv).top(1)[0].value.avg;
+    maxThroughput = (maxThroughput > maxRevThroughput? maxThroughput : maxRevThroughput);
+    minThroughput = (minThroughput < minRevThroughput ? minThroughput : minRevThroughput);
+    
     var maxDelay = owdelayGroup.order(avgOrder).top(1)[0].value.avg;
+    console.log("original maxDelay: " + maxDelay);
+    var minDelay = owdelayGroup.order(avgOrderInv).top(1)[0].value.avg;
     var maxRevDelay = revOwdelayGroup.order(avgOrder).top(1)[0].value.avg;
+    console.log("original maxRevDelay: " + maxRevDelay);
+    var minRevDelay = revOwdelayGroup.order(avgOrderInv).top(1)[0].value.avg;
+    maxDelay = (maxDelay > maxRevDelay ? maxDelay : maxRevDelay);
+    //if (maxDelay === 0) { maxDelay = 1; }
+    minDelay = (minDelay < minRevDelay ? minDelay : minRevDelay);
+    minDelay = 0;
     var maxLoss = lossGroup.order(avgOrder).top(1)[0].value.avg; 
+    var minLoss = lossGroup.order(avgOrderInv).top(1)[0].value.avg; 
     var maxRevLoss = revLossGroup.order(avgOrder).top(1)[0].value.avg; 
+    var minRevLoss = revLossGroup.order(avgOrderInv).top(1)[0].value.avg; 
+    maxLoss = (maxLoss > maxRevLoss ? maxLoss: maxRevLoss);
+    minLoss = (minLoss < minRevLoss ? minLoss : minRevLoss);
     var maxPacketRetrans = packetRetransGroup.top(1)[0].value; 
     var maxRevPacketRetrans = revPacketRetransGroup.top(1)[0].value; 
+    maxPacketRetrans = (maxRevPacketRetrans > maxPacketRetrans ? maxRevPacketRetrans : maxPacketRetrans);
+    console.log('maxPacketRetrans: ' + maxPacketRetrans);
+    console.log('maxRevPacketRetrans: ' + maxRevPacketRetrans);
+    var minY = minDelay;
+    var maxY = maxDelay;
     var axisScale = 1.1; // Scale the axes so we have some padding at the top
     var yAxisMax = 100; // All right Y axes will be scaled to max out at this value
+    var yNegPadAmt = 0; // RATIO by which to pad negative y axis
+    if (minY < 0) { // && maxY != 0) {
+        yNegPadAmt = Math.abs(minY / maxY);
+    }
+    if (maxLoss < 0 && minLoss < 0) { 
+        //yNegPadAmt = yNegPadAmt * -1;
+        //yAxisMax = 100;
+    }
+    console.log('yNegPadAmt: ' + yNegPadAmt);
 
     var setHeader = function() { 
         var rangeLabel = format_ts_header(new Date(1000 * start_ts)) + ' -- ' + format_ts_header(new Date(1000 * end_ts));
@@ -357,7 +387,7 @@ d3.json(url, function(error,ps_data) {
                 })
 
         .valueAccessor(function (d) {
-            return yAxisMax * d.value.avg / maxDelay ; 
+            return yAxisMax * d.value.avg / maxDelay; 
         })
         //.interpolate('bundle')
         .brushOn(false)        
@@ -381,14 +411,14 @@ d3.json(url, function(error,ps_data) {
                 })
 
         .valueAccessor(function (d) {
-            return yAxisMax * d.value.avg / maxDelay ; 
+            return yAxisMax * d.value.avg / maxDelay; 
         })
         //.interpolate('bundle')
         .brushOn(false)        
         .colors("#00ff00")
         .dashStyle([3, 3]) 
         .title(function(d){
-            return "Latency: " + format_latency(d.value.avg) + "\n"
+            return "Reverse Latency: " + format_latency(d.value.avg) + "\n"
                 + format_ts(d.key);
              
             })
@@ -432,7 +462,7 @@ d3.json(url, function(error,ps_data) {
                 })
         .valueAccessor(function(d) {
             if (d.value.avg != 0) { 
-                return yAxisMax * d.value.avg / maxRevLoss; 
+                return yAxisMax * d.value.avg / maxLoss; 
 
             } else {
                 return 0.01; // TODO: fix: hacky -- so we see "0" values
@@ -457,12 +487,19 @@ d3.json(url, function(error,ps_data) {
         //.interpolate('bundle')
     
         .valueAccessor(function (d) {
-            if (d.value !== 0) {
+                if (isNaN(d.value) || d.value > maxPacketRetrans) {
+                    alert("NaN! " +d.value);
+                }
+            if (maxPacketRetrans !== 0) {
                 return yAxisMax * d.value / maxPacketRetrans; 
             } else {
                 return 0;
             }
         })
+        .defined(function(d) {
+                return (!isNaN(d.data.value));
+                //return (d.data.value !== 0);
+                })
         
         .useRightYAxis(true) 
         .brushOn(false)      
@@ -481,7 +518,7 @@ d3.json(url, function(error,ps_data) {
         .dashStyle([3, 3])
         .valueAccessor(function (d) {
             if (d.value !== 0) {
-                return yAxisMax * d.value / maxRevPacketRetrans; 
+                return yAxisMax * d.value / maxPacketRetrans; 
             } else {
                 return 0;
             }
@@ -498,29 +535,37 @@ d3.json(url, function(error,ps_data) {
     var allCharts = [throughputChart, revThroughputChart, owdelayChart, revOwdelayChart, lossChart, revLossChart, packetRetransChart, revPacketRetransChart];
     var activeCharts = [throughputChart, revThroughputChart, owdelayChart, revOwdelayChart, lossChart, revLossChart, packetRetransChart, revPacketRetransChart];
 
+        if (yNegPadAmt > 0) { // Temporarily disable
+            //yAxisMax = yAxisMax*yNegPadAmt;
+        }
+        //var minDel = minDelay; // / yNegPadAmt;
+        var minDel = minDelay - (maxDelay * yNegPadAmt ); // / yNegPadAmt;
+        minDel = 0; //temporarily override the ability to have negative values (it's not ready)
+        var maxDel = maxDelay * axisScale;
+        console.log("minDel: " + minDel);
+        console.log("maxDel: " + maxDel);
+        if (maxDel == 0) {
+            maxDel = 1;
+        }
+    var minThroughputAxis = 0;
+    //var minThroughputAxis = 0 - yNegPadAmt * maxThroughput;
 
     allTestsChart.width(750)
         .height(465)
         .brushOn(false)
         .mouseZoomable(true)
         .shareTitle(false)
-        //.compose([throughputChart, lossChart])
-        //.compose([owdelayChart, lossChart, packetRetransChart])
-        //.compose([throughputChart, revThroughputChart, owdelayChart, revOwdelayChart, lossChart, revLossChart, packetRetransChart, revPacketRetransChart])
         .compose(activeCharts)
         .x(d3.time.scale().domain(d3.extent(ps_data, function(d) { return new Date(d.ts * 1000); })))
         .xAxisLabel('Date')
-        .y(d3.scale.linear().domain([0, axis_value( maxThroughput, 1000000000)]))
+        .y(d3.scale.linear().domain([minThroughputAxis, axis_value( maxThroughput, 1000000000)]))
         //.elasticY(true)
-        //.yAxisPadding('15%')
         .yAxisLabel('Throughput')
         .rightYAxisLabel('Latency (ms)')
-        //.rightYAxisPadding('15%')
-        //.legend(dc.legend().x(400))
         .legend(dc.legend().x(40).y(470).itemHeight(13).gap(5).legendWidth(600).horizontal(true).itemWidth(150))
-        //.rightY(d3.scale.linear().domain([0, axis_value(maxDelay, 50)]))
         .rightY(d3.scale.linear().domain([0, yAxisMax * axisScale]).nice())
-        //.y(d3.scale.linear().domain([0, maxLoss * axisScale]))
+        //.rightY(d3.scale.linear().domain([minDel, maxDel]).nice())
+        //.rightY(d3.scale.linear().domain([0, axis_value(maxDelay)]).nice())
         .xAxis();
     allTestsChart.yAxis().tickFormat(format_throughput);
     if (maxDelay > 0) {
@@ -594,10 +639,21 @@ d3.json(url, function(error,ps_data) {
 //              .attr("width", (+svgWidth + axisWidth) )
 //              .attr("height", "100%");
 
+    console.log('maxLoss: ' + maxLoss);
     // Loss axis
-    var lossAxis = addAxis(maxLoss, "Loss", function(d) { return d3.format('.2%')(d); }, "#ff0000");
+    if (maxLoss == 0) {
+        maxLoss = 1;
+    }
+    var minLossAxis = 0 - (maxLoss * yNegPadAmt);
+    var minRetransAxis = 0 - (maxPacketRetrans * yNegPadAmt);
+    minRetransAxis = 0; // temporarily override ability to have negative values
+    console.log('minLoss: ' + minLossAxis);
+    console.log('maxLoss: ' + maxLoss);
+    // Loss axis
+    //var lossAxis = addAxis(minLossAxis, maxLoss, "Loss", function(d) { return d3.format('.2%')(d); }, "#ff0000");
+    var lossAxis = addAxis(0, maxLoss, "Loss", function(d) { return d3.format('.2%')(d * axisScale); }, "#ff0000");
     // Packet retransmissions axis
-    var retransAxis = addAxis(maxPacketRetrans, "Packet Retransmissions", function(d) { return d; }, "#ff00ff");
+    var retransAxis = addAxis(0, maxPacketRetrans, "Packet Retransmissions", function(d) { return d * axisScale; }, "#ff00ff");
 
     var svgSel = allTestsChart.svg();
     //var svgSel = d3.select('#chart svg');
@@ -612,30 +668,13 @@ d3.json(url, function(error,ps_data) {
             d3.event.target.style.fill = 'black';
         }
         
-        //e.hidden = true;
-
-        //e.chart.filter(false);
-        //e.chart.filter(function (d) { return false; } );
-        //e.chart.filters.apply();
-        //e.chart.render();
-        //allTestsChart.compose([revThroughputChart, owdelayChart, revOwdelayChart, lossChart, revLossChart, packetRetransChart, revPacketRetransChart])
-        //allTestsChart.redraw();
-        //allTestsChart.legend(dc.legend().x(40).y(470).itemHeight(13).gap(5).legendWidth(600).horizontal(true).itemWidth(150))
         allTestsChart.render();
         postRenderTasks();
-        //dc.renderAll();
-
-        //.attr("fill", "red");
-        //alert(e);
     });
-
-    //var dcLegendItems = svgSel.selectAll('.dc-legend-item') {
-
-    //}
 
     } // end function postRenderTasks()
 
-      function addAxis(maxVal, label, axisFormat, color) {
+      function addAxis(minVal, maxVal, label, axisFormat, color) {
           var axisWidth = 60;
           var y1 = d3.scale.linear().range([412, 0]);
           var yAxisRight = d3.svg.axis().scale(y1)  // This is the new declaration for the 'Right', 'y1'
@@ -645,9 +684,9 @@ d3.json(url, function(error,ps_data) {
           yAxisRight.scale(y1);
           // Set a default range, so we don't get a broken axis if there's no data
           if(maxVal == 0) {
-              y1.domain([0, 1]);
+              y1.domain([minVal, 1 * axisScale]);
           } else {
-              y1.domain([0, maxVal * axisScale]);
+              y1.domain([minVal, maxVal * axisScale]);
               //y1.domain([0, maxLoss]);
           }
 
