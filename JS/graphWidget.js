@@ -142,8 +142,8 @@ if (uri.indexOf('?') > -1) {
 
 var chartStates = [];
 
-var base_url = '/serviceTest/graphData.cgi?url=' + ma_url + '&action=data&src=' + source + '&dest=' + dest;
-var url = '/serviceTest/graphData.cgi?url=' + ma_url + '&action=data&src=' + source + '&dest=' + dest + '&start=' + start_ts + '&end=' + end_ts + '&window=' + summary_window;
+var base_url = '/serviceTest/graphData.cgi?action=data&url=' + ma_url + '&src=' + source + '&dest=' + dest;
+var url = '/serviceTest/graphData.cgi?action=data&url=' + ma_url + '&src=' + source + '&dest=' + dest + '&start=' + start_ts + '&end=' + end_ts + '&window=' + summary_window;
 
 d3.json('/serviceTest/graphData.cgi?src=' + source + '&dest=' + dest +  '&action=hosts', function(error, hosts) {
    //var srcCapacity = d3.select('#source_capacity');
