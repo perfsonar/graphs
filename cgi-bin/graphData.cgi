@@ -96,19 +96,22 @@ sub get_data {
     my $end     = $cgi->param('end')     || error("Missing required parameter \"end\"");
     my $flatten = 1;
     $flatten = $cgi->param('flatten') if (defined $cgi->param('flatten'));
+    my $orig_src = $src;
+    my $orig_dest = $dest;
 
     my %results;
     
     foreach my $type (@types){
         my $real_type = $type;	
         foreach my $ordered ([$src, $dest], [$dest, $src]){
-
             my ($test_src, $test_dest) = @$ordered;
 
             my $filter = new perfSONAR_PS::Client::Esmond::ApiFilters();
             $filter->event_type($type);
             $filter->source($test_src);
             $filter->destination($test_dest);
+            #$filter->time_start($start);
+            #$filter->time_end($end);
 
             my $client = new perfSONAR_PS::Client::Esmond::ApiConnect(url     => $url,
                 filters => $filter);
@@ -129,7 +132,7 @@ sub get_data {
                 my $tool_name = $metadatum->tool_name();
 
                 # we MAY want to skip bwctl/ping results
-                # for now, we won't. Uncomment to skip them.
+                # for now, we are. comment out or remove to skip them.
                 next if ($tool_name eq 'bwctl/ping');
 
                 $type = 'loss' if ($type eq 'packet-loss-rate');
@@ -146,9 +149,7 @@ sub get_data {
                     #$data = $event_type->get_data();
                     my $stats_summ = $event->get_summary('statistics', $summary_window);
                     error($event->error) if ($event->error);
-                    #warn "No $type summary found\n" unless $stats_summ;
                     $data = $stats_summ->get_data() if defined $stats_summ;
-                    #warn "stats_data: " . Dumper $data;
                     if (defined($data) && @$data > 0){
                         foreach my $datum (@$data){
                             $total += $datum->val->{mean};
@@ -161,15 +162,10 @@ sub get_data {
                     if ($type eq 'loss') {
                         my $stats_summ = $event->get_summary('aggregation', $summary_window);
                         error($event->error) if ($event->error);
-                        #warn "No $type summary found\n" unless $stats_summ;
                         $data = $stats_summ->get_data() if defined $stats_summ;
                     } else {
-                        #warn "event: " . Dumper $event;
                         $data = $event->get_data();
-                        #warn "data: " . Dumper $data;
-                        #error($event->error) if ($event->error);
                     }
-                    #warn "data: " . Dumper $data;
                     if (defined($data) && @$data > 0){
                         foreach my $datum (@$data){
                             $total += $datum->val;
@@ -180,12 +176,6 @@ sub get_data {
                     }
                 } 
 
-                #my $data  = $event->get_data();
-
-                #error($event->error) if($event->error); 
-
-                #print all data
-                #warn "not here!";
                 foreach my $datum (@$data){
                     my $ts = $datum->ts;
                     my $val;
@@ -196,9 +186,9 @@ sub get_data {
                     }
                     push(@data_points, {'ts' => $ts, 'val' => $val});		    
                 }
-            }
-            #warn "$type data_points: " . @data_points;
             $results{$test_src}{$test_dest}{$type} = \@data_points;
+            #warn "!!!!! Retrieved results for source: ${test_src} . dest:  ${test_dest} . test type:  $type . received " . @data_points;
+            }
         }
     }
 
@@ -206,6 +196,10 @@ sub get_data {
     my %res = ();
     if (1) {
         while (my ($src, $values) = each %results) {
+            if ($src ne $orig_src) {
+                #warn "src: $src but orig is ${orig_src}";
+                next;
+            }
             while (my ($dst, $result_types) = each %$values) {
                 #warn "src: $src and dst: $dst\n";
                 #while (my $type = each %$result_types) {
@@ -213,6 +207,7 @@ sub get_data {
                     #my $row = {};
                     #warn "type: " . $type;
                     $res{$src}{$dst}{$type} = ();
+                    #if (exists $results{$src}{$dst}{$type} && $src eq $orig_src && $dst eq $orig_dest) 
                     if (exists $results{$src}{$dst}{$type}) {
                         foreach my $data (@{$results{$src}{$dst}{$type}}) {
                             my $row = {};
@@ -224,9 +219,9 @@ sub get_data {
                             push @{$res{$src}{$dst}{$type}}, $row;
                         }
                     }
-                    if (exists($results{$dst}{$src}{$type})) {
+                    if (exists($results{$dst}{$src}{$type})) { # && $dst eq $orig_dest && $src eq $orig_src) 
+                            warn "got here dst src type: $type";
                         foreach my $data (@{$results{$dst}{$src}{$type}}) {
-                            #warn "got here dst src";
                             my $row = {};
                             while (my ($key, $val) = each %$data) {
                                 $row->{'dst_'.$key} = $val;
@@ -277,21 +272,21 @@ sub get_data {
 
                         my $ts = $value->{src_ts};
                         my $val = $value->{src_val};
-                        if (defined($ts) && defined($val) || 1) {
+                        #if (defined($ts) && defined($val) || 1) {
                             $row->{"${type}_src_ts"} = $ts;
                             $row->{"${type}_src_val"} = $val;
                             $row->{ts} = $ts;
                             $row->{ts_date} = localtime($ts) if $ts;
-                        }
+                            #}
 
                         my $dst_ts = $value->{dst_ts};
                         my $dst_val = $value->{dst_val};
-                        if (defined($dst_ts) && defined($dst_val) || 1) {
+                        #if (defined($dst_ts) && defined($dst_val) || 1) {
                             $row->{"${type}_dst_ts"} = $dst_ts;
                             $row->{"${type}_dst_val"} = $dst_val;
                             $row->{ts} = $dst_ts if defined $dst_ts;
                             $row->{ts_date} = localtime($dst_ts) if $dst_ts;
-                        }
+                            #}
                         $row->{'source'} = $src;
                         $row->{'destination'} = $dst;
                         #$row->{'type'} = $type;
