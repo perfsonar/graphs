@@ -430,9 +430,8 @@ d3.json(url, function(error,ps_data) {
         .renderDataPoints(true) 
         .mouseZoomable(true)
         .brushOn(false)       
-        .defined(function(d) {
-                return (!d.data.value.isNull);
-                })
+        //.defined(function(d) { return (!d.data.value.isNull); })
+        //.defined(function(d) { return (isNaN(d.data.value)); })
         .valueAccessor(function(d) {
             if (d.value.avg != 0) { 
                 return yAxisMax * d.value.avg / maxLoss; 
@@ -456,9 +455,8 @@ d3.json(url, function(error,ps_data) {
         .renderDataPoints(true) 
         .mouseZoomable(true)
         .brushOn(false)       
-        .defined(function(d) {
-                return (!d.data.value.isNull);
-                })
+        //.defined(function(d) { return (!d.data.value.isNull); })
+        //.defined(function(d) { return (isNaN(d.data.value)); })
         .valueAccessor(function(d) {
             if (d.value.avg != 0) { 
                 return yAxisMax * d.value.avg / maxLoss; 
