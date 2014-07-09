@@ -151,7 +151,6 @@ d3.json('/serviceTest/graphData.cgi?src=' + source + '&dest=' + dest +  '&action
     source_host.html(hosts.source_host);
     var dest_host = d3.select('#dest_host');
     dest_host.html(hosts.dest_host);
-
 });
 
 

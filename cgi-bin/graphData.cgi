@@ -87,7 +87,6 @@ sub get_data {
     my @valid_windows = (60, 300, 3600, 86400);
     $summary_window = 3600;
     $summary_window = $window if ($window && (grep {$_ eq $window} @valid_windows));
-    #warn "Summary window: ${summary_window}; window: $window";
 
     my $url     = $cgi->param('url')     || error("Missing required parameter \"url\"");
     my $src     = $cgi->param('src')     || error("Missing required parameter \"src\"");
@@ -107,7 +106,7 @@ sub get_data {
             my ($test_src, $test_dest) = @$ordered;
 
             my $filter = new perfSONAR_PS::Client::Esmond::ApiFilters();
-            $filter->event_type($type);
+            $filter->event_type($real_type);
             $filter->source($test_src);
             $filter->destination($test_dest);
             #$filter->time_start($start);
@@ -123,8 +122,8 @@ sub get_data {
             my @data_points;
 
             foreach my $metadatum (@$metadata){
+
                 my $event = $metadatum->get_event_type($real_type);
-                #warn "Type: $type";
                 $event->filters->time_start($start);
                 $event->filters->time_end($end);
                 my $source_host = $metadatum->input_source();
@@ -146,7 +145,6 @@ sub get_data {
                 my $max = undef; 
 
                 if ($type eq 'owdelay') {
-                    #$data = $event_type->get_data();
                     my $stats_summ = $event->get_summary('statistics', $summary_window);
                     error($event->error) if ($event->error);
                     $data = $stats_summ->get_data() if defined $stats_summ;
@@ -175,7 +173,7 @@ sub get_data {
                         $average = $total / @$data;
                     }
                 } 
-
+                my @data_points = ();
                 foreach my $datum (@$data){
                     my $ts = $datum->ts;
                     my $val;
@@ -186,8 +184,8 @@ sub get_data {
                     }
                     push(@data_points, {'ts' => $ts, 'val' => $val});		    
                 }
-            $results{$test_src}{$test_dest}{$type} = \@data_points;
-            #warn "!!!!! Retrieved results for source: ${test_src} . dest:  ${test_dest} . test type:  $type . received " . @data_points;
+            
+             $results{$test_src}{$test_dest}{$type} = \@data_points if @data_points > 0; 
             }
         }
     }
@@ -196,45 +194,37 @@ sub get_data {
     my %res = ();
     if (1) {
         while (my ($src, $values) = each %results) {
-            if ($src ne $orig_src) {
-                #warn "src: $src but orig is ${orig_src}";
-                next;
-            }
             while (my ($dst, $result_types) = each %$values) {
                 #warn "src: $src and dst: $dst\n";
-                #while (my $type = each %$result_types) {
+                #while (my $type = each %$result_types) 
                 foreach my $type (@types) {
-                    #my $row = {};
-                    #warn "type: " . $type;
-                    $res{$src}{$dst}{$type} = ();
+                    $res{$src}{$dst}{$type} = [] unless $res{$src}{$dst}{$type};
                     #if (exists $results{$src}{$dst}{$type} && $src eq $orig_src && $dst eq $orig_dest) 
-                    if (exists $results{$src}{$dst}{$type}) {
+                    if (exists($results{$src}{$dst}{$type}) && $src eq $orig_src) {
                         foreach my $data (@{$results{$src}{$dst}{$type}}) {
-                            my $row = {};
+                            my $src_row = {};
 
                             while (my ($key, $val) = each %$data) {
-                                $row->{'src_'.$key} = $val;
+                                $src_row->{'src_'.$key} = $val;
                                 #push @{$results{$src}{$dst}{$type}}, \%row;
                             }
-                            push @{$res{$src}{$dst}{$type}}, $row;
+                            push @{$res{$src}{$dst}{$type}}, $src_row;
                         }
                     }
-                    if (exists($results{$dst}{$src}{$type})) { # && $dst eq $orig_dest && $src eq $orig_src) 
-                            warn "got here dst src type: $type";
+                    if (exists($results{$dst}{$src}{$type}) && $src eq $orig_src ) { 
                         foreach my $data (@{$results{$dst}{$src}{$type}}) {
-                            my $row = {};
+                            my $dst_row = {};
                             while (my ($key, $val) = each %$data) {
-                                $row->{'dst_'.$key} = $val;
+                                $dst_row->{'dst_'.$key} = $val;
                             }
-                            #warn Dumper $row;
-                            push @{$res{$src}{$dst}{$type}}, $row;
+                            #next if keys %$dst_row == 0;
+                            push @{$res{$src}{$dst}{$type}}, $dst_row; # if $src eq $orig_src;
                         }
-                        delete $results{$dst}{$src}{$type};
+                        delete $results{$dst}{$src}{$type}; # if $src eq $orig_src;
                     } 
+                    delete $results{$dst}{$src}{$type} if !defined($results{$dst}{$src}{$type}) || @{$results{$dst}{$src}{$type}} == 0; 
                     delete $results{$dst}{$src} if !%{$results{$dst}{$src}};
                     delete $results{$dst} if !%{$results{$dst}};
-                    #push @{$res{$src}{$dst}{$type}}, $row;
-
                 }
             }
         }
@@ -273,7 +263,7 @@ sub get_data {
                         my $ts = $value->{src_ts};
                         my $val = $value->{src_val};
                         #if (defined($ts) && defined($val) || 1) {
-                            $row->{"${type}_src_ts"} = $ts;
+                        #$row->{"${type}_src_ts"} = $ts;
                             $row->{"${type}_src_val"} = $val;
                             $row->{ts} = $ts;
                             $row->{ts_date} = localtime($ts) if $ts;
@@ -282,7 +272,7 @@ sub get_data {
                         my $dst_ts = $value->{dst_ts};
                         my $dst_val = $value->{dst_val};
                         #if (defined($dst_ts) && defined($dst_val) || 1) {
-                            $row->{"${type}_dst_ts"} = $dst_ts;
+                        #$row->{"${type}_dst_ts"} = $dst_ts;
                             $row->{"${type}_dst_val"} = $dst_val;
                             $row->{ts} = $dst_ts if defined $dst_ts;
                             $row->{ts_date} = localtime($dst_ts) if $dst_ts;
@@ -322,7 +312,6 @@ sub get_data {
             }
         }
         print to_json(\@results_arr);
-        #print to_json($results2);
     } else {
         print to_json(\%results);
     }
@@ -333,7 +322,6 @@ sub get_tests {
     my $url    = $cgi->param('url')   || error("Missing required parameter \"url\"");
     my $flatten = 1;
     $flatten = $cgi->param('flatten') if (defined $cgi->param('flatten'));
-    #my $flatten    = $cgi->param('flatten') || 1;
     my $start_time = [Time::HiRes::gettimeofday()];
 
     my $filter = new perfSONAR_PS::Client::Esmond::ApiFilters();
@@ -345,13 +333,11 @@ sub get_tests {
     my $method_start_time = [Time::HiRes::gettimeofday()];
     $start_time = [Time::HiRes::gettimeofday()];
     my $metadata = $client->get_metadata();
-    #warn "Time elapsed getting metadata: " . Time::HiRes::tv_interval($start_time);
     $total_metadata += Time::HiRes::tv_interval($start_time);
     error($client->error) if ($client->error);
 
     my %results;
 
-    #my $summary_window = 86400; # try 0 or 86400
     my $summary_window = 3600; # try 0 or 86400
 
     my $now = time;
@@ -367,12 +353,9 @@ sub get_tests {
 
         my $protocol = $metadatum->get_field('ip-transport-protocol');
         my $duration = $metadatum->get_field('time-duration');
-        #my $source_host = $metadatum->input_source();
-        #my $destination_host = $metadatum->input_destination();
         my $hostnames = host_info( {src => $src, dest => $dst} );
         my $source_host = $hostnames->{source_host};
         my $destination_host = $hostnames->{dest_host};
-        #warn "source: ${source_host} dest: ${destination_host}";
 
 
         foreach my $event_type (@$event_types){
@@ -390,7 +373,7 @@ sub get_tests {
             # now grab the last 1 weeks worth of data to generate a high level view
             $event_type->filters->time_start($now - 86400 * 7);
             $event_type->filters->time_end($now);
-            $event_type->filters->source($src); # TODO: CHECK THIS
+            $event_type->filters->source($src);
             $event_type->filters->destination($dst);
 
             $start_time = [Time::HiRes::gettimeofday()];
@@ -401,12 +384,9 @@ sub get_tests {
             my $max = undef;
 
             if ($type eq 'owdelay') {
-                #$data = $event_type->get_data();
                 my $stats_summ = $event_type->get_summary('statistics', $summary_window);
                 error($event_type->error) if ($event_type->error);
-                #warn "No $type summary found\n" unless $stats_summ;
                 $data = $stats_summ->get_data() if defined $stats_summ;
-                #warn "stats_data: " . Dumper $data;
                 if (@$data > 0){
                     push @$all_types, $type if (!grep {$_ eq $type} @$all_types);
                     foreach my $datum (@$data){
@@ -420,7 +400,6 @@ sub get_tests {
                 if ($type eq 'loss') {
                     my $stats_summ = $event_type->get_summary('aggregation', $summary_window);
                     error($event_type->error) if ($event_type->error);
-                    #warn "No $type summary found\n" unless $stats_summ;
                     $data = $stats_summ->get_data() if defined $stats_summ;
                 } else {
                     $data = $event_type->get_data();
@@ -436,7 +415,6 @@ sub get_tests {
                 }
             }
             $total_data += Time::HiRes::tv_interval($start_time);
-            #warn "Time elapsed getting data: " . Time::HiRes::tv_interval($start_time);
 
             error($event_type->error) if ($event_type->error);
         
@@ -460,8 +438,6 @@ sub get_tests {
     if (1) {
         while (my ($src, $values) = each %results) {
             while (my ($dst, $types) = each %$values) {
-                #warn "src: $src and dst: $dst\n";
-                #while (my $type = each %$types) { }
                 foreach my $type (@$all_types) {
                     my $bidirectional = 0;
                     my ($src_res, $src_average, $src_min, $src_max, $source_host);
@@ -479,7 +455,7 @@ sub get_tests {
                     }
                     if (exists($results{$dst}{$src}{$type})) {
                         $dst_res = $results{$dst}{$src}{$type};
-                        $average = undef; # = $dst_res->{'week_average'};# || 0;
+                        $average = undef;
                         $dst_average = $dst_res->{'week_average'};
                         $dst_min = $dst_res->{'week_min'};
                         $dst_max = $dst_res->{'week_max'};
@@ -489,17 +465,13 @@ sub get_tests {
                         $duration = $dst_res->{'duration'};
                         $last_update = $dst_res->{'last_update'} || 0;
                         $protocol = $dst_res->{'protocol'};
-                        #warn "src_res: " . Dumper $src_res;
-                        #warn "dst_res: " . Dumper $dst_res;
-                        $source_host = $dst_res->{'destination_host'}; # TODO: DOUBLE-CHECK THIS
-                        $destination_host = $dst_res->{'source_host'}; # TODO: DOUBLE-CHECK THIS
+                        $source_host = $dst_res->{'destination_host'}; 
+                        $destination_host = $dst_res->{'source_host'};
                         $bidirectional = 1 if (defined ($results{$dst}{$src}{$type}->{'week_average'}) && defined ($results{$src}{$dst}{$type}->{'week_average'}) );
 
                         # Now combine with the source values
                         $min = $src_res->{'week_min'} if (defined($src_res->{'week_min'}) && (!defined($min) || $src_res->{'week_min'} < $min));
                         $max = $src_res->{'week_max'} if (defined($src_res->{'week_max'}) && (!defined($max) || $src_res->{'week_max'} > $max));
-                        #warn "src_res min: " . $src_res->{'week_min'};
-                        #warn "src_res max: " . $src_res->{'week_max'};
 
                         if (defined $src_average && defined($dst_average)) {
                             $average = ($src_average + $dst_average) / 2;
@@ -544,11 +516,8 @@ sub get_tests {
     if ($flatten == 1) {
         while (my ($src, $values) = each %results) {
             while (my ($dst, $types) = each %$values) {
-                #warn "src: $src and dst: $dst\n";
                 my $row = {};
-                #while (my $type = each %$types) { }
                 foreach my $type (@$all_types) {
-                    #my $row = {};
                     while (my ($key, $value) = each %{$results{$src}{$dst}{$type}}) {
                         $row->{"${type}_$key"} = $value;
                     }
@@ -560,9 +529,6 @@ sub get_tests {
         }
 
     }
-    #warn "Total metadata time (s): $total_metadata\n";
-    #warn "Total data time (s): $total_data\n";
-    #warn "Total time: " . Time::HiRes::tv_interval($method_start_time);
 
     print $cgi->header('text/json');
     if ($flatten == 1) {
@@ -574,27 +540,22 @@ sub get_tests {
 }
 
 sub get_ls_hosts {
-    #my $source     = $cgi->param('source')     || error("Missing required parameter \"src\"");
     my %hosts;
 
     my %results;
     my $ls_bootstrap_client = SimpleLookupService::Client::Bootstrap->new();
     $ls_bootstrap_client->init();
     my $urls = $ls_bootstrap_client->query_urls();
-    #warn "urls: " . Dumper @$urls;
-
-    my $error_message;
 
     print $cgi->header('text/json');
-    #print to_json(\%results);
     print to_json($urls);
 
 }
 
 sub get_interfaces {
-    my $source     = $cgi->param('source'); #    || error("Missing required parameter \"src\"");
-    my $dest       = $cgi->param('dest'); #    || error("Missing required parameter \"dest\"");
-    my $interface  = $cgi->param('interface'); #    || error("Missing required parameter \"interface\"");
+    my $source     = $cgi->param('source');
+    my $dest       = $cgi->param('dest'); 
+    my $interface  = $cgi->param('interface');
     my $ls_url      = $cgi->param('ls_url')    || error("Missing required parameter \"ls_url\"");
     my %hosts;
     $hosts{source} = $source;
@@ -602,20 +563,21 @@ sub get_interfaces {
     my $ip = $interface;
     my %results;
 
-    my $hostname = 'ps-west.es.net';
-    my $port = 8090;
-
     my $server = SimpleLookupService::Client::SimpleLS->new();
-    $server->init( { host => $hostname, port => $port } );
     $server->setUrl($ls_url);
     $server->connect();
 
     my $query_object = SimpleLookupService::QueryObjects::Network::InterfaceQueryObject->new();
     $query_object->init();
+
+    my $host_info = host_info( { src => $source, dest => $dest });
+    my $source_hostname = $host_info->{'source_host'};
+    my $dest_hostname = $host_info->{'dest_host'};
+
     if ($source && $dest) {
-        $query_object->setInterfaceAddresses( [ $source, $dest ] );
+        $query_object->setInterfaceAddresses( [ $source, $dest, $source_hostname, $dest_hostname ] );
     } elsif ($source) { # If only source is provided, only query source
-        $query_object->setInterfaceAddresses( $source );
+        $query_object->setInterfaceAddresses( [ $source, $source_hostname ] );
     }
     $query_object->setKeyOperator( { key => 'interface-addresses', operator => 'any' } );
 
@@ -633,12 +595,12 @@ sub get_interfaces {
         $mtu = shift @$mtu;
         my $addresses = $res->getInterfaceAddresses();
         foreach my $address (@$addresses) {
-            if ($address eq $source) {
+            if ($address eq $source || $address eq $source_hostname) {
                 $results{'source_capacity'} = $capacity if defined $capacity;
                 $results{'source_mtu'} = $mtu if defined $mtu;
                 $results{'source_ip'} = $source;
                 $results{'source_addresses'} = $addresses;
-            } elsif ($dest && $address eq $dest) {
+            } elsif ($dest && $address eq $dest || $address eq $dest_hostname) {
                 $results{'dest_capacity'} = $capacity if defined $capacity;
                 $results{'dest_mtu'} = $mtu if defined $mtu;
                 $results{'dest_ip'} = $dest;
@@ -693,3 +655,4 @@ sub error {
 sub by_ts {
     $a->{ts} <=> $b->{ts};
 }
+
