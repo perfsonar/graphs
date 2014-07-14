@@ -1,5 +1,4 @@
 [% INCLUDE header.tmpl %]
-	<input type="hidden" id="ma_host_type" value='[% ma_host_type %]'/>
 	<script type="text/javascript" src="JS/initService.js"></script>
 	<script type="text/javascript" src="JS/result.js"></script>
 	<script type="text/javascript" src="JS/bwctl-datadiv.js"></script>
@@ -11,20 +10,17 @@
      			<td valign="top">
      				 <div id="testsContainer">
         				<h2 align='center'>perfSONAR-PS Tests</h2>
-        			
 					[% IF eventType %]
-						<h4 class="divheading"> Service type: [% IF serviceDisplayName %] [% key=eventType %] [% serviceDisplayName.$key %]
+						<h2 class="divheading"> Service type </h2>
+						<p> [% IF serviceDisplayName %] [% key=eventType %] [% serviceDisplayName.$key %]
 						    [% ELSE %] [% $key %]
-						    [% END %] </h4>
-	                                        [% IF ma_host_type=='toolkit' %]
-             	                                   <h4 class="divheading"><p id="initiator"></p></h4>
-       	                                        [% END %]
+						    [% END %]
 					[% ELSE %]
 						<h2 class="divheading"> Choose Service type </h2>
 						[% FOREACH serviceType IN services.keys %]
         						[% IF hosts.size==1 %]
 									[% FOREACH key IN hosts.keys %]
-										<input type="radio" name="servicetype" onchange="processSelectedRadioOption('[% hosts.$key %]','[% services.$serviceType %]','[% ma_host_type %]')"  value="[% services.$serviceType %]"> [% serviceType %]
+										<input type="radio" name="servicetype" onchange="processSelectedRadioOption('[% hosts.$key %]','[% services.$serviceType %]')"  value="[% services.$serviceType %]"> [% serviceType %]
 									[%END%]
 							[% ELSE %]
    									<input type="radio" name="servicetype" onchange="showTestGroups()" default='' value="[% services.$serviceType %]"> [% serviceType %]
@@ -41,7 +37,7 @@
 										[% FOREACH member IN group.members %]
 											<option value="[% hosts.$member %]"> [% member %] </option>
 										[% END %]
-										</select> <button name="GetResponse" value="Display" onClick="doclick('[% group.id %]','[% key=group.type %][% services.$key %]','[% ma_host_type %]'); return false;"> Display</button>
+										</select> <button name="GetResponse" value="Display" onClick="doclick('[% group.id %]','[% key=group.type %][% services.$key %]'); return false;"> Display</button>
 							     		[% END %]
 								[% END %]
 								</ul>
@@ -53,15 +49,12 @@
 					 <hr><br>
 
  					 <p><h3 class="divheading">Active Tests: </h3></p>
-		[% IF eventType=='bwctl' %]
+ 					 [% IF eventType=='bwctl' %]
  					 <p><i><h4>The tests listed below have collected data within the last 7 days</h4></i></p>
  					 [% ELSIF eventType=='owamp' %]
  					  <p><i><h4>The tests listed below have collected data within the last 30 minutes</h4></i></p>
  					 [% END %]	
  					 <p><img src="images/uparrow.png" width="9px" height="9px" align="left"/> - Sorted(asc) by that column. Click on column headings to sort
-                                          [% IF ma_host_type=='toolkit' %]
-						<h4><p id="initiator"></p></h4>
-                                          [% END %]
 					 <div id='Active' > &nbsp; </div>
 					 <br><hr><br>
 	
@@ -90,7 +83,7 @@
 [% IF eventType %] 
 	[% IF hosts.size==1 %]
         	[% FOREACH key IN hosts.keys %]
-                	  <script type="text/javascript"> window.onload = processSelectedRadioOption('[% hosts.$key %]','[% key = eventType %][% services.$key %]','[% ma_host_type %]'); </script>
+                	  <script type="text/javascript"> window.onload = processSelectedRadioOption('[% hosts.$key %]','[% key = eventType %][% services.$key %]'); </script>
         	[%END%]
  	[% END %]
 [% END %]

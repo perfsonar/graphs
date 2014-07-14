@@ -1,11 +1,4 @@
 var divLayers = ["Active","Inactive"];
-var owampTableHeadings = ["Source","Destination","Bidirectional","Forward&nbsp;Direction&nbsp;Loss (Past&nbsp;30&nbsp;minutes)","Reverse&nbsp;Direction&nbsp;Loss (Past&nbsp;30&nbsp;minutes)","Graph"];
-var bwctlTableHeadings = ["Source","Destination","Bidirectional","Protocol","Duration","1 week Avg Throughput Src-Dst (Gbps)","1 week Avg Throughput Dst-Src (Gbps)","Graph"];
-
-var toolkitOwampTableHeadings = ["Target","Bidirectional","Loss Sending&nbsp;(Past&nbsp;30&nbsp;minutes)","Loss Receiving&nbsp;(Past&nbsp;30&nbsp;minutes)","Graph"];
-var toolkitBwctlTableHeadings = ["Target","Bidirectional","Protocol","Duration","1 week Avg Outbound Throughput(Gbps)","1 week Avg Inbound Throughput (Gbps)","Graph"];
-
-
 var queryParameters = new Array();
 
 function createRequestObject() { 
@@ -24,14 +17,13 @@ function createRequestObject() {
 // Make the XMLHttpRequest object 
 var http = createRequestObject(); 
 
-function processSelectedRadioOption(hostValue,serviceType,ma_host_type){
+function processSelectedRadioOption(hostValue,serviceType){
 	clearpage();
-	sendRequest(hostValue,serviceType,ma_host_type);
+	sendRequest(hostValue,serviceType);
 }	
 
-function sendRequest(ma_url,eventType,ma_host) { 
+function sendRequest(ma_url,eventType) { 
   	var now = new Date();
-	console.log(ma_host);
   	if(ma_url === "" || eventType === ""){
 	  	var testparamdiv = document.getElementById("testParametersDiv");
 	  	var htmltext = "<br><br><h3> Error!Empty parameters";
@@ -39,46 +31,27 @@ function sendRequest(ma_url,eventType,ma_host) {
 	  
   	}else{
 	  	http = createRequestObject();
-	  	if(ma_host === ""){
-	  		http.open('get', 'getData.cgi?ma_url='+ma_url+'&eventType='+eventType+'&nocache='+now.getTime());
-	  	}else{
-	  		http.open('get', 'getData.cgi?ma_url='+ma_url+'&eventType='+eventType+'&ma_host_type='+ma_host+'&nocache='+now.getTime());
-	  	}
+	  	http.open('get', 'getData.cgi?ma_url='+ma_url+'&eventType='+eventType+'&nocache='+now.getTime());
 	  	queryParameters["ma_url"] = ma_url;
 	 	queryParameters["eventType"] = eventType;
 	  	document.getElementById("testParametersDiv").innerHTML = "<ul><li>MA_URL: "+ma_url+"</li></br><li>Service Test URL: "+eventType+"</li></ul>";
-	  	if(ma_host == "toolkit"){
-	  		if(eventType == "http://ggf.org/ns/nmwg/characteristic/delay/summary/20070921" || eventType == "http://ggf.org/ns/nmwg/tools/owamp/2.0" || eventType == "http://ggf.org/ns/nmwg/characteristic/delay/summary/20110317"){		
-	  			drawTable(toolkitOwampTableHeadings);
-	  		}else if (eventType == "http://ggf.org/ns/nmwg/tools/iperf/2.0" || eventType == "http://ggf.org/ns/nmwg/characteristics/bandwidth/achievable/2.0"){
-	  		
-	  			drawTable(toolkitBwctlTableHeadings);
-	  		}
-	  	}else {
-	  		if(eventType == "http://ggf.org/ns/nmwg/characteristic/delay/summary/20070921" || eventType == "http://ggf.org/ns/nmwg/tools/owamp/2.0" || eventType == "http://ggf.org/ns/nmwg/characteristic/delay/summary/20110317"){
-	  			
-	  			drawTable(owampTableHeadings);
-	  		}else if (eventType == "http://ggf.org/ns/nmwg/tools/iperf/2.0" || eventType == "http://ggf.org/ns/nmwg/characteristics/bandwidth/achievable/2.0"){
-	  		
-	  			drawTable(bwctlTableHeadings);
-	  		}
-	  	}
-	  	 http.onreadystatechange = function(){if(http.readyState ==4){handleResponse(http,ma_host)}};
+	  	drawTable(eventType);
+	  	http.onreadystatechange = handleResponse; 
 	  	http.send(null); 
 	  	setprogressTimerID = setInterval("setProgress()",200);
 	  	clearprogressTimerID = setInterval("blinkProgressDots()",400);
   	}
 }	 
      
-function handleResponse(http, hostType) { 
+function handleResponse() { 
   	if(http.readyState == 4 && http.status == 200){ 
    		response = http.responseText; // Text returned FROM perl script
     	var eType = queryParameters["eventType"]; 
     	if(response) {  
         	JSONData = eval("(" + response + ")");
-            updateTable(response,"Active",eType,hostType);
-            updateTable(response,"Inactive",eType,hostType);
-		    clearInterval(setprogressTimerID);
+        	updateTable(response,"Active",eType);
+        	updateTable(response,"Inactive",eType);
+      		clearInterval(setprogressTimerID);
       		clearInterval(clearprogressTimerID);
       		clearProgress();
       		createDataDisplayDiv(eType);
@@ -94,7 +67,7 @@ function handleResponse(http, hostType) {
 }
 
 //comes here once the user selects MA and clicks the button
-function doclick(selectboxname, eventType,ma_host_type) {
+function doclick(selectboxname, eventType) {
 		clearpage();
 		var selectbox = document.getElementById(selectboxname);
 		ma_url = selectbox.options[selectbox.selectedIndex].value;
@@ -104,7 +77,7 @@ function doclick(selectboxname, eventType,ma_host_type) {
   		var htmltext = "<br><br><h3> Invalid parameters!!";
   		testparamdiv.innerHTML = htmltext;
 		}else{
-  		sendRequest(ma_url,eventType, ma_host_type);
+  		sendRequest(ma_url,eventType);
 		}
 
 		return true;

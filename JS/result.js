@@ -1,8 +1,8 @@
+var owampTableHeadings = ["Source","Destination","Bidirectional","Forward&nbsp;Direction&nbsp;Loss (Past&nbsp;30&nbsp;minutes)","Reverse&nbsp;Direction&nbsp;Loss (Past&nbsp;30&nbsp;minutes)","Graph"];
+var bwctlTableHeadings = ["Source","Destination","Bidirectional","Protocol","Duration","1 week Avg Throughput Src-Dst (Gbps)","1 week Avg Throughput Dst-Src (Gbps)","Graph"];
 var allTests = new Array();
 // draws the result table
-function drawTable(tableHeadings){
-		var hostType = document.getElementById("ma_host_type");
-		
+function drawTable(evtType){
 		for (var i=0;i<divLayers.length;i++){
 			var testDiv = document.getElementById(divLayers[i]);
 			var myTable = document.createElement("table");
@@ -14,26 +14,39 @@ function drawTable(tableHeadings){
 			testDiv.appendChild(myTable);
 			var newTR = document.createElement("tr");
 			myTable.appendChild(newTR);
-	
-				for (var j=0;j<tableHeadings.length;j++){
+			if((evtType == "http://ggf.org/ns/nmwg/tools/iperf/2.0") || (evtType == "http://ggf.org/ns/nmwg/characteristics/bandwidth/achievable/2.0")){
+				for (var j=0;j<bwctlTableHeadings.length;j++){
 					var tmpTD = document.createElement("th");
 					tmpTD.align="center";	
-					if(j < tableHeadings.length-1){
+					if(j < bwctlTableHeadings.length-1){
 						tmpTD.setAttribute('onclick',"return sortTable('"+tableName+"',"+j+",true);");
 			                        tmpTD.setAttribute('onmouseover',"return changeMousePointer(this)");
 					}
 					
-					tmpTD.innerHTML =tableHeadings[j]+" <img id=\""+tableName+j+"\" src=\"images/uparrow.png\" align=\"right\" width=\"9px\" height=\"9px\" style=\"display:none\"/>";
+					tmpTD.innerHTML =bwctlTableHeadings[j]+" <img id=\""+tableName+j+"\" src=\"images/uparrow.png\" align=\"right\" width=\"9px\" height=\"9px\" style=\"display:none\"/>";
 					newTR.appendChild(tmpTD);
 				}
-			
+			}else if((evtType == "http://ggf.org/ns/nmwg/characteristic/delay/summary/20070921") || (evtType == "http://ggf.org/ns/nmwg/tools/owamp/2.0")){
+				for (var j=0;j<owampTableHeadings.length;j++){
+					var tmpTD = document.createElement("th");
+					tmpTD.align="center";
+					if(j < owampTableHeadings.length-1){
+                                                tmpTD.setAttribute('onclick',"return sortTable('"+tableName+"',"+j+",true);");
+                                                tmpTD.setAttribute('onmouseover',"return changeMousePointer(this)");					
+					}
+                                        tmpTD.innerHTML =owampTableHeadings[j]+"<img id=\""+tableName+j+"\" src=\"images/uparrow.png\" align=\"right\" width=\"9px\" height=\"9px\" style=\"display:none\"/>";
+					newTR.appendChild(tmpTD);
+				}		
+			}
 			
 		toggleSortArrowSymbols(tableName,0,true);	
-		}						
+		}
+
+						
 }
 
 //fills the table with entries
-function updateTable(data,testType,evtType,hostType){
+function updateTable(data,testType,evtType){
 	table = document.getElementById("table"+testType);
 	var parsedData = eval("(" + data + ")");
 	allTests[testType] = new Array();
@@ -42,18 +55,14 @@ function updateTable(data,testType,evtType,hostType){
 		allTests[testType][testKey] = tmpDir[testKey];
 		var tmpTR = document.createElement("tr");
 		var testDetails = tmpDir[testKey];
-		
-		if(hostType !== "toolkit"){
-			var srcTD = document.createElement("td");
-			srcTD.innerHTML = '<span style="white-space: nowrap;">'+testDetails['src']+'</span>';
-			srcTD.innerHTML += " ("+testDetails['srcIP']+")";
-			srcTD.align="center";
-			srcList[testDetails['src']]=1;
-			allHostsList[testDetails['src']]=1;
-			tmpTR.appendChild(srcTD);
-			
-		}
-		
+				
+		var srcTD = document.createElement("td");
+	 	srcTD.innerHTML = '<span style="white-space: nowrap;">'+testDetails['src']+'</span>';
+  		srcTD.innerHTML += " ("+testDetails['srcIP']+")";
+		srcTD.align="center";
+		srcList[testDetails['src']]=1;
+		allHostsList[testDetails['src']]=1;
+		tmpTR.appendChild(srcTD);
 				
 		var dstTD = document.createElement("td");
 		dstTD.innerHTML = '<span style="white-space: nowrap;">'+testDetails['dst']+'</span>';
@@ -108,22 +117,21 @@ function updateTable(data,testType,evtType,hostType){
 
             		graphTD.innerHTML = "<select type=\"button\" onChange=getGraphURL(\""+testType+"\",\""+testKey+"\",options[selectedIndex].value)> <option value=\"\"> Select </option> <option value=\"2592000\"> 1 month </option> <option value=\"7776000\"> 3 months </option> </select>";
    		}else if((evtType == "http://ggf.org/ns/nmwg/characteristic/delay/summary/20070921") || (evtType == "http://ggf.org/ns/nmwg/tools/owamp/2.0")){
-                        var fLossTD = document.createElement("td");
+           		var fLossTD = document.createElement("td");
+           		if (testType=="Active"){	
+            			fLossTD.innerHTML = testDetails['data']['loss'];          	
+                	}else{
+                		fLossTD.innerHTML = "*";
+                	}
+           		fLossTD.align="center";
+           		tmpTR.appendChild(fLossTD);
 
-                        if(testDetails['data'] !== null){
-                                fLossTD.innerHTML = testDetails['data']['loss'];
-                        }else{
-                                fLossTD.innerHTML = "*";
-                        }
-                        fLossTD.align="center";
-                        tmpTR.appendChild(fLossTD);
-
-                        var rLossTD = document.createElement("td");
-                        if (testDetails['dataR'] !== null){
-                              rLossTD.innerHTML = testDetails['dataR']['loss'];
-                        }else{
-                              rLossTD.innerHTML = "*";
-                        }
+            		var rLossTD = document.createElement("td");
+            		if (testDetails['bidirectional'] == "Yes" && testType=="Active"){	
+            			rLossTD.innerHTML = testDetails['dataR']['loss'];          	
+                	}else{
+                		rLossTD.innerHTML = "*";
+                	}
             		rLossTD.align="center";
             		tmpTR.appendChild(rLossTD);
  
@@ -136,11 +144,6 @@ function updateTable(data,testType,evtType,hostType){
    		graphTD.align="center";
    		tmpTR.appendChild(graphTD);
    		table.appendChild(tmpTR);
-	}
-	if(hostType == "toolkit"){
-		initiator=document.getElementById("initiator");
-	        initiator.innerHTML = "Initiator: "+parsedData["initiator"]+"";
-
 	}
 	
 }
