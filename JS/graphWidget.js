@@ -454,7 +454,7 @@ function drawChart(url) {
                 .colors("#ff00ff")
                 .valueAccessor(function (d) {
                         if (isNaN(d.value) || d.value > maxPacketRetrans) {
-                        alert("NaN! " +d.value);
+                        //alert("NaN! " +d.value);
                         }
                         if (maxPacketRetrans !== 0) {
                         return yAxisMax * d.value / maxPacketRetrans; 
