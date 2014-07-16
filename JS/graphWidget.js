@@ -156,12 +156,11 @@ function drawChart(url) {
 
     loading.style('display', 'block');
 
-
     d3.json(url, function(error,ps_data) {
 
             drawChartSameCall(error, ps_data);
 
-        function drawChartSameCall(error, ps_data) { 
+            function drawChartSameCall(error, ps_data) { 
             loading.style('display', 'none');
 
             var prevLink = d3.selectAll('.ps-timerange-nav .prev');
@@ -180,13 +179,13 @@ function drawChart(url) {
             prevLink.html('<a href="#">Previous ' + timePeriod + '</a>');
             nextLink.html('<a href="#">Next ' + timePeriod + '</a>');
             nextLink.on("click", function() { 
-                d3.event.preventDefault(); 
-                end_ts = end_ts + time_diff;
-                start_ts = start_ts + time_diff;
-                url = '/serviceTest/graphData.cgi?action=data&url=' + ma_url + '&src=' + source + '&dest=' + dest + '&start=' + start_ts + '&end=' + end_ts + '&window=' + summary_window;
-                d3.selectAll("#chart").selectAll("svg").remove();
-                drawChart(url);
-                });
+                    d3.event.preventDefault(); 
+                    end_ts = end_ts + time_diff;
+                    start_ts = start_ts + time_diff;
+                    url = '/serviceTest/graphData.cgi?action=data&url=' + ma_url + '&src=' + source + '&dest=' + dest + '&start=' + start_ts + '&end=' + end_ts + '&window=' + summary_window;
+                    d3.selectAll("#chart").selectAll("svg").remove();
+                    drawChart(url);
+                    });
             if (end_ts >= now ) {
                 nextLink.style('display', 'none');
             }
@@ -308,9 +307,6 @@ function drawChart(url) {
             charts.throughput.color = '#1F77B4'; 
             charts.throughput.valueAccessor = function(d) { return d.value.avg; };
             charts.throughput.showByDefault = true;
-            // 'title' is actually the label on mouseover
-            //charts.throughput.title = function(d) { return 'Throughput: ' + format_throughput(d.value.avg)
-            //                            + "\n" + format_ts(d.key); };
             charts.throughput.tickFormat = d3.format('.2s');
 
             // Latency charts
@@ -322,17 +318,10 @@ function drawChart(url) {
             charts.latency.valType = 'avg';
             charts.latency.color = '#00ff00'; 
             charts.latency.showByDefault = true;
-            //charts.latency.valueAccessor = function(d) { return yAxisMax * d.value.avg / maxDelay; };
-            // 'title' is actually the label on mouseover
-            //charts.latency.title = function(d) { return 'Latency: ' + format_latency(d.value.avg)
-            //                            + "\n" + format_ts(d.key); };
-            //charts.latency.tickFormat = d3.format('.2s');
-                //allTestsChart.rightYAxis().ticks(5)
-                //    .tickFormat(function(d) { return d3.format('.2f')(d * maxDelay / yAxisMax) });
             charts.latency.ticks = 5;
             charts.latency.tickFormat = function(d) { return d3.format('.2f')(d * maxDelay / yAxisMax) };
-           
-           
+
+
             // Loss charts 
             charts.loss = {};
             charts.loss.name = 'Loss';
@@ -342,11 +331,6 @@ function drawChart(url) {
             charts.loss.valType = 'avg';
             charts.loss.color = '#ff0000'; 
             charts.loss.showByDefault = true;
-            //charts.loss.valueAccessor = function(d) { return d.value.avg; };
-            //charts.loss.valueAccessor = function(d) { return yAxisMax * d.value.avg / maxLoss; };
-            // 'title' is actually the label on mouseover
-            //charts.loss.title = function(d) { return 'Loss: ' + format_loss(d.value.avg)
-            //                            + "\n" + format_ts(d.key); };
             charts.loss.tickFormat = d3.format('.2s');
             charts.loss.valueAccessor = function(d) {
                 if (d.value.avg != 0) { 
@@ -355,7 +339,7 @@ function drawChart(url) {
                     return 0.01; // TODO: fix: hacky -- so we see "0" values
                 }
             };
-            
+
             // Packet retrans charts 
             charts.retrans = {};
             charts.retrans.name = 'Packet Retransmissions';
@@ -365,20 +349,6 @@ function drawChart(url) {
             charts.retrans.valType = 'sum';
             charts.retrans.color = '#ff00ff'; 
             charts.retrans.showByDefault = false;
-            //charts.retrans.valueAccessor = function(d) { return d.value.avg; };
-            //charts.retrans.valueAccessor = function(d) { return yAxisMax * d.value / maxPacketRetrans; };
-            // 'title' is actually the label on mouseover
-            //charts.retrans.title = function(d) { return 'Packet Retransmissions: ' + d.value                                        + "\n" + format_ts(d.key); };
-            //charts.retrans.tickFormat = d3.format('.2s');
-            //charts.retrans.valueAccessor = function(d) {
-            //    if (d.value !== 0) { 
-            //        return yAxisMax * d.value / maxPacketRetrans; 
-            //    } else {
-            //        return 0;
-             //   }
-            //};
-            
-            
 
             var parentChart = allTestsChart;
 
@@ -435,7 +405,7 @@ function drawChart(url) {
                         type['typeMax'] = c.max || 1;
                     }
                 }
-                
+
                 for(var key in this) {
                     var c = this[key];   // 'c' is the current chart
                     if (isFunction(c)) {
@@ -475,7 +445,7 @@ function drawChart(url) {
                 } 
                 return max;
             };
-            
+
             charts.createCharts = function() {
                 this.createReverseCharts();
                 this.createGroups();
@@ -488,46 +458,37 @@ function drawChart(url) {
             };
             charts.createChart = function(currentChart) {
                 var c = currentChart;
-                    if (isFunction(c)) {
-                        //continue;
-                        return;
-                    }
-                    c.chart = dc.psLineChart(parentChart);
-                    // The groups were created above, but we have to add them here
-                    c.chart.group(c.group, c.name);
-                    if (c.valType == 'avg') { 
-                        c.chart.valueAccessor(function (d) {
-                                //console.log(c.unitMax + " " + c.type);
-                                return yAxisMax * d.value.avg / c.unitMax; 
-                                //return yAxisMax * d.value.avg / this[c.type][typeMax]; 
-                                //return d.value.avg; 
-                                });
-                        c.title = function(d) { return c.name + ': ' + format_values(d.value.avg, c.type)
-                                        + "\n" + format_values(d.key, 'ts'); };
-                    } else if (c.valType == 'sum') {
-                       //c.chart.valueAccessor(function(d) { return yAxisMax * d.value / this[c.type][typeMax]; }); 
-                       c.chart.valueAccessor(function(d) { return yAxisMax * d.value / c.unitMax; }); 
-                       c.title = function(d) { return c.name + ': ' + format_values(d.value, c.type)
-                                        + "\n" + format_values(d.key, 'ts'); };
-                    }
-                    var type = this[c.type];
-                    if (c.valueAccessor) { c.chart.valueAccessor(c.valueAccessor) };
-                    if (c.tickFormat) { c.chart.yAxis().tickFormat(c.tickFormat); }
-                    c.chart.colors(c.color);
-                    c.chart.title(c.title);
-                    if (c.direction == 'reverse') {
-                        c.chart.dashStyle([3, 3]);
-                        c.dashstyle = [3, 3];
-                        //c.chart.title(function(d) { return 'Reverse ' + c.title(d) } );
-                        //c.chart.title(function(closure){ return function(d) { return 'Reverse ' + closure.title(d) } }(c));
-                    } 
-                    /*else {
-                        c.chart.dashStyle([]);
-                    } */    
-                    if (c.type != 'throughput') {
-                        c.chart.useRightYAxis(true);
+                if (isFunction(c)) {
+                    //continue;
+                    return;
+                }
+                c.chart = dc.psLineChart(parentChart);
+                // The groups were created above, but we have to add them here
+                c.chart.group(c.group, c.name);
+                if (c.valType == 'avg') { 
+                    c.chart.valueAccessor(function (d) {
+                            return yAxisMax * d.value.avg / c.unitMax; 
+                            });
+                    c.title = function(d) { return c.name + ': ' + format_values(d.value.avg, c.type)
+                        + "\n" + format_values(d.key, 'ts'); };
+                } else if (c.valType == 'sum') {
+                    c.chart.valueAccessor(function(d) { return yAxisMax * d.value / c.unitMax; }); 
+                    c.title = function(d) { return c.name + ': ' + format_values(d.value, c.type)
+                        + "\n" + format_values(d.key, 'ts'); };
+                }
+                var type = this[c.type];
+                if (c.valueAccessor) { c.chart.valueAccessor(c.valueAccessor) };
+                if (c.tickFormat) { c.chart.yAxis().tickFormat(c.tickFormat); }
+                c.chart.colors(c.color);
+                c.chart.title(c.title);
+                if (c.direction == 'reverse') {
+                    c.chart.dashStyle([3, 3]);
+                    c.dashstyle = [3, 3];
+                } 
+                if (c.type != 'throughput') {
+                    c.chart.useRightYAxis(true);
 
-                    }
+                }
             }; 
             charts.getAllObjects = function() {
                 var theCharts = [];
@@ -588,14 +549,10 @@ function drawChart(url) {
             charts.getDirectionOrder = function() { return ['', '_rev']; };
             charts.createLegend = function(divId) {
                 var activeObjects = this.getAllObjects();
-                console.log(activeObjects);
                 var parentDiv = d3.select(divId);
                 var dataDiv = parentDiv.selectAll('div');
-                //dataDiv.remove();
-                //dataDiv = parentDiv.selectAll('div');
                 dataDivElements = dataDiv.data(activeObjects).enter().append('div');
                 dataDivElements.attr('class', 'dc-legend-item');
-                //dataDivElements.attr("id", function(c) { return c.id + 'checkbox'; });
                 var cbElements = dataDivElements.data(activeObjects).append('input')
                     .attr('type', 'checkbox')
                     .attr('id', function(d) { return d.id + '_checkbox'; })
@@ -604,17 +561,16 @@ function drawChart(url) {
                     .classed('legend-line', true)
                     .classed('reverse', function(d) { return d.direction == 'reverse'; })
                     .style('border-color', function(d) { return d.color; });
-                    //.classed(function(c) { return 'legend-line' + c.name; }, true);
                 var cbTitles = dataDivElements.data(activeObjects).append('text')
                     .text(function(c) { return c.name; });
 
                 var cb = d3.selectAll(divId + ' .dc-legend-item');
                 cb.on("mouseover", function(d, e) { 
-                    allTestsChart.legendHighlight(d); 
-                });
+                        allTestsChart.legendHighlight(d); 
+                        });
                 cb.on("mouseout", function(d, e) {
-                    allTestsChart.legendReset(d);
-                });
+                        allTestsChart.legendReset(d);
+                        });
             };
 
             charts.createCharts();
@@ -631,193 +587,8 @@ function drawChart(url) {
             var maxPacketRetrans = charts.retrans.typeMax;
             var minPacketRetrans = charts.retrans.typeMin;
 
-            console.log(charts.getActiveCharts());
-            /* 
-            throughputChart.dimension(lineDimension)
-                .group(throughputGroup, "Throughput")
-                .mouseZoomable(true)
-                //.defined(function(d) { 
-                //        return (!isNaN(d.data.value.avg)); 
-                //})
-                .valueAccessor(function (d) {
-                        return d.value.avg; 
-                        })
-                .brushOn(false)      
-                .title(function(d){
-                        return 'Throughput: ' + format_throughput(d.value.avg) 
-                        + "\n" + format_ts(d.key);        
-                        })
-                //.elasticY(true)
-                .yAxis().tickFormat(d3.format('.2s'))
-                ;
-
-            if (maxThroughput == 0 ) {
-                // TODO: fix -- setting default throughput axis doesn't work
-                throughputChart.y(d3.scale.linear().domain([0, 1000]))
-            }
-
-            revThroughputChart.dimension(lineDimension)
-                .group(revThroughputGroup, "Reverse Throughput")
-                .mouseZoomable(true)
-                //.interpolate('bundle')
-
-                //.defined(function(d) { 
-                //        return (!isNaN(d.data.value.avg)); 
-                //})
-                .valueAccessor(function (d) {
-                        return d.value.avg; 
-                        })
-                .brushOn(false)     
-                .dashStyle([3, 3]) 
-                .title(function(d){
-                        return 'Reverse Throughput: ' + format_throughput(d.value.avg) 
-                        + "\n" + format_ts(d.key);        
-                        })
-                .yAxis().tickFormat(d3.format('.2s'))
-                ;
-
-            owdelayChart.dimension(lineDimension)
-                .group(owdelayGroup, "Latency")
-
-                .defined(function(d) {
-                        return (!isNaN(d.data.value.avg));
-                        //return (d.data.value !== 0);
-                        })
-                .valueAccessor(function (d) {
-                    return yAxisMax * d.value.avg / maxDelay; 
-                    })
-                //.interpolate('bundle')
-                .brushOn(false)        
-                .colors("#00ff00")
-                .title(function(d){
-                        return "Latency: " + format_latency(d.value.avg) + "\n"
-                        + format_ts(d.key);
-
-                        })
-                .useRightYAxis(true)
-                .xAxis()
-                ;
-
-            revOwdelayChart.dimension(lineDimension)
-                .group(revOwdelayGroup, "Reverse Latency")
-                .defined(function(d) {
-                        return (!isNaN(d.data.value.avg));
-                        //return (d.data.value !== 0);
-                        })
-                .valueAccessor(function (d) {
-                    return yAxisMax * d.value.avg / maxDelay; 
-                })
-                .brushOn(false)        
-                .colors("#00ff00")
-                .dashStyle([3, 3]) 
-                .title(function(d){
-                        return "Reverse Latency: " + format_latency(d.value.avg) + "\n"
-                        + format_ts(d.key);
-
-                        })
-                .useRightYAxis(true)
-                .xAxis()
-                ;
-
-            lossChart.dimension(lineDimension)
-                .group(lossGroup, "Loss")
-                .renderDataPoints(true) 
-                .mouseZoomable(true)
-                .brushOn(false)       
-                //.defined(function(d) { return (!d.data.value.isNull); })
-                //.defined(function(d) { return (isNaN(d.data.value)); })
-                .valueAccessor(function(d) {
-                        if (d.value.avg != 0) { 
-                            return yAxisMax * d.value.avg / maxLoss; 
-                        } else {
-                            return 0.01; // TODO: fix: hacky -- so we see "0" values
-                        }
-                        }) 
-                .title(function(d){
-                    return "Loss: " + format_loss(d.value.avg) + "\n"
-                    + format_ts(d.key);
-                })
-                .colors("#ff0000")
-                .useRightYAxis(true) 
-                .xAxis()
-                ;
-
-            revLossChart.dimension(lineDimension)
-                .group(revLossGroup, "Reverse Loss")
-                .renderDataPoints(true) 
-                .mouseZoomable(true)
-                .brushOn(false)       
-                //.defined(function(d) { return (!d.data.value.isNull); })
-                //.defined(function(d) { return (isNaN(d.data.value)); })
-                .valueAccessor(function(d) {
-                        if (d.value.avg != 0) { 
-                            return yAxisMax * d.value.avg / maxLoss; 
-                        } else {
-                            return 0.01; // TODO: fix: hacky -- so we see "0" values
-                        }
-                        }) 
-                .title(function(d){
-                    return "Reverse Loss: " + format_loss(d.value.avg) + "\n"
-                    + format_ts(d.key);
-                    })
-                .colors("#FF704D")
-                .dashStyle([3, 3]) 
-                .useRightYAxis(true) 
-                .xAxis()
-                ;
-
-            packetRetransChart.dimension(lineDimension)
-                .group(packetRetransGroup, "Packet Retransmissions")
-                .mouseZoomable(true)
-                .colors("#ff00ff")
-                .valueAccessor(function (d) {
-                        if (isNaN(d.value) || d.value > maxPacketRetrans) {
-                        //alert("NaN! " +d.value);
-                        }
-                        if (maxPacketRetrans !== 0) {
-                        return yAxisMax * d.value / maxPacketRetrans; 
-                        } else {
-                        return 0;
-                        }
-                        })
-                .defined(function(d) {
-                    return (!isNaN(d.data.value));
-                    //return (d.data.value !== 0);
-                })
-                .useRightYAxis(true) 
-                .brushOn(false)      
-                .title(function(d){
-                        return 'Retransmitted packets: ' + d.value 
-                        + "\n" + format_ts(d.key);        
-                })
-                ;
-
-            revPacketRetransChart.dimension(lineDimension)
-                .group(revPacketRetransGroup, "Reverse Packet Retransmissions")
-                .mouseZoomable(true)
-                .colors("#ff00ff")
-                .dashStyle([3, 3])
-                .valueAccessor(function (d) {
-                        if (d.value !== 0) {
-                        return yAxisMax * d.value / maxPacketRetrans; 
-                        } else {
-                        return 0;
-                        }
-                        })
-                .useRightYAxis(true) 
-                .brushOn(false)      
-                .title(function(d){
-                        return 'Reverse retransmitted packets: ' + d.value 
-                        + "\n" + format_ts(d.key);        
-                        })
-                ;
-*/
-            //var allCharts = [throughputChart, revThroughputChart, owdelayChart, revOwdelayChart, lossChart, revLossChart, packetRetransChart, revPacketRetransChart];
-            var objCharts = charts.getActiveCharts();
-            //var additionalCharts = [lossChart, revLossChart, packetRetransChart, revPacketRetransChart];
-            //var additionalCharts = [packetRetransChart, revPacketRetransChart];
-            //var activeCharts = objCharts.concat(additionalCharts);
-            var activeCharts = objCharts;
+            var activeCharts = charts.getActiveCharts();
+            //console.log(activeCharts);
 
             if (yNegPadAmt > 0) { // Temporarily disable
                 //yAxisMax = yAxisMax*yNegPadAmt;
@@ -990,7 +761,7 @@ function drawChart(url) {
                 var getType = {};
                 return functionToCheck && getType.toString.call(functionToCheck) === '[object Function]';
             }
-    } // end drawChartAfterCall()
+            } // end drawChartAfterCall()
             }); // end d3.json call
     }; // end drawChart() function
 }); // end dojo require function
