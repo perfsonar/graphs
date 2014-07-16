@@ -292,3 +292,33 @@ span.psgraph-val { font-family: "Lucida Console", Monaco, monospace; }
 div.dc-chart { float:none; }
 .chartHeader { margin-top:10px; }
 .chartHeader .content { padding:8px; }
+/*.legend { position:relative; top: 500px; } */
+div#legend {
+    /* margin: auto 0; */
+    /* float: none; */
+    /* display: block; */
+    width: 750px;
+    top: 50px;
+    position: relative;
+    margin: 0 auto;
+}
+.dc-legend-item { float:left; width:180px; }
+#legend2 { display:none; }
+.throughput {
+    border-color: #1F77B4; 
+}
+.latency {
+    border-color: #00ff00;
+}
+.legend .legend-line {
+    width: 13px;
+    height: 0px;
+    display: inline-block;
+    vertical-align: middle;
+    border-style: solid;
+    border-width: 3px 0 0 0;
+    margin:0 3px;
+}
+.legend .legend-line.reverse {
+    border-style: dotted;
+}

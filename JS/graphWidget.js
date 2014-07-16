@@ -158,6 +158,10 @@ function drawChart(url) {
 
 
     d3.json(url, function(error,ps_data) {
+
+            drawChartSameCall(error, ps_data);
+
+        function drawChartSameCall(error, ps_data) { 
             loading.style('display', 'none');
 
             var prevLink = d3.selectAll('.ps-timerange-nav .prev');
@@ -201,14 +205,6 @@ function drawChart(url) {
             var end_date = new Date (end_ts);
 
             var allTestsChart = dc.compositeChart("#ps-all-tests");
-            var throughputChart = dc.psLineChart(allTestsChart);
-            var revThroughputChart = dc.psLineChart(allTestsChart);
-            var owdelayChart = dc.psLineChart(allTestsChart);
-            var revOwdelayChart = dc.psLineChart(allTestsChart);
-            var lossChart = dc.psLineChart(allTestsChart);
-            var revLossChart = dc.psLineChart(allTestsChart);
-            var packetRetransChart = dc.psLineChart(allTestsChart);
-            var revPacketRetransChart = dc.psLineChart(allTestsChart);
 
             var ndx = crossfilter(ps_data);
             var lineDimension = ndx.dimension(function (d) { return new Date( d.ts * 1000); });
@@ -247,14 +243,6 @@ function drawChart(url) {
                 ];
             }
 
-            var throughputGroup = lineDimension.group().reduce.apply(lineDimension, make_functions('throughput_src_val'));
-            var revThroughputGroup = lineDimension.group().reduce.apply(lineDimension, make_functions('throughput_dst_val'));
-            var owdelayGroup = lineDimension.group().reduce.apply(lineDimension, make_functions('owdelay_src_val'));
-            var revOwdelayGroup = lineDimension.group().reduce.apply(lineDimension, make_functions('owdelay_dst_val'));
-            var lossGroup = lineDimension.group().reduce.apply(lineDimension, make_functions('loss_src_val'));
-            var revLossGroup = lineDimension.group().reduce.apply(lineDimension, make_functions('loss_dst_val'));
-            var packetRetransGroup = lineDimension.group().reduceSum(function(d) { return d.packet_retransmits_src_val; } );
-            var revPacketRetransGroup = lineDimension.group().reduceSum(function(d) { return d.packet_retransmits_dst_val; } );
 
             var avgOrder = function(p) { 
                 return p.avg; 
@@ -263,6 +251,7 @@ function drawChart(url) {
                 return -p.avg; 
             };
             var valOrder = function(p) { return p; };
+            var valOrderInv = function(p) { return -p; };
 
 
             var format_throughput = function(d) { return d3.format('.3s')(d) + 'bps';  }
@@ -271,30 +260,23 @@ function drawChart(url) {
             var format_ts = function(d) { return d3.time.format('%X %x')(d); }
             var format_ts_header = function(d) { return d3.time.format('%c')(d); }
 
-            var maxThroughput = throughputGroup.order(avgOrder).top(1)[0].value.avg;
-            var maxRevThroughput = revThroughputGroup.order(avgOrder).top(1)[0].value.avg;
-            var minThroughput = throughputGroup.order(avgOrderInv).top(1)[0].value.avg;
-            var minRevThroughput = revThroughputGroup.order(avgOrderInv).top(1)[0].value.avg;
-            maxThroughput = (maxThroughput > maxRevThroughput? maxThroughput : maxRevThroughput);
-            minThroughput = (minThroughput < minRevThroughput ? minThroughput : minRevThroughput);
+            var format_values = function(d, type) {
+                if (type == 'throughput') {
+                    return d3.format('.3s')(d) + 'bps';
+                } else if (type == 'latency') {
+                    return d3.format('.3f')(d) + ' ms';
+                } else if (type == 'loss') {
+                    return d3.format('.3%f')(d);
+                } else if (type == 'ts') {
+                    return d3.time.format('%X %x')(d);
+                } else if (type == 'ts_header') {
+                    return d3.time.format('%c')(d);
+                } else {
+                    return d;
+                }
+            }
 
-            var maxDelay = owdelayGroup.order(avgOrder).top(1)[0].value.avg;
-            var minDelay = owdelayGroup.order(avgOrderInv).top(1)[0].value.avg;
-            var maxRevDelay = revOwdelayGroup.order(avgOrder).top(1)[0].value.avg;
-            var minRevDelay = revOwdelayGroup.order(avgOrderInv).top(1)[0].value.avg;
-            maxDelay = (maxDelay > maxRevDelay ? maxDelay : maxRevDelay);
-            //if (maxDelay === 0) { maxDelay = 1; }
-            minDelay = (minDelay < minRevDelay ? minDelay : minRevDelay);
-            minDelay = 0;
-            var maxLoss = lossGroup.order(avgOrder).top(1)[0].value.avg; 
-            var minLoss = lossGroup.order(avgOrderInv).top(1)[0].value.avg; 
-            var maxRevLoss = revLossGroup.order(avgOrder).top(1)[0].value.avg; 
-            var minRevLoss = revLossGroup.order(avgOrderInv).top(1)[0].value.avg; 
-            maxLoss = (maxLoss > maxRevLoss ? maxLoss: maxRevLoss);
-            minLoss = (minLoss < minRevLoss ? minLoss : minRevLoss);
-            var maxPacketRetrans = packetRetransGroup.top(1)[0].value; 
-            var maxRevPacketRetrans = revPacketRetransGroup.top(1)[0].value; 
-            maxPacketRetrans = (maxRevPacketRetrans > maxPacketRetrans ? maxRevPacketRetrans : maxPacketRetrans);
+
             var minY = minDelay;
             var maxY = maxDelay;
             var axisScale = 1.1; // Scale the axes so we have some padding at the top
@@ -315,6 +297,342 @@ function drawChart(url) {
 
             setHeader();
 
+            var charts = {};
+
+            charts.throughput = {};
+            charts.throughput.name = 'Throughput';
+            charts.throughput.type = 'throughput';
+            charts.throughput.unit = 'bps';
+            charts.throughput.fieldName = 'throughput';
+            charts.throughput.valType = 'avg';
+            charts.throughput.color = '#1F77B4'; 
+            charts.throughput.valueAccessor = function(d) { return d.value.avg; };
+            charts.throughput.showByDefault = true;
+            // 'title' is actually the label on mouseover
+            //charts.throughput.title = function(d) { return 'Throughput: ' + format_throughput(d.value.avg)
+            //                            + "\n" + format_ts(d.key); };
+            charts.throughput.tickFormat = d3.format('.2s');
+
+            // Latency charts
+            charts.latency = {};
+            charts.latency.name = 'Latency';
+            charts.latency.type = 'latency';
+            charts.latency.unit = 'ms';
+            charts.latency.fieldName = 'owdelay';
+            charts.latency.valType = 'avg';
+            charts.latency.color = '#00ff00'; 
+            charts.latency.showByDefault = true;
+            //charts.latency.valueAccessor = function(d) { return yAxisMax * d.value.avg / maxDelay; };
+            // 'title' is actually the label on mouseover
+            //charts.latency.title = function(d) { return 'Latency: ' + format_latency(d.value.avg)
+            //                            + "\n" + format_ts(d.key); };
+            //charts.latency.tickFormat = d3.format('.2s');
+                //allTestsChart.rightYAxis().ticks(5)
+                //    .tickFormat(function(d) { return d3.format('.2f')(d * maxDelay / yAxisMax) });
+            charts.latency.ticks = 5;
+            charts.latency.tickFormat = function(d) { return d3.format('.2f')(d * maxDelay / yAxisMax) };
+           
+           
+            // Loss charts 
+            charts.loss = {};
+            charts.loss.name = 'Loss';
+            charts.loss.type = 'loss';
+            charts.loss.unit = 'percent';
+            charts.loss.fieldName = 'loss';
+            charts.loss.valType = 'avg';
+            charts.loss.color = '#ff0000'; 
+            charts.loss.showByDefault = true;
+            //charts.loss.valueAccessor = function(d) { return d.value.avg; };
+            //charts.loss.valueAccessor = function(d) { return yAxisMax * d.value.avg / maxLoss; };
+            // 'title' is actually the label on mouseover
+            //charts.loss.title = function(d) { return 'Loss: ' + format_loss(d.value.avg)
+            //                            + "\n" + format_ts(d.key); };
+            charts.loss.tickFormat = d3.format('.2s');
+            charts.loss.valueAccessor = function(d) {
+                if (d.value.avg != 0) { 
+                    return yAxisMax * d.value.avg / maxLoss; 
+                } else {
+                    return 0.01; // TODO: fix: hacky -- so we see "0" values
+                }
+            };
+            
+            // Packet retrans charts 
+            charts.retrans = {};
+            charts.retrans.name = 'Packet Retransmissions';
+            charts.retrans.type = 'retrans';
+            charts.retrans.unit = 'packets';
+            charts.retrans.fieldName = 'packet_retransmits';
+            charts.retrans.valType = 'sum';
+            charts.retrans.color = '#ff00ff'; 
+            charts.retrans.showByDefault = false;
+            //charts.retrans.valueAccessor = function(d) { return d.value.avg; };
+            //charts.retrans.valueAccessor = function(d) { return yAxisMax * d.value / maxPacketRetrans; };
+            // 'title' is actually the label on mouseover
+            //charts.retrans.title = function(d) { return 'Packet Retransmissions: ' + d.value                                        + "\n" + format_ts(d.key); };
+            //charts.retrans.tickFormat = d3.format('.2s');
+            //charts.retrans.valueAccessor = function(d) {
+            //    if (d.value !== 0) { 
+            //        return yAxisMax * d.value / maxPacketRetrans; 
+            //    } else {
+            //        return 0;
+             //   }
+            //};
+            
+            
+
+            var parentChart = allTestsChart;
+
+            charts.createReverseCharts = function() {
+                for(var key in this) {
+                    var c = this[key];              // current (forward) chart
+                    if (isFunction(c)) {
+                        continue;
+                    }
+                    //this[key + '_rev'] = c;
+                    this[key + '_rev'] = {};
+                    var rev = this[key + '_rev'];   // newly created reverse values
+
+                    for(var item in c) {
+                        rev[item] = c[item];
+                    }
+
+                    // Set values that are different in the reverse direction
+                    rev.name = 'Reverse ' + rev.name;
+                    rev.fieldName = rev.fieldName + '_dst_val';
+                    rev.direction = 'reverse';
+                    rev.id = key + '_rev';
+                    //rev.title = 'Reverse ' + rev.title;
+
+                    // Set values for forward direction
+                    c.fieldName = c.fieldName + '_src_val';
+                    c.direction = 'normal';
+                    c.id = key;
+                }
+
+            }
+            charts.createGroups = function() {                
+                for(var key in this) {
+                    var c = this[key];   // 'c' is the current chart
+                    if (isFunction(c)) {
+                        continue;
+                    }
+                    c.chart = dc.psLineChart(parentChart);
+                    if (c.valType == 'avg') { 
+                        c.group = lineDimension.group().reduce.apply(lineDimension, make_functions(c.fieldName));
+                        c.max =  c.group.order(avgOrder).top(1)[0].value.avg;
+                        c.min =  c.group.order(avgOrderInv).top(1)[0].value.avg;
+                    } else if (c.valType == 'sum') {
+                        c.group = lineDimension.group().reduceSum(function(d) { return d[c.fieldName]; });
+                        c.max = c.group.top(1)[0].value; 
+                        c.min = c.group.order(valOrderInv).top(1)[0].value;
+                    }
+                    var type = this[c.type];
+                    // typeMin and typeMax are the min/max values for that type
+                    if (typeof type['typeMin'] === "undefined" || c.min < type['typeMin']) {
+                        type['typeMin'] = c.min || 0;
+                    }
+                    if (typeof type['typeMax'] === "undefined" || c.max > type['typeMax']) {
+                        type['typeMax'] = c.max || 1;
+                    }
+                }
+                
+                for(var key in this) {
+                    var c = this[key];   // 'c' is the current chart
+                    if (isFunction(c)) {
+                        continue;
+                    }
+                    c.unitMin = this.getUnitMin(c.unit);
+                    c.unitMax = this.getUnitMax(c.unit);
+                }
+            };
+            charts.getUnitMin = function(unit) {
+                var min = null;
+                for(var key in this) {
+                    var c = this[key];   // 'c' is the current chart
+                    if (isFunction(c)) {
+                        continue;
+                    }
+                    if (c.unit == unit) {
+                        if (typeof min === 'undefined' || c.min < min) {
+                            min = c.min;
+                        }
+                    }
+                } 
+                return min;
+            };
+            charts.getUnitMax = function(unit) {
+                var max = null;
+                for(var key in this) {
+                    var c = this[key];   // 'c' is the current chart
+                    if (isFunction(c)) {
+                        continue;
+                    }
+                    if (c.unit == unit) {
+                        if (typeof max === 'undefined' || c.max > max) {
+                            max = c.max;
+                        }
+                    }
+                } 
+                return max;
+            };
+            
+            charts.createCharts = function() {
+                this.createReverseCharts();
+                this.createGroups();
+                for(var key in this) {
+                    var c = this[key];   // 'c' is the current chart
+                    this.createChart(c);
+                }
+                this.createLegend('#legend'); 
+                return this;
+            };
+            charts.createChart = function(currentChart) {
+                var c = currentChart;
+                    if (isFunction(c)) {
+                        //continue;
+                        return;
+                    }
+                    c.chart = dc.psLineChart(parentChart);
+                    // The groups were created above, but we have to add them here
+                    c.chart.group(c.group, c.name);
+                    if (c.valType == 'avg') { 
+                        c.chart.valueAccessor(function (d) {
+                                //console.log(c.unitMax + " " + c.type);
+                                return yAxisMax * d.value.avg / c.unitMax; 
+                                //return yAxisMax * d.value.avg / this[c.type][typeMax]; 
+                                //return d.value.avg; 
+                                });
+                        c.title = function(d) { return c.name + ': ' + format_values(d.value.avg, c.type)
+                                        + "\n" + format_values(d.key, 'ts'); };
+                    } else if (c.valType == 'sum') {
+                       //c.chart.valueAccessor(function(d) { return yAxisMax * d.value / this[c.type][typeMax]; }); 
+                       c.chart.valueAccessor(function(d) { return yAxisMax * d.value / c.unitMax; }); 
+                       c.title = function(d) { return c.name + ': ' + format_values(d.value, c.type)
+                                        + "\n" + format_values(d.key, 'ts'); };
+                    }
+                    var type = this[c.type];
+                    if (c.valueAccessor) { c.chart.valueAccessor(c.valueAccessor) };
+                    if (c.tickFormat) { c.chart.yAxis().tickFormat(c.tickFormat); }
+                    c.chart.colors(c.color);
+                    c.chart.title(c.title);
+                    if (c.direction == 'reverse') {
+                        c.chart.dashStyle([3, 3]);
+                        c.dashstyle = [3, 3];
+                        //c.chart.title(function(d) { return 'Reverse ' + c.title(d) } );
+                        //c.chart.title(function(closure){ return function(d) { return 'Reverse ' + closure.title(d) } }(c));
+                    } 
+                    /*else {
+                        c.chart.dashStyle([]);
+                    } */    
+                    if (c.type != 'throughput') {
+                        c.chart.useRightYAxis(true);
+
+                    }
+            }; 
+            charts.getAllObjects = function() {
+                var theCharts = [];
+                var typeOrder = this.getChartOrder();
+                var directionOrder = this.getDirectionOrder();
+                for(var typeIndex in typeOrder) {
+                    var type = typeOrder[typeIndex];
+                    for(var directionIndex in directionOrder) {
+                        var direction = directionOrder[directionIndex];
+                        if (typeof this[type + direction] !== 'undefined') {
+                            if (isFunction(this[type + direction])) { 
+                                continue;
+                            }
+                            theCharts.push(this[type + direction]);
+                        }
+
+                    }
+                }
+                return theCharts;
+            };
+            charts.getActiveObjects = function() {
+                var allCharts = this.getAllObjects();
+                var theCharts = [];
+                var typeOrder = this.getChartOrder();
+                var directionOrder = this.getDirectionOrder();
+                for(var typeIndex in typeOrder) {
+                    var type = typeOrder[typeIndex];
+                    for(var directionIndex in directionOrder) {
+                        var direction = directionOrder[directionIndex];
+                        if (typeof this[type + direction] !== 'undefined') {
+                            var c = this[type + direction];
+                            var theType = c.type + (c.direction == 'reverse' ? '_rev' : '');
+                            var cb = d3.select('#' + theType + "_checkbox");
+                            cb.on("change", function() { drawChartSameCall(error, ps_data); });
+                            if (cb && cb.property('checked') == false) {
+                                continue;
+                            } 
+
+                            theCharts.push(c);
+                        }
+
+                    }
+                }
+                return theCharts;
+            };
+            charts.getActiveCharts = function() {
+                var activeObjects = this.getActiveObjects();
+                var theCharts = [];
+                for(var key in activeObjects) {
+                    theCharts.push(activeObjects[key].chart);
+                }
+                return theCharts;
+            }
+            charts.getChartOrder = function() {
+                var chartOrder = ['throughput', 'latency', 'loss', 'retrans'];
+                return chartOrder;
+            };
+            charts.getDirectionOrder = function() { return ['', '_rev']; };
+            charts.createLegend = function(divId) {
+                var activeObjects = this.getAllObjects();
+                console.log(activeObjects);
+                var parentDiv = d3.select(divId);
+                var dataDiv = parentDiv.selectAll('div');
+                //dataDiv.remove();
+                //dataDiv = parentDiv.selectAll('div');
+                dataDivElements = dataDiv.data(activeObjects).enter().append('div');
+                dataDivElements.attr('class', 'dc-legend-item');
+                //dataDivElements.attr("id", function(c) { return c.id + 'checkbox'; });
+                var cbElements = dataDivElements.data(activeObjects).append('input')
+                    .attr('type', 'checkbox')
+                    .attr('id', function(d) { return d.id + '_checkbox'; })
+                    .property('checked', function(d) { return d.showByDefault; });
+                var cbIcons = dataDivElements.data(activeObjects).append('span')
+                    .classed('legend-line', true)
+                    .classed('reverse', function(d) { return d.direction == 'reverse'; })
+                    .style('border-color', function(d) { return d.color; });
+                    //.classed(function(c) { return 'legend-line' + c.name; }, true);
+                var cbTitles = dataDivElements.data(activeObjects).append('text')
+                    .text(function(c) { return c.name; });
+
+                var cb = d3.selectAll(divId + ' .dc-legend-item');
+                cb.on("mouseover", function(d, e) { 
+                    allTestsChart.legendHighlight(d); 
+                });
+                cb.on("mouseout", function(d, e) {
+                    allTestsChart.legendReset(d);
+                });
+            };
+
+            charts.createCharts();
+            var maxThroughput = charts.throughput.typeMax;
+            var minThroughput = charts.throughput.typeMin;
+            var maxDelay = charts.latency.typeMax;
+            var minDelay = charts.latency.typeMin;
+
+            //if (maxDelay === 0) { maxDelay = 1; }
+            minDelay = 0;
+            var maxLoss = charts.loss.typeMax;
+            var minLoss = charts.loss.typeMin;
+
+            var maxPacketRetrans = charts.retrans.typeMax;
+            var minPacketRetrans = charts.retrans.typeMin;
+
+            console.log(charts.getActiveCharts());
+            /* 
             throughputChart.dimension(lineDimension)
                 .group(throughputGroup, "Throughput")
                 .mouseZoomable(true)
@@ -493,9 +811,13 @@ function drawChart(url) {
                         + "\n" + format_ts(d.key);        
                         })
                 ;
-
-            var allCharts = [throughputChart, revThroughputChart, owdelayChart, revOwdelayChart, lossChart, revLossChart, packetRetransChart, revPacketRetransChart];
-            var activeCharts = [throughputChart, revThroughputChart, owdelayChart, revOwdelayChart, lossChart, revLossChart, packetRetransChart, revPacketRetransChart];
+*/
+            //var allCharts = [throughputChart, revThroughputChart, owdelayChart, revOwdelayChart, lossChart, revLossChart, packetRetransChart, revPacketRetransChart];
+            var objCharts = charts.getActiveCharts();
+            //var additionalCharts = [lossChart, revLossChart, packetRetransChart, revPacketRetransChart];
+            //var additionalCharts = [packetRetransChart, revPacketRetransChart];
+            //var activeCharts = objCharts.concat(additionalCharts);
+            var activeCharts = objCharts;
 
             if (yNegPadAmt > 0) { // Temporarily disable
                 //yAxisMax = yAxisMax*yNegPadAmt;
@@ -522,7 +844,7 @@ function drawChart(url) {
                 //.elasticY(true)
                 .yAxisLabel('Throughput')
                 .rightYAxisLabel('Latency (ms)')
-                .legend(dc.legend().x(40).y(470).itemHeight(13).gap(5).legendWidth(600).horizontal(true).itemWidth(150))
+                .legend(dc.legend().x(40).y(570).itemHeight(13).gap(5).legendWidth(600).horizontal(true).itemWidth(150))
                 .rightY(d3.scale.linear().domain([0, yAxisMax * axisScale]).nice())
                 //.rightY(d3.scale.linear().domain([minDel, maxDel]).nice())
                 //.rightY(d3.scale.linear().domain([0, axis_value(maxDelay)]).nice())
@@ -530,7 +852,7 @@ function drawChart(url) {
             allTestsChart.yAxis().tickFormat(format_throughput);
             if (maxDelay > 0) {
                 allTestsChart.rightYAxis().ticks(5)
-                    .tickFormat(function(d) { return d3.format()(Math.round(d * maxDelay / yAxisMax)) });
+                    .tickFormat(function(d) { return d3.format('.2f')(d * maxDelay / yAxisMax) });
             }
             allTestsChart.margins().left = 90;
 
@@ -664,7 +986,11 @@ function drawChart(url) {
                 return yAxisRight;
             }
 
-
+            function isFunction(functionToCheck) {
+                var getType = {};
+                return functionToCheck && getType.toString.call(functionToCheck) === '[object Function]';
+            }
+    } // end drawChartAfterCall()
             }); // end d3.json call
     }; // end drawChart() function
 }); // end dojo require function

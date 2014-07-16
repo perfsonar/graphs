@@ -387,7 +387,7 @@ sub get_tests {
                 my $stats_summ = $event_type->get_summary('statistics', $summary_window);
                 error($event_type->error) if ($event_type->error);
                 $data = $stats_summ->get_data() if defined $stats_summ;
-                if (@$data > 0){
+                if (defined($data) && @$data > 0){
                     push @$all_types, $type if (!grep {$_ eq $type} @$all_types);
                     foreach my $datum (@$data){
                         $total += $datum->val->{mean};
@@ -404,7 +404,7 @@ sub get_tests {
                 } else {
                     $data = $event_type->get_data();
                 }
-                if (@$data > 0){
+                if (defined($data) && @$data > 0){
                     push @$all_types, $type if (!grep {$_ eq $type} @$all_types);
                     foreach my $datum (@$data){
                         $total += $datum->val;
@@ -418,7 +418,7 @@ sub get_tests {
 
             error($event_type->error) if ($event_type->error);
         
-            if (@$data > 0 ) {
+            if (defined($data) && @$data > 0 ) {
                 $results{$src}{$dst}{$type} = {last_update  => $last_update,
                     week_average => $average,
                     week_min     => $min,

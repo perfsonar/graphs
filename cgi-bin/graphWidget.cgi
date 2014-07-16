@@ -32,11 +32,11 @@ my $window          = $cgi->param('window');
 # If we're handling a request to an old MA
 # figure out where it needs to go
 if ($ma_url =~ /pSB/){
-    warn "OLD MA";
+    #warn "OLD MA";
     handle_old_ma();
 }
 else {
-    warn "NEW MA";
+    #warn "NEW MA";
     handle_esmond();
 }
 
