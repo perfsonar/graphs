@@ -140,11 +140,20 @@ var base_url = '/serviceTest/graphData.cgi?action=data&url=' + ma_url + '&src=' 
 var url = '/serviceTest/graphData.cgi?action=data&url=' + ma_url + '&src=' + source + '&dest=' + dest + '&start=' + start_ts + '&end=' + end_ts + '&window=' + summary_window;
 
 d3.json('/serviceTest/graphData.cgi?action=hosts&src=' + source + '&dest=' + dest, function(error, hosts) {
-   //var srcCapacity = d3.select('#source_capacity');
     var source_host = d3.select('#source_host');
-    source_host.html(hosts.source_host);
+    var source_content = hosts.source_ip;
+    if (hosts.source_host) {
+        source_content = hosts.source_host + ' (' + source_content + ')';
+    }
+    source_host.html(source_content);
+
     var dest_host = d3.select('#dest_host');
-    dest_host.html(hosts.dest_host);
+    var dest_content = hosts.dest_ip;
+    if (hosts.dest_host) {
+        dest_content = hosts.dest_host + ' (' + dest_content + ')';
+    }
+    dest_host.html(dest_content);
+
 });
 
 
