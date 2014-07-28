@@ -322,3 +322,7 @@ div#legend {
 .legend .legend-line.reverse {
     border-style: dotted;
 }
+.service_test_error {
+    font-size: 14px;
+    color: red;
+}

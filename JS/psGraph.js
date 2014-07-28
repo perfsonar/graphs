@@ -30,6 +30,13 @@ require(["dijit/Dialog", "dijit/form/Button", "dojo/domReady!", "dojox/widget/Di
     var url = '/serviceTest/graphData.cgi?url=' + ma_url + '&action=tests';
     
     d3.json(url, function(error,ps_data) {
+
+	    if (ps_data == undefined){
+		d3.select('#loading').style('display', 'none');
+		d3.select("#service_test_error").text("Error loading data from MA.").style('display', '');
+		return;
+	    }
+
 	    var ndx = crossfilter(ps_data);
 	    var tableDimension = ndx.dimension(function (d) { return d.source; });
 	    //var dataTable = dc.dataTable("#summaryTable");
