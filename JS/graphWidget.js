@@ -1,5 +1,5 @@
 require(["dojo/dom", "dojo/on", "dojo/hash", "dojo/io-query", "dojo/domReady!"], function(theDom, theOn, theHash, ioQuery){
-var dst = dest;
+
 var ma_url = '';
 var now = Math.round(new Date().getTime() / 1000);
 
@@ -74,92 +74,117 @@ function isEmpty(obj) {
 }
 
 d3.json(ls_list_url, function(error, ls_list_data) { 
-        var srcCapacity = d3.select('#source_capacity');
-        var srcMTU = d3.select('#source_mtu');
-        var destCapacity = d3.select('#dest_capacity');
-        var destMTU = d3.select('#dest_mtu');
         var rows = [];
-        var ips = [source, dest];
         var remaining = ls_list_data.length;
         for(var ls_index in ls_list_data) {
-        var url = ls_list_data[ls_index];
-        var ls = ls_query_url + '&ls_url=' + encodeURI(url) + '&source=' + source + '&dest=' + dest;
-        d3.json(ls, function(ls_error, interface_data) {
-            if (ls_error) {
-            }
-            if(!isEmpty(interface_data)) {
-                rows.push(interface_data);
-            }
-            if (!--remaining) combineData();
-            });
+	    var url = ls_list_data[ls_index];
+	    var ls = ls_query_url + '&ls_url=' + encodeURI(url) + array2param('source', sources) + array2param('dest', dests);
+	    d3.json(ls, function(ls_error, interface_data) {
+		    if (ls_error){
+			// should do something with this
+		    }
+		    if(!isEmpty(interface_data)) {
+			rows.push(interface_data);
+		    }
+		    if (!--remaining){
+			combineData();
+		    }
+		});
         }
-        //}
 
-        function combineData() {
+        function combineData() {   
+
             for(var i in rows) {
-                var row = rows[i];
-                if (row.source_mtu) {
-                    src_mtu = row.source_mtu;
-                    srcMTU.html( src_mtu );
-                }
-                if (row.dest_mtu) {
-                    dest_mtu = row.dest_mtu;
-                    destMTU.html( dest_mtu );
-                }
-                if (row.source_capacity) {
-                    src_capacity = row.source_capacity;
-                    srcCapacity.html( d3.format('.2s')(src_capacity) );
-                }
-                if (row.dest_capacity) {
-                    dest_capacity = row.dest_capacity;
-                    destCapacity.html( d3.format('.2s')(dest_capacity) );
-                }
-            }
-        }
+                var results = rows[i];
 
-    
-});
+		for (var j in results){
+		    row = rows[i][j];
+		
+		    for (var k in sources){
+			if (sources[k] == row.source_ip){
+			    var srcCapacity = d3.select('#source_capacity_' + k);
+			    var srcMTU = d3.select('#source_mtu_' + k);
+			    
+			    if (row.source_mtu) {
+				src_mtu = row.source_mtu;
+				srcMTU.html( src_mtu );
+			    }
+			    
+			    if (row.source_capacity) {
+			    src_capacity = row.source_capacity;
+			    srcCapacity.html( d3.format('.2s')(src_capacity) );
+			    }
+			    
+			}
+			
+			if(dests[k] == row.dest_ip){
+			    var destCapacity = d3.select('#dest_capacity_' + k);
+			    var destMTU = d3.select('#dest_mtu_' + k);    
+			    
+			    if (row.dest_mtu) {
+				dest_mtu = row.dest_mtu;
+				destMTU.html( dest_mtu );
+			    }
+			    if (row.dest_capacity) {
+				dest_capacity = row.dest_capacity;
+				destCapacity.html( d3.format('.2s')(dest_capacity) );
+			    }			
+			}
+		    }
+		}
+	    }
+	}   
+    });
 
-var ma_url = 'http%3A%2F%2Flocalhost%2Fesmond%2Fperfsonar%2Farchive%2F';
+// default ma url, pre-encoded
+var ma_urls = ['http%3A%2F%2Flocalhost%2Fesmond%2Fperfsonar%2Farchive%2F'];
+
 var uri = document.URL;
 if (uri.indexOf('?') > -1) {
     var query = uri.substring(uri.indexOf("?") + 1, uri.length);
     var queryObject = ioQuery.queryToObject(query);
     if (queryObject.url) {
-        ma_url = queryObject.url;
+
+        ma_urls = queryObject.url;
+
+	// force it into array form
+	if(typeof(ma_urls) != 'object'){
+	    ma_urls = [ma_urls];
+	}
+
         // remove #whatever from ma_url, if applicable
-        if (ma_url.indexOf('#') > -1) {
-            ma_url = ma_url.substring(0, ma_url.indexOf('#'));
-        }
+	for (var i = 0; i < ma_urls.length; i++){
+	    var ma_url = ma_urls[i];   
+            if (ma_url.indexOf('#') > -1) {
+                ma_url = ma_url.substring(0, ma_url.indexOf('#'));
+            }
+	}
     }
 } 
 
 var chartStates = [];
 
-var base_url = '/serviceTest/graphData.cgi?action=data&url=' + ma_url + '&src=' + source + '&dest=' + dest;
-var url = '/serviceTest/graphData.cgi?action=data&url=' + ma_url + '&src=' + source + '&dest=' + dest + '&start=' + start_ts + '&end=' + end_ts + '&window=' + summary_window;
+var base_url = '/serviceTest/graphData.cgi?action=data';
+base_url += array2param('url', ma_urls);
+base_url += array2param('src', sources);
+base_url += array2param('dest', dests);
 
-d3.json('/serviceTest/graphData.cgi?action=hosts&src=' + source + '&dest=' + dest, function(error, hosts) {
-    var source_host = d3.select('#source_host');
-    var source_content = hosts.source_ip;
-    if (hosts.source_host) {
-        source_content = hosts.source_host + ' (' + source_content + ')';
-    }
-    source_host.html(source_content);
 
-    var dest_host = d3.select('#dest_host');
-    var dest_content = hosts.dest_ip;
-    if (hosts.dest_host) {
-        dest_content = hosts.dest_host + ' (' + dest_content + ')';
-    }
-    dest_host.html(dest_content);
-
+// do a DNS lookup on the source/dests
+d3.json('/serviceTest/graphData.cgi?action=hosts' + array2param('src', sources) + array2param('dest', dests), function(error, hosts) {
+	for (var i = 0; i < hosts.length; i++){
+	    var source_host = d3.select('#source_host_' + i);
+	    source_host.html(hosts[i].source_host);
+	    var dest_host = d3.select('#dest_host_' + i);
+	    dest_host.html(hosts[i].dest_host);
+	}
 });
 
 
 var loading = d3.select('#chart #loading');
+drawChart(base_url + '&start=' + start_ts + '&end=' + end_ts + '&window=' + summary_window);
 
-drawChart(url);
+
 
 function drawChart(url) {
 
@@ -773,4 +798,10 @@ function drawChart(url) {
             } // end drawChartAfterCall()
             }); // end d3.json call
     }; // end drawChart() function
+
+    function array2param(name, array){	
+	var joiner = "&" + name + "=";
+	return joiner + array.join(joiner);
+    }
+
 }); // end dojo require function
