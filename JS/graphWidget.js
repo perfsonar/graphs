@@ -179,6 +179,7 @@ function drawChart(url) {
                 start_ts = start_ts - time_diff;
                 url = '/serviceTest/graphData.cgi?action=data&url=' + ma_url + '&src=' + source + '&dest=' + dest + '&start=' + start_ts + '&end=' + end_ts + '&window=' + summary_window;
                 d3.selectAll("#chart").selectAll("svg").remove();
+                cleanupObjects();
                 drawChart(url);
                 if (end_ts < now ) {
                 nextLink.style('display', 'block');
@@ -193,6 +194,7 @@ function drawChart(url) {
                     start_ts = start_ts + time_diff;
                     url = '/serviceTest/graphData.cgi?action=data&url=' + ma_url + '&src=' + source + '&dest=' + dest + '&start=' + start_ts + '&end=' + end_ts + '&window=' + summary_window;
                     d3.selectAll("#chart").selectAll("svg").remove();
+                    cleanupObjects();
                     drawChart(url);
                     });
             if (end_ts >= now ) {
@@ -221,21 +223,25 @@ function drawChart(url) {
                 return [
                     // Add        
                     function(p, v) {                
-                        if (v[param] !== null) {
+                        ++p.total_count;
+                        if ( v[param] !== null ) {
                             ++p.count;
                             p.sum += v[param];
                             p.avg = p.sum/p.count;
-                            p.isNull = false;
+                            p.val = v[param];
+                            p.isNull = false; 
                         } else {
-                            //p.avg = null;
-                            p.isNull = true;
-                        } 
+                            // Mark p as null, but only if it hasn't already been flagged as not null
+                            if (!p.isNull) { 
+                                p.isNull = true;
+                            } 
+                        }
                         return p;
                     },
 
                     // Remove
                     function (p, v) {
-                        if (v[param] !== null) {
+                        if ( v[param] !== null ) {
                             --p.count;
                             p.sum -= v[param];
                             p.avg = p.sum/p.count;
@@ -245,7 +251,7 @@ function drawChart(url) {
 
                     // Init
                     function() {
-                        return { count: 0, sum: 0, avg: 0 };
+                        return { count: 0, sum: 0, avg: 0, total_count: 0 };
                     }
 
                 ];
@@ -304,6 +310,15 @@ function drawChart(url) {
             };
 
             setHeader();
+            // Handle zoom events
+            dojo.query('#ps-all-tests #time-selector a.zoomLink').onclick(function(e){ 
+                    e.preventDefault();
+                    var timePeriod = e.currentTarget.name;
+                    dojo.query('#ps-all-tests #time-selector a.zoomLink').removeClass('active');
+                    dojo.addClass(e.currentTarget, 'active');
+                    theHash("timeframe=" + timePeriod);
+                    reloadChart(timePeriod);
+                });
 
             var charts = {};
 
@@ -314,9 +329,10 @@ function drawChart(url) {
             charts.throughput.fieldName = 'throughput';
             charts.throughput.valType = 'avg';
             charts.throughput.color = '#1F77B4'; 
-            charts.throughput.valueAccessor = function(d) { return d.value.avg; };
+            //charts.throughput.valueAccessor = function(d) { return d.value.avg; };
             charts.throughput.showByDefault = true;
-            charts.throughput.tickFormat = d3.format('.2s');
+            //charts.throughput.tickFormat = d3.format('.2s');
+            charts.throughput.tickFormat = function(d) { return d3.format('.3s')(d) + 'bps';  };
 
             // Latency charts
             charts.latency = {};
@@ -325,10 +341,11 @@ function drawChart(url) {
             charts.latency.unit = 'ms';
             charts.latency.fieldName = 'owdelay';
             charts.latency.valType = 'avg';
-            charts.latency.color = '#00ff00'; 
+            charts.latency.color = '#009933'; 
             charts.latency.showByDefault = true;
             charts.latency.ticks = 5;
-            charts.latency.tickFormat = function(d) { return d3.format('.2f')(d * maxDelay / yAxisMax) };
+            charts.latency.tickFormat = function(d) { return d3.format('.2f')(d ) };
+            //charts.latency.tickFormat = function(d) { return d3.format('.2f')(d * maxDelay / yAxisMax) };
 
 
             // Loss charts 
@@ -340,14 +357,14 @@ function drawChart(url) {
             charts.loss.valType = 'avg';
             charts.loss.color = '#ff0000'; 
             charts.loss.showByDefault = true;
-            charts.loss.tickFormat = d3.format('.2s');
-            charts.loss.valueAccessor = function(d) {
+            charts.loss.tickFormat = function(d) { return d3.format('.2%')(d) };
+            /*charts.loss.valueAccessor = function(d) {
                 if (d.value.avg != 0) { 
                     return yAxisMax * d.value.avg / maxLoss; 
                 } else {
                     return 0.01; // TODO: fix: hacky -- so we see "0" values
                 }
-            };
+            };*/
 
             // Packet retrans charts 
             charts.retrans = {};
@@ -380,7 +397,6 @@ function drawChart(url) {
                     rev.fieldName = rev.fieldName + '_dst_val';
                     rev.direction = 'reverse';
                     rev.id = key + '_rev';
-                    //rev.title = 'Reverse ' + rev.title;
 
                     // Set values for forward direction
                     c.fieldName = c.fieldName + '_src_val';
@@ -396,14 +412,31 @@ function drawChart(url) {
                         continue;
                     }
                     c.chart = dc.psLineChart(parentChart);
+                    //c.chart.dimension(lineDimension);
                     if (c.valType == 'avg') { 
                         c.group = lineDimension.group().reduce.apply(lineDimension, make_functions(c.fieldName));
-                        c.max =  c.group.order(avgOrder).top(1)[0].value.avg;
-                        c.min =  c.group.order(avgOrderInv).top(1)[0].value.avg;
+                        var topMin = c.group.order(avgOrderInv).top(1);
+                        var topMax = c.group.order(avgOrder).top(1);
+                        if (typeof topMin === 'undefined' || typeof topMax === 'undefined' 
+                                || topMin.length == 0 || topMax.length == 0 || topMax[0].value.count == 0 ) {
+                            c.hasValues = false;
+                        } else {
+                            c.max =  c.group.order(avgOrder).top(1)[0].value.avg || 0;
+                            c.min =  c.group.order(avgOrderInv).top(1)[0].value.avg || 0;
+                            c.hasValues = true;
+                        }
                     } else if (c.valType == 'sum') {
                         c.group = lineDimension.group().reduceSum(function(d) { return d[c.fieldName]; });
-                        c.max = c.group.top(1)[0].value; 
-                        c.min = c.group.order(valOrderInv).top(1)[0].value;
+                        var topMin = c.group.order(valOrderInv).top(1);
+                        var topMax = c.group.order(valOrder).top(1);
+                        if (typeof topMin === 'undefined' || typeof topMax === 'undefined' 
+                                || topMin.length == 0 || topMax.length == 0 || isNaN(topMax[0].value) ) {
+                            c.hasValues = false;
+                        } else {
+                            c.max = c.group.order(valOrder).top(1)[0].value; 
+                            c.min = c.group.order(valOrderInv).top(1)[0].value;
+                            c.hasValues = true;
+                        }
                     }
                     var type = this[c.type];
                     // typeMin and typeMax are the min/max values for that type
@@ -411,7 +444,7 @@ function drawChart(url) {
                         type['typeMin'] = c.min || 0;
                     }
                     if (typeof type['typeMax'] === "undefined" || c.max > type['typeMax']) {
-                        type['typeMax'] = c.max || 1;
+                        type['typeMax'] = c.max || 0;
                     }
                 }
 
@@ -420,8 +453,8 @@ function drawChart(url) {
                     if (isFunction(c)) {
                         continue;
                     }
-                    c.unitMin = this.getUnitMin(c.unit);
-                    c.unitMax = this.getUnitMax(c.unit);
+                    c.unitMin = this.getUnitMin(c.unit) || 0;
+                    c.unitMax = this.getUnitMax(c.unit) || 0;
                 }
             };
             charts.getUnitMin = function(unit) {
@@ -475,9 +508,18 @@ function drawChart(url) {
                 // The groups were created above, but we have to add them here
                 c.chart.group(c.group, c.name);
                 if (c.valType == 'avg') { 
-                    c.chart.valueAccessor(function (d) {
-                            return yAxisMax * d.value.avg / c.unitMax; 
-                            });
+                    c.chart.valueAccessor(function (d) { return yAxisMax * d.value.avg / c.unitMax; });
+                    if (c.type == 'loss') {
+                        c.chart.valueAccessor(function(d) { 
+                                if (d.value.avg != 0) { 
+                                    return yAxisMax * d.value.avg / c.unitMax; 
+                                } else {
+                                    return 0.01; // TODO: fix: hacky -- so we see "0" values
+                                }
+
+                        });
+
+                    }
                     c.title = function(d) { return c.name + ': ' + format_values(d.value.avg, c.type)
                         + "\n" + format_values(d.key, 'ts'); };
                 } else if (c.valType == 'sum') {
@@ -495,8 +537,7 @@ function drawChart(url) {
                     c.dashstyle = [3, 3];
                 } 
                 if (c.type != 'throughput') {
-                    c.chart.useRightYAxis(true);
-
+                    //c.chart.useRightYAxis(true);
                 }
             }; 
             charts.getAllObjects = function() {
@@ -518,6 +559,17 @@ function drawChart(url) {
                 }
                 return theCharts;
             };
+            charts.getAvailableObjects = function() {
+                var allCharts = this.getAllObjects();
+                var theCharts = [];
+                for(var i in allCharts) {
+                    var c = allCharts[i];
+                    if (c.hasValues) {
+                        theCharts.push(c);
+                    }
+                }
+                return theCharts;
+            };
             charts.getActiveObjects = function() {
                 var allCharts = this.getAllObjects();
                 var theCharts = [];
@@ -527,15 +579,16 @@ function drawChart(url) {
                     var type = typeOrder[typeIndex];
                     for(var directionIndex in directionOrder) {
                         var direction = directionOrder[directionIndex];
-                        if (typeof this[type + direction] !== 'undefined') {
+                        if (typeof this[type + direction] !== 'undefined' && this[type + direction].hasValues) {
                             var c = this[type + direction];
                             var theType = c.type + (c.direction == 'reverse' ? '_rev' : '');
                             var cb = d3.select('#' + theType + "_checkbox");
-                            cb.on("change", function() { drawChartSameCall(error, ps_data); });
-                            if (cb && cb.property('checked') == false) {
-                                continue;
-                            } 
-
+                            if (cb !== null && !cb.empty()) {
+                                cb.on("change", function() { drawChartSameCall(error, ps_data); });
+                                if (cb.property('checked') == false) {
+                                    continue;
+                                } 
+                            }
                             theCharts.push(c);
                         }
 
@@ -555,9 +608,41 @@ function drawChart(url) {
                 var chartOrder = ['throughput', 'latency', 'loss', 'retrans'];
                 return chartOrder;
             };
+            charts.getAxes = function() {                
+                var theAxes = []; // Use an array to maintain order
+                var unitsAdded = [];
+                var activeObjects = this.getAvailableObjects();
+                var j = 0;                
+                for(var i in activeObjects) {
+                    var o = activeObjects[i];
+                    var thisObj = {};
+                    thisObj.name = o.name;
+                    thisObj.min = o.unitMin;
+                    thisObj.max = o.unitMax;
+                    thisObj.unit = o.unit;
+                    thisObj.color = o.color;
+                    if (j == 0) {
+                        o.useRightYAxis = false;
+                        o.chart.useRightYAxis(false);
+                    } else {
+                        o.useRightYAxis = true;
+                        o.chart.useRightYAxis(true);
+                    }
+                    // Only add the unit if it's not already in the array
+                    if (unitsAdded.indexOf(o.unit) == -1) {
+                        if (o.tickFormat) {
+                            thisObj.tickFormat = o.tickFormat;
+                        }
+                        theAxes.push(thisObj);
+                        unitsAdded.push(o.unit);
+                        j++;
+                    }
+                }
+                return theAxes;
+            };
             charts.getDirectionOrder = function() { return ['', '_rev']; };
             charts.createLegend = function(divId) {
-                var activeObjects = this.getAllObjects();
+                var activeObjects = this.getAvailableObjects();
                 var parentDiv = d3.select(divId);
                 var dataDiv = parentDiv.selectAll('div');
                 dataDivElements = dataDiv.data(activeObjects).enter().append('div');
@@ -574,12 +659,14 @@ function drawChart(url) {
                     .text(function(c) { return c.name; });
 
                 var cb = d3.selectAll(divId + ' .dc-legend-item');
+                //if (cb !== null && !cb.empty()) {
                 cb.on("mouseover", function(d, e) { 
                         allTestsChart.legendHighlight(d); 
                         });
                 cb.on("mouseout", function(d, e) {
                         allTestsChart.legendReset(d);
                         });
+                //}
             };
 
             charts.createCharts();
@@ -597,6 +684,9 @@ function drawChart(url) {
             var minPacketRetrans = charts.retrans.typeMin;
 
             var activeCharts = charts.getActiveCharts();
+
+            var axes = charts.getAxes();
+
             //console.log(activeCharts);
 
             if (yNegPadAmt > 0) { // Temporarily disable
@@ -611,6 +701,16 @@ function drawChart(url) {
             }
             var minThroughputAxis = 0;
             //var minThroughputAxis = 0 - yNegPadAmt * maxThroughput;
+            //
+            var format_min = function(d) { return (d >= 0 ? d : 0);  };
+
+            var errorDiv = d3.select('#chartError');
+            // No data to plot
+            if (axes.length == 0) { 
+                errorDiv.html('ERROR: No data to plot for the hosts and time range selected.');
+                d3.select('#legend').html('');
+            } else {
+                errorDiv.html('');
 
             allTestsChart.width(750)
                 .height(465)
@@ -618,19 +718,58 @@ function drawChart(url) {
                 .mouseZoomable(true)
                 .shareTitle(false)
                 .compose(activeCharts)
-                .x(d3.time.scale().domain(d3.extent(ps_data, function(d) { return new Date(d.ts * 1000); })))
+                //.dimension(lineDimension)
+                .x(d3.time.scale().domain(d3.extent(ps_data, function(d) { return new Date(d.ts * 1000); })).nice())
                 .xAxisLabel('Date')
-                .y(d3.scale.linear().domain([minThroughputAxis, axis_value( maxThroughput, 1000000000)]))
-                //.elasticY(true)
-                .yAxisLabel('Throughput')
-                .rightYAxisLabel('Latency (ms)')
+                //.y(d3.scale.linear().domain([minThroughputAxis, axis_value( maxDelay, 1000)]))
+                .y(d3.scale.linear().domain([format_min(axes[0].min), yAxisMax * axisScale ])) 
+                .yAxisLabel(axes[0].name + ' (' + axes[0].unit + ')')
+                //.yAxisLabel('Throughput')
+                //.rightYAxisLabel('Latency (ms)')
                 .legend(dc.legend().x(40).y(570).itemHeight(13).gap(5).legendWidth(600).horizontal(true).itemWidth(150))
-                .rightY(d3.scale.linear().domain([0, yAxisMax * axisScale]).nice())
+                //.rightY(d3.scale.linear().domain([0, yAxisMax * axisScale]).nice())
                 //.rightY(d3.scale.linear().domain([minDel, maxDel]).nice())
                 //.rightY(d3.scale.linear().domain([0, axis_value(maxDelay)]).nice())
                 .xAxis();
-            allTestsChart.yAxis().tickFormat(format_throughput);
-            if (maxDelay > 0) {
+           //allTestsChart.yAxis().tickFormat(format_throughput);
+           allTestsChart.yAxis().ticks(5);
+           //allTestsChart.yAxis().tickFormat(function(d) { return d3.format('.1f')( d * axes[0].max / yAxisMax ) } );
+           function make_formatter(charts, index) { 
+               return function(d) { 
+                    var ret = charts.getAxes()[index].tickFormat( d * charts.getAxes()[index].max / yAxisMax );
+                    return ret;
+               }
+            }
+           function make_formatter1(charts) { 
+               return function(d) { 
+                    var i = 1;
+                    var ret = charts.getAxes()[i].tickFormat( d * charts.getAxes()[i].max / yAxisMax );
+                    return ret;
+               }
+            }
+           allTestsChart.yAxis().tickFormat(make_formatter(charts, 0));
+           //allTestsChart.yAxis().tickFormat(function(d) { return d3.format('.2f')( d * axes[0].max / yAxisMax ) } );
+
+            function get_axes(axes) {
+                return function() { return axes; };
+            }
+
+           if (axes.length > 1 ) {
+                allTestsChart.rightYAxisLabel(axes[1].name + ' (' + axes[1].unit + ')')
+                    .rightY(d3.scale.linear().domain([0, yAxisMax * axisScale]))
+                    .rightYAxis().ticks(5)
+                allTestsChart.rightYAxis().tickFormat(make_formatter1(charts));
+                //allTestsChart.rightYAxis().tickFormat(make_formatter(charts, 1));
+                //allTestsChart.rightYAxis().tickFormat(function(d) { return axes[1].tickFormat(d * axes[1].max/yAxisMax); });
+                //allTestsChart.rightYAxis().tickFormat(function(d) { 
+                //    var axis = get_axes(axes)()[1];
+                //    return axis.tickFormat(d * axis.max/yAxisMax); 
+                //    });
+
+                //allTestsChart.rightYAxis().tickFormat(function(d) { return d3.format('.1f')( d * axes[1].max / yAxisMax ) } );
+           }
+
+            if (maxDelay > 0 && 0) {
                 allTestsChart.rightYAxis().ticks(5)
                     .tickFormat(function(d) { return d3.format('.2f')(d * maxDelay / yAxisMax) });
             }
@@ -644,55 +783,25 @@ function drawChart(url) {
                 }
             }
 
-            // Handle zoom events
-            dojo.query('#ps-all-tests #time-selector a.zoomLink').onclick(function(e){ 
-                    e.preventDefault();
-                    var timePeriod = e.currentTarget.name;
-                    dojo.query('#ps-all-tests #time-selector a.zoomLink').removeClass('active');
-                    dojo.addClass(e.currentTarget, 'active');
-                    theHash("timeframe=" + timePeriod);
-                    reloadChart(timePeriod);
-                    });
-
-            var reloadChart = function(timePeriod) {
-                var url = base_url;
-                summary_window = 3600;
-                end_ts = Math.round(new Date().getTime() / 1000);
-                setTimeVars(timePeriod);
-
-                start_ts = end_ts - time_diff;
-
-                url += '&start=' + start_ts + '&end=' + end_ts + '&window=' + summary_window;
-                if (lineDimension !== null) {
-                    lineDimension.dispose();
-                }
-                if (ndx !== null && ndx.size() > 0 ) {    
-                    dc.filterAll();
-                    ndx.remove();
-                }
-
-                d3.selectAll("#chart").selectAll("svg").remove();
-                if (allTestsChart !== null) {
-                    allTestsChart.resetSvg(); 
-                }
-                allTestsChart = null;
-                lineDimension = null;
-                ndx = null;
-                drawChart(url);
-                setHeader();
-
-
-            };
 
             dc.renderAll();
 
             postRenderTasks();
+
+        } // end if the axes are not empty
+
 
             function postRenderTasks() {
 
                 var svg = allTestsChart.svg(); // d3.select('#chart svg');
                 var svgWidth = svg.attr('width');
                 var svgHeight = svg.attr('height');
+
+                if (axes.length > 1) {
+                    var chartSVG = allTestsChart.svg();
+                    chartSVG.selectAll('g.yr g.tick text').style('fill', axes[1].color);
+                    chartSVG.selectAll('g.y g.tick text').style('fill', axes[0].color);
+                }
 
                 svg.attr("height", +svgHeight + 50);
 
@@ -705,9 +814,19 @@ function drawChart(url) {
                 minRetransAxis = 0; // temporarily override ability to have negative values
                 // Loss axis
                 //var lossAxis = addAxis(minLossAxis, maxLoss, "Loss", function(d) { return d3.format('.2%')(d); }, "#ff0000");
-                var lossAxis = addAxis(0, maxLoss, "Loss", function(d) { return d3.format('.2%')(d * axisScale); }, "#ff0000");
+                //var lossAxis = addAxis(0, maxLoss, "Loss", function(d) { return d3.format('.2%')(d * axisScale); }, "#ff0000");
                 // Packet retransmissions axis
-                var retransAxis = addAxis(0, maxPacketRetrans, "Packet Retransmissions", function(d) { return d * axisScale; }, "#ff00ff");
+                //var retransAxis = addAxis(0, maxPacketRetrans, "Packet Retransmissions", function(d) { return d * axisScale; }, "#ff00ff");
+
+                var additionalAxes = [];
+
+                if (axes.length > 2) {
+                    for(var i=2; i<axes.length;i++) {
+                        //additionalAxes.push(addAxis(0, axes[i].max, axes[i].name, make_formatter(charts, i), axes[i].color));
+                        //additionalAxes.push(addAxis(0, axes[i].max, axes[i].name, function(d) { return d * axisScale; }, make_formatter(charts, i), axes[i].color));
+                        additionalAxes.push(addAxis(0, axes[i].max, axes[i].name, axes[i].tickFormat, axes[i].color));
+                    }
+                }
 
                 var svgSel = allTestsChart.svg();
                 var dcLegendEvents = svgSel.selectAll('.dc-legend-item').on('click', function(e, i) {
@@ -738,7 +857,7 @@ function drawChart(url) {
                 if(maxVal == 0) {
                     y1.domain([minVal, 1 * axisScale]);
                 } else {
-                    y1.domain([minVal, maxVal * axisScale]);
+                    y1.domain([minVal, maxVal * axisScale ]);
                     //y1.domain([0, maxLoss]);
                 }
 
@@ -765,6 +884,57 @@ function drawChart(url) {
                     .attr("transform", "translate(" + (+svgWidth + 50) + " , " + origHeight/2 + ") rotate(90)");
                 return yAxisRight;
             }
+
+            var reloadChart = function(timePeriod) {
+                var url = base_url;
+                summary_window = 3600;
+                end_ts = Math.round(new Date().getTime() / 1000);
+                setTimeVars(timePeriod);
+
+                start_ts = end_ts - time_diff;
+
+                url += '&start=' + start_ts + '&end=' + end_ts + '&window=' + summary_window;
+
+                cleanupObjects();
+
+                drawChart(url);
+                setHeader();
+            };
+
+            var cleanupObjects = function() {
+                if (lineDimension !== null) {
+                    lineDimension.dispose();
+                }
+                if (ndx !== null && ndx.size() > 0 ) {    
+                    dc.filterAll();
+                    ndx.remove();
+                }
+
+                // Remove references in dc chart registry
+                //dc.deregisterChart(allTestsChart);
+                // Clear SVG (similar to the resetSVG method, but don't recreate anything)
+                if (allTestsChart !== null) {
+                    allTestsChart.select("svg").remove();
+                }
+                // Remove root reference (probably not needed)
+                //allTestsChart.root(null);
+
+                //var svg = allTestsChart.svg();
+                //svg.remove();
+
+                d3.selectAll("#chart").selectAll("svg").remove();
+                //if (allTestsChart !== null) {
+                //    allTestsChart.resetSvg(); 
+                //}
+                d3.select('#legend').html('');
+                allTestsChart = null;
+                lineDimension = null;
+                ndx = null;
+                charts = null;
+                axes = null;
+                activeCharts = null;
+
+            };
 
             function isFunction(functionToCheck) {
                 var getType = {};

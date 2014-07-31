@@ -322,3 +322,4 @@ div#legend {
 .legend .legend-line.reverse {
     border-style: dotted;
 }
+#chartError { margin: 0.5em 0; }
