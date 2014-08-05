@@ -172,6 +172,7 @@ function drawChart(url) {
             function drawChartSameCall(error, ps_data) { 
             loading.style('display', 'none');
 
+            timePeriod = ioQuery.queryToObject(theHash()).timeframe || '1w';  // get hash
             var prevLink = d3.selectAll('.ps-timerange-nav .prev');
             prevLink.on("click", function() { 
                 d3.event.preventDefault(); 
@@ -181,14 +182,13 @@ function drawChart(url) {
                 d3.selectAll("#chart").selectAll("svg").remove();
                 cleanupObjects();
                 drawChart(url);
+                setHeader();
                 if (end_ts < now ) {
                 nextLink.style('display', 'block');
                 }
                 return;
                 });
             var nextLink = d3.selectAll('.ps-timerange-nav .next');
-            prevLink.html('<a href="#">Previous ' + timePeriod + '</a>');
-            nextLink.html('<a href="#">Next ' + timePeriod + '</a>');
             nextLink.on("click", function() { 
                     d3.event.preventDefault(); 
                     end_ts = end_ts + time_diff;
@@ -197,13 +197,14 @@ function drawChart(url) {
                     d3.selectAll("#chart").selectAll("svg").remove();
                     cleanupObjects();
                     drawChart(url);
-                    return;
+                    //return;
                     });
             if (end_ts >= now ) {
                 nextLink.style('display', 'none');
             }
 
-            timePeriod = ioQuery.queryToObject(theHash()).timeframe || '1w';  // get hash
+            prevLink.html('<a href="#">Previous ' + timePeriod + '</a>');
+            nextLink.html('<a href="#">Next ' + timePeriod + '</a>');
             if (timePeriod != '') {
                 dojo.query('#ps-all-tests #time-selector a.zoomLink').removeClass('active');
                 dojo.query('#ps-all-tests #time-selector a.zoomLink').forEach(function(node, index, nodelist) {
@@ -347,8 +348,6 @@ function drawChart(url) {
             charts.latency.showByDefault = true;
             charts.latency.ticks = 5;
             charts.latency.tickFormat = function(d) { return d3.format('.2f')(d ) };
-            //charts.latency.tickFormat = function(d) { return d3.format('.2f')(d * maxDelay / yAxisMax) };
-
 
             // Loss charts 
             charts.loss = {};
@@ -377,6 +376,7 @@ function drawChart(url) {
             charts.retrans.valType = 'sum';
             charts.retrans.color = '#ff00ff'; 
             charts.retrans.showByDefault = false;
+            charts.retrans.tickFormat = function(d) { return d };
 
             var parentChart = allTestsChart;
 
@@ -414,7 +414,6 @@ function drawChart(url) {
                         continue;
                     }
                     c.chart = dc.psLineChart(parentChart);
-                    //c.chart.dimension(lineDimension);
                     if (c.valType == 'avg') { 
                         c.group = lineDimension.group().reduce.apply(lineDimension, make_functions(c.fieldName));
                         var topMin = c.group.order(avgOrderInv).top(1);
@@ -731,28 +730,15 @@ function drawChart(url) {
                 //.yAxisLabel('Throughput')
                 //.rightYAxisLabel('Latency (ms)')
                 .legend(dc.legend().x(40).y(570).itemHeight(13).gap(5).legendWidth(600).horizontal(true).itemWidth(150))
-                //.rightY(d3.scale.linear().domain([0, yAxisMax * axisScale]).nice())
-                //.rightY(d3.scale.linear().domain([minDel, maxDel]).nice())
-                //.rightY(d3.scale.linear().domain([0, axis_value(maxDelay)]).nice())
                 .xAxis();
-           //allTestsChart.yAxis().tickFormat(format_throughput);
            allTestsChart.yAxis().ticks(5);
-           //allTestsChart.yAxis().tickFormat(function(d) { return d3.format('.1f')( d * axes[0].max / yAxisMax ) } );
            function make_formatter(charts, index) { 
                return function(d) { 
                     var ret = charts.getAxes()[index].tickFormat( d * charts.getAxes()[index].max / yAxisMax );
                     return ret;
                }
             }
-           function make_formatter1(charts) { 
-               return function(d) { 
-                    var i = 1;
-                    var ret = charts.getAxes()[i].tickFormat( d * charts.getAxes()[i].max / yAxisMax );
-                    return ret;
-               }
-            }
            allTestsChart.yAxis().tickFormat(make_formatter(charts, 0));
-           //allTestsChart.yAxis().tickFormat(function(d) { return d3.format('.2f')( d * axes[0].max / yAxisMax ) } );
 
             function get_axes(axes) {
                 return function() { return axes; };
@@ -762,15 +748,7 @@ function drawChart(url) {
                 allTestsChart.rightYAxisLabel(axes[1].name + ' (' + axes[1].unit + ')')
                     .rightY(d3.scale.linear().domain([0, yAxisMax * axisScale]))
                     .rightYAxis().ticks(5)
-                //allTestsChart.rightYAxis().tickFormat(make_formatter1(charts));
                 allTestsChart.rightYAxis().tickFormat(make_formatter(charts, 1));
-                //allTestsChart.rightYAxis().tickFormat(function(d) { return axes[1].tickFormat(d * axes[1].max/yAxisMax); });
-                //allTestsChart.rightYAxis().tickFormat(function(d) { 
-                //    var axis = get_axes(axes)()[1];
-                //    return axis.tickFormat(d * axis.max/yAxisMax); 
-                //    });
-
-                //allTestsChart.rightYAxis().tickFormat(function(d) { return d3.format('.1f')( d * axes[1].max / yAxisMax ) } );
            }
 
             if (maxDelay > 0 && 0) {
@@ -816,19 +794,12 @@ function drawChart(url) {
                 var minLossAxis = 0 - (maxLoss * yNegPadAmt);
                 var minRetransAxis = 0 - (maxPacketRetrans * yNegPadAmt);
                 minRetransAxis = 0; // temporarily override ability to have negative values
-                // Loss axis
-                //var lossAxis = addAxis(minLossAxis, maxLoss, "Loss", function(d) { return d3.format('.2%')(d); }, "#ff0000");
-                //var lossAxis = addAxis(0, maxLoss, "Loss", function(d) { return d3.format('.2%')(d * axisScale); }, "#ff0000");
-                // Packet retransmissions axis
-                //var retransAxis = addAxis(0, maxPacketRetrans, "Packet Retransmissions", function(d) { return d * axisScale; }, "#ff00ff");
 
                 var additionalAxes = [];
 
                 if (axes.length > 2) {
                     for(var i=2; i<axes.length;i++) {
-                        //additionalAxes.push(addAxis(0, axes[i].max, axes[i].name, make_formatter(charts, i), axes[i].color));
-                        additionalAxes.push(addAxis(0, axes[i].max, axes[i].name, function(d) { return d * axisScale; }, make_formatter(charts, i), axes[i].color));
-                        //additionalAxes.push(addAxis(0, axes[i].max, axes[i].name, axes[i].tickFormat, axes[i].color));
+                        additionalAxes.push(addAxis(0, axes[i].max, axes[i].name, axes[i].tickFormat, axes[i].color));
                     }
                 }
 
@@ -862,7 +833,6 @@ function drawChart(url) {
                     y1.domain([minVal, 1 * axisScale]);
                 } else {
                     y1.domain([minVal, maxVal * axisScale ]);
-                    //y1.domain([0, maxLoss]);
                 }
 
                 var svg = allTestsChart.svg(); // d3.select('#chart svg');
@@ -889,7 +859,8 @@ function drawChart(url) {
                 return yAxisRight;
             }
 
-            var reloadChart = function(timePeriod) {
+            //var reloadChart = function(timePeriod) {
+            function reloadChart(timePeriod) {
                 var url = base_url;
                 summary_window = 3600;
                 end_ts = Math.round(new Date().getTime() / 1000);
@@ -904,7 +875,7 @@ function drawChart(url) {
                 drawChart(url);
                 setHeader();
                 return;
-            };
+            }
 
             //var cleanupObjects = function() {
             function cleanupObjects() {
