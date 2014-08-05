@@ -37,7 +37,7 @@ setTimeVars(timePeriod);
 
 // getTime() returns ms, divide by 1000 to get seconds
 var end_ts = Math.round(new Date().getTime() / 1000);
-var start_ts = end_ts - 86400 * 7;
+//var start_ts = end_ts - 86400 * 7;
 if (time_diff != 0 ) {
     start_ts = end_ts - time_diff;
 }
@@ -184,6 +184,7 @@ function drawChart(url) {
                 if (end_ts < now ) {
                 nextLink.style('display', 'block');
                 }
+                return;
                 });
             var nextLink = d3.selectAll('.ps-timerange-nav .next');
             prevLink.html('<a href="#">Previous ' + timePeriod + '</a>');
@@ -196,6 +197,7 @@ function drawChart(url) {
                     d3.selectAll("#chart").selectAll("svg").remove();
                     cleanupObjects();
                     drawChart(url);
+                    return;
                     });
             if (end_ts >= now ) {
                 nextLink.style('display', 'none');
@@ -211,8 +213,8 @@ function drawChart(url) {
                         });
             }
 
-            var start_date = new Date (start_ts);
-            var end_date = new Date (end_ts);
+            var start_date = new Date (start_ts * 1000);
+            var end_date = new Date (end_ts * 1000);
 
             var allTestsChart = dc.compositeChart("#ps-all-tests");
 
@@ -611,7 +613,7 @@ function drawChart(url) {
             charts.getAxes = function() {                
                 var theAxes = []; // Use an array to maintain order
                 var unitsAdded = [];
-                var activeObjects = this.getAvailableObjects();
+                var activeObjects = this.getActiveObjects();
                 var j = 0;                
                 for(var i in activeObjects) {
                     var o = activeObjects[i];
@@ -706,7 +708,8 @@ function drawChart(url) {
 
             var errorDiv = d3.select('#chartError');
             // No data to plot
-            if (axes.length == 0) { 
+            if (axes.length == 0) {
+               cleanupObjects(); 
                 errorDiv.html('ERROR: No data to plot for the hosts and time range selected.');
                 d3.select('#legend').html('');
             } else {
@@ -719,7 +722,8 @@ function drawChart(url) {
                 .shareTitle(false)
                 .compose(activeCharts)
                 //.dimension(lineDimension)
-                .x(d3.time.scale().domain(d3.extent(ps_data, function(d) { return new Date(d.ts * 1000); })).nice())
+                .x(d3.time.scale().domain([start_date, end_date])) //.nice())
+                //.x(d3.time.scale().domain(d3.extent(ps_data, function(d) { return new Date(d.ts * 1000); }))) //.nice())
                 .xAxisLabel('Date')
                 //.y(d3.scale.linear().domain([minThroughputAxis, axis_value( maxDelay, 1000)]))
                 .y(d3.scale.linear().domain([format_min(axes[0].min), yAxisMax * axisScale ])) 
@@ -758,8 +762,8 @@ function drawChart(url) {
                 allTestsChart.rightYAxisLabel(axes[1].name + ' (' + axes[1].unit + ')')
                     .rightY(d3.scale.linear().domain([0, yAxisMax * axisScale]))
                     .rightYAxis().ticks(5)
-                allTestsChart.rightYAxis().tickFormat(make_formatter1(charts));
-                //allTestsChart.rightYAxis().tickFormat(make_formatter(charts, 1));
+                //allTestsChart.rightYAxis().tickFormat(make_formatter1(charts));
+                allTestsChart.rightYAxis().tickFormat(make_formatter(charts, 1));
                 //allTestsChart.rightYAxis().tickFormat(function(d) { return axes[1].tickFormat(d * axes[1].max/yAxisMax); });
                 //allTestsChart.rightYAxis().tickFormat(function(d) { 
                 //    var axis = get_axes(axes)()[1];
@@ -823,8 +827,8 @@ function drawChart(url) {
                 if (axes.length > 2) {
                     for(var i=2; i<axes.length;i++) {
                         //additionalAxes.push(addAxis(0, axes[i].max, axes[i].name, make_formatter(charts, i), axes[i].color));
-                        //additionalAxes.push(addAxis(0, axes[i].max, axes[i].name, function(d) { return d * axisScale; }, make_formatter(charts, i), axes[i].color));
-                        additionalAxes.push(addAxis(0, axes[i].max, axes[i].name, axes[i].tickFormat, axes[i].color));
+                        additionalAxes.push(addAxis(0, axes[i].max, axes[i].name, function(d) { return d * axisScale; }, make_formatter(charts, i), axes[i].color));
+                        //additionalAxes.push(addAxis(0, axes[i].max, axes[i].name, axes[i].tickFormat, axes[i].color));
                     }
                 }
 
@@ -899,9 +903,11 @@ function drawChart(url) {
 
                 drawChart(url);
                 setHeader();
+                return;
             };
 
-            var cleanupObjects = function() {
+            //var cleanupObjects = function() {
+            function cleanupObjects() {
                 if (lineDimension !== null) {
                     lineDimension.dispose();
                 }
@@ -934,7 +940,7 @@ function drawChart(url) {
                 axes = null;
                 activeCharts = null;
 
-            };
+            }
 
             function isFunction(functionToCheck) {
                 var getType = {};
