@@ -156,7 +156,7 @@ if (uri.indexOf('?') > -1) {
 	for (var i = 0; i < ma_urls.length; i++){
 	    var ma_url = ma_urls[i];   
             if (ma_url.indexOf('#') > -1) {
-                ma_url = ma_url.substring(0, ma_url.indexOf('#'));
+                ma_urls[i] = ma_url.substring(0, ma_url.indexOf('#'));
             }
 	}
     }
@@ -202,11 +202,11 @@ function drawChart(url) {
                 d3.event.preventDefault(); 
                 end_ts = end_ts - time_diff;
                 start_ts = start_ts - time_diff;
-                url = '/serviceTest/graphData.cgi?action=data&url=' + ma_url + '&src=' + source + '&dest=' + dest + '&start=' + start_ts + '&end=' + end_ts + '&window=' + summary_window;
+                var new_url = base_url + '&start=' + start_ts + '&end=' + end_ts + '&window=' + summary_window;
                 d3.selectAll("#chart").selectAll("svg").remove();
-                drawChart(url);
+                drawChart(new_url);
                 if (end_ts < now ) {
-                nextLink.style('display', 'block');
+		    nextLink.style('display', 'block');
                 }
                 });
             var nextLink = d3.selectAll('.ps-timerange-nav .next');
@@ -216,9 +216,9 @@ function drawChart(url) {
                     d3.event.preventDefault(); 
                     end_ts = end_ts + time_diff;
                     start_ts = start_ts + time_diff;
-                    url = '/serviceTest/graphData.cgi?action=data&url=' + ma_url + '&src=' + source + '&dest=' + dest + '&start=' + start_ts + '&end=' + end_ts + '&window=' + summary_window;
+                    var new_url = base_url +'&start=' + start_ts + '&end=' + end_ts + '&window=' + summary_window;
                     d3.selectAll("#chart").selectAll("svg").remove();
-                    drawChart(url);
+                    drawChart(new_url);
                     });
             if (end_ts >= now ) {
                 nextLink.style('display', 'none');
