@@ -83,142 +83,146 @@ sub get_data {
     my %results;
 
     for (my $i = 0; $i < @base_event_types; $i++){
-	my $event_type = $base_event_types[$i];
+        my $event_type = $base_event_types[$i];
 
-	for (my $j = 0; $j < @sources; $j++){
-	    foreach my $ordered ([$sources[$j], $dests[$j]], [$dests[$j], $sources[$j]]){
-		my ($test_src, $test_dest) = @$ordered;
-		
-		my $filter = new perfSONAR_PS::Client::Esmond::ApiFilters();
-		$filter->event_type($event_type);
-		$filter->source($test_src);
-		$filter->destination($test_dest);
-		
-		my $client = new perfSONAR_PS::Client::Esmond::ApiConnect(url     => $urls[$j],
-									  filters => $filter);
-		
-		my $metadata = $client->get_metadata();
-		
-		error($client->error) if ($client->error);
-		
-		my @data_points;
-		
-		foreach my $metadatum (@$metadata){
-		    
-		    my $event = $metadatum->get_event_type($event_type);
-		    $event->filters->time_start($start);
-		    $event->filters->time_end($end);
-		    my $source_host = $metadatum->input_source();
-		    my $destination_host = $metadatum->input_destination();
-		    my $tool_name = $metadatum->tool_name();
-		    
-		    # we MAY want to skip bwctl/ping results
-		    # for now, we are. comment out or remove to skip them.
-		    next if ($tool_name eq 'bwctl/ping');
+        for (my $j = 0; $j < @sources; $j++){
+            foreach my $ordered ([$sources[$j], $dests[$j]], [$dests[$j], $sources[$j]]){
+                my ($test_src, $test_dest) = @$ordered;
 
-		    my $data;
-		    my $total = 0;
-		    my $average;
-		    my $min = undef;
-		    my $max = undef; 
+                my $filter = new perfSONAR_PS::Client::Esmond::ApiFilters();
+                $filter->event_type($event_type);
+                $filter->source($test_src);
+                $filter->destination($test_dest);
 
-		    
-		    if ($event_type eq 'histogram-owdelay') {
-			my $stats_summ = $event->get_summary('statistics', $summary_window);
-			error($event->error) if ($event->error);
-			$data = $stats_summ->get_data() if defined $stats_summ;
-			if (defined($data) && @$data > 0){
-			    foreach my $datum (@$data){
-				$total += $datum->val->{mean};
-				$max = $datum->val->{maximum} if !defined($max) || $datum->val->{maximum} > $max;
-				$min = $datum->val->{minimum} if !defined($min) || $datum->val->{minimum} < $min;
-			    }
-			    $average = $total / @$data;
-			}
-		    } 
-		    else {
-			if ($event_type eq 'packet-loss-rate') {
-			    my $stats_summ = $event->get_summary('aggregation', $summary_window);
-			    error($event->error) if ($event->error);
-			    $data = $stats_summ->get_data() if defined $stats_summ;
-			} 
-			else {
-			    $data = $event->get_data();
-			}
-			if (defined($data) && @$data > 0){
-			    foreach my $datum (@$data){
-				$total += $datum->val;
-				$max = $datum->val if !defined($max) || $datum->val > $max;
-				$min = $datum->val if !defined($min) || $datum->val < $min;
-			    }
-			    $average = $total / @$data;
-			}
-		    }
+                my $client = new perfSONAR_PS::Client::Esmond::ApiConnect(url     => $urls[$j],
+                    filters => $filter);
 
-		    my @data_points = ();
-		    foreach my $datum (@$data){
-			my $ts = $datum->ts;
-			my $val;
-			if ($event_type eq 'histogram-owdelay') {
-			    $val = $datum->{val}->{mean};
-			}
-			else {    
-			    $val = $datum->val;
-			}
-			push(@data_points, {'ts' => $ts, 'val' => $val});		    
-		    }
+                my $metadata = $client->get_metadata();
 
-		    # Figure out how to map into prettier names that don't reveal
-		    # underlying constructs			    	    		   
-		    my $remapped_name = $mapped_event_types[$i];
+                error($client->error) if ($client->error);
 
-		    $results{$test_src}{$test_dest}{$remapped_name} = \@data_points if @data_points > 0; 
-		}
-	    }
-	}
+                my @data_points;
+
+                foreach my $metadatum (@$metadata){
+                    my $event = $metadatum->get_event_type($event_type);
+                    $event->filters->time_start($start);
+                    $event->filters->time_end($end);
+                    my $source_host = $metadatum->input_source();
+                    my $destination_host = $metadatum->input_destination();
+                    my $tool_name = $metadatum->tool_name();
+
+                    # we MAY want to skip bwctl/ping results
+                    # for now, we are. comment out or remove to skip them.
+                    next if ($tool_name eq 'bwctl/ping');
+
+                    my $data;
+                    my $total = 0;
+                    my $average;
+                    my $min = undef;
+                    my $max = undef; 
+
+
+                    if ($event_type eq 'histogram-owdelay') {
+                        my $stats_summ = $event->get_summary('statistics', $summary_window);
+                        error($event->error) if ($event->error);
+                        $data = $stats_summ->get_data() if defined $stats_summ;
+                        if (defined($data) && @$data > 0){
+                            foreach my $datum (@$data){
+                                $total += $datum->val->{mean};
+                                $max = $datum->val->{maximum} if !defined($max) || $datum->val->{maximum} > $max;
+                                $min = $datum->val->{minimum} if !defined($min) || $datum->val->{minimum} < $min;
+                            }
+                            $average = $total / @$data;
+                        }
+                    } 
+                    else {
+                        if ($event_type eq 'packet-loss-rate') {
+                            my $stats_summ = $event->get_summary('aggregation', $summary_window);
+                            error($event->error) if ($event->error);
+                            $data = $stats_summ->get_data() if defined $stats_summ;
+                        } 
+                        else {
+                            $data = $event->get_data();
+                        }
+                        if (defined($data) && @$data > 0){
+                            foreach my $datum (@$data){
+                                $total += $datum->val;
+                                $max = $datum->val if !defined($max) || $datum->val > $max;
+                                $min = $datum->val if !defined($min) || $datum->val < $min;
+                            }
+                            $average = $total / @$data;
+                        }
+                    }
+
+                    my @data_points = ();
+                    foreach my $datum (@$data){
+                        my $ts = $datum->ts;
+                        my $val;
+                        if ($event_type eq 'histogram-owdelay') {
+                            $val = $datum->{val}->{mean};
+                        }
+                        else {    
+                            $val = $datum->val;
+                        }
+                        push(@data_points, {'ts' => $ts, 'val' => $val});		    
+                    }
+
+                    # Figure out how to map into prettier names that don't reveal
+                    # underlying constructs			    	    		   
+                    my $remapped_name = $mapped_event_types[$i];
+           
+                   if (exists($results{$test_src}{$test_dest}{$remapped_name}) &&  @{$results{$test_src}{$test_dest}{$remapped_name}} > 0) { 
+                        my @existing_data_points = @{$results{$test_src}{$test_dest}{$remapped_name}};
+                        @data_points = (@existing_data_points, @data_points);
+                    }
+                    $results{$test_src}{$test_dest}{$remapped_name} = \@data_points if @data_points > 0; 
+                }
+            }
+        }
     }
 
     # CONSOLIDATE BIDIRECTIONAL TESTS
     my %consolidated;
 
     while (my ($src, $values) = each %results) {
-	while (my ($dst, $result_types) = each %$values) {
+        while (my ($dst, $result_types) = each %$values) {
 
-	    foreach my $type (@mapped_event_types) {
-		
-		$consolidated{$src}{$dst}{$type} ||= [];
+            foreach my $type (@mapped_event_types) {
 
-		my $src_was_orig_src = grep {$_ eq $src} @sources;
-		my $dst_was_orig_src = grep {$_ eq $dst} @sources;
+                $consolidated{$src}{$dst}{$type} ||= [];
 
-		my $data_set;
-		my $key_prefix;
+                my $src_was_orig_src = grep {$_ eq $src} @sources;
+                my $dst_was_orig_src = grep {$_ eq $dst} @sources;
 
-		# Figure out which direction we're looking at here, was it src->dst
-		# or was it dst->src?
-		if (exists $results{$src}{$dst}{$type} && $src_was_orig_src){
-		    $data_set   = $results{$src}{$dst}{$type};
-		    $key_prefix = "src";
-		}
-		elsif (exists $results{$dst}{$src}{$type} && $dst_was_orig_src){
-		    $data_set   = $results{$dst}{$src}{$type};
-		    $key_prefix = "dst";		    
-		}
+                my $data_set;
+                my $key_prefix;
 
-		next unless ($data_set);
-		
-		foreach my $data (@$data_set) {
-		    my $row = {};
-		    
-		    while (my ($key, $val) = each %$data) {
-			$row->{$key_prefix . "_" . $key} = $val;
-		    }
+                # Figure out which direction we're looking at here, was it src->dst
+                # or was it dst->src?
+                if (exists $results{$src}{$dst}{$type} && $src_was_orig_src){
+                    $data_set   = $results{$src}{$dst}{$type};
+                    $key_prefix = "src";
+                }
+                elsif (exists $results{$dst}{$src}{$type} && $dst_was_orig_src){
+                    $data_set   = $results{$dst}{$src}{$type};
+                    $key_prefix = "dst";		    
+                }
 
-		    push @{$consolidated{$src}{$dst}{$type}}, $row;		    
-		}
-		
-	    }
-	}
+                next unless ($data_set);
+
+                foreach my $data (@$data_set) {
+                    my $row = {};
+
+                    while (my ($key, $val) = each %$data) {
+                        $row->{$key_prefix . "_" . $key} = $val;
+                    }
+
+                    push @{$consolidated{$src}{$dst}{$type}}, $row;		    
+
+                }
+
+            }
+        }
     }
 
 
@@ -227,41 +231,41 @@ sub get_data {
     my @flattened;
 
     while (my ($src, $values) = each %consolidated){
-	while (my ($dst, $val_types) = each %$values) {
-	    
-	    foreach my $type (@mapped_event_types) {
+        while (my ($dst, $val_types) = each %$values) {
 
-		foreach my $value (@{$consolidated{$src}{$dst}{$type}}) {
+            foreach my $type (@mapped_event_types) {
 
-		    my $row = {};
-		    
-		    # Iterate over ALL types in the request
-		    foreach my $all_type (@mapped_event_types) {
-			$row->{$all_type . '_src_val'} = undef;
-			$row->{$all_type . '_dst_val'} = undef;
-		    }
-		    
-		    my $ts  = $value->{'src_ts'};
-		    my $val = $value->{'src_val'};
+                foreach my $value (@{$consolidated{$src}{$dst}{$type}}) {
 
-		    $row->{$type . "_src_val"} = $val;
-		    $row->{'ts'}      = $ts;
-		    $row->{'ts_date'} = localtime($ts) if $ts;
-		    
-		    my $dst_ts  = $value->{'dst_ts'};
-		    my $dst_val = $value->{'dst_val'};
+                    my $row = {};
 
-		    $row->{$type . "_dst_val"} = $dst_val;
-		    $row->{'ts'}      = $dst_ts if defined $dst_ts;
-		    $row->{'ts_date'} = localtime($dst_ts) if $dst_ts;
+                    # Iterate over ALL types in the request
+                    foreach my $all_type (@mapped_event_types) {
+                        $row->{$all_type . '_src_val'} = undef;
+                        $row->{$all_type . '_dst_val'} = undef;
+                    }
 
-		    $row->{'source'}      = $src;
-		    $row->{'destination'} = $dst;
+                    my $ts  = $value->{'src_ts'};
+                    my $val = $value->{'src_val'};
 
-		    push @flattened, $row;
-		}
-	    }
-	}
+                    $row->{$type . "_src_val"} = $val;
+                    $row->{'ts'}      = $ts;
+                    $row->{'ts_date'} = localtime($ts) if $ts;
+
+                    my $dst_ts  = $value->{'dst_ts'};
+                    my $dst_val = $value->{'dst_val'};
+
+                    $row->{$type . "_dst_val"} = $dst_val;
+                    $row->{'ts'}      = $dst_ts if defined $dst_ts;
+                    $row->{'ts_date'} = localtime($dst_ts) if $dst_ts;
+
+                    $row->{'source'}      = $src;
+                    $row->{'destination'} = $dst;
+
+                    push @flattened, $row;
+                }
+            }
+        }
     }
 
     print $cgi->header('text/json');
@@ -269,12 +273,21 @@ sub get_data {
     if ($flatten == 1) {        
         # This code will consolidate based on same timestamp, and make adjustments to better display stray points
         # Not finished yet, as of 06/18/2014 - Michael Johnson
-        if (0) {
+        if (1) {
             # Sort by ts
             @flattened = sort by_ts @flattened;
             my $last_ts = 0;
             for(my $i = 0; $i < @flattened; $i++) {
                 my $row  = $flattened[$i];
+                if ($row->{ts} <= $last_ts) {
+                    #warn "less than or equal " . $row->{ts} . " last: " . $last_ts;
+                    #warn Dumper $row;
+                    $flattened[$i-1] = combine_data($row, $flattened[$i-1]);
+                    #warn 'flattened: ' . Dumper $flattened[$i-1];
+                    splice(@flattened, $i, 1);
+                    $i--;
+                
+                }
                 $last_ts = $row->{ts};
 		
             }
@@ -283,6 +296,7 @@ sub get_data {
     } 
     else {
         print to_json(\%consolidated);
+        #print to_json(\%results);
     }
 }
 
@@ -562,29 +576,35 @@ sub get_interfaces {
 	my $mtu = 0;
 
 	foreach my $res (@$result) {
-	    $capacity = $res->getInterfaceCapacity()->[0];
-	    $mtu      = $res->getInterfaceMTU()->[0];
+    	$capacity = $res->getInterfaceCapacity()->[0] unless !$res->getInterfaceCapacity();
+    	$mtu      = $res->getInterfaceMTU()->[0] unless !$res->getInterfaceMTU();
+        #if ($res->getInterfaceCapacity()) {
+        #    $capacity = $res->getInterfaceCapacity()->[0];
+        #}
+        #if ($res->getInterfaceMTU()) {
+        #    $mtu      = $res->getInterfaceMTU()->[0];
+        #}
 
 	    my $addresses = $res->getInterfaceAddresses();
-	    foreach my $address (@$addresses) {
-		if ($address eq $source || $address eq $source_hostname) {
-		    push(@results, {'source_capacity'  => $capacity,
-				    'source_mtu'       => $mtu,
-				    'source_ip'        => $source,
-				    'source_addresses' => $addresses
-			 }
-			);
-		} 
-		elsif ($dest && $address eq $dest || $address eq $dest_hostname) {
-		    push(@results, {'dest_capacity'  => $capacity,
-				    'dest_mtu'       => $mtu,
-				    'dest_ip'        => $dest,
-				    'dest_addresses' => $addresses
-			 }
-			);
+        foreach my $address (@$addresses) {
+            if ($address eq $source || $address eq $source_hostname) {
+                push(@results, {'source_capacity'  => $capacity,
+                        'source_mtu'       => $mtu,
+                        'source_ip'        => $source,
+                        'source_addresses' => $addresses
+                    }
+                );
+            } 
+            elsif ($dest && $address eq $dest || $address eq $dest_hostname) {
+                push(@results, {'dest_capacity'  => $capacity,
+                        'dest_mtu'       => $mtu,
+                        'dest_ip'        => $dest,
+                        'dest_addresses' => $addresses
+                    }
+                );
 
-		}
-	    }
+            }
+        }
 	}
     }
 
@@ -639,3 +659,19 @@ sub by_ts {
     $a->{ts} <=> $b->{ts};
 }
 
+sub combine_data {
+    my $data1 = shift;
+    my $data2 = shift;
+    my $combined = {};
+
+    while (my ($key, $val) = each %$data1) {
+        $combined->{$key} = $val;
+    }
+
+    while (my ($key, $val) = each %$data2) {
+        if(defined($val)) {
+            $combined->{$key} = $val;
+        }
+    }
+    return $combined;
+}
