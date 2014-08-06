@@ -24,19 +24,17 @@ my $configdir   = "$basedir/../etc";
 
 my $cgi = new CGI;
 
-my $ma_url          = $cgi->param("url");      # adding option to query MA directly
-my $source          = $cgi->param("source");
-my $dest            = $cgi->param("dest");
-my $window          = $cgi->param('window');
+my @ma_urls          = $cgi->param("url");      # adding option to query MA directly
+my @sources          = $cgi->param("source");
+my @dests            = $cgi->param("dest");
+my $window           = $cgi->param('window');
 
 # If we're handling a request to an old MA
 # figure out where it needs to go
-if ($ma_url =~ /pSB/){
-    #warn "OLD MA";
+if ($ma_urls[0] =~ /pSB/){
     handle_old_ma();
 }
 else {
-    #warn "NEW MA";
     handle_esmond();
 }
 
@@ -50,9 +48,6 @@ sub handle_old_ma {
 
     my $cgi_url   = $cgi->url();
     my $query_str = $cgi->query_string();
-
-    warn Dumper($cgi_url);
-    warn Dumper($query_str);
 
     if ($cgi->param('bucket_width')){
 	$cgi_url =~ s/graphWidget\.cgi/delayGraph\.cgi/;
@@ -68,11 +63,10 @@ sub handle_esmond {
     #print cgi-header
     print $cgi->header;
     
-    
     my %vars = (
-	source             => $source,
-	dest               => $dest,
-	window             => $window
+	sources             => \@sources,
+	dests               => \@dests,
+	window              => $window
 	);
     
     #open template

@@ -6,8 +6,15 @@
 
 <script language="javascript">
 var summary_window = '[% window %]';
-var source = '[% source %]';
-var dest = '[% dest %]';
+var sources = [];
+[% FOREACH source IN sources %]
+sources.push("[% source %]");
+[% END %]
+
+var dests = [];
+[% FOREACH dest IN dests %]
+dests.push("[% dest %]");
+[% END %]
 </script>
 
 <script type="text/javascript" src="/toolkit/content/dojo/dojo/dojo.js" djConfig="parseOnLoad:true"></script>
@@ -41,21 +48,43 @@ var dest = '[% dest %]';
         <div class="chartHeader" style="margin-left: auto; margin-right: auto; width: 700px;">
             <div id="chartError" class="error"></div>
             <table class="hosts">
-            <tr>
-	      <th>Source: <span id="source_host">[% source %]</span></th>
-	      <th>Destination: <span id="dest_host">[% dest %]</span></th>
+ 	    <tr>
+   	        <th>Source</th>
+	        <th></th>
+	        <th>Destination</th>
 	    </tr>
-            <tr>
-                <td>Capacity: 
-                    <span id="source_capacity" style="margin-right: 10px;">Unknown</span>
-                    MTU: <span id="source_mtu">Unknown</span>
+	    [% size = sources.size %]
+	    [% size = size - 1 %]
+	    [% FOREACH n IN [0 .. size] %]
+	      <tr class="host_table_[% n mod 2 %]">
+		<td>
+		   <span class="host_table_host" id="source_host_[% n %]">
+                       <span class="host_table_looking_up">Retrieving...</span>
+                   </span>
+                   - [% sources.$n %]
+		</td>
+		<td>
+		   --
+		</td>
+	      	<td>
+		   <span class="host_table_host" id="dest_host_[% n %]">
+                       <span class="host_table_looking_up">Retrieving...</span>
+                   </span> 
+                   - [% dests.$n %]
                 </td>
-
+  	      </tr>
+              <tr class="host_table_[% n mod 2 %]">
                 <td>Capacity: 
-                    <span id="dest_capacity" style="margin-right: 10px;">Unknown</span>
-                    MTU: <span id="dest_mtu">Unknown</span>
+                    <span id="source_capacity_[% n %]" style="margin-right: 10px;">Unknown</span>
+                    MTU: <span id="source_mtu_[% n %]">Unknown</span>
                 </td>
-            </tr>
+		<td></td>
+                <td>Capacity: 
+                    <span id="dest_capacity_[% n %]" style="margin-right: 10px;">Unknown</span>
+                    MTU: <span id="dest_mtu_[% n %]">Unknown</span>
+                </td>
+              </tr>
+            [% END %]
             </table>
         </div>
 

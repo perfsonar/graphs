@@ -33,27 +33,6 @@ use SimpleLookupService::QueryObjects::Network::InterfaceQueryObject;
 
 my $basedir = "$FindBin::Bin";
 
-# my $config_file = $basedir . '/etc/web_admin.conf';
-# my $conf_obj    = Config::General->new( -ConfigFile => $config_file );
-
-# our %conf = $conf_obj->getall;
-
-# if ($conf{logger_conf}) {
-#     unless ( $conf{logger_conf} =~ /^\// ) {
-#         $conf{logger_conf} = $basedir . "/etc/" . $conf{logger_conf};
-#     }    
-#     Log::Log4perl->init( $conf{logger_conf} );
-# }
-# else {
-#     # If they've not specified a logger, send it all to /dev/null
-#     Log::Log4perl->easy_init( { level => $DEBUG, file => "/dev/null" } );
-# }
-
-# our $logger = get_logger( "perfSONAR_PS::WebGUI::ServiceTest::graphData" );
-# if ( $conf{debug} ) {
-#     $logger->level( $DEBUG );
-# }
-
 my $cgi = new CGI;
 
 my $action = $cgi->param('action') || error("Missing required parameter \"action\", must specify data or tests");
@@ -78,242 +57,232 @@ else {
 }
 
 sub get_data {
-    my @types  = $cgi->param('type');
-    if (! @types) {
-        @types = ('throughput', 'histogram-owdelay', 'packet-loss-rate', 'packet-retransmits');
-    }
+
     my $summary_window;
     my $window = $cgi->param('window');
     my @valid_windows = (60, 300, 3600, 86400);
     $summary_window = 3600;
     $summary_window = $window if ($window && (grep {$_ eq $window} @valid_windows));
 
-    my $url     = $cgi->param('url')     || error("Missing required parameter \"url\"");
-    my $src     = $cgi->param('src')     || error("Missing required parameter \"src\"");
-    my $dest    = $cgi->param('dest')    || error("Missing required parameter \"dest\"");
+    my @urls    = $cgi->param('url');     
+    my @sources = $cgi->param('src');     
+    my @dests   = $cgi->param('dest');    
     my $start   = $cgi->param('start')   || error("Missing required parameter \"start\"");
     my $end     = $cgi->param('end')     || error("Missing required parameter \"end\"");
+
+    if (@sources == 0 || @sources != @dests || @sources != @urls){
+	error("There must be an equal non-zero amount of src, dest, and url options passed.");
+    }
+
+    my @base_event_types   = ('throughput', 'histogram-owdelay', 'packet-loss-rate', 'packet-retransmits');
+    my @mapped_event_types = ('throughput', 'owdelay', 'loss', 'packet_retransmits');
+
     my $flatten = 1;
     $flatten = $cgi->param('flatten') if (defined $cgi->param('flatten'));
-    my $orig_src = $src;
-    my $orig_dest = $dest;
 
     my %results;
-    
-    foreach my $type (@types){
-        my $real_type = $type;	
-        foreach my $ordered ([$src, $dest], [$dest, $src]){
-            my ($test_src, $test_dest) = @$ordered;
 
-            my $filter = new perfSONAR_PS::Client::Esmond::ApiFilters();
-            $filter->event_type($real_type);
-            $filter->source($test_src);
-            $filter->destination($test_dest);
-            #$filter->time_start($start);
-            #$filter->time_end($end);
+    for (my $i = 0; $i < @base_event_types; $i++){
+	my $event_type = $base_event_types[$i];
 
-            my $client = new perfSONAR_PS::Client::Esmond::ApiConnect(url     => $url,
-                filters => $filter);
+	for (my $j = 0; $j < @sources; $j++){
+	    foreach my $ordered ([$sources[$j], $dests[$j]], [$dests[$j], $sources[$j]]){
+		my ($test_src, $test_dest) = @$ordered;
+		
+		my $filter = new perfSONAR_PS::Client::Esmond::ApiFilters();
+		$filter->event_type($event_type);
+		$filter->source($test_src);
+		$filter->destination($test_dest);
+		
+		my $client = new perfSONAR_PS::Client::Esmond::ApiConnect(url     => $urls[$j],
+									  filters => $filter);
+		
+		my $metadata = $client->get_metadata();
+		
+		error($client->error) if ($client->error);
+		
+		my @data_points;
+		
+		foreach my $metadatum (@$metadata){
+		    
+		    my $event = $metadatum->get_event_type($event_type);
+		    $event->filters->time_start($start);
+		    $event->filters->time_end($end);
+		    my $source_host = $metadatum->input_source();
+		    my $destination_host = $metadatum->input_destination();
+		    my $tool_name = $metadatum->tool_name();
+		    
+		    # we MAY want to skip bwctl/ping results
+		    # for now, we are. comment out or remove to skip them.
+		    next if ($tool_name eq 'bwctl/ping');
 
-            my $metadata = $client->get_metadata();
+		    my $data;
+		    my $total = 0;
+		    my $average;
+		    my $min = undef;
+		    my $max = undef; 
 
-            error($client->error) if ($client->error);
+		    
+		    if ($event_type eq 'histogram-owdelay') {
+			my $stats_summ = $event->get_summary('statistics', $summary_window);
+			error($event->error) if ($event->error);
+			$data = $stats_summ->get_data() if defined $stats_summ;
+			if (defined($data) && @$data > 0){
+			    foreach my $datum (@$data){
+				$total += $datum->val->{mean};
+				$max = $datum->val->{maximum} if !defined($max) || $datum->val->{maximum} > $max;
+				$min = $datum->val->{minimum} if !defined($min) || $datum->val->{minimum} < $min;
+			    }
+			    $average = $total / @$data;
+			}
+		    } 
+		    else {
+			if ($event_type eq 'packet-loss-rate') {
+			    my $stats_summ = $event->get_summary('aggregation', $summary_window);
+			    error($event->error) if ($event->error);
+			    $data = $stats_summ->get_data() if defined $stats_summ;
+			} 
+			else {
+			    $data = $event->get_data();
+			}
+			if (defined($data) && @$data > 0){
+			    foreach my $datum (@$data){
+				$total += $datum->val;
+				$max = $datum->val if !defined($max) || $datum->val > $max;
+				$min = $datum->val if !defined($min) || $datum->val < $min;
+			    }
+			    $average = $total / @$data;
+			}
+		    }
 
-            my @data_points;
+		    my @data_points = ();
+		    foreach my $datum (@$data){
+			my $ts = $datum->ts;
+			my $val;
+			if ($event_type eq 'histogram-owdelay') {
+			    $val = $datum->{val}->{mean};
+			}
+			else {    
+			    $val = $datum->val;
+			}
+			push(@data_points, {'ts' => $ts, 'val' => $val});		    
+		    }
 
-            foreach my $metadatum (@$metadata){
+		    # Figure out how to map into prettier names that don't reveal
+		    # underlying constructs			    	    		   
+		    my $remapped_name = $mapped_event_types[$i];
 
-                my $event = $metadatum->get_event_type($real_type);
-                $event->filters->time_start($start);
-                $event->filters->time_end($end);
-                my $source_host = $metadatum->input_source();
-                my $destination_host = $metadatum->input_destination();
-                my $tool_name = $metadatum->tool_name();
-
-                # we MAY want to skip bwctl/ping results
-                # for now, we are. comment out or remove to skip them.
-                next if ($tool_name eq 'bwctl/ping');
-
-                $type = 'loss' if ($type eq 'packet-loss-rate');
-                $type = 'owdelay' if ($type eq 'histogram-owdelay');
-                $type = 'packet_retransmits' if ($type eq 'packet-retransmits');
-
-                my $data;
-                my $total = 0;
-                my $average;
-                my $min = undef;
-                my $max = undef; 
-
-                if ($type eq 'owdelay') {
-                    my $stats_summ = $event->get_summary('statistics', $summary_window);
-                    error($event->error) if ($event->error);
-                    $data = $stats_summ->get_data() if defined $stats_summ;
-                    if (defined($data) && @$data > 0){
-                        foreach my $datum (@$data){
-                            $total += $datum->val->{mean};
-                            $max = $datum->val->{maximum} if !defined($max) || $datum->val->{maximum} > $max;
-                            $min = $datum->val->{minimum} if !defined($min) || $datum->val->{minimum} < $min;
-                        }
-                        $average = $total / @$data;
-                    }
-                } else {
-                    if ($type eq 'loss') {
-                        my $stats_summ = $event->get_summary('aggregation', $summary_window);
-                        error($event->error) if ($event->error);
-                        $data = $stats_summ->get_data() if defined $stats_summ;
-                    } else {
-                        $data = $event->get_data();
-                    }
-                    if (defined($data) && @$data > 0){
-                        foreach my $datum (@$data){
-                            $total += $datum->val;
-                            $max = $datum->val if !defined($max) || $datum->val > $max;
-                            $min = $datum->val if !defined($min) || $datum->val < $min;
-                        }
-                        $average = $total / @$data;
-                    }
-                } 
-                my @data_points = ();
-                foreach my $datum (@$data){
-                    my $ts = $datum->ts;
-                    my $val;
-                    if ($type eq 'owdelay') {
-                        $val = $datum->{val}->{mean};
-                    } else {    
-                        $val = $datum->val;
-                    }
-                    push(@data_points, {'ts' => $ts, 'val' => $val});		    
-                }
-            
-             $results{$test_src}{$test_dest}{$type} = \@data_points if @data_points > 0; 
-            }
-        }
+		    $results{$test_src}{$test_dest}{$remapped_name} = \@data_points if @data_points > 0; 
+		}
+	    }
+	}
     }
 
     # CONSOLIDATE BIDIRECTIONAL TESTS
-    my %res = ();
-    if (1) {
-        while (my ($src, $values) = each %results) {
-            while (my ($dst, $result_types) = each %$values) {
-                #warn "src: $src and dst: $dst\n";
-                #while (my $type = each %$result_types) 
-                foreach my $type (@types) {
-                    $res{$src}{$dst}{$type} = [] unless $res{$src}{$dst}{$type};
-                    #if (exists $results{$src}{$dst}{$type} && $src eq $orig_src && $dst eq $orig_dest) 
-                    if (exists($results{$src}{$dst}{$type}) && $src eq $orig_src) {
-                        foreach my $data (@{$results{$src}{$dst}{$type}}) {
-                            my $src_row = {};
+    my %consolidated;
 
-                            while (my ($key, $val) = each %$data) {
-                                $src_row->{'src_'.$key} = $val;
-                                #push @{$results{$src}{$dst}{$type}}, \%row;
-                            }
-                            push @{$res{$src}{$dst}{$type}}, $src_row;
-                        }
-                    }
-                    if (exists($results{$dst}{$src}{$type}) && $src eq $orig_src ) { 
-                        foreach my $data (@{$results{$dst}{$src}{$type}}) {
-                            my $dst_row = {};
-                            while (my ($key, $val) = each %$data) {
-                                $dst_row->{'dst_'.$key} = $val;
-                            }
-                            #next if keys %$dst_row == 0;
-                            push @{$res{$src}{$dst}{$type}}, $dst_row; # if $src eq $orig_src;
-                        }
-                        delete $results{$dst}{$src}{$type}; # if $src eq $orig_src;
-                    } 
-                    delete $results{$dst}{$src}{$type} if !defined($results{$dst}{$src}{$type}) || @{$results{$dst}{$src}{$type}} == 0; 
-                    delete $results{$dst}{$src} if !%{$results{$dst}{$src}};
-                    delete $results{$dst} if !%{$results{$dst}};
-                }
-            }
-        }
-        %results = ();
-        %results = %res;
+    while (my ($src, $values) = each %results) {
+	while (my ($dst, $result_types) = each %$values) {
+
+	    foreach my $type (@mapped_event_types) {
+		
+		$consolidated{$src}{$dst}{$type} ||= [];
+
+		my $src_was_orig_src = grep {$_ eq $src} @sources;
+		my $dst_was_orig_src = grep {$_ eq $dst} @sources;
+
+		my $data_set;
+		my $key_prefix;
+
+		# Figure out which direction we're looking at here, was it src->dst
+		# or was it dst->src?
+		if (exists $results{$src}{$dst}{$type} && $src_was_orig_src){
+		    $data_set   = $results{$src}{$dst}{$type};
+		    $key_prefix = "src";
+		}
+		elsif (exists $results{$dst}{$src}{$type} && $dst_was_orig_src){
+		    $data_set   = $results{$dst}{$src}{$type};
+		    $key_prefix = "dst";		    
+		}
+
+		next unless ($data_set);
+		
+		foreach my $data (@$data_set) {
+		    my $row = {};
+		    
+		    while (my ($key, $val) = each %$data) {
+			$row->{$key_prefix . "_" . $key} = $val;
+		    }
+
+		    push @{$consolidated{$src}{$dst}{$type}}, $row;		    
+		}
+		
+	    }
+	}
     }
-    
+
 
     # FLATTEN DATASTRUCTURE
 
-    my @results_arr;
-    my $results2 = {};
-    my $results_arr2 = [];
-    #my $min_ts;
-    #my $max_ts;
-    if ($flatten == 1) {
-        while (my ($src, $values) = each %results) {
-            while (my ($dst, $val_types) = each %$values) {
-                #warn "src: $src and dst: $dst\n";
-                #while (my $type = each %$types) { 
-                foreach my $type(@types) {
-                    $results_arr2 = [];
-                    $results2->{$type} = [];
-                    foreach my $value (@{$results{$src}{$dst}{$type}}) {
-                        my $row = {};
-                        #my $min_ts = $ts if (!defined($min_ts) || $ts < $min_ts);
-                        #my $max_ts = $ts if (!defined($max_ts) || $ts > $max_ts);
+    my @flattened;
 
-                        # Iterate over ALL types in the request
-                        foreach my $all_type (@types) {
-                            #warn "type (full): " . $all_type;
-                            $row->{$all_type.'_src_val'} = undef;
-                            $row->{$all_type.'_dst_val'} = undef;
-                        }
+    while (my ($src, $values) = each %consolidated){
+	while (my ($dst, $val_types) = each %$values) {
+	    
+	    foreach my $type (@mapped_event_types) {
 
-                        my $ts = $value->{src_ts};
-                        my $val = $value->{src_val};
-                        #if (defined($ts) && defined($val) || 1) {
-                        #$row->{"${type}_src_ts"} = $ts;
-                            $row->{"${type}_src_val"} = $val;
-                            $row->{ts} = $ts;
-                            $row->{ts_date} = localtime($ts) if $ts;
-                            #}
+		foreach my $value (@{$consolidated{$src}{$dst}{$type}}) {
 
-                        my $dst_ts = $value->{dst_ts};
-                        my $dst_val = $value->{dst_val};
-                        #if (defined($dst_ts) && defined($dst_val) || 1) {
-                        #$row->{"${type}_dst_ts"} = $dst_ts;
-                            $row->{"${type}_dst_val"} = $dst_val;
-                            $row->{ts} = $dst_ts if defined $dst_ts;
-                            $row->{ts_date} = localtime($dst_ts) if $dst_ts;
-                            #}
-                        $row->{'source'} = $src;
-                        $row->{'destination'} = $dst;
-                        #$row->{'type'} = $type;
-                        #$results2{$type} = $row;
-                        push @results_arr, $row;
-                        push @$results_arr2, $row;
-                        push @{$results2->{$type}}, $row;
-                    }
-                    #warn "results_arr2 ${type}: " . Dumper $results_arr2;
-                    #$results2->{$type} = $results_arr2;
-                }
-            }
-        }
+		    my $row = {};
+		    
+		    # Iterate over ALL types in the request
+		    foreach my $all_type (@mapped_event_types) {
+			$row->{$all_type . '_src_val'} = undef;
+			$row->{$all_type . '_dst_val'} = undef;
+		    }
+		    
+		    my $ts  = $value->{'src_ts'};
+		    my $val = $value->{'src_val'};
 
+		    $row->{$type . "_src_val"} = $val;
+		    $row->{'ts'}      = $ts;
+		    $row->{'ts_date'} = localtime($ts) if $ts;
+		    
+		    my $dst_ts  = $value->{'dst_ts'};
+		    my $dst_val = $value->{'dst_val'};
+
+		    $row->{$type . "_dst_val"} = $dst_val;
+		    $row->{'ts'}      = $dst_ts if defined $dst_ts;
+		    $row->{'ts_date'} = localtime($dst_ts) if $dst_ts;
+
+		    $row->{'source'}      = $src;
+		    $row->{'destination'} = $dst;
+
+		    push @flattened, $row;
+		}
+	    }
+	}
     }
-    
 
     print $cgi->header('text/json');
 
-    if ($flatten == 1) {
-        
+    if ($flatten == 1) {        
         # This code will consolidate based on same timestamp, and make adjustments to better display stray points
         # Not finished yet, as of 06/18/2014 - Michael Johnson
         if (0) {
             # Sort by ts
-            @results_arr = sort by_ts @results_arr;
+            @flattened = sort by_ts @flattened;
             my $last_ts = 0;
-            for(my $i=0; $i<@results_arr; $i++) {
-                my $row = $results_arr[$i];
-                #warn "less than " . $row->{ts} . " last: " . $last_ts if $row->{ts} <= $last_ts;
+            for(my $i = 0; $i < @flattened; $i++) {
+                my $row  = $flattened[$i];
                 $last_ts = $row->{ts};
-
+		
             }
         }
-        print to_json(\@results_arr);
-    } else {
-        print to_json(\%results);
+        print to_json(\@flattened);
+    } 
+    else {
+        print to_json(\%consolidated);
     }
 }
 
@@ -356,8 +325,7 @@ sub get_tests {
         my $hostnames = host_info( {src => $src, dest => $dst} );
         my $source_host = $hostnames->{source_host};
         my $destination_host = $hostnames->{dest_host};
-        my $source_ip = $hostnames->{source_ip};
-        my $destination_ip = $hostnames->{dest_ip};
+
 
         foreach my $event_type (@$event_types){
 
@@ -430,8 +398,6 @@ sub get_tests {
                     dst           => $dst,
                     source_host  => $source_host,
                     destination_host => $destination_host,
-                    source_ip => $source_ip,
-                    destination_ip => $destination_ip,
                     bidirectional => 0};
             }
         }
@@ -556,76 +522,90 @@ sub get_ls_hosts {
 }
 
 sub get_interfaces {
-    my $source     = $cgi->param('source');
-    my $dest       = $cgi->param('dest'); 
-    my $interface  = $cgi->param('interface');
+    my @sources     = $cgi->param('source');
+    my @dests       = $cgi->param('dest'); 
     my $ls_url      = $cgi->param('ls_url')    || error("Missing required parameter \"ls_url\"");
-    my %hosts;
-    $hosts{source} = $source;
-    $hosts{dest} = $dest;
-    my $ip = $interface;
-    my %results;
 
-    my $server = SimpleLookupService::Client::SimpleLS->new();
-    $server->setUrl($ls_url);
-    $server->connect();
+    my @results;    
 
-    my $query_object = SimpleLookupService::QueryObjects::Network::InterfaceQueryObject->new();
-    $query_object->init();
+    for (my $i = 0; $i < @sources; $i++){
+	my $source = $sources[$i];
+	my $dest   = $dests[$i];
+				
+	my $server = SimpleLookupService::Client::SimpleLS->new();
+	$server->setUrl($ls_url);
+	$server->connect();
+	
+	my $query_object = SimpleLookupService::QueryObjects::Network::InterfaceQueryObject->new();
+	$query_object->init();
+	
+	my $host_info       = host_info( { src => $source, dest => $dest });
+	my $source_hostname = $host_info->{'source_host'};
+	my $dest_hostname   = $host_info->{'dest_host'};
+	
+	# If source and dest are provided, query both. Otherwise only query source
+	if ($source && $dest) {
+	    $query_object->setInterfaceAddresses( [ $source, $dest, $source_hostname, $dest_hostname ] );
+	} 
+	elsif ($source) { 
+	    $query_object->setInterfaceAddresses( [ $source, $source_hostname ] );
+	}
 
-    my $host_info = host_info( { src => $source, dest => $dest });
-    my $source_hostname = $host_info->{'source_host'};
-    my $dest_hostname = $host_info->{'dest_host'};
+	$query_object->setKeyOperator( { key => 'interface-addresses', operator => 'any' } );
+	
+	my $query = new SimpleLookupService::Client::Query;
+	$query->init( { server => $server } );
+	
+	my ($resCode, $result) = $query->query( $query_object );
+	
+	my $capacity = 0;
+	my $mtu = 0;
 
-    if ($source && $dest) {
-        $query_object->setInterfaceAddresses( [ $source, $dest, $source_hostname, $dest_hostname ] );
-    } elsif ($source) { # If only source is provided, only query source
-        $query_object->setInterfaceAddresses( [ $source, $source_hostname ] );
+	foreach my $res (@$result) {
+	    $capacity = $res->getInterfaceCapacity()->[0];
+	    $mtu      = $res->getInterfaceMTU()->[0];
+
+	    my $addresses = $res->getInterfaceAddresses();
+	    foreach my $address (@$addresses) {
+		if ($address eq $source || $address eq $source_hostname) {
+		    push(@results, {'source_capacity'  => $capacity,
+				    'source_mtu'       => $mtu,
+				    'source_ip'        => $source,
+				    'source_addresses' => $addresses
+			 }
+			);
+		} 
+		elsif ($dest && $address eq $dest || $address eq $dest_hostname) {
+		    push(@results, {'dest_capacity'  => $capacity,
+				    'dest_mtu'       => $mtu,
+				    'dest_ip'        => $dest,
+				    'dest_addresses' => $addresses
+			 }
+			);
+
+		}
+	    }
+	}
     }
-    $query_object->setKeyOperator( { key => 'interface-addresses', operator => 'any' } );
-
-    my $query = new SimpleLookupService::Client::Query;
-    $query->init( { server => $server } );
-
-    my ($resCode, $result) = $query->query( $query_object );
-
-    my $capacity = 0;
-    my $mtu = 0;
-    foreach my $res (@$result) {
-        $capacity = $res->getInterfaceCapacity();
-        $capacity = shift @$capacity;
-        my $mtu = $res->getInterfaceMTU();
-        $mtu = shift @$mtu;
-        my $addresses = $res->getInterfaceAddresses();
-        foreach my $address (@$addresses) {
-            if ($address eq $source || $address eq $source_hostname) {
-                $results{'source_capacity'} = $capacity if defined $capacity;
-                $results{'source_mtu'} = $mtu if defined $mtu;
-                $results{'source_ip'} = $source;
-                $results{'source_addresses'} = $addresses;
-            } elsif ($dest && $address eq $dest || $address eq $dest_hostname) {
-                $results{'dest_capacity'} = $capacity if defined $capacity;
-                $results{'dest_mtu'} = $mtu if defined $mtu;
-                $results{'dest_ip'} = $dest;
-                $results{'dest_addresses'} = $addresses;
-            }
-        }
-    }
-
 
     print $cgi->header('text/json');
-    print to_json(\%results);
+    print to_json(\@results);
 
 }
 
 sub get_host_info {
-    my $src     = $cgi->param('src')     || error("Missing required parameter \"src\"");
-    my $dest    = $cgi->param('dest')    || error("Missing required parameter \"dest\"");
+    my @sources   = $cgi->param('src');  
+    my @dests     = $cgi->param('dest'); 
+
+    my @all_results;
    
-    my $results = host_info( { src => $src, dest => $dest} );
+    for (my $i = 0; $i < @sources; $i++){
+	my $results = host_info( { src => $sources[$i], dest => $dests[$i] } );	
+	push(@all_results, $results);
+    }  
 
     print $cgi->header('text/json');
-    print to_json($results);
+    print to_json(\@all_results);
 }
 
 sub host_info {
@@ -633,27 +613,14 @@ sub host_info {
     my $src       = $parameters->{src};
     my $dest      = $parameters->{dest};
 
-    # Create a new object with just source and dest (in case other parameters are passed that we don't want)
-    my $hosts = {};
-    $hosts->{'source'} = $src;
-    $hosts->{'dest'} = $dest;
-
-    my $ip_regex ='^((?-xism::(?::[0-9a-fA-F]{1,4}){0,5}(?:(?::[0-9a-fA-F]{1,4}){1,2}|:(?:(?:25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2})[.](?:25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2})[.](?:25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2})[.](?:25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2})))|[0-9a-fA-F]{1,4}:(?:[0-9a-fA-F]{1,4}:(?:[0-9a-fA-F]{1,4}:(?:[0-9a-fA-F]{1,4}:(?:[0-9a-fA-F]{1,4}:(?:[0-9a-fA-F]{1,4}:(?:[0-9a-fA-F]{1,4}:(?:[0-9a-fA-F]{1,4}|:)|(?::(?:[0-9a-fA-F]{1,4})?|(?:(?:25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2})[.](?:25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2})[.](?:25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2})[.](?:25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2}))))|:(?:(?:(?:25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2})[.](?:25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2})[.](?:25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2})[.](?:25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2}))|[0-9a-fA-F]{1,4}(?::[0-9a-fA-F]{1,4})?|))|(?::(?:(?:25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2})[.](?:25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2})[.](?:25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2})[.](?:25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2}))|:[0-9a-fA-F]{1,4}(?::(?:(?:25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2})[.](?:25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2})[.](?:25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2})[.](?:25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2}))|(?::[0-9a-fA-F]{1,4}){0,2})|:))|(?:(?::[0-9a-fA-F]{1,4}){0,2}(?::(?:(?:25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2})[.](?:25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2})[.](?:25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2})[.](?:25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2}))|(?::[0-9a-fA-F]{1,4}){1,2})|:))|(?:(?::[0-9a-fA-F]{1,4}){0,3}(?::(?:(?:25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2})[.](?:25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2})[.](?:25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2})[.](?:25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2}))|(?::[0-9a-fA-F]{1,4}){1,2})|:))|(?:(?::[0-9a-fA-F]{1,4}){0,4}(?::(?:(?:25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2})[.](?:25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2})[.](?:25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2})[.](?:25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2}))|(?::[0-9a-fA-F]{1,4}){1,2})|:))|(?:(?:25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2})[.](?:25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2})[.](?:25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2})[.](?:25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2}))))$';
+    my $src_addr = inet_aton($src); 
+    my $dest_addr = inet_aton($dest); 
+    my $source_host = gethostbyaddr($src_addr, AF_INET);
+    my $dest_host = gethostbyaddr($dest_addr, AF_INET);
 
     my $results  = {};
-
-    while (my ($key, $host) =  each %$hosts) {
-        # if $host is IP address, do DNS lookup
-        if ($host =~ /$ip_regex/) { 
-            $results->{$key . '_ip'} = $host;
-            my $host_addr = inet_aton($host); 
-            $results->{$key . '_host'} = gethostbyaddr($host_addr, AF_INET);
-        } else {
-            $results->{$key . '_host'} = $host;
-            #$results->{$key . '_ip'} = inet_ntoa(inet_aton(gethostbyname($host))); #   or die "Can't resolve $name: $!\n";
-            $results->{$key . '_ip'} = inet_ntoa(inet_aton($host)); #   or die "Can't resolve $name: $!\n";
-        }
-    }
+    $results->{'source_host'} = $source_host;
+    $results->{'dest_host'} = $dest_host;
 
     return $results;
 }
