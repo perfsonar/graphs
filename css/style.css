@@ -269,6 +269,10 @@ table.grid-value td { padding: 0 4px 0 0; }
 table.grid-value.inactive, table.grid-value .inactive { color:#aaaaaa; }
 table.hosts { font-size:12px; }
 table.hosts td, table.hosts th { padding:0 10px; }
+table.hosts .host_table_host { font-weight: bold; }
+table.hosts tr:nth-child(3n+1) td {padding-top: 15px;}
+table.hosts .host_table_looking_up { font-weight: normal; color: #adaea8; }
+table.hosts tr th { padding-bottom: 15px; color: darkgrey; }
 /*table.grid-value .inactive:hover { background-color:#dddddd; }*/
 span.psgraph-val { font-family: "Lucida Console", Monaco, monospace; } 
 #summaryTable th.sortHeader span.sort { width:13px; height:12px; display:inline-block; margin-left:5px; }
@@ -323,3 +327,6 @@ div#legend {
     border-style: dotted;
 }
 #chartError { margin: 0.5em 0; }
+.service_test_label {
+    font-weight: bold;
+}
