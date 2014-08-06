@@ -61,7 +61,7 @@ dests.push("[% dest %]");
 		   <span class="host_table_host" id="source_host_[% n %]">
                        <span class="host_table_looking_up">Retrieving...</span>
                    </span>
-                   - [% sources.$n %]
+                   - <span id="source_ip_[% n %]">[% sources.$n %]</span>
 		</td>
 		<td>
 		   --
@@ -70,7 +70,7 @@ dests.push("[% dest %]");
 		   <span class="host_table_host" id="dest_host_[% n %]">
                        <span class="host_table_looking_up">Retrieving...</span>
                    </span> 
-                   - [% dests.$n %]
+                   - <span id="dest_ip_[% n %]">[% dests.$n %]</span>
                 </td>
   	      </tr>
               <tr class="host_table_[% n mod 2 %]">

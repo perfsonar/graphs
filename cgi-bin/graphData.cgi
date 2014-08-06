@@ -270,33 +270,27 @@ sub get_data {
 
     print $cgi->header('text/json');
 
-    if ($flatten == 1) {        
-        # This code will consolidate based on same timestamp, and make adjustments to better display stray points
-        # Not finished yet, as of 06/18/2014 - Michael Johnson
-        if (1) {
-            # Sort by ts
-            @flattened = sort by_ts @flattened;
-            my $last_ts = 0;
-            for(my $i = 0; $i < @flattened; $i++) {
-                my $row  = $flattened[$i];
-                if ($row->{ts} <= $last_ts) {
-                    #warn "less than or equal " . $row->{ts} . " last: " . $last_ts;
-                    #warn Dumper $row;
-                    $flattened[$i-1] = combine_data($row, $flattened[$i-1]);
-                    #warn 'flattened: ' . Dumper $flattened[$i-1];
-                    splice(@flattened, $i, 1);
-                    $i--;
-                
-                }
-                $last_ts = $row->{ts};
-		
+    if ($flatten == 1) { 
+        # This section consolidates based on same timestamp
+        # It may be good to try to make adjustments to better display stray points
+        # Sort by ts
+        @flattened = sort by_ts @flattened;
+        my $last_ts = 0;            
+        for(my $i = 0; $i < @flattened; $i++) {
+            my $row  = $flattened[$i];
+            if ($row->{ts} <= $last_ts) {
+                $flattened[$i-1] = combine_data($row, $flattened[$i-1]);
+                splice(@flattened, $i, 1);
+                $i--;
+
             }
+            $last_ts = $row->{ts};
+
         }
         print to_json(\@flattened);
     } 
     else {
         print to_json(\%consolidated);
-        #print to_json(\%results);
     }
 }
 
@@ -339,7 +333,8 @@ sub get_tests {
         my $hostnames = host_info( {src => $src, dest => $dst} );
         my $source_host = $hostnames->{source_host};
         my $destination_host = $hostnames->{dest_host};
-
+        my $source_ip = $hostnames->{source_ip};
+        my $destination_ip = $hostnames->{dest_ip};
 
         foreach my $event_type (@$event_types){
 
@@ -412,6 +407,8 @@ sub get_tests {
                     dst           => $dst,
                     source_host  => $source_host,
                     destination_host => $destination_host,
+                    source_ip => $source_ip,
+                    destination_ip => $destination_ip,
                     bidirectional => 0};
             }
         }
@@ -578,12 +575,6 @@ sub get_interfaces {
 	foreach my $res (@$result) {
     	$capacity = $res->getInterfaceCapacity()->[0] unless !$res->getInterfaceCapacity();
     	$mtu      = $res->getInterfaceMTU()->[0] unless !$res->getInterfaceMTU();
-        #if ($res->getInterfaceCapacity()) {
-        #    $capacity = $res->getInterfaceCapacity()->[0];
-        #}
-        #if ($res->getInterfaceMTU()) {
-        #    $mtu      = $res->getInterfaceMTU()->[0];
-        #}
 
 	    my $addresses = $res->getInterfaceAddresses();
         foreach my $address (@$addresses) {
@@ -633,14 +624,27 @@ sub host_info {
     my $src       = $parameters->{src};
     my $dest      = $parameters->{dest};
 
-    my $src_addr = inet_aton($src); 
-    my $dest_addr = inet_aton($dest); 
-    my $source_host = gethostbyaddr($src_addr, AF_INET);
-    my $dest_host = gethostbyaddr($dest_addr, AF_INET);
+# Create a new object with just source and dest (in case other parameters are passed that we don't want)
+    my $hosts = {};
+    $hosts->{'source'} = $src;
+    $hosts->{'dest'} = $dest;
+
+    my $ip_regex ='^((?-xism::(?::[0-9a-fA-F]{1,4}){0,5}(?:(?::[0-9a-fA-F]{1,4}){1,2}|:(?:(?:25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2})[.](?:25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2})[.](?:25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2})[.](?:25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2})))|[0-9a-fA-F]{1,4}:(?:[0-9a-fA-F]{1,4}:(?:[0-9a-fA-F]{1,4}:(?:[0-9a-fA-F]{1,4}:(?:[0-9a-fA-F]{1,4}:(?:[0-9a-fA-F]{1,4}:(?:[0-9a-fA-F]{1,4}:(?:[0-9a-fA-F]{1,4}|:)|(?::(?:[0-9a-fA-F]{1,4})?|(?:(?:25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2})[.](?:25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2})[.](?:25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2})[.](?:25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2}))))|:(?:(?:(?:25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2})[.](?:25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2})[.](?:25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2})[.](?:25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2}))|[0-9a-fA-F]{1,4}(?::[0-9a-fA-F]{1,4})?|))|(?::(?:(?:25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2})[.](?:25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2})[.](?:25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2})[.](?:25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2}))|:[0-9a-fA-F]{1,4}(?::(?:(?:25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2})[.](?:25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2})[.](?:25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2})[.](?:25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2}))|(?::[0-9a-fA-F]{1,4}){0,2})|:))|(?:(?::[0-9a-fA-F]{1,4}){0,2}(?::(?:(?:25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2})[.](?:25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2})[.](?:25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2})[.](?:25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2}))|(?::[0-9a-fA-F]{1,4}){1,2})|:))|(?:(?::[0-9a-fA-F]{1,4}){0,3}(?::(?:(?:25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2})[.](?:25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2})[.](?:25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2})[.](?:25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2}))|(?::[0-9a-fA-F]{1,4}){1,2})|:))|(?:(?::[0-9a-fA-F]{1,4}){0,4}(?::(?:(?:25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2})[.](?:25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2})[.](?:25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2})[.](?:25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2}))|(?::[0-9a-fA-F]{1,4}){1,2})|:))|(?:(?:25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2})[.](?:25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2})[.](?:25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2})[.](?:25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2}))))$';
 
     my $results  = {};
-    $results->{'source_host'} = $source_host;
-    $results->{'dest_host'} = $dest_host;
+
+    while (my ($key, $host) =  each %$hosts) {
+        # if $host is IP address, do DNS lookup
+        if ($host =~ /$ip_regex/) { 
+            $results->{$key . '_ip'} = $host;
+            my $host_addr = inet_aton($host); 
+            $results->{$key . '_host'} = gethostbyaddr($host_addr, AF_INET);
+        } else {
+            $results->{$key . '_host'} = $host;
+            #$results->{$key . '_ip'} = inet_ntoa(inet_aton(gethostbyname($host))); #   or die "Can't resolve $name: $!\n";
+            $results->{$key . '_ip'} = inet_ntoa(inet_aton($host)); #   or die "Can't resolve $name: $!\n";
+        }
+    }
 
     return $results;
 }

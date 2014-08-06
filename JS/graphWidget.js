@@ -175,8 +175,12 @@ d3.json('/serviceTest/graphData.cgi?action=hosts' + array2param('src', sources) 
 	for (var i = 0; i < hosts.length; i++){
 	    var source_host = d3.select('#source_host_' + i);
 	    source_host.html(hosts[i].source_host);
+	    var source_ip = d3.select('#source_ip_' + i);
+        source_ip.html(hosts[i].source_ip);
 	    var dest_host = d3.select('#dest_host_' + i);
 	    dest_host.html(hosts[i].dest_host);
+	    var dest_ip = d3.select('#dest_ip_' + i);
+        dest_ip.html(hosts[i].dest_ip);
 	}
 });
 
