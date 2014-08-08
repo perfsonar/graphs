@@ -3,7 +3,7 @@
 # cron/apache entries are located in the 'etc' directory
 %define apacheconf apache-serviceTest.conf
 
-%define relnum    7 
+%define relnum    8 
 %define disttag pSPS
 
 Name:			perl-perfSONAR_PS-serviceTest
