@@ -171,7 +171,7 @@ sub get_data {
                     # underlying constructs			    	    		   
                     my $remapped_name = $mapped_event_types[$i];
            
-                   if (exists($results{$test_src}{$test_dest}{$remapped_name}) &&  @{$results{$test_src}{$test_dest}{$remapped_name}} > 0) { 
+                   if (exists($results{$test_src}{$test_dest}{$remapped_name}) && @{$results{$test_src}{$test_dest}{$remapped_name}} > 0) { 
                         my @existing_data_points = @{$results{$test_src}{$test_dest}{$remapped_name}};
                         @data_points = (@existing_data_points, @data_points);
                     }
@@ -203,11 +203,11 @@ sub get_data {
                     $data_set   = $results{$src}{$dst}{$type};
                     $key_prefix = "src";
                 }
-                elsif (exists $results{$dst}{$src}{$type} && $dst_was_orig_src){
-                    $data_set   = $results{$dst}{$src}{$type};
-                    $key_prefix = "dst";		    
+                elsif (exists $results{$src}{$dst}{$type} && $dst_was_orig_src){
+                    $data_set   = $results{$src}{$dst}{$type};
+                    $key_prefix = "dst"; 
                 }
-
+                
                 next unless ($data_set);
 
                 foreach my $data (@$data_set) {
@@ -217,10 +217,11 @@ sub get_data {
                         $row->{$key_prefix . "_" . $key} = $val;
                     }
 
-                    push @{$consolidated{$src}{$dst}{$type}}, $row;		    
-
-                }
-
+                    push @{$consolidated{$src}{$dst}{$type}}, $row if $src_was_orig_src; 
+                    if ($dst_was_orig_src) {
+                        push @{$consolidated{$dst}{$src}{$type}}, $row;
+                    }
+                }               
             }
         }
     }
@@ -291,6 +292,7 @@ sub get_data {
     } 
     else {
         print to_json(\%consolidated);
+        #print to_json(\%results);
     }
 }
 
@@ -641,7 +643,6 @@ sub host_info {
             $results->{$key . '_host'} = gethostbyaddr($host_addr, AF_INET);
         } else {
             $results->{$key . '_host'} = $host;
-            #$results->{$key . '_ip'} = inet_ntoa(inet_aton(gethostbyname($host))); #   or die "Can't resolve $name: $!\n";
             $results->{$key . '_ip'} = inet_ntoa(inet_aton($host)); #   or die "Can't resolve $name: $!\n";
         }
     }
