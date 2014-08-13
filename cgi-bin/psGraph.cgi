@@ -56,8 +56,8 @@ my $serviceCount       = scalar keys %servicetypes;
 my $hostCount          = scalar keys %hostlist;
 
 my @tests = ();
-if ( defined @{ %{$string}->{'groups'} } ) {
-    @tests = @{ %{$string}->{'groups'} };
+if ( defined @{ $string->{'groups'} } ) {
+    @tests = @{ $string->{'groups'} };
 }
 
 my %vars = (
