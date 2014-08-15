@@ -122,11 +122,14 @@ sub get_data {
                     my $average;
                     my $min = undef;
                     my $max = undef; 
-
+                    my $multiple_values = 0;
+                    my @summary_fields = ();
 
                     if ($event_type eq 'histogram-owdelay') {
                         my $stats_summ = $event->get_summary('statistics', $summary_window);
                         error($event->error) if ($event->error);
+                        $multiple_values = 1;
+                        @summary_fields = ( 'minimum', 'median' );
                         $data = $stats_summ->get_data() if defined $stats_summ;
                         if (defined($data) && @$data > 0){
                             foreach my $datum (@$data){
@@ -156,28 +159,48 @@ sub get_data {
                         }
                     }
 
-                    my @data_points = ();
-                    foreach my $datum (@$data){
-                        my $ts = $datum->ts;
-                        my $val;
-                        if ($event_type eq 'histogram-owdelay') {
-                            $val = $datum->{val}->{mean};
-                        }
-                        else {    
-                            $val = $datum->val;
-                        }
-                        push(@data_points, {'ts' => $ts, 'val' => $val});		    
-                    }
-
                     # Figure out how to map into prettier names that don't reveal
                     # underlying constructs			    	    		   
                     my $remapped_name = $mapped_event_types[$i];
-           
-                   if (exists($results{$test_src}{$test_dest}{$remapped_name}) && @{$results{$test_src}{$test_dest}{$remapped_name}} > 0) { 
-                        my @existing_data_points = @{$results{$test_src}{$test_dest}{$remapped_name}};
-                        @data_points = (@existing_data_points, @data_points);
+
+                    my @data_points = ();
+                    my %additional_data = ();
+                    foreach my $datum (@$data){
+                        my $ts = $datum->ts;
+                        my $val;
+                        my $median_val;
+                        if ($multiple_values) {
+                            foreach my $field(@summary_fields) {
+                                my $key = $remapped_name . '_' . $field;
+                                push @mapped_event_types, $key if !grep {$_ eq $key} @mapped_event_types; 
+                                push @{$additional_data{$key}}, {'ts' => $ts, 'val' => $datum->{val}->{$field}};
+                            }
+                        } else {    
+                            $val = $datum->val;
+                            push(@data_points, {'ts' => $ts, 'val' => $val});		    
+                        }
                     }
-                    $results{$test_src}{$test_dest}{$remapped_name} = \@data_points if @data_points > 0; 
+
+                    if (!$multiple_values) {
+                        if (exists($results{$test_src}{$test_dest}{$remapped_name}) && @{$results{$test_src}{$test_dest}{$remapped_name}} > 0) { 
+                            my @existing_data_points = @{$results{$test_src}{$test_dest}{$remapped_name}};
+                            @data_points = (@existing_data_points, @data_points);
+                        }
+                        $results{$test_src}{$test_dest}{$remapped_name} = \@data_points if @data_points > 0; 
+                    
+                    } else {
+                        if (@summary_fields > 0 && keys(%additional_data) > 0) {
+                            while (my ($key, $values) = each (%additional_data)) {
+                                my @new_data_points = ();
+                                @new_data_points = @$values;
+                                if (exists($results{$test_src}{$test_dest}{$key}) && @{$results{$test_src}{$test_dest}{$key}} > 0) { 
+                                    my @existing_data_points = @{$results{$test_src}{$test_dest}{$key}};
+                                    @new_data_points = (@existing_data_points, @new_data_points);
+                                }
+                                $results{$test_src}{$test_dest}{$key} = \@new_data_points if @new_data_points > 0; 
+                            }                        
+                        }
+                    }
                 }
             }
         }

@@ -371,7 +371,7 @@ function drawChart(url) {
             charts.latency.name = 'Latency';
             charts.latency.type = 'latency';
             charts.latency.unit = 'ms';
-            charts.latency.fieldName = 'owdelay';
+            charts.latency.fieldName = 'owdelay_minimum';
             charts.latency.valType = 'avg';
             charts.latency.color = '#009933'; 
             charts.latency.showByDefault = true;
