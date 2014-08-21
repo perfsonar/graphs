@@ -261,6 +261,12 @@ function drawChart(url) {
                             p.sum += v[param];
                             p.avg = p.sum/p.count;
                             p.val = v[param];
+                            var re = /_src_val$/;
+                            if (re.test(param)) {
+                                p.retrans = v['packet_retransmits_src_val'] || 0;
+                            } else {
+                                p.retrans = v['packet_retransmits_dst_val'] || 0;
+                            }                             
                             p.isNull = false; 
                         } else {
                             // Mark p as null, but only if it hasn't already been flagged as not null
@@ -283,7 +289,7 @@ function drawChart(url) {
 
                     // Init
                     function() {
-                        return { count: 0, sum: 0, avg: 0, total_count: 0 };
+                        return { count: 0, sum: 0, avg: 0, total_count: 0, retrans: 0 };
                     }
 
                 ];
@@ -308,8 +314,8 @@ function drawChart(url) {
 
             var format_values = function(d, type) {
                 if (type == 'throughput') {
-                    return d3.format('.3s')(d) + 'bps';
-                } else if (type == 'latency') {
+                    return d3.format('.2s')(d) + 'bps';
+                } else if (type == 'latency' || type == 'ping') {
                     return d3.format('.3f')(d) + ' ms';
                 } else if (type == 'loss') {
                     return d3.format('.3%f')(d);
@@ -378,6 +384,18 @@ function drawChart(url) {
             charts.latency.ticks = 5;
             charts.latency.tickFormat = function(d) { return d3.format('.2f')(d ) };
 
+            // Ping charts
+            charts.ping = {};
+            charts.ping.name = 'Ping';
+            charts.ping.type = 'ping';
+            charts.ping.unit = 'ms';
+            charts.ping.fieldName = 'ping_minimum';
+            charts.ping.valType = 'avg';
+            charts.ping.color = '#ff00ff'; 
+            charts.ping.showByDefault = true;
+            charts.ping.ticks = 5;
+            charts.ping.tickFormat = function(d) { return d3.format('.2f')(d ) };
+
             // Loss charts 
             charts.loss = {};
             charts.loss.name = 'Loss';
@@ -397,15 +415,17 @@ function drawChart(url) {
             };*/
 
             // Packet retrans charts 
+            
             charts.retrans = {};
             charts.retrans.name = 'Packet Retransmissions';
             charts.retrans.type = 'retrans';
             charts.retrans.unit = 'packets';
             charts.retrans.fieldName = 'packet_retransmits';
             charts.retrans.valType = 'sum';
-            charts.retrans.color = '#ff00ff'; 
+            charts.retrans.color = '#00ffff'; 
             charts.retrans.showByDefault = false;
             charts.retrans.tickFormat = function(d) { return d };
+            charts.retrans.hide = true; 
 
             var parentChart = allTestsChart;
 
@@ -550,8 +570,20 @@ function drawChart(url) {
                         });
 
                     }
-                    c.title = function(d) { return c.name + ': ' + format_values(d.value.avg, c.type)
+                    c.title = function(d) { return c.name + ': ' 
+                        + format_values(d.value.avg, c.type)
                         + "\n" + format_values(d.key, 'ts'); };
+                    if (c.type == 'throughput') {
+                        c.title = function(d) { 
+                            var ret = c.name + ': '
+                            + format_values(d.value.avg, c.type);
+                            if (d.value.retrans > 0) {
+                                ret += "\nPacket Retransmissions: " + d.value.retrans;
+                            }
+                            ret += "\n" + format_values(d.key, 'ts'); 
+                            return ret;
+                        };
+                    }
                 } else if (c.valType == 'sum') {
                     c.chart.valueAccessor(function(d) { return yAxisMax * d.value / c.unitMax; }); 
                     c.title = function(d) { return c.name + ': ' + format_values(d.value, c.type)
@@ -566,9 +598,6 @@ function drawChart(url) {
                     c.chart.dashStyle([3, 3]);
                     c.dashstyle = [3, 3];
                 } 
-                if (c.type != 'throughput') {
-                    //c.chart.useRightYAxis(true);
-                }
             }; 
             charts.getAllObjects = function() {
                 var theCharts = [];
@@ -594,7 +623,7 @@ function drawChart(url) {
                 var theCharts = [];
                 for(var i in allCharts) {
                     var c = allCharts[i];
-                    if (c.hasValues) {
+                    if (c.hasValues && !c.hide) {
                         theCharts.push(c);
                     }
                 }
@@ -609,8 +638,8 @@ function drawChart(url) {
                     var type = typeOrder[typeIndex];
                     for(var directionIndex in directionOrder) {
                         var direction = directionOrder[directionIndex];
-                        if (typeof this[type + direction] !== 'undefined' && this[type + direction].hasValues) {
-                            var c = this[type + direction];
+                        if (typeof this[type + direction] !== 'undefined' && this[type + direction].hasValues && !this[type + direction].hide) {
+                            var c = this[type + direction];                            
                             var theType = c.type + (c.direction == 'reverse' ? '_rev' : '');
                             var cb = d3.select('#' + theType + "_checkbox");
                             if (cb !== null && !cb.empty()) {
@@ -635,7 +664,7 @@ function drawChart(url) {
                 return theCharts;
             }
             charts.getChartOrder = function() {
-                var chartOrder = ['throughput', 'latency', 'loss', 'retrans'];
+                var chartOrder = ['throughput', 'latency', 'ping', 'loss', 'retrans'];
                 return chartOrder;
             };
             charts.getAxes = function() {                
@@ -651,7 +680,9 @@ function drawChart(url) {
                     thisObj.max = o.unitMax;
                     thisObj.unit = o.unit;
                     thisObj.color = o.color;
-                    if (j == 0) {
+                    // if this is our first axis, OR if this type has the same unit
+                    // as the first axis
+                    if (j == 0 || (theAxes[0] && thisObj.unit == theAxes[0].unit)) {
                         o.useRightYAxis = false;
                         o.chart.useRightYAxis(false);
                     } else {
@@ -705,13 +736,9 @@ function drawChart(url) {
             var maxDelay = charts.latency.typeMax;
             var minDelay = charts.latency.typeMin;
 
-            //if (maxDelay === 0) { maxDelay = 1; }
             minDelay = 0;
             var maxLoss = charts.loss.typeMax;
             var minLoss = charts.loss.typeMin;
-
-            var maxPacketRetrans = charts.retrans.typeMax;
-            var minPacketRetrans = charts.retrans.typeMin;
 
             var activeCharts = charts.getActiveCharts();
 
@@ -821,8 +848,6 @@ function drawChart(url) {
                     maxLoss = 1;
                 }
                 var minLossAxis = 0 - (maxLoss * yNegPadAmt);
-                var minRetransAxis = 0 - (maxPacketRetrans * yNegPadAmt);
-                minRetransAxis = 0; // temporarily override ability to have negative values
 
                 var additionalAxes = [];
 

@@ -76,13 +76,14 @@ sub get_data {
 	error("There must be an equal non-zero amount of src, dest, and url options passed.");
     }
 
-    my @base_event_types   = ('throughput', 'histogram-owdelay', 'packet-loss-rate', 'packet-retransmits');
-    my @mapped_event_types = ('throughput', 'owdelay', 'loss', 'packet_retransmits');
+    my @base_event_types   = ('throughput', 'histogram-owdelay', 'packet-loss-rate', 'packet-retransmits', 'histogram-rtt');
+    my @mapped_event_types = ('throughput', 'owdelay', 'loss', 'packet_retransmits', 'ping');
 
     my $flatten = 1;
     $flatten = $cgi->param('flatten') if (defined $cgi->param('flatten'));
 
     my %results;
+    my %types_to_ignore = ();
 
     for (my $i = 0; $i < @base_event_types; $i++){
         my $event_type = $base_event_types[$i];
@@ -113,10 +114,6 @@ sub get_data {
                     my $destination_host = $metadatum->input_destination();
                     my $tool_name = $metadatum->tool_name();
 
-                    # we MAY want to skip bwctl/ping results
-                    # for now, we are. comment out or remove to skip them.
-                    next if ($tool_name eq 'bwctl/ping');
-
                     my $data;
                     my $total = 0;
                     my $average;
@@ -125,8 +122,13 @@ sub get_data {
                     my $multiple_values = 0;
                     my @summary_fields = ();
 
-                    if ($event_type eq 'histogram-owdelay') {
-                        my $stats_summ = $event->get_summary('statistics', $summary_window);
+                    if ($event_type eq 'histogram-owdelay' || $event_type eq 'histogram-rtt') {
+                        my $stats_summ;
+                        if ($event_type eq 'histogram-rtt') {
+                            $stats_summ = $event->get_summary('statistics', 0);
+                        } else {
+                            $stats_summ = $event->get_summary('statistics', $summary_window);
+                        }
                         error($event->error) if ($event->error);
                         $multiple_values = 1;
                         @summary_fields = ( 'minimum', 'median' );
@@ -149,7 +151,7 @@ sub get_data {
                         else {
                             $data = $event->get_data();
                         }
-                        if (defined($data) && @$data > 0){
+                        if (defined($data) && @$data > 0) {
                             foreach my $datum (@$data){
                                 $total += $datum->val;
                                 $max = $datum->val if !defined($max) || $datum->val > $max;
@@ -170,9 +172,11 @@ sub get_data {
                         my $val;
                         my $median_val;
                         if ($multiple_values) {
+                            $types_to_ignore{$remapped_name} = 1;
+                            my @indices = grep $mapped_event_types[$_] eq $remapped_name, 0..$#mapped_event_types;
                             foreach my $field(@summary_fields) {
                                 my $key = $remapped_name . '_' . $field;
-                                push @mapped_event_types, $key if !grep {$_ eq $key} @mapped_event_types; 
+                                push @mapped_event_types, $key if !grep {$_ eq $key} @mapped_event_types;
                                 push @{$additional_data{$key}}, {'ts' => $ts, 'val' => $datum->{val}->{$field}};
                             }
                         } else {    
@@ -213,6 +217,7 @@ sub get_data {
         while (my ($dst, $result_types) = each %$values) {
 
             foreach my $type (@mapped_event_types) {
+                next if $types_to_ignore{$type};
 
                 $consolidated{$src}{$dst}{$type} ||= [];
 
@@ -260,6 +265,7 @@ sub get_data {
         while (my ($dst, $val_types) = each %$values) {
 
             foreach my $type (@mapped_event_types) {
+                next if $types_to_ignore{$type};
 
                 foreach my $value (@{$consolidated{$src}{$dst}{$type}}) {
 
@@ -267,6 +273,7 @@ sub get_data {
 
                     # Iterate over ALL types in the request
                     foreach my $all_type (@mapped_event_types) {
+                        next if $types_to_ignore{$all_type};
                         $row->{$all_type . '_src_val'} = undef;
                         $row->{$all_type . '_dst_val'} = undef;
                     }
