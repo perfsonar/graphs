@@ -21,6 +21,7 @@ css/dc/colorbrewer.css
 css/dc/dc.css
 css/spinner.css
 css/style.css
+css/style-toolkit.css
 doc/LICENSE
 doc/README
 etc/apache-serviceTest.conf
@@ -40,6 +41,7 @@ JS/d3.js
 JS/d3.min.js
 JS/d3.v3.min.js
 JS/dc.js
+JS/dojo-release-ps-toolkit.tar.gz
 JS/graphWidget.js
 JS/ps-dc.js
 JS/psGraph.js
