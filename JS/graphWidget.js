@@ -12,10 +12,10 @@ var setTimeVars = function (period) {
 
     if (period == '4h') {
         time_diff = 60*60 * 4;
-        summary_window = 300;
+        summary_window = 0;
     } else if (period == '1d') {
         time_diff = 86400;
-        summary_window = 300;
+        summary_window = 0;
     } else if (period == '3d') {
         time_diff = 86400 * 3;
         summary_window = 300;
@@ -366,7 +366,7 @@ function drawChart(url) {
             charts.throughput.unit = 'bps';
             charts.throughput.fieldName = 'throughput';
             charts.throughput.valType = 'avg';
-            charts.throughput.color = '#1F77B4'; 
+            charts.throughput.color = '#0076b4'; 
             //charts.throughput.valueAccessor = function(d) { return d.value.avg; };
             charts.throughput.showByDefault = true;
             //charts.throughput.tickFormat = d3.format('.2s');
@@ -379,7 +379,7 @@ function drawChart(url) {
             charts.latency.unit = 'ms';
             charts.latency.fieldName = 'owdelay_minimum';
             charts.latency.valType = 'avg';
-            charts.latency.color = '#009933'; 
+            charts.latency.color = '#2b9f78'; 
             charts.latency.showByDefault = true;
             charts.latency.ticks = 5;
             charts.latency.tickFormat = function(d) { return d3.format('.2f')(d ) };
@@ -391,7 +391,7 @@ function drawChart(url) {
             charts.ping.unit = 'ms';
             charts.ping.fieldName = 'ping_minimum';
             charts.ping.valType = 'avg';
-            charts.ping.color = '#ff00ff'; 
+            charts.ping.color = '#e5a11c'; 
             charts.ping.showByDefault = true;
             charts.ping.ticks = 5;
             charts.ping.tickFormat = function(d) { return d3.format('.2f')(d ) };
@@ -403,7 +403,7 @@ function drawChart(url) {
             charts.loss.unit = 'percent';
             charts.loss.fieldName = 'loss';
             charts.loss.valType = 'avg';
-            charts.loss.color = '#ff0000'; 
+            charts.loss.color = '#cc7daa'; 
             charts.loss.showByDefault = true;
             charts.loss.tickFormat = function(d) { return d3.format('.2%')(d) };
             /*charts.loss.valueAccessor = function(d) {
