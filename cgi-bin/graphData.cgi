@@ -62,9 +62,10 @@ sub get_data {
 
     my $summary_window;
     my $window = $cgi->param('window');
-    my @valid_windows = (60, 300, 3600, 86400);
+    my @valid_windows = (0, 60, 300, 3600, 86400);
     $summary_window = 3600;
-    $summary_window = $window if ($window && (grep {$_ eq $window} @valid_windows));
+    $summary_window = $window if (defined($window) && (grep {$_ eq $window} @valid_windows));
+    #warn "window: " . $summary_window;
 
     my @urls    = $cgi->param('url');     
     my @sources = $cgi->param('src');     
@@ -121,14 +122,14 @@ sub get_data {
                     my $max = undef; 
                     my $multiple_values = 0;
                     my @summary_fields = ();
+                    my $summary_type = 'none';
 
                     if ($event_type eq 'histogram-owdelay' || $event_type eq 'histogram-rtt') {
                         my $stats_summ;
-                        if ($event_type eq 'histogram-rtt') {
-                            $stats_summ = $event->get_summary('statistics', 0);
-                        } else {
-                            $stats_summ = $event->get_summary('statistics', $summary_window);
-                        }
+                        $summary_type = 'statistics';
+                        my $req_summary_window = select_summary_window($event_type, $summary_type, $summary_window, $event);
+
+                        $stats_summ = $event->get_summary($summary_type, $req_summary_window);
                         error($event->error) if ($event->error);
                         $multiple_values = 1;
                         @summary_fields = ( 'minimum', 'median' );
@@ -144,9 +145,15 @@ sub get_data {
                     } 
                     else {
                         if ($event_type eq 'packet-loss-rate') {
-                            my $stats_summ = $event->get_summary('aggregation', $summary_window);
-                            error($event->error) if ($event->error);
-                            $data = $stats_summ->get_data() if defined $stats_summ;
+                            $summary_type = 'aggregation';
+                            my $req_summary_window = select_summary_window($event_type, $summary_type, $summary_window, $event);
+                            if ($req_summary_window != -1) {
+                                my $stats_summ = $event->get_summary($summary_type, $req_summary_window);
+                                error($event->error) if ($event->error);
+                                $data = $stats_summ->get_data() if defined $stats_summ;
+                            } else {
+                                $data = $event->get_data();
+                            }
                         } 
                         else {
                             $data = $event->get_data();
@@ -711,6 +718,42 @@ sub error {
 
 sub by_ts {
     $a->{ts} <=> $b->{ts};
+}
+
+sub select_summary_window {
+    my $event_type = shift;
+    my $summary_type = shift;
+    my $window = shift;
+    my $event = shift;
+
+    my $ret_window = -1;
+    my $next_smallest_window = -1;
+    my $next_largest_window = -1;
+    my $summaries = $event->{data}->{summaries};
+    my $exact_match = 0;
+    foreach my $summary (@$summaries) {
+        if ($summary->{'summary-type'} eq $summary_type && $summary->{'summary-window'} == $window) {
+            $ret_window = $window;
+            $exact_match = 1;
+            last;
+        } elsif ($summary->{'summary-window'} < $window && $summary->{'summary-window'} > $next_smallest_window) {
+            $next_smallest_window = $summary->{'summary-window'};
+        } elsif ($next_largest_window == -1 || ($summary->{'summary-window'} > $window && $summary->{'summary-window'} < $next_largest_window)) {
+           $next_largest_window = $summary->{'summary-window'};
+        } 
+    }
+    # if the requested window is 0 (base data) and we don't have a match,
+    # this means we need to return -1 so the calling code can use base data instead
+    if ($window == 0 && !$exact_match) {
+        $ret_window = -1;
+    } else {
+        # if there's no exact match, accept the closest lower value
+        $ret_window = $next_smallest_window if ($ret_window == -1 && !$exact_match);
+        # if there's no lower value, take the closest larger value
+        $ret_window = $next_largest_window if ($ret_window == -1 && !$exact_match);
+    }   
+    return $ret_window;
+
 }
 
 sub combine_data {
