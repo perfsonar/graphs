@@ -45,6 +45,9 @@ if ($action eq 'data'){
 elsif ($action eq 'tests'){
     get_tests();
 }
+elsif ($action eq 'test_list'){
+    get_test_list();
+}
 elsif ($action eq 'interfaces'){
     get_interfaces();
 }
@@ -335,14 +338,80 @@ sub get_data {
     }
 }
 
+# get_test_list is used to retrieve just the hostname/ips of source and destination
+# of active tests in an MA. 
+sub get_test_list {
+    my $url    = $cgi->param('url')   || error("Missing required parameter \"url\"");
+
+    my $filter = new perfSONAR_PS::Client::Esmond::ApiFilters(); 
+    $filter->time_range( 86400*31 );
+    my $client = new perfSONAR_PS::Client::Esmond::ApiConnect(url     => $url,
+							      filters => $filter);
+    
+    my $metadata = $client->get_metadata();
+    error($client->error) if ($client->error);
+
+    my $results;
+    my %hosts;
+    my @active_tests;
+    my %active_hosts;
+    my $now = time;
+    my $start_time = $now - 86400 * 7;
+    my $metadata_out = [];
+
+    HOSTS: foreach my $metadatum (@$metadata) {
+        push @$metadata_out, $metadatum->{data};
+        $hosts{ $metadatum->{'data'}->{'source'} } = 1;
+        $hosts{ $metadatum->{'data'}->{'destination'} } = 1;
+        foreach my $event_type (@{$metadatum->{'data'}->{'event-types'}}) {
+            if (defined ($event_type->{'time-updated'}) && $event_type->{'time-updated'} > $start_time ) {
+                my $source = $metadatum->{'data'}->{'source'};
+                my $dest = $metadatum->{'data'}->{'destination'};
+                $active_hosts{ $source } = 1;
+                my $hostnames = host_info( {src => $source, dest => $dest} );
+                my $source_host = $hostnames->{source_host};
+                my $destination_host = $hostnames->{dest_host};
+                my $source_ip = $hostnames->{source_ip};
+                my $destination_ip = $hostnames->{dest_ip};
+                my $test = {
+                    source => $source,
+                    destination => $dest,
+                    source_ip => $source_ip,
+                    destination_ip => $destination_ip,
+                    source_host => $source_host,
+                    destination_host => $destination_host,
+                    last_updated => $event_type->{'time-updated'},
+                    #event_type => $event_type->{'event-type'}
+                };
+                # only add this src/dest pair if it doesn't already exist, either
+                # in the same direction, or reverse direction.
+                if ( (!  grep {$_->{source} eq $source && $_->{destination} eq $dest} @active_tests)
+                    && (! grep {$_->{source} eq $dest && $_->{destination} eq $source} @active_tests) ) {
+                    push @active_tests, $test;
+                }
+                next HOSTS;
+            }
+        }
+
+    }
+
+    $results = \@active_tests;
+
+    print $cgi->header('text/json');
+    print to_json(\@$results);
+}
 
 sub get_tests {
     my $url    = $cgi->param('url')   || error("Missing required parameter \"url\"");
     my $flatten = 1;
     $flatten = $cgi->param('flatten') if (defined $cgi->param('flatten'));
+
+    my $show_details = 0;
     my $start_time = [Time::HiRes::gettimeofday()];
 
     my $filter = new perfSONAR_PS::Client::Esmond::ApiFilters();
+    #$filter->limit(10); #return up to 10 results
+    #$filter->offset(0); # return the first results you find
    
     my $client = new perfSONAR_PS::Client::Esmond::ApiConnect(url     => $url,
 							      filters => $filter);
@@ -350,6 +419,7 @@ sub get_tests {
     my $total_metadata = 0;
     my $method_start_time = [Time::HiRes::gettimeofday()];
     $start_time = [Time::HiRes::gettimeofday()];
+    #$filter->offset(0);
     my $metadata = $client->get_metadata();
     $total_metadata += Time::HiRes::tv_interval($start_time);
     error($client->error) if ($client->error);
@@ -390,7 +460,8 @@ sub get_tests {
             $type = 'owdelay' if ($type eq 'histogram-owdelay');
 
             # now grab the last 1 weeks worth of data to generate a high level view
-            $event_type->filters->time_start($now - 86400 * 7);
+            my $start_time = $now - 86400 * 7;
+            $event_type->filters->time_start($start_time);
             $event_type->filters->time_end($now);
             $event_type->filters->source($src);
             $event_type->filters->destination($dst);
@@ -401,19 +472,27 @@ sub get_tests {
             my $average;
             my $min = undef;
             my $max = undef;
-
+            #warn "event type: " . Dumper $event_type;            
             if ($type eq 'owdelay') {
-                my $stats_summ = $event_type->get_summary('statistics', $summary_window);
-                error($event_type->error) if ($event_type->error);
-                $data = $stats_summ->get_data() if defined $stats_summ;
-                if (defined($data) && @$data > 0){
-                    push @$all_types, $type if (!grep {$_ eq $type} @$all_types);
-                    foreach my $datum (@$data){
-                        $total += $datum->val->{mean};
-                        $max = $datum->val->{maximum} if !defined($max) || $datum->val->{maximum} > $max;
-                        $min = $datum->val->{minimum} if !defined($min) || $datum->val->{minimum} < $min;
+                if ($show_details || 1) {
+                    my $stats_summ = $event_type->get_summary('statistics', $summary_window);
+                    error($event_type->error) if ($event_type->error);
+                    $data = $stats_summ->get_data() if defined $stats_summ;
+                    if (defined($data) && @$data > 0){
+                        push @$all_types, $type if (!grep {$_ eq $type} @$all_types);
+                        foreach my $datum (@$data){
+                            $total += $datum->val->{mean};
+                            $max = $datum->val->{maximum} if !defined($max) || $datum->val->{maximum} > $max;
+                            $min = $datum->val->{minimum} if !defined($min) || $datum->val->{minimum} < $min;
+                        }
+                        $average = $total / @$data;
                     }
-                    $average = $total / @$data;
+                } else {
+                    if (defined ($event_type->{data}->{'time-updated'}) && $event_type->{data}->{'time-updated'} > $start_time ) {
+                        $min = 1;
+                        $average = 5;
+                        $max = 10;
+                    }
                 }
             } else {
                 if ($type eq 'loss') {

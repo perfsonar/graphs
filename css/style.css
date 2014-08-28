@@ -266,7 +266,7 @@ table.table .header { font-size:14px; }
 tr.dc-table-group { display:none;  } 
 table.grid-value, table.grid-value tr, table.grid-value td { border:0; margin:0; padding: 0; }
 table.grid-value td { padding: 0 4px 0 0; } 
-table.grid-value.inactive, table.grid-value .inactive { color:#aaaaaa; }
+table.grid-value.inactive, table.grid-value .inactive, span.psgraph-val .inactive { color:#aaaaaa; }
 table.hosts { font-size:12px; }
 table.hosts td, table.hosts th { padding:0 10px; }
 table.hosts .host_table_host { font-weight: bold; }
@@ -298,6 +298,7 @@ div.dc-chart { float:none; }
 .chartHeader { margin-top:10px; }
 .chartHeader .content { padding:8px; }
 /*.legend { position:relative; top: 500px; } */
+.dc-chart path.line { stroke-width:2px; }
 div#legend {
     /* margin: auto 0; */
     /* float: none; */
@@ -328,6 +329,7 @@ div#legend {
     border-style: dotted;
 }
 #chartError { margin: 0.5em 0; }
+.psGraphError { color:#ff0000; }
 .service_test_label {
     font-weight: bold;
 }

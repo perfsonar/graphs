@@ -18,21 +18,23 @@
 
  <div id="body" class="dijitContentPane" dojotype="dijit.layout.ContentPane" widgetid="body">
     <h1>perfSONAR Tests</h1>
-    <h4>Average Testing Results for Past Week</h4>
+    <h4>Testing Results for Past 30 Days</h4>
     <p>Click a hostname to see a graph of the results</p>
     <p>Grey text indicates inactive test (tests that have not run in the last 7 days)</p>
 
+
+    <div class="psGraphError"></div>
 
 	<table id="summaryTable" class="table table-hover dc-data-table">
      <thead>
         <tr class="header">
             <th id="sourceHeader" class="sortHeader">Source</th>
             <th id="destHeader" class="sortHeader">Destination</th>
-            <th colspan="2">Throughput</th>
-            <th colspan="2">Latency (ms)</th>
-            <th colspan="2">Loss (%)</th>
+            <th colspan="2" class="detailedOnly">Throughput</th>
+            <th colspan="2" class="detailedOnly">Latency (ms)</th>
+            <th colspan="2" class="detailedOnly">Loss (%)</th>
         </tr>
-        <tr>
+        <tr class="detailedOnly">
             <td></td>
             <td></td>
             <td>src-dst</td>
