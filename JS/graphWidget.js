@@ -379,7 +379,11 @@ function drawChart(url) {
             charts.latency.unit = 'ms';
             charts.latency.fieldName = 'owdelay_minimum';
             charts.latency.valType = 'avg';
-            charts.latency.color = '#2b9f78'; 
+            //charts.latency.color = '#2b9f78'; 
+            //charts.latency.color = '#f0e54b'; 
+            //charts.latency.color = '#5cb6ea'; 
+            charts.latency.color = '#663333'; 
+
             charts.latency.showByDefault = true;
             charts.latency.ticks = 5;
             charts.latency.tickFormat = function(d) { return d3.format('.2f')(d ) };
@@ -403,7 +407,8 @@ function drawChart(url) {
             charts.loss.unit = 'percent';
             charts.loss.fieldName = 'loss';
             charts.loss.valType = 'avg';
-            charts.loss.color = '#cc7daa'; 
+            charts.loss.color = '#cc7dbe'; 
+            //charts.loss.color = '#5cb6ea'; 
             charts.loss.showByDefault = true;
             charts.loss.tickFormat = function(d) { return d3.format('.2%')(d) };
             /*charts.loss.valueAccessor = function(d) {
@@ -770,7 +775,13 @@ function drawChart(url) {
             } else {
                 errorDiv.html('');
 
-            allTestsChart.width(750)
+            //allTestsChart.width(750)
+            var window_width = document.getElementById("chart").clientWidth;
+            var chart_width = 700;
+            if (window_width > 700) {
+                chart_width = window_width - 100;
+            }
+            allTestsChart.width(chart_width)
                 .height(465)
                 .brushOn(false)
                 .mouseZoomable(true)
