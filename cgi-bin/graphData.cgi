@@ -48,6 +48,9 @@ elsif ($action eq 'tests'){
 elsif ($action eq 'test_list'){
     get_test_list();
 }
+elsif ($action eq 'has_traceroute_data'){
+    has_traceroute_data();
+}
 elsif ($action eq 'interfaces'){
     get_interfaces();
 }
@@ -336,6 +339,84 @@ sub get_data {
         print to_json(\%consolidated);
         #print to_json(\%results);
     }
+}
+
+
+# has_traceroute_data is the webservice that is called to see if a source/dest pair
+# has traceroute data defined in the specified MA
+sub has_traceroute_data {
+    my $url    = $cgi->param('url')   || error("Missing required parameter \"url\"");
+    my $source    = $cgi->param('source')   || error("Missing required parameter \"url\"");
+    my $dest    = $cgi->param('dest')   || error("Missing required parameter \"url\"");
+
+    my $results = check_traceroute_data( { source => $source, dest => $dest, url => $url } );
+
+    print $cgi->header('text/json');
+    print to_json($results);
+}
+
+# check_traceroute_data is used to retrieve just the hostname/ips of source and destination
+# of active tests in an MA. 
+sub check_traceroute_data {
+    my $parameters = validate(@_, {source => 1, dest => 1, url => 1});
+    my $source = $parameters->{source};
+    my $dest = $parameters->{dest};
+    my $url = $parameters->{url};
+    
+    my $time_range = 86400;
+
+    my @active_tests;
+    my %active_hosts;
+    my %hosts;
+    my $results;
+    my $now = time;
+    my $start_time = $now - $time_range;
+    my $metadata_out = [];
+
+    my $result = { source => $source, dest => $dest, has_traceroute => 0, traceroute_last_updated => 0 };
+
+    foreach my $ordered ([$source, $dest], [$dest, $source]){
+        my ($src, $dst) = @$ordered;
+
+    my $filter = new perfSONAR_PS::Client::Esmond::ApiFilters(); 
+    $filter->time_range( $time_range ); # last 24 hours
+    $filter->source($src);
+    $filter->destination($dst);
+    $filter->event_type('packet-trace');
+    my $client = new perfSONAR_PS::Client::Esmond::ApiConnect(url     => $url,
+							      filters => $filter);
+    
+    my $metadata = $client->get_metadata();
+    error($client->error) if ($client->error);
+
+    HOSTS: foreach my $metadatum (@$metadata) {
+        push @$metadata_out, $metadatum->{data};
+        $hosts{ $metadatum->{'data'}->{'source'} } = 1;
+        $hosts{ $metadatum->{'data'}->{'destination'} } = 1;
+        foreach my $event_type (@{$metadatum->{'data'}->{'event-types'}}) {
+            if (defined ($event_type->{'time-updated'}) && $event_type->{'time-updated'} > $start_time ) {
+                my $source = $metadatum->{'data'}->{'source'};
+                my $dest = $metadatum->{'data'}->{'destination'};
+                $active_hosts{ $source } = 1;
+                my $time_updated = $event_type->{'time-updated'};
+                if (exists($result->{traceroute_last_updated}) && $time_updated < $result->{traceroute_last_updated}) {
+                    $time_updated = $result->{traceroute_last_updated};
+                }
+
+                $result->{traceroute_last_updated} = $time_updated;
+                $result->{has_traceroute} = 1;
+                $result->{ma_url} = $url;
+                $result->{traceroute_uri} = $event_type->{'base-uri'};
+                next HOSTS;
+            }
+        }
+
+    }
+}
+
+    $results = \@active_tests;
+
+    return $result;
 }
 
 # get_test_list is used to retrieve just the hostname/ips of source and destination

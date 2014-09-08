@@ -330,6 +330,7 @@ div#legend {
 }
 #chartError { margin: 0.5em 0; }
 .psGraphError { color:#ff0000; }
+.hosts span.traceroute { margin-left:0.5em; }
 .service_test_label {
     font-weight: bold;
 }
