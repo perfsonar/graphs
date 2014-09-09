@@ -192,21 +192,19 @@ function get_tr_url(url) { return function() { return url; }; }
 
 function get_traceroute_data(url, div) {
         d3.json(url, function(trace_error, trace_data) {
-                console.log(trace_data);
-            console.log('here2 ' + url);
-            console.log(trace_error);
-            console.log(div);
-            if (typeof trace_data.has_traceroute !== undefined && trace_data.has_traceroute == 1) {
-                var tr_link = div.append('span');
-                tr_link.classed("traceroute", true);
-                var trace_url = '/toolkit/gui/psTracerouteViewer/index.cgi?';
-                trace_url += '&mahost=' + trace_data.ma_url;
-                trace_url += '&stime=yesterday';
-                trace_url += '&etime=now';
-                //trace_url += '&tzselect='; // Commented out (allow default to be used)
-                trace_url += '&epselect=' + trace_data.traceroute_uri;
-                trace_url += '';
-                tr_link.html('[<a href="' + trace_url + '" target="_blank">traceroute</a>]');
+            if (typeof trace_data !== "undefined") {
+                if (typeof trace_data.has_traceroute !== "undefined" && trace_data.has_traceroute == 1) {
+                    var tr_link = div.append('span');
+                    tr_link.classed("traceroute", true);
+                    var trace_url = '/toolkit/gui/psTracerouteViewer/index.cgi?';
+                    trace_url += '&mahost=' + trace_data.ma_url;
+                    trace_url += '&stime=yesterday';
+                    trace_url += '&etime=now';
+                    //trace_url += '&tzselect='; // Commented out (allow default to be used)
+                    trace_url += '&epselect=' + trace_data.traceroute_uri;
+                    trace_url += '';
+                    tr_link.html('[<a href="' + trace_url + '" target="_blank">traceroute</a>]');
+                }
             }
 
         });
@@ -777,8 +775,6 @@ function drawChart(url) {
             var activeCharts = charts.getActiveCharts();
 
             var axes = charts.getAxes();
-
-            //console.log(activeCharts);
 
             if (yNegPadAmt > 0) { // Temporarily disable
                 //yAxisMax = yAxisMax*yNegPadAmt;
