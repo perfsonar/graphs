@@ -3,16 +3,28 @@ require(["dijit/Dialog", "dijit/form/Button", "dojo/domReady!", "dojox/widget/Di
     var detailed_threshold = 15;
 
     var dlg = new dojox.widget.DialogSimple({ 
-           title:"perfSONAR Charts", 
-           executeScripts:true, 
-           style: "width: 85%; height:85%",
-           href:"/serviceTest/graphWidget.cgi" }, 
+           title:"perfSONAR Chart", 
+           style: "width: 85%; height:85%; max-height:750px",
+           }, 
        'chartDialog');
 
+    dlg.connect(dlg, "hide", function(e){
+        clear_iframe();
+        });
  
     var createDialog = function(source, dest) {
-        dlg.set('href', "/serviceTest/graphWidget.cgi?source="  + source + "&dest=" + dest + "&url=" + ma_url);
-        dlg.show(source, dest);
+        clear_iframe();
+        var iframe = dojo.byId('chart_iframe');
+        iframe.src = "/serviceTest/graphWidget.cgi?source="  + source + "&dest="
+            + dest + "&url=" + ma_url;
+
+        dlg.show();
+
+    };
+
+    var clear_iframe = function() {
+        var iframe = dojo.byId('chart_iframe');
+        iframe.src = ''; // Clear the iframe
     };
 
     var ma_url = 'http%3A%2F%2Flocalhost%2Fesmond%2Fperfsonar%2Farchive%2F';
@@ -30,7 +42,6 @@ require(["dijit/Dialog", "dijit/form/Button", "dojo/domReady!", "dojox/widget/Di
     //ma_url = encodeURI(ma_url);
     
     var url = '/serviceTest/graphData.cgi?action=test_list&url=' + ma_url;
-    //render_test_table(url);
     d3.json(url, function(list_error, list_data) {
         var detailed = true;
         if (list_error) { display_error('Error retrieving test data: ' + list_error.statusText); };

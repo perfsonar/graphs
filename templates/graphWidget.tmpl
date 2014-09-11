@@ -46,6 +46,17 @@ dests.push("[% dest %]");
 <!-- </div> --> <!-- end body div -->
 
         <div class="chartHeader" style="margin-left: auto; margin-right: auto; width: 700px;">
+            <div id="share_chart">
+                    <a href="" id="share_chart_link" target="_blank">Link to this chart</a>
+<!--
+                <button name="share" value="Share" id="share_button">Share</button>
+                <div id="share_chart_url">                    
+                    Copy and paste the URL below:<br />
+                    <input type="text" data-dojo-type="dijit/form/TextBox" value="test" id="share_chart_textbox" /><br />
+                    <button id="close_url_button">Close</button>
+                </div>
+-->
+            </div>
             <div id="chartError" class="error"></div>
             <table class="hosts">
  	    <tr>
@@ -86,8 +97,8 @@ dests.push("[% dest %]");
               </tr>
             [% END %]
             </table>
+            <div style="clear:both;"></div>
         </div>
-
 
     <div id="chart" style="height:465px; margin-left: 20px; margin-right: 20px;">
 

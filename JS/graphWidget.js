@@ -1,4 +1,4 @@
-require(["dojo/dom", "dojo/on", "dojo/hash", "dojo/io-query", "dojo/domReady!"], function(theDom, theOn, theHash, ioQuery){
+require(["dojo/parser", "dijit/registry", "dojo/dom-style", "dojo/dom", "dojo/on", "dojo/hash", "dojo/io-query", "dojo/_base/connect", "dojo/_base/event", "dijit/form/TextBox", "dojo/domReady!"], function(parser, registry, domStyle, theDom, theOn, theHash, ioQuery, connect, event, TextBox, ready){
 
 var ma_url = '';
 var now = Math.round(new Date().getTime() / 1000);
@@ -71,6 +71,29 @@ function isEmpty(obj) {
     }
 
     return true;
+}
+
+var share_button = dojo.byId('share_button');
+dojo.connect(share_button, 'onclick', function() {
+        var share_url = dojo.query('#share_chart_url');
+        if (share_url.style('display') == 'none') {
+            share_url.style('display', 'block');
+        } else {
+            share_url.style('display', 'none');
+        }
+});
+
+dojo.connect(dojo.byId('close_url_button'), 'onclick', function() {
+    var share_url = dojo.query('#share_chart_url');
+    share_url.style('display', 'none');    
+});
+
+set_share_url();
+
+function set_share_url() {
+    var url = window.location;
+    var share_link = dojo.query('#share_chart_link');
+    share_link.attr('href', url);
 }
 
 d3.json(ls_list_url, function(error, ls_list_data) { 
@@ -964,6 +987,7 @@ function drawChart(url) {
 
                 drawChart(url);
                 setHeader();
+                set_share_url();
                 return;
             }
 
