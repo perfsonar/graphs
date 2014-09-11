@@ -331,7 +331,6 @@ div#legend {
 #chartError { margin: 0.5em 0; }
 .psGraphError { color:#ff0000; }
 .hosts span.traceroute { margin-left:0.5em; }
-/*#chartDialog { height:750px !important; width:85% !important; }*/
 #chartDialog .dijitDialogPaneContent { height:700px !important; }
 #chart_iframe { width: 100%; height:100%; border:0; }
 #share_chart { float:right; }
