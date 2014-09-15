@@ -102,12 +102,14 @@ function add_to_hash(key, val) {
     var hashObj = ioQuery.queryToObject(theHash());  // get
     hashObj[key] = val;
     theHash(ioQuery.objectToQuery(hashObj));  // set
+    set_share_url();
 }
 
 function remove_from_hash(key) {
     var hashObj = ioQuery.queryToObject(theHash());  // get
     delete hashObj[key];
     theHash(ioQuery.objectToQuery(hashObj));  // set
+    set_share_url();
 }
 
 function get_hash_val(key) {
@@ -432,7 +434,9 @@ function drawChart(url) {
                     var timePeriod = e.currentTarget.name;
                     dojo.query('#ps-all-tests #time-selector a.zoomLink').removeClass('active');
                     dojo.addClass(e.currentTarget, 'active');
-                    theHash("timeframe=" + timePeriod);
+                    add_to_hash("timeframe", timePeriod);
+                    remove_from_hash("start_ts");
+                    remove_from_hash("end_ts");
                     reloadChart(timePeriod);
                 });
 
