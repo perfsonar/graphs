@@ -36,10 +36,12 @@ setTimeVars(timePeriod);
 
 
 // getTime() returns ms, divide by 1000 to get seconds
-var end_ts = Math.round(new Date().getTime() / 1000);
-//var start_ts = end_ts - 86400 * 7;
-if (time_diff != 0 ) {
-    start_ts = end_ts - time_diff;
+var end_ts = get_hash_val('end_ts') ||  Math.round(new Date().getTime() / 1000);
+var start_ts = get_hash_val('start_ts') ||  end_ts - time_diff;
+
+if (end_ts > now) {
+    end_ts = now;
+    start_ts = now - time_diff;
 }
 
 var ls_list_url = '/serviceTest/graphData.cgi?action=ls_hosts';
@@ -94,6 +96,22 @@ function set_share_url() {
     var url = window.location;
     var share_link = dojo.query('#share_chart_link');
     share_link.attr('href', url);
+}
+
+function add_to_hash(key, val) {
+    var hashObj = ioQuery.queryToObject(theHash());  // get
+    hashObj[key] = val;
+    theHash(ioQuery.objectToQuery(hashObj));  // set
+}
+
+function remove_from_hash(key) {
+    var hashObj = ioQuery.queryToObject(theHash());  // get
+    delete hashObj[key];
+    theHash(ioQuery.objectToQuery(hashObj));  // set
+}
+
+function get_hash_val(key) {
+    return ioQuery.queryToObject(theHash())[key];
 }
 
 d3.json(ls_list_url, function(error, ls_list_data) { 
@@ -257,6 +275,9 @@ function drawChart(url) {
                 d3.event.preventDefault(); 
                 end_ts = end_ts - time_diff;
                 start_ts = start_ts - time_diff;
+                add_to_hash('start_ts', start_ts);
+                add_to_hash('end_ts', end_ts);
+                add_to_hash('timeframe', timePeriod);
                 var new_url = base_url + '&start=' + start_ts + '&end=' + end_ts + '&window=' + summary_window;
                 d3.selectAll("#chart").selectAll("svg").remove();
                 cleanupObjects();
@@ -272,6 +293,13 @@ function drawChart(url) {
                     d3.event.preventDefault(); 
                     end_ts = end_ts + time_diff;
                     start_ts = start_ts + time_diff;
+                    if (end_ts > now) {
+                        end_ts = now;
+                        start_ts = end_ts - time_diff;
+                    }
+                    add_to_hash('start_ts', start_ts);
+                    add_to_hash('end_ts', end_ts);
+                    add_to_hash('timeframe', timePeriod);
                     var new_url = base_url +'&start=' + start_ts + '&end=' + end_ts + '&window=' + summary_window;
                     d3.selectAll("#chart").selectAll("svg").remove();
                     cleanupObjects();
@@ -685,6 +713,19 @@ function drawChart(url) {
                 }
                 return theCharts;
             };
+            charts.checkboxCallBack = function(cb) {
+                    var hide_name = 'hide_' + cb.id;
+                    var checked = this.checked;
+                    if (checked == false) {
+                        add_to_hash(hide_name, true);
+                    } else {
+                        remove_from_hash(hide_name);
+                    }
+
+                    drawChartSameCall(error, ps_data);                                     
+
+            };
+
             charts.getActiveObjects = function() {
                 var allCharts = this.getAllObjects();
                 var theCharts = [];
@@ -699,7 +740,13 @@ function drawChart(url) {
                             var theType = c.type + (c.direction == 'reverse' ? '_rev' : '');
                             var cb = d3.select('#' + theType + "_checkbox");
                             if (cb !== null && !cb.empty()) {
-                                cb.on("change", function() { drawChartSameCall(error, ps_data); });
+                                cb.on("change", this.checkboxCallBack);
+                                if (get_hash_val('hide_' + theType) == 'true') {
+                                    cb.property('checked', false);                                
+                                } else {
+                                    cb.property('checked', true);
+                                }
+
                                 if (cb.property('checked') == false) {
                                     continue;
                                 } 
