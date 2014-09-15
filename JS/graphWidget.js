@@ -257,6 +257,7 @@ var loading = d3.select('#chart #loading');
 drawChart(base_url + '&start=' + start_ts + '&end=' + end_ts + '&window=' + summary_window);
 
 
+var zoom_registered = false;
 
 function drawChart(url) {
 
@@ -427,15 +428,6 @@ function drawChart(url) {
             };
 
             setHeader();
-            // Handle zoom events
-            dojo.query('#chart #time-selector a.zoomLink').onclick(function(e){ 
-                    e.preventDefault();
-                    var timePeriod = e.currentTarget.name;
-                    dojo.query('#chart #time-selector a.zoomLink').removeClass('active');
-                    dojo.addClass(e.currentTarget, 'active');
-                    theHash("timeframe=" + timePeriod);
-                    reloadChart(timePeriod);
-                });
 
             var charts = {};
 
@@ -897,19 +889,34 @@ function drawChart(url) {
 	    var rangeReducer = function(d){		
 		var val;
 
+		var active_objects = charts.getActiveObjects();
+
 		for (var k in d){
 		    if (d[k] === null || d[k] === undefined || d[k] < 0){
 			continue;
 		    }
 
 		    var res = k.match(/(loss|owdelay|packet_trans|ping|throughput)/);
-
 		    if (! res){
+			continue;
+		    }	    
+
+		    var match = res[0];
+
+		    var active = false;
+
+
+		    for (var i = 0; i < active_objects.length; i++){			
+			if (active_objects[i].fieldName == k){
+			    active = true;
+			    break;
+			}
+		    }
+
+		    if (! active){
 			continue;
 		    }
 
-		    var match = res[0];
-		    
 		    var inner_max;
 		    
 		    if (match == 'loss'){
@@ -947,8 +954,7 @@ function drawChart(url) {
 		.dimension(lineDimension)
 		.yAxisLabel("")
 		.xAxisLabel("")
-		.group(lineDimension.group().reduceSum(rangeReducer));
-
+		.group(lineDimension.group().reduceSum(rangeReducer));	    
 
            allTestsChart.yAxis().ticks(5);
            function make_formatter(charts, index) { 
@@ -1021,15 +1027,15 @@ function drawChart(url) {
                 var svgSel = allTestsChart.svg();
                 var dcLegendEvents = svgSel.selectAll('.dc-legend-item').on('click', function(e, i) {
                         if (chartStates[i] === undefined || chartStates[i] === true) {
-                        e.chart.defined(function(d) { return false; });
-                        chartStates[i] = false;
-                        d3.event.target.style.fill = 'gray';
+			    e.chart.defined(function(d) { return false; });
+			    chartStates[i] = false;
+			    d3.event.target.style.fill = 'gray';
                         } else {
-                        e.chart.defined(function(d) { return true; });
-                        chartStates[i] = true;
-                        d3.event.target.style.fill = 'black';
+			    e.chart.defined(function(d) { return true; });
+			    chartStates[i] = true;
+			    d3.event.target.style.fill = 'black';
                         }
-
+			
                         allTestsChart.render();
                         postRenderTasks();
                         });
@@ -1092,6 +1098,19 @@ function drawChart(url) {
                 set_share_url();
                 return;
             }
+
+            // Handle zoom events
+	    if (! zoom_registered){
+		dojo.query('#chart #time-selector a.zoomLink').onclick(function(e){ 
+			e.preventDefault();
+			var timePeriod = e.currentTarget.name;
+			dojo.query('#chart #time-selector a.zoomLink').removeClass('active');
+			dojo.addClass(e.currentTarget, 'active');
+			theHash("timeframe=" + timePeriod);
+			reloadChart(timePeriod);
+		    });
+		zoom_registered = true;
+	    }
 
             //var cleanupObjects = function() {
             function cleanupObjects() {
