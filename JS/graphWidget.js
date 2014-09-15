@@ -285,8 +285,8 @@ function drawChart(url) {
             prevLink.html('<a href="#">Previous ' + timePeriod + '</a>');
             nextLink.html('<a href="#">Next ' + timePeriod + '</a>');
             if (timePeriod != '') {
-                dojo.query('#ps-all-tests #time-selector a.zoomLink').removeClass('active');
-                dojo.query('#ps-all-tests #time-selector a.zoomLink').forEach(function(node, index, nodelist) {
+                dojo.query('#chart #time-selector a.zoomLink').removeClass('active');
+                dojo.query('#chart #time-selector a.zoomLink').forEach(function(node, index, nodelist) {
                         if(node.name == timePeriod) {
                         dojo.addClass(node, "active");
                         }
@@ -297,6 +297,7 @@ function drawChart(url) {
             var end_date = new Date (end_ts * 1000);
 
             var allTestsChart = dc.compositeChart("#ps-all-tests");
+	    var rangeChart    = dc.barChart("#range-chart");
 
             var ndx = crossfilter(ps_data);
             var lineDimension = ndx.dimension(function (d) { return new Date( d.ts * 1000); });
@@ -399,10 +400,10 @@ function drawChart(url) {
 
             setHeader();
             // Handle zoom events
-            dojo.query('#ps-all-tests #time-selector a.zoomLink').onclick(function(e){ 
+            dojo.query('#chart #time-selector a.zoomLink').onclick(function(e){ 
                     e.preventDefault();
                     var timePeriod = e.currentTarget.name;
-                    dojo.query('#ps-all-tests #time-selector a.zoomLink').removeClass('active');
+                    dojo.query('#chart #time-selector a.zoomLink').removeClass('active');
                     dojo.addClass(e.currentTarget, 'active');
                     theHash("timeframe=" + timePeriod);
                     reloadChart(timePeriod);
@@ -795,6 +796,9 @@ function drawChart(url) {
             var maxLoss = charts.loss.typeMax;
             var minLoss = charts.loss.typeMin;
 
+	    var maxPing = charts.ping.typeMax;
+	    var minPing = charts.ping.typeMin;
+
             var activeCharts = charts.getActiveCharts();
 
             var axes = charts.getAxes();
@@ -823,29 +827,82 @@ function drawChart(url) {
             } else {
                 errorDiv.html('');
 
-            //allTestsChart.width(750)
             var window_width = document.getElementById("chart").clientWidth;
             var chart_width = 700;
             if (window_width > 700) {
                 chart_width = window_width - 100;
             }
+
             allTestsChart.width(chart_width)
                 .height(465)
-                .brushOn(false)
-                .mouseZoomable(true)
                 .shareTitle(false)
+		.brushOn(false)
                 .compose(activeCharts)
-                //.dimension(lineDimension)
-                .x(d3.time.scale().domain([start_date, end_date])) //.nice())
-                //.x(d3.time.scale().domain(d3.extent(ps_data, function(d) { return new Date(d.ts * 1000); }))) //.nice())
+                .x(d3.time.scale().domain([start_date, end_date])) 
                 .xAxisLabel('Date')
-                //.y(d3.scale.linear().domain([minThroughputAxis, axis_value( maxDelay, 1000)]))
                 .y(d3.scale.linear().domain([format_min(axes[0].min), yAxisMax * axisScale ])) 
                 .yAxisLabel(axes[0].name + ' (' + axes[0].unit + ')')
-                //.yAxisLabel('Throughput')
-                //.rightYAxisLabel('Latency (ms)')
                 .legend(dc.legend().x(40).y(570).itemHeight(13).gap(5).legendWidth(600).horizontal(true).itemWidth(150))
+		.rangeChart(rangeChart)
                 .xAxis();
+
+	    
+	    var rangeReducer = function(d){		
+		var val;
+
+		for (var k in d){
+		    if (d[k] === null || d[k] === undefined || d[k] < 0){
+			continue;
+		    }
+
+		    var res = k.match(/(loss|owdelay|packet_trans|ping|throughput)/);
+
+		    if (! res){
+			continue;
+		    }
+
+		    var match = res[0];
+		    
+		    var inner_max;
+		    
+		    if (match == 'loss'){
+			inner_max = maxLoss;
+		    }
+		    if (match == 'owdelay'){
+			inner_max = maxDelay;
+		    }
+		    if (match == 'ping'){
+			inner_max = maxPing;
+		    }
+		    if (match == 'throughput'){
+			inner_max = maxThroughput;
+		    }
+		    
+		    if (inner_max == undefined || inner_max == 0){
+			continue;
+		    }		    
+
+		    var comparison = d[k] / inner_max;
+
+		    if (val == undefined || comparison > val){
+			val = comparison;
+		    }
+		}
+
+		return val;
+	    };
+
+
+	    rangeChart.width(chart_width)
+		.height(60)
+		.margins({left: 69, top: 0, right: 40, bottom: 10})
+		.x(d3.time.scale().domain([start_date, end_date]))
+		.dimension(lineDimension)
+		.yAxisLabel("")
+		.xAxisLabel("")
+		.group(lineDimension.group().reduceSum(rangeReducer));
+
+
            allTestsChart.yAxis().ticks(5);
            function make_formatter(charts, index) { 
                return function(d) { 
@@ -899,8 +956,6 @@ function drawChart(url) {
                     chartSVG.selectAll('g.yr g.tick text').style('fill', axes[1].color);
                     chartSVG.selectAll('g.y g.tick text').style('fill', axes[0].color);
                 }
-
-                svg.attr("height", +svgHeight + 50);
 
                 // Loss axis
                 if (maxLoss == 0) {
@@ -1007,19 +1062,17 @@ function drawChart(url) {
                 if (allTestsChart !== null) {
                     allTestsChart.select("svg").remove();
                 }
-                // Remove root reference (probably not needed)
-                //allTestsChart.root(null);
+                if (rangeChart !== null) {
+                    rangeChart.select("svg").remove();
+                }
 
-                //var svg = allTestsChart.svg();
-                //svg.remove();
 
                 d3.selectAll("#chart").selectAll("svg").remove();
-                //if (allTestsChart !== null) {
-                //    allTestsChart.resetSvg(); 
-                //}
                 d3.select('#legend').html('');
+
                 allTestsChart = null;
                 lineDimension = null;
+		rangeChart    = null;
                 ndx = null;
                 charts = null;
                 axes = null;
