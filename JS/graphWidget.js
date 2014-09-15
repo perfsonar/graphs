@@ -260,6 +260,7 @@ drawChart(base_url + '&start=' + start_ts + '&end=' + end_ts + '&window=' + summ
 
 
 var zoom_registered = false;
+var next_prev_registered = false;
 
 function drawChart(url) {
 
@@ -272,58 +273,65 @@ function drawChart(url) {
             function drawChartSameCall(error, ps_data) { 
             loading.style('display', 'none');
 
-            timePeriod = ioQuery.queryToObject(theHash()).timeframe || '1w';  // get hash
-            var prevLink = d3.selectAll('.ps-timerange-nav .prev');
-            prevLink.on("click", function() { 
-                d3.event.preventDefault(); 
-                end_ts = end_ts - time_diff;
-                start_ts = start_ts - time_diff;
-                add_to_hash('start_ts', start_ts);
-                add_to_hash('end_ts', end_ts);
-                add_to_hash('timeframe', timePeriod);
-                var new_url = base_url + '&start=' + start_ts + '&end=' + end_ts + '&window=' + summary_window;
-                d3.selectAll("#chart").selectAll("svg").remove();
-                cleanupObjects();
-                drawChart(new_url);
-                setHeader();
-                if (end_ts < now ) {
-		    nextLink.style('display', 'block');
-                }
-                return;
-                });
-            var nextLink = d3.selectAll('.ps-timerange-nav .next');
-            nextLink.on("click", function() { 
-                    d3.event.preventDefault(); 
-                    end_ts = end_ts + time_diff;
-                    start_ts = start_ts + time_diff;
-                    if (end_ts > now) {
-                        end_ts = now;
-                        start_ts = end_ts - time_diff;
-                    }
-                    add_to_hash('start_ts', start_ts);
-                    add_to_hash('end_ts', end_ts);
-                    add_to_hash('timeframe', timePeriod);
-                    var new_url = base_url +'&start=' + start_ts + '&end=' + end_ts + '&window=' + summary_window;
-                    d3.selectAll("#chart").selectAll("svg").remove();
-                    cleanupObjects();
-                    drawChart(new_url);
-                    return;
-                    });
-            if (end_ts >= now ) {
-                nextLink.style('display', 'none');
-            }
+	    var timePeriod = ioQuery.queryToObject(theHash()).timeframe || '1w';  // get hash
 
+	    var prevLink = d3.selectAll('.ps-timerange-nav .prev');	 		
+	    var nextLink = d3.selectAll('.ps-timerange-nav .next');
+
+	    if (! next_prev_registered){
+		prevLink.on("click", function() { 
+			d3.event.preventDefault(); 			
+			end_ts = end_ts - time_diff;
+			start_ts = start_ts - time_diff;
+			add_to_hash('start_ts', start_ts);
+			add_to_hash('end_ts', end_ts);
+			add_to_hash('timeframe', timePeriod);
+			var new_url = base_url + '&start=' + start_ts + '&end=' + end_ts + '&window=' + summary_window;
+			d3.selectAll("#chart").selectAll("svg").remove();
+			cleanupObjects();
+			drawChart(new_url);
+			setHeader();
+			if (end_ts < now ) {
+			    nextLink.style('display', 'block');
+			}
+			return;
+		    });
+		
+		nextLink.on("click", function() { 
+			d3.event.preventDefault(); 
+			end_ts = end_ts + time_diff;
+			start_ts = start_ts + time_diff;
+			if (end_ts > now) {
+			    end_ts = now;
+			    start_ts = end_ts - time_diff;
+			}
+			add_to_hash('start_ts', start_ts);
+			add_to_hash('end_ts', end_ts);
+			add_to_hash('timeframe', timePeriod);
+			var new_url = base_url +'&start=' + start_ts + '&end=' + end_ts + '&window=' + summary_window;
+			d3.selectAll("#chart").selectAll("svg").remove();
+			cleanupObjects();
+			drawChart(new_url);
+			return;
+                    });
+		next_prev_registered = true;
+	    }
+
+	    if (end_ts >= now ) {
+		nextLink.style('display', 'none');
+	    }
+	    
             prevLink.html('<a href="#">Previous ' + timePeriod + '</a>');
             nextLink.html('<a href="#">Next ' + timePeriod + '</a>');
             if (timePeriod != '') {
                 dojo.query('#chart #time-selector a.zoomLink').removeClass('active');
                 dojo.query('#chart #time-selector a.zoomLink').forEach(function(node, index, nodelist) {
                         if(node.name == timePeriod) {
-                        dojo.addClass(node, "active");
+			    dojo.addClass(node, "active");
                         }
-                        });
+		    });
             }
-
+	    
             var start_date = new Date (start_ts * 1000);
             var end_date = new Date (end_ts * 1000);
 
@@ -430,18 +438,6 @@ function drawChart(url) {
             };
 
             setHeader();
-
-            // Handle zoom events
-            dojo.query('#ps-all-tests #time-selector a.zoomLink').onclick(function(e){ 
-                    e.preventDefault();
-                    var timePeriod = e.currentTarget.name;
-                    dojo.query('#ps-all-tests #time-selector a.zoomLink').removeClass('active');
-                    dojo.addClass(e.currentTarget, 'active');
-                    add_to_hash("timeframe", timePeriod);
-                    remove_from_hash("start_ts");
-                    remove_from_hash("end_ts");
-                    reloadChart(timePeriod);
-                });
 
             var charts = {};
 
@@ -899,11 +895,11 @@ function drawChart(url) {
 		.rangeChart(rangeChart)
                 .xAxis();
 
+
+	    var active_objects = charts.getActiveObjects();
 	    
 	    var rangeReducer = function(d){		
 		var val;
-
-		var active_objects = charts.getActiveObjects();
 
 		for (var k in d){
 		    if (d[k] === null || d[k] === undefined || d[k] < 0){
@@ -968,6 +964,7 @@ function drawChart(url) {
 		.dimension(lineDimension)
 		.yAxisLabel("")
 		.xAxisLabel("")
+		.gap(1)
 		.group(lineDimension.group().reduceSum(rangeReducer));	    
 
            allTestsChart.yAxis().ticks(5);
@@ -1119,8 +1116,7 @@ function drawChart(url) {
 			e.preventDefault();
 			var timePeriod = e.currentTarget.name;
 			dojo.query('#chart #time-selector a.zoomLink').removeClass('active');
-			dojo.addClass(e.currentTarget, 'active');
-			theHash("timeframe=" + timePeriod);
+			dojo.addClass(e.currentTarget, 'active');			
 			reloadChart(timePeriod);
 		    });
 		zoom_registered = true;

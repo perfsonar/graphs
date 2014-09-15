@@ -278,13 +278,9 @@ span.psgraph-val { font-family: "Lucida Console", Monaco, monospace; }
 #summaryTable th.sortHeader span.sort { width:13px; height:12px; display:inline-block; margin-left:5px; }
 #summaryTable th.sortHeader span.sort.asc { background:url(/serviceTest/images/uparrow.png); }
 #summaryTable th.sortHeader span.sort.desc { background:url(/serviceTest/images/downarrow.png); }
-/*#chart { width:80%; height:80%; } */
-/*.dijitDialogPaneContent {
-    width: 80% !important;
-    height: 80% !important;
-}*/
+
 .chart { clear:both; }
-/*#summaryTable th.extra, #summaryTable td.extra { display:none; } */
+
 #chartDialog { overflow: auto;  }
 
 #time-selector { text-align:right; margin-right:3em;  } 
@@ -297,18 +293,15 @@ td.dc-table-column._0 span.psgraph-val, td.dc-table-column._1 span.psgraph-val {
 div.dc-chart { float:none; }
 .chartHeader { margin-top:10px; }
 .chartHeader .content { padding:8px; }
-/*.legend { position:relative; top: 500px; } */
+
 .dc-chart path.line { stroke-width:2px; }
 div#legend {
-    /* margin: auto 0; */
-    /* float: none; */
-    /* display: block; */
     width: 750px;
-    top: 50px;
-    position: relative;
-    margin: 0 auto;
+    margin-left: auto;
+    margin-right: auto;
 }
-.dc-legend-item { float:left; width:180px; }
+.rangeChart .axis.y .tick { display: none; }
+.dc-legend-item { display: inline-block; width:180px; }
 #legend2 { display:none; }
 .throughput {
     border-color: #1F77B4; 
