@@ -294,7 +294,7 @@ div.dc-chart { float:none; }
 .chartHeader { margin-top:10px; }
 .chartHeader .content { padding:8px; }
 
-.dc-chart path.line { stroke-width:2px; }
+.dc-chart path.line { stroke-width:2px; opacity:0.8; }
 div#legend {
     width: 750px;
     margin-left: auto;

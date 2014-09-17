@@ -448,10 +448,8 @@ function drawChart(url) {
             charts.throughput.fieldName = 'throughput';
             charts.throughput.valType = 'avg';
             charts.throughput.color = '#0076b4'; 
-            //charts.throughput.valueAccessor = function(d) { return d.value.avg; };
             charts.throughput.showByDefault = true;
-            //charts.throughput.tickFormat = d3.format('.2s');
-            charts.throughput.tickFormat = function(d) { return d3.format('.3s')(d) + 'bps';  };
+            charts.throughput.tickFormat = function(d) { return d3.format('.2s')(d) + 'bps';  };
 
             // Latency charts
             charts.latency = {};
@@ -467,7 +465,14 @@ function drawChart(url) {
 
             charts.latency.showByDefault = true;
             charts.latency.ticks = 5;
-            charts.latency.tickFormat = function(d) { return d3.format('.2f')(d ) };
+            charts.latency.tickFormat = function(d) { 
+                var ret = d;
+                if (this.max > 5) {
+                    ret = Math.ceil(d);
+                }
+                //console.log(this);
+                return ret; 
+            };
 
             // Ping charts
             charts.ping = {};
@@ -885,16 +890,17 @@ function drawChart(url) {
             allTestsChart.width(chart_width)
                 .height(465)
                 .shareTitle(false)
-		.brushOn(false)
+		        .brushOn(false)
                 .compose(activeCharts)
                 .x(d3.time.scale().domain([start_date, end_date])) 
                 .xAxisLabel('Date')
-                .y(d3.scale.linear().domain([format_min(axes[0].min), yAxisMax * axisScale ])) 
+                .y(d3.scale.linear().domain([format_min(axes[0].min), yAxisMax * axisScale ]).nice()) 
                 .yAxisLabel(axes[0].name + ' (' + axes[0].unit + ')')
                 .legend(dc.legend().x(40).y(570).itemHeight(13).gap(5).legendWidth(600).horizontal(true).itemWidth(150))
-		.rangeChart(rangeChart)
+		        .rangeChart(rangeChart)
                 .xAxis();
 
+        allTestsChart.yAxis().ticks(5);
 
 	    var active_objects = charts.getActiveObjects();
 	    
@@ -957,23 +963,23 @@ function drawChart(url) {
 	    };
 
 
-	    rangeChart.width(chart_width)
-		.height(60)
-		.margins({left: 69, top: 0, right: 40, bottom: 10})
-		.x(d3.time.scale().domain([start_date, end_date]))
-		.dimension(lineDimension)
-		.yAxisLabel("")
-		.xAxisLabel("")
-		.gap(1)
-		.group(lineDimension.group().reduceSum(rangeReducer));	    
+	        rangeChart.width(chart_width)
+                .height(60)
+                .margins({left: 69, top: 0, right: 40, bottom: 10})
+                .x(d3.time.scale().domain([start_date, end_date]))
+                .dimension(lineDimension)
+                .yAxisLabel("")
+                .xAxisLabel("")
+                .gap(1)
+                .group(lineDimension.group().reduceSum(rangeReducer));	    
 
-           allTestsChart.yAxis().ticks(5);
            function make_formatter(charts, index) { 
                return function(d) { 
                     var ret = charts.getAxes()[index].tickFormat( d * charts.getAxes()[index].max / yAxisMax );
                     return ret;
                }
             }
+
            allTestsChart.yAxis().tickFormat(make_formatter(charts, 0));
 
             function get_axes(axes) {
@@ -983,7 +989,7 @@ function drawChart(url) {
            if (axes.length > 1 ) {
                 allTestsChart.rightYAxisLabel(axes[1].name + ' (' + axes[1].unit + ')')
                     .rightY(d3.scale.linear().domain([0, yAxisMax * axisScale]))
-                    .rightYAxis().ticks(5)
+                    .rightYAxis().ticks(5);
                 allTestsChart.rightYAxis().tickFormat(make_formatter(charts, 1));
            }
 
