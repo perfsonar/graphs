@@ -818,6 +818,29 @@ function drawChart(url) {
             var maxDelay = charts.latency.typeMax;
             var minDelay = charts.latency.typeMin;
 
+            var warning_div = d3.select("#data_warning");
+            warning_div.html('');
+            var data_warning = '';
+            if (charts.latency.min < 0 || charts.latency_rev.min < 0) {
+                data_warning += 'Negative latency values found in'; 
+
+                if (charts.latency.min < 0 && charts.latency_rev.min < 0) { 
+                    data_warning += ' both directions. '
+                } else {
+                    if (charts.latency.min < 0) {
+                        data_warning += ' the forward direction.';
+                    }
+                    if (charts.rev_latency.min < 0) {
+                        data_warning += ' the reverse direction.';
+                    }                    
+                }
+                data_warning += " Typically, this occurs when one or both hosts' clocks are out of sync, or the hosts are very close together."
+                warning_div.html(data_warning);
+                warning_div.style('display', 'block');
+            } else {
+                warning_div.style('display', 'none');
+            }
+
             minDelay = 0;
             var maxLoss = charts.loss.typeMax;
             var minLoss = charts.loss.typeMin;

@@ -322,6 +322,8 @@ div#legend {
     border-style: dotted;
 }
 #chartError { margin: 0.5em 0; }
+#data_warning { margin:5px auto 0 auto; width:710px; font-size:10px; color:#9f6000; }
+#data_warning.status { padding: 5px 10px 5px 10px; line-height:120%; background-image:none; }
 .psGraphError { color:#ff0000; }
 .hosts span.traceroute { margin-left:0.5em; }
 #chartDialog .dijitDialogPaneContent { height:700px !important; }
