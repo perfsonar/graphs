@@ -231,8 +231,6 @@ d3.json('/serviceTest/graphData.cgi?action=hosts' + array2param('src', sources) 
 
 });
 
-function get_tr_url(url) { return function() { return url; }; }
-
 function get_traceroute_data(url, div) {
         d3.json(url, function(trace_error, trace_data) {
             if (typeof trace_data !== "undefined") {
@@ -254,10 +252,8 @@ function get_traceroute_data(url, div) {
 
 }
 
-
 var loading = d3.select('#chart #loading');
 drawChart(base_url + '&start=' + start_ts + '&end=' + end_ts + '&window=' + summary_window);
-
 
 var zoom_registered = false;
 var next_prev_registered = false;
@@ -287,14 +283,11 @@ function drawChart(url) {
 			add_to_hash('end_ts', end_ts);
 			add_to_hash('timeframe', timePeriod);
 			var new_url = base_url + '&start=' + start_ts + '&end=' + end_ts + '&window=' + summary_window;
-			d3.selectAll("#chart").selectAll("svg").remove();
 			cleanupObjects();
 			drawChart(new_url);
-			setHeader();
 			if (end_ts < now ) {
 			    nextLink.style('display', 'block');
 			}
-			return;
 		    });
 		
 		nextLink.on("click", function() { 
@@ -309,12 +302,10 @@ function drawChart(url) {
 			add_to_hash('end_ts', end_ts);
 			add_to_hash('timeframe', timePeriod);
 			var new_url = base_url +'&start=' + start_ts + '&end=' + end_ts + '&window=' + summary_window;
-			d3.selectAll("#chart").selectAll("svg").remove();
 			cleanupObjects();
 			drawChart(new_url);
-			return;
                     });
-		next_prev_registered = true;
+            next_prev_registered = true;
 	    }
 
 	    if (end_ts >= now ) {
@@ -336,7 +327,7 @@ function drawChart(url) {
             var end_date = new Date (end_ts * 1000);
 
             var allTestsChart = dc.compositeChart("#ps-all-tests");
-	    var rangeChart    = dc.barChart("#range-chart");
+            var rangeChart    = dc.barChart("#range-chart");
 
             var ndx = crossfilter(ps_data);
             var lineDimension = ndx.dimension(function (d) { return new Date( d.ts * 1000); });
@@ -427,10 +418,6 @@ function drawChart(url) {
             if (minY < 0) {
                 yNegPadAmt = Math.abs(minY / maxY);
             }
-            if (maxLoss < 0 && minLoss < 0) { 
-                //yNegPadAmt = yNegPadAmt * -1;
-                //yAxisMax = 100;
-            }
 
             var setHeader = function() { 
                 var rangeLabel = format_ts_header(new Date(1000 * start_ts)) + ' -- ' + format_ts_header(new Date(1000 * end_ts));
@@ -458,9 +445,6 @@ function drawChart(url) {
             charts.latency.unit = 'ms';
             charts.latency.fieldName = 'owdelay_minimum';
             charts.latency.valType = 'avg';
-            //charts.latency.color = '#2b9f78'; 
-            //charts.latency.color = '#f0e54b'; 
-            //charts.latency.color = '#5cb6ea'; 
             charts.latency.color = '#663333'; 
 
             charts.latency.showByDefault = true;
@@ -470,7 +454,6 @@ function drawChart(url) {
                 if (this.max > 5) {
                     ret = Math.ceil(d);
                 }
-                //console.log(this);
                 return ret; 
             };
 
@@ -494,16 +477,8 @@ function drawChart(url) {
             charts.loss.fieldName = 'loss';
             charts.loss.valType = 'avg';
             charts.loss.color = '#cc7dbe'; 
-            //charts.loss.color = '#5cb6ea'; 
             charts.loss.showByDefault = true;
             charts.loss.tickFormat = function(d) { return d3.format('.2%')(d) };
-            /*charts.loss.valueAccessor = function(d) {
-                if (d.value.avg != 0) { 
-                    return yAxisMax * d.value.avg / maxLoss; 
-                } else {
-                    return 0.01; // TODO: fix: hacky -- so we see "0" values
-                }
-            };*/
 
             // Packet retrans charts 
             
@@ -526,7 +501,6 @@ function drawChart(url) {
                     if (isFunction(c)) {
                         continue;
                     }
-                    //this[key + '_rev'] = c;
                     this[key + '_rev'] = {};
                     var rev = this[key + '_rev'];   // newly created reverse values
 
@@ -580,6 +554,7 @@ function drawChart(url) {
                         }
                     }
                     var type = this[c.type];
+
                     // typeMin and typeMax are the min/max values for that type
                     if (typeof type['typeMin'] === "undefined" || c.min < type['typeMin']) {
                         type['typeMin'] = c.min || 0;
@@ -642,7 +617,6 @@ function drawChart(url) {
             charts.createChart = function(currentChart) {
                 var c = currentChart;
                 if (isFunction(c)) {
-                    //continue;
                     return;
                 }
                 c.chart = dc.psLineChart(parentChart);
@@ -830,14 +804,12 @@ function drawChart(url) {
                     .text(function(c) { return c.name; });
 
                 var cb = d3.selectAll(divId + ' .dc-legend-item');
-                //if (cb !== null && !cb.empty()) {
                 cb.on("mouseover", function(d, e) { 
                         allTestsChart.legendHighlight(d); 
                         });
                 cb.on("mouseout", function(d, e) {
                         allTestsChart.legendReset(d);
                         });
-                //}
             };
 
             charts.createCharts();
@@ -850,35 +822,29 @@ function drawChart(url) {
             var maxLoss = charts.loss.typeMax;
             var minLoss = charts.loss.typeMin;
 
-	    var maxPing = charts.ping.typeMax;
-	    var minPing = charts.ping.typeMin;
+            var maxPing = charts.ping.typeMax;
+            var minPing = charts.ping.typeMin;
 
             var activeCharts = charts.getActiveCharts();
 
             var axes = charts.getAxes();
 
-            if (yNegPadAmt > 0) { // Temporarily disable
-                //yAxisMax = yAxisMax*yNegPadAmt;
-            }
-            //var minDel = minDelay; // / yNegPadAmt;
-            var minDel = minDelay - (maxDelay * yNegPadAmt ); // / yNegPadAmt;
+            var minDel = minDelay - (maxDelay * yNegPadAmt ); 
             minDel = 0; //temporarily override the ability to have negative values (it's not ready)
             var maxDel = maxDelay * axisScale;
             if (maxDel == 0) {
                 maxDel = 1;
             }
             var minThroughputAxis = 0;
-            //var minThroughputAxis = 0 - yNegPadAmt * maxThroughput;
-            //
             var format_min = function(d) { return (d >= 0 ? d : 0);  };
 
             var errorDiv = d3.select('#chartError');
             // No data to plot
             if (axes.length == 0) {
-               cleanupObjects(); 
+                cleanupObjects(); 
                 errorDiv.html('ERROR: No data to plot for the hosts and time range selected.');
                 d3.select('#legend').html('');
-            } else {
+           } else {
                 errorDiv.html('');
 
             var window_width = document.getElementById("chart").clientWidth;
@@ -896,11 +862,21 @@ function drawChart(url) {
                 .xAxisLabel('Date')
                 .y(d3.scale.linear().domain([format_min(axes[0].min), yAxisMax * axisScale ]).nice()) 
                 .yAxisLabel(axes[0].name + ' (' + axes[0].unit + ')')
-                .legend(dc.legend().x(40).y(570).itemHeight(13).gap(5).legendWidth(600).horizontal(true).itemWidth(150))
-		        .rangeChart(rangeChart)
-                .xAxis();
+		        .rangeChart(rangeChart);
 
         allTestsChart.yAxis().ticks(5);
+      
+        // Add/remove zoom parameters from url
+        rangeChart.on("postRedraw", function(chart) {
+            var filters = chart.filters() || [];
+            if (filters.length == 0) {
+                remove_from_hash('zoom_start');
+                remove_from_hash('zoom_end');             
+            } else {
+                add_to_hash('zoom_start', +filters[0][0]);
+                add_to_hash('zoom_end', +filters[0][1]);                
+            }
+        });
 
 	    var active_objects = charts.getActiveObjects();
 	    
@@ -971,7 +947,7 @@ function drawChart(url) {
                 .yAxisLabel("")
                 .xAxisLabel("")
                 .gap(1)
-                .group(lineDimension.group().reduceSum(rangeReducer));	    
+                .group(lineDimension.group().reduceSum(rangeReducer), "rangegroup"); 
 
            function make_formatter(charts, index) { 
                return function(d) { 
@@ -1020,6 +996,20 @@ function drawChart(url) {
                 var svg = allTestsChart.svg(); // d3.select('#chart svg');
                 var svgWidth = svg.attr('width');
                 var svgHeight = svg.attr('height');
+
+                var zoom_start = get_hash_val('zoom_start');
+                var zoom_end = get_hash_val('zoom_end');
+
+                function in_zoom_range(val) { 
+                    return (val/1000 >= start_ts && val/1000 <= end_ts); 
+                }
+
+                if (zoom_start && zoom_end && in_zoom_range(zoom_start) && in_zoom_range(zoom_end)) {
+                    allTestsChart.focus([zoom_start, zoom_end]);
+                } else {
+                    remove_from_hash('zoom_start');
+                    remove_from_hash('zoom_end');
+                }
 
                 if (axes.length > 1) {
                     var chartSVG = allTestsChart.svg();
@@ -1073,7 +1063,7 @@ function drawChart(url) {
                     y1.domain([minVal, maxVal * axisScale ]);
                 }
 
-                var svg = allTestsChart.svg(); // d3.select('#chart svg');
+                var svg = allTestsChart.svg();
                 var svgWidth = svg.attr('width');
                 var svgHeight = svg.attr('height');
                 var origWidth = 750;
@@ -1125,21 +1115,19 @@ function drawChart(url) {
 			dojo.addClass(e.currentTarget, 'active');			
 			reloadChart(timePeriod);
 		    });
-		zoom_registered = true;
+        zoom_registered = true;
 	    }
 
-            //var cleanupObjects = function() {
             function cleanupObjects() {
                 if (lineDimension !== null) {
                     lineDimension.dispose();
+                    lineDimension = null;
                 }
                 if (ndx !== null && ndx.size() > 0 ) {    
                     dc.filterAll();
                     ndx.remove();
                 }
 
-                // Remove references in dc chart registry
-                //dc.deregisterChart(allTestsChart);
                 // Clear SVG (similar to the resetSVG method, but don't recreate anything)
                 if (allTestsChart !== null) {
                     allTestsChart.select("svg").remove();
@@ -1150,15 +1138,18 @@ function drawChart(url) {
 
 
                 d3.selectAll("#chart").selectAll("svg").remove();
+                d3.selectAll("#range-chart").selectAll("svg").remove();
+                d3.selectAll("#ps-all-tests").selectAll("svg").remove();
                 d3.select('#legend').html('');
 
                 allTestsChart = null;
                 lineDimension = null;
-		rangeChart    = null;
+                rangeChart    = null;
                 ndx = null;
                 charts = null;
                 axes = null;
                 activeCharts = null;
+                active_objects = null;
 
             }
 
