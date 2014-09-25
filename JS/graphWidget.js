@@ -453,8 +453,12 @@ function drawChart(url) {
                 var ret = d;
                 if (this.max > 5) {
                     ret = Math.ceil(d);
+                } else if (this.max > 2) {
+                    ret = d3.format('.2f')(ret);
+                } else {
+                    ret = d3.format('.3f')(ret);
                 }
-                return ret; 
+                return ret;
             };
 
             // Ping charts
@@ -532,8 +536,8 @@ function drawChart(url) {
                         c.group = lineDimension.group().reduce.apply(lineDimension, make_functions(c.fieldName));
                         var topMin = c.group.order(avgOrderInv).top(1);
                         var topMax = c.group.order(avgOrder).top(1);
-                        if (typeof topMin === 'undefined' || typeof topMax === 'undefined' 
-                                || topMin.length == 0 || topMax.length == 0 || topMax[0].value.count == 0 ) {
+                        if (topMax[0].value.count == 0 ||
+                                isNaN( topMin[0].value.avg) || isNaN(topMax[0].value.avg) ) {
                             c.hasValues = false;
                         } else {
                             c.max =  c.group.order(avgOrder).top(1)[0].value.avg || 0;
@@ -821,6 +825,7 @@ function drawChart(url) {
             var warning_div = d3.select("#data_warning");
             warning_div.html('');
             var data_warning = '';
+
             if (charts.latency.min < 0 || charts.latency_rev.min < 0) {
                 data_warning += 'Negative latency values found in'; 
 
@@ -830,7 +835,7 @@ function drawChart(url) {
                     if (charts.latency.min < 0) {
                         data_warning += ' the forward direction.';
                     }
-                    if (charts.rev_latency.min < 0) {
+                    if (charts.latency_rev.min < 0) {
                         data_warning += ' the reverse direction.';
                     }                    
                 }
