@@ -1,5 +1,8 @@
+<body class="tundra">
+
 <style type="text/css">
 @import "JS/dojo/dijit/themes/tundra/tundra.css";
+@import "JS/dojo/dijit/themes/tundra/Dialog.css";
 </style>
 
 <link rel="stylesheet" href="css/style-toolkit.css" type="text/css" media="screen" />
@@ -35,6 +38,8 @@ dests.push("[% dest %]");
     <link rel="stylesheet" href="css/dc/dc.css" type="text/css" media="screen" />
     <link rel="stylesheet" href="/serviceTest/css/style.css" type="text/css" />
     <link rel="stylesheet" href="/serviceTest/css/spinner.css" type="text/css" media="screen" />
+    <link rel="stylesheet" href="JS/dojo/dijit/themes/tundra/Dialog.css" /> 
+    <link rel="stylesheet" href="JS/dojo/dijit/themes/tundra/form/Button.css" />
 
 
 <!-- <div id="body" class="dijitContentPane" dojotype="dijit.layout.ContentPane" widgetid="body"> -->
@@ -105,13 +110,39 @@ dests.push("[% dest %]");
                           <a href="#" id="1mLink" class="zoomLink" name="1m">1m</a> 
                           <a href="#" id="1yLink" class="zoomLink" name="1y">1y</a>
                 </div>
-       </div> 
+       </div>
        <div class="ps-timerange-nav" style="width: 700px; margin-left: auto; margin-right: auto;">
                 <div class="prev">
 		     <a href="#">Previous</a>
                 </div>
                 <div class="next">
                      <a href="#">Next</a>
+                </div>
+                <div id="ps-graph-options" class="ps-graph-options" style="float:right; margin: 0 0.75em; display:none;">
+                    <button id="graph_options_button" data-dojo-type="dijit/form/Button" type="button" style="display:none;">Options</button>
+                    <div data-dojo-type="dojox/widget/DialogSimple" data-dojo-id="optionsDialog" title="Chart Options" id="optionsDialog">
+                        <form id="chart_options_form">
+                        <table class="chart-options">
+                            <tr>
+                                <td>Latency</td> 
+                                <td><input type="checkbox" id="latency_min" name="latency_values" value="minimum" checked="checked" /></td>
+                                <td>Minimum</td>
+                                <td><input type="checkbox" id="latency_median" name="latency_values" value="median" /> </td>
+                                <td>Median</td>
+                            </tr>
+<!--
+                            <tr>
+                                <td>Loss</td>
+                                <td><input type="checkbox" id="log_scale_checkbox"></td>
+                                <td>Use log scale</td>
+                                <td></td>
+                                <td></td>
+                            </tr>
+-->
+                        </table>
+                        </form>
+                    </div>
+
                 </div>
 	        <div class="chartTimeRange" style="text-align: center; width: 350px; margin-left: auto; margin-right: auto;"></div>
 
@@ -146,4 +177,4 @@ dests.push("[% dest %]");
 </div>
 
 
-
+</body>

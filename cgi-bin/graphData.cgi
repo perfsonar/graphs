@@ -226,7 +226,7 @@ sub get_data {
         }
     }
 
-    # CONSOLIDATE BIDIRECTIONAL TESTS
+    # CONSOLIDATE ALL TESTS IN ONE DATASTRUCTURE
     my %consolidated;
 
     while (my ($src, $values) = each %results) {
@@ -234,8 +234,6 @@ sub get_data {
 
             foreach my $type (@mapped_event_types) {
                 next if $types_to_ignore{$type};
-
-                $consolidated{$src}{$dst}{$type} ||= [];
 
                 my $src_was_orig_src = grep {$_ eq $src} @sources;
                 my $dst_was_orig_src = grep {$_ eq $dst} @sources;
@@ -252,96 +250,36 @@ sub get_data {
                 elsif (exists $results{$src}{$dst}{$type} && $dst_was_orig_src){
                     $data_set   = $results{$src}{$dst}{$type};
                     $key_prefix = "dst"; 
+                } else {
+                    # result is not set, skip this row
+                    next;
                 }
-                
+
+                my $type_key = $type . '_' . $key_prefix;
+                $consolidated{$type_key} ||= [];
+
                 next unless ($data_set);
 
                 foreach my $data (@$data_set) {
-                    my $row = {};
+                    my @row;
 
                     while (my ($key, $val) = each %$data) {
-                        $row->{$key_prefix . "_" . $key} = $val;
+                        if ($key eq 'ts') {
+                            $row[0] = $val;
+                        } elsif ($key eq 'val') {
+                            $row[1] = $val;
+                        }
                     }
 
-                    push @{$consolidated{$src}{$dst}{$type}}, $row if $src_was_orig_src; 
-                    if ($dst_was_orig_src) {
-                        push @{$consolidated{$dst}{$src}{$type}}, $row;
-                    }
+                    push @{$consolidated{$type_key}}, \@row;
                 }               
-            }
-        }
-    }
-
-
-    # FLATTEN DATASTRUCTURE
-
-    my @flattened;
-
-    while (my ($src, $values) = each %consolidated){
-        while (my ($dst, $val_types) = each %$values) {
-
-            foreach my $type (@mapped_event_types) {
-                next if $types_to_ignore{$type};
-
-                foreach my $value (@{$consolidated{$src}{$dst}{$type}}) {
-
-                    my $row = {};
-
-                    # Iterate over ALL types in the request
-                    foreach my $all_type (@mapped_event_types) {
-                        next if $types_to_ignore{$all_type};
-                        $row->{$all_type . '_src_val'} = undef;
-                        $row->{$all_type . '_dst_val'} = undef;
-                    }
-
-                    my $ts  = $value->{'src_ts'};
-                    my $val = $value->{'src_val'};
-
-                    $row->{$type . "_src_val"} = $val;
-                    $row->{'ts'}      = $ts;
-                    $row->{'ts_date'} = localtime($ts) if $ts;
-
-                    my $dst_ts  = $value->{'dst_ts'};
-                    my $dst_val = $value->{'dst_val'};
-
-                    $row->{$type . "_dst_val"} = $dst_val;
-                    $row->{'ts'}      = $dst_ts if defined $dst_ts;
-                    $row->{'ts_date'} = localtime($dst_ts) if $dst_ts;
-
-                    $row->{'source'}      = $src;
-                    $row->{'destination'} = $dst;
-
-                    push @flattened, $row;
-                }
             }
         }
     }
 
     print $cgi->header('text/json');
 
-    if ($flatten == 1) { 
-        # This section consolidates based on same timestamp
-        # It may be good to try to make adjustments to better display stray points
-        # Sort by ts
-        @flattened = sort by_ts @flattened;
-        my $last_ts = 0;            
-        for(my $i = 0; $i < @flattened; $i++) {
-            my $row  = $flattened[$i];
-            if ($row->{ts} <= $last_ts) {
-                $flattened[$i-1] = combine_data($row, $flattened[$i-1]);
-                splice(@flattened, $i, 1);
-                $i--;
-
-            }
-            $last_ts = $row->{ts};
-
-        }
-        print to_json(\@flattened);
-    } 
-    else {
-        print to_json(\%consolidated);
-        #print to_json(\%results);
-    }
+    print to_json(\%consolidated);
 }
 
 

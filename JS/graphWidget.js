@@ -337,17 +337,11 @@ function drawChart(url) {
                     // Add        
                     function(p, v) {                
                         ++p.total_count;
-                        if ( v[param] !== null ) {
+                        if ( v[1] !== null ) {
                             ++p.count;
-                            p.sum += v[param];
+                            p.sum += v[1];
                             p.avg = p.sum/p.count;
-                            p.val = v[param];
-                            var re = /_src_val$/;
-                            if (re.test(param)) {
-                                p.retrans = v['packet_retransmits_src_val'] || 0;
-                            } else {
-                                p.retrans = v['packet_retransmits_dst_val'] || 0;
-                            }                             
+                            p.val = v[1];
                             p.isNull = false; 
                         } else {
                             // Mark p as null, but only if it hasn't already been flagged as not null
@@ -360,9 +354,9 @@ function drawChart(url) {
 
                     // Remove
                     function (p, v) {
-                        if ( v[param] !== null ) {
+                        if ( v[1] !== null ) {
                             --p.count;
-                            p.sum -= v[param];
+                            p.sum -= v[1];
                             p.avg = p.sum/p.count;
                         } 
                         return p;
@@ -514,11 +508,13 @@ function drawChart(url) {
 
                     // Set values that are different in the reverse direction
                     rev.name = 'Reverse ' + rev.name;
+                    rev.tableName = rev.fieldName + '_dst';
                     rev.fieldName = rev.fieldName + '_dst_val';
                     rev.direction = 'reverse';
                     rev.id = key + '_rev';
 
                     // Set values for forward direction
+                    c.tableName = c.fieldName + '_src';
                     c.fieldName = c.fieldName + '_src_val';
                     c.direction = 'normal';
                     c.id = key;
@@ -531,9 +527,14 @@ function drawChart(url) {
                     if (isFunction(c)) {
                         continue;
                     }
+
                     c.chart = dc.psLineChart(parentChart);
+
+                    if (!ps_data[c.tableName]) { continue; }
+                    c.crossfilter = crossfilter(ps_data[c.tableName]);
+                    c.dimension = c.crossfilter.dimension(function (d) { return new Date( d[0] * 1000); });
                     if (c.valType == 'avg') { 
-                        c.group = lineDimension.group().reduce.apply(lineDimension, make_functions(c.fieldName));
+                        c.group = c.dimension.group().reduce.apply(c.dimension, make_functions(c.fieldName));
                         var topMin = c.group.order(avgOrderInv).top(1);
                         var topMax = c.group.order(avgOrder).top(1);
                         if (topMax[0].value.count == 0 ||
@@ -545,7 +546,7 @@ function drawChart(url) {
                             c.hasValues = true;
                         }
                     } else if (c.valType == 'sum') {
-                        c.group = lineDimension.group().reduceSum(function(d) { return d[c.fieldName]; });
+                        c.group = c.dimension.group().reduceSum(function(d) { return d[1]; });
                         var topMin = c.group.order(valOrderInv).top(1);
                         var topMax = c.group.order(valOrder).top(1);
                         if (typeof topMin === 'undefined' || typeof topMax === 'undefined' 
@@ -816,6 +817,30 @@ function drawChart(url) {
                         });
             };
 
+            charts.getRangeValues = function() {
+                var activeObjects = this.getActiveObjects();
+                var total_values = {};
+                for (var i in activeObjects) {
+                    values = activeObjects[i].group.all();
+                    for (var j in values) {
+                        var ts = values[j].key;
+                        var value = values[j].value.avg;
+                        // normalize value based on max for type
+                        var max = activeObjects[i].unitMax;
+                        value = value/max;
+                        if ((total_values[ts] === null || typeof total_values[ts] === "undefined" || value > total_values[ts]) && !isNaN(value)) {
+                            total_values[ts] = {
+                                time: ts,
+                                value: value
+                            };
+                        }
+                    }
+                }
+                var keys = Object.keys(total_values);
+                var values = keys.map(function(v) { return total_values[v]; });
+                return values; 
+            }
+
             charts.createCharts();
             var maxThroughput = charts.throughput.typeMax;
             var minThroughput = charts.throughput.typeMin;
@@ -908,83 +933,33 @@ function drawChart(url) {
 
 	    var active_objects = charts.getActiveObjects();
 	    
-	    var rangeReducer = function(d){		
-		var val;
+        var rangeReducer = function(d) { return d.value; };
 
-		for (var k in d){
-		    if (d[k] === null || d[k] === undefined || d[k] < 0){
-			continue;
-		    }
+        var rangeValues = charts.getRangeValues();
+        var range_crossfilter;
+        if (typeof range_crossfilter !== 'undefined') {
+            range_crossfilter.remove();
+        }
+        range_crossfilter = crossfilter(rangeValues);
+        var rangeDimension = range_crossfilter.dimension(function(d) { return d.time; });
+        rangeChart.width(chart_width)
+            .height(60)
+            .margins({left: 69, top: 0, right: 40, bottom: 10})
+            .x(d3.time.scale().domain([start_date, end_date]))
+            .dimension(rangeDimension)
+            .yAxisLabel("")
+            .xAxisLabel("")
+            .gap(1)
+            .group(rangeDimension.group().reduceSum(rangeReducer), "rangegroup"); 
 
-		    var res = k.match(/(loss|owdelay|packet_trans|ping|throughput)/);
-		    if (! res){
-			continue;
-		    }	    
-
-		    var match = res[0];
-
-		    var active = false;
-
-
-		    for (var i = 0; i < active_objects.length; i++){			
-			if (active_objects[i].fieldName == k){
-			    active = true;
-			    break;
-			}
-		    }
-
-		    if (! active){
-			continue;
-		    }
-
-		    var inner_max;
-		    
-		    if (match == 'loss'){
-			inner_max = maxLoss;
-		    }
-		    if (match == 'owdelay'){
-			inner_max = maxDelay;
-		    }
-		    if (match == 'ping'){
-			inner_max = maxPing;
-		    }
-		    if (match == 'throughput'){
-			inner_max = maxThroughput;
-		    }
-		    
-		    if (inner_max == undefined || inner_max == 0){
-			continue;
-		    }		    
-
-		    var comparison = d[k] / inner_max;
-
-		    if (val == undefined || comparison > val){
-			val = comparison;
-		    }
-		}
-
-		return val;
-	    };
-
-
-	        rangeChart.width(chart_width)
-                .height(60)
-                .margins({left: 69, top: 0, right: 40, bottom: 10})
-                .x(d3.time.scale().domain([start_date, end_date]))
-                .dimension(lineDimension)
-                .yAxisLabel("")
-                .xAxisLabel("")
-                .gap(1)
-                .group(lineDimension.group().reduceSum(rangeReducer), "rangegroup"); 
-
-           function make_formatter(charts, index) { 
-               return function(d) { 
-                    var ret = charts.getAxes()[index].tickFormat( d * charts.getAxes()[index].max / yAxisMax );
-                    return ret;
-               }
+        function make_formatter(charts, index) { 
+            return function(d) { 
+                var ret = charts.getAxes()[index].tickFormat( d * charts.getAxes()[index].max / yAxisMax );
+                return ret;
             }
+        }
 
-           allTestsChart.yAxis().tickFormat(make_formatter(charts, 0));
+        allTestsChart.yAxis().tickFormat(make_formatter(charts, 0));
 
             function get_axes(axes) {
                 return function() { return axes; };
@@ -1141,6 +1116,7 @@ function drawChart(url) {
 			var timePeriod = e.currentTarget.name;
 			dojo.query('#chart #time-selector a.zoomLink').removeClass('active');
 			dojo.addClass(e.currentTarget, 'active');			
+			add_to_hash('timeframe', timePeriod);
 			reloadChart(timePeriod);
 		    });
         zoom_registered = true;

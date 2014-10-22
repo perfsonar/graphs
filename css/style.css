@@ -322,6 +322,10 @@ div#legend {
     border-style: dotted;
 }
 #chartError { margin: 0.5em 0; }
+/*.chart-options td { margin:3px 1em;  } */
+.chart-options td input[type="radio"], input[type="checkbox"] {
+    margin: 3px 0.1em 3px 1.5em;
+}
 #data_warning { margin:5px auto 0 auto; width:710px; font-size:10px; color:#9f6000; }
 #data_warning.status { padding: 5px 10px 5px 10px; line-height:120%; background-image:none; }
 .psGraphError { color:#ff0000; }
