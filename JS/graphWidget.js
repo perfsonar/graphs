@@ -260,6 +260,7 @@ var next_prev_registered = false;
 
 function drawChart(url) {
 
+
     loading.style('display', 'block');
 
     d3.json(url, function(error,ps_data) {
@@ -281,7 +282,7 @@ function drawChart(url) {
 			start_ts = start_ts - time_diff;
 			add_to_hash('start_ts', start_ts);
 			add_to_hash('end_ts', end_ts);
-			add_to_hash('timeframe', timePeriod);
+			add_to_hash('timeframe', get_hash_val('timeframe'));
 			var new_url = base_url + '&start=' + start_ts + '&end=' + end_ts + '&window=' + summary_window;
 			cleanupObjects();
 			drawChart(new_url);
@@ -300,7 +301,7 @@ function drawChart(url) {
 			}
 			add_to_hash('start_ts', start_ts);
 			add_to_hash('end_ts', end_ts);
-			add_to_hash('timeframe', timePeriod);
+			add_to_hash('timeframe', get_hash_val('timeframe'));
 			var new_url = base_url +'&start=' + start_ts + '&end=' + end_ts + '&window=' + summary_window;
 			cleanupObjects();
 			drawChart(new_url);
@@ -309,19 +310,19 @@ function drawChart(url) {
 	    }
 
 	    if (end_ts >= now ) {
-		nextLink.style('display', 'none');
+		    nextLink.style('display', 'none');
 	    }
 	    
-            prevLink.html('<a href="#">Previous ' + timePeriod + '</a>');
-            nextLink.html('<a href="#">Next ' + timePeriod + '</a>');
-            if (timePeriod != '') {
-                dojo.query('#chart #time-selector a.zoomLink').removeClass('active');
-                dojo.query('#chart #time-selector a.zoomLink').forEach(function(node, index, nodelist) {
-                        if(node.name == timePeriod) {
-			    dojo.addClass(node, "active");
-                        }
-		    });
-            }
+        prevLink.html('<a href="#">Previous ' + timePeriod + '</a>');
+        nextLink.html('<a href="#">Next ' + timePeriod + '</a>');
+        if (timePeriod != '') {
+            dojo.query('#chart #time-selector a.zoomLink').removeClass('active');
+            dojo.query('#chart #time-selector a.zoomLink').forEach(function(node, index, nodelist) {
+                    if(node.name == timePeriod) {
+                    dojo.addClass(node, "active");
+                    }
+                    });
+        }
 	    
             var start_date = new Date (start_ts * 1000);
             var end_date = new Date (end_ts * 1000);
@@ -726,17 +727,17 @@ function drawChart(url) {
                             var theType = c.type + (c.direction == 'reverse' ? '_rev' : '');
                             var cb = d3.select('#' + theType + "_checkbox");
                             if (cb !== null && !cb.empty()) {
-                                cb.on("change", this.checkboxCallBack);
+                                    cb.on("change", this.checkboxCallBack);
                                 if (get_hash_val('hide_' + theType) == 'true') {
                                     cb.property('checked', false);                                
                                 } else {
                                     cb.property('checked', true);
                                 }
-
+                            }
                                 if (cb.property('checked') == false) {
                                     continue;
                                 } 
-                            }
+                            
                             theCharts.push(c);
                         }
 
@@ -826,9 +827,10 @@ function drawChart(url) {
                         var ts = values[j].key;
                         var value = values[j].value.avg;
                         // normalize value based on max for type
-                        var max = activeObjects[i].unitMax;
+                        var max = Math.abs(activeObjects[i].unitMax);
                         value = value/max;
-                        if ((total_values[ts] === null || typeof total_values[ts] === "undefined" || value > total_values[ts]) && !isNaN(value)) {
+                        if (value < 0) { value = 0; }
+                        if ((total_values[ts] === null || typeof total_values[ts] === "undefined" || value > total_values[ts].value) && !isNaN(value)) {
                             total_values[ts] = {
                                 time: ts,
                                 value: value
@@ -1037,15 +1039,15 @@ function drawChart(url) {
                 var svgSel = allTestsChart.svg();
                 var dcLegendEvents = svgSel.selectAll('.dc-legend-item').on('click', function(e, i) {
                         if (chartStates[i] === undefined || chartStates[i] === true) {
-			    e.chart.defined(function(d) { return false; });
-			    chartStates[i] = false;
-			    d3.event.target.style.fill = 'gray';
+                            e.chart.defined(function(d) { return false; });
+                            chartStates[i] = false;
+                            d3.event.target.style.fill = 'gray';
                         } else {
-			    e.chart.defined(function(d) { return true; });
-			    chartStates[i] = true;
-			    d3.event.target.style.fill = 'black';
+                            e.chart.defined(function(d) { return true; });
+                            chartStates[i] = true;
+                            d3.event.target.style.fill = 'black';
                         }
-			
+
                         allTestsChart.render();
                         postRenderTasks();
                         });
@@ -1103,9 +1105,9 @@ function drawChart(url) {
 
                 cleanupObjects();
 
-                drawChart(url);
                 setHeader();
                 set_share_url();
+                drawChart(url);
                 return;
             }
 
@@ -1117,6 +1119,10 @@ function drawChart(url) {
 			dojo.query('#chart #time-selector a.zoomLink').removeClass('active');
 			dojo.addClass(e.currentTarget, 'active');			
 			add_to_hash('timeframe', timePeriod);
+            remove_from_hash('start_ts'); 
+            remove_from_hash('end_ts'); 
+            remove_from_hash('zoom_start');
+            remove_from_hash('zoom_end');             
 			reloadChart(timePeriod);
 		    });
         zoom_registered = true;
