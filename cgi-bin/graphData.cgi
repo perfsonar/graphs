@@ -3,6 +3,9 @@
 use strict;
 use warnings;
 
+use threads;
+use threads::shared;
+
 use CGI;
 use Config::General;
 use JSON;
@@ -18,8 +21,6 @@ use Socket qw( AF_INET AF_INET6 );
 use Socket6;
 use Data::Validate::IP;
 use Log::Log4perl qw(get_logger :easy :levels);
-
-#use Devel::NYTProf;
 
 #use lib "$FindBin::Bin/../../../../lib";
 use lib "$FindBin::RealBin/../lib";
@@ -85,150 +86,77 @@ sub get_data {
     }
 
     my @base_event_types   = ('throughput', 'histogram-owdelay', 'packet-loss-rate', 'packet-retransmits', 'histogram-rtt');
-    my @mapped_event_types = ('throughput', 'owdelay', 'loss', 'packet_retransmits', 'ping');
-
-    my $flatten = 1;
-    $flatten = $cgi->param('flatten') if (defined $cgi->param('flatten'));
+    my @mapped_event_types = ('throughput', 'owdelay', 'loss', 'packet_retransmits', 'ping', 'owdelay_minimum', 'owdelay_median', 'ping_minimum', 'ping_maximum');
 
     my %results;
     my %types_to_ignore = ();
 
+    share(%types_to_ignore);
 
-        for (my $j = 0; $j < @sources; $j++){
-            foreach my $ordered ([$sources[$j], $dests[$j]], [$dests[$j], $sources[$j]]){
-                my ($test_src, $test_dest) = @$ordered;
+    my @threads;
 
-                my $filter = new perfSONAR_PS::Client::Esmond::ApiFilters();
-                $filter->source($test_src);
-                $filter->destination($test_dest);
+    for (my $j = 0; $j < @sources; $j++){
+	foreach my $ordered ([$sources[$j], $dests[$j]], [$dests[$j], $sources[$j]]){
+	    my ($test_src, $test_dest) = @$ordered;
+	    
+	    my $thread = threads->create(\&_get_test_data,
+					 $test_src,
+					 $test_dest,
+					 $start,
+					 $end,
+					 $summary_window,
+					 $urls[$j],
+					 \@base_event_types,
+					 \@mapped_event_types,
+					 \%types_to_ignore
+		);
+	    
+	    push(@threads, $thread);	   	    
+	}
+    }
+    
+    foreach my $thread (@threads){
+	my $ret_array = $thread->join();
+	error("Error fetching data") if (! $ret_array);		
 
-                my $client = new perfSONAR_PS::Client::Esmond::ApiConnect(url     => $urls[$j],
-                    filters => $filter);
+	foreach my $ret (@$ret_array){
 
-                my $metadata = $client->get_metadata();
-
-                error($client->error) if ($client->error);
-
-                foreach my $metadatum (@$metadata) {
-                    for (my $i = 0; $i < @base_event_types; $i++){
-                        my $event_type = $base_event_types[$i];
-
-                        my $event = $metadatum->get_event_type($event_type);
-
-                        next if !$event;
-
-                        $event->filters->time_start($start);
-                        $event->filters->time_end($end);
-                        my $source_host = $metadatum->input_source();
-                        my $destination_host = $metadatum->input_destination();
-                        my $tool_name = $metadatum->tool_name();
-
-                        #my @data_points;
-                        my $data;
-                        my $total = 0;
-                        my $average;
-                        my $min = undef;
-                        my $max = undef; 
-                        my $multiple_values = 0;
-                        my @summary_fields = ();
-                        my $summary_type = 'none';
-
-                        if ($event_type eq 'histogram-owdelay' || $event_type eq 'histogram-rtt') {
-                            my $stats_summ;
-                            $summary_type = 'statistics';
-                            my $req_summary_window = select_summary_window($event_type, $summary_type, $summary_window, $event);
-
-                            $stats_summ = $event->get_summary($summary_type, $req_summary_window);
-                            error($event->error) if ($event->error);
-                            $multiple_values = 1;
-                            @summary_fields = ( 'minimum', 'median' );
-                            $data = $stats_summ->get_data() if defined $stats_summ;
-                            if (defined($data) && @$data > 0){
-                                foreach my $datum (@$data){
-                                    $total += $datum->val->{mean};
-                                    $max = $datum->val->{maximum} if !defined($max) || $datum->val->{maximum} > $max;
-                                    $min = $datum->val->{minimum} if !defined($min) || $datum->val->{minimum} < $min;
-                                }
-                                $average = $total / @$data;
-                            }
-                        } 
-                        else {
-                            if ($event_type eq 'packet-loss-rate') {
-                                $summary_type = 'aggregation';
-                                my $req_summary_window = select_summary_window($event_type, $summary_type, $summary_window, $event);
-                                if ($req_summary_window != -1) {
-                                    my $stats_summ = $event->get_summary($summary_type, $req_summary_window);
-                                    error($event->error) if ($event->error);
-                                    $data = $stats_summ->get_data() if defined $stats_summ;
-                                } else {
-                                    $data = $event->get_data();
-                                }
-                            } 
-                            else {
-                                $data = $event->get_data();
-                            }
-                            if (defined($data) && @$data > 0) {
-                                foreach my $datum (@$data){
-                                    $total += $datum->val;
-                                    $max = $datum->val if !defined($max) || $datum->val > $max;
-                                    $min = $datum->val if !defined($min) || $datum->val < $min;
-                                }
-                                $average = $total / @$data;
-                            }
-                        }
-
-                        # Figure out how to map into prettier names that don't reveal
-                        # underlying constructs			    	    		   
-                        my $remapped_name = $mapped_event_types[$i];
-
-                        my @data_points = ();
-                        my %additional_data = ();
-                        foreach my $datum (@$data){
-                            my $ts = $datum->ts;
-                            my $val;
-                            my $median_val;
-                            if ($multiple_values) {
-                                $types_to_ignore{$remapped_name} = 1;
-                                my @indices = grep $mapped_event_types[$_] eq $remapped_name, 0..$#mapped_event_types;
-                                foreach my $field(@summary_fields) {
-                                    my $key = $remapped_name . '_' . $field;
-                                    push @mapped_event_types, $key if !grep {$_ eq $key} @mapped_event_types;
-                                    push @{$additional_data{$key}}, {'ts' => $ts, 'val' => $datum->{val}->{$field}};
-                                }
-                            } else {    
-                                $val = $datum->val;
-                                push(@data_points, {'ts' => $ts, 'val' => $val});		    
-                            }
-                        }
-
-                        if (!$multiple_values) {
-                            if (exists($results{$test_src}{$test_dest}{$remapped_name}) && @{$results{$test_src}{$test_dest}{$remapped_name}} > 0) { 
-                                my @existing_data_points = @{$results{$test_src}{$test_dest}{$remapped_name}};
-                                @data_points = (@existing_data_points, @data_points);
-                            }
-                            $results{$test_src}{$test_dest}{$remapped_name} = \@data_points if @data_points > 0; 
-
-                        } else {
-                            if (@summary_fields > 0 && keys(%additional_data) > 0) {
-                                while (my ($key, $values) = each (%additional_data)) {
-                                    my @new_data_points = ();
-                                    @new_data_points = @$values;
-                                    if (exists($results{$test_src}{$test_dest}{$key}) && @{$results{$test_src}{$test_dest}{$key}} > 0) { 
-                                        my @existing_data_points = @{$results{$test_src}{$test_dest}{$key}};
-                                        @new_data_points = (@existing_data_points, @new_data_points);
-                                    }
-                                    $results{$test_src}{$test_dest}{$key} = \@new_data_points if @new_data_points > 0; 
-                                }                        
-                            }
-                        }
-                    }
-                }
-        }
+	    my $test_src        = $ret->{'test_src'};
+	    my $test_dest       = $ret->{'test_dest'};
+	    my $multiple_values = $ret->{'multiple_values'};
+	    my $remapped_name   = $ret->{'remapped_name'};
+	    my @data_points     = @{$ret->{'data'}};
+	    my @summary_fields  = @{$ret->{'summary_fields'}};
+	    my %additional_data = %{$ret->{'additional_data'}};
+	    
+	    
+	    if (!$multiple_values) {
+		if (exists($results{$test_src}{$test_dest}{$remapped_name}) && @{$results{$test_src}{$test_dest}{$remapped_name}} > 0) { 
+		    my @existing_data_points = @{$results{$test_src}{$test_dest}{$remapped_name}};
+		    @data_points = (@existing_data_points, @data_points);
+		}
+		$results{$test_src}{$test_dest}{$remapped_name} = \@data_points if @data_points > 0; 
+	    
+	    } 
+	    else {
+		if (@summary_fields > 0 && keys(%additional_data) > 0) {
+		    while (my ($key, $values) = each (%additional_data)) {
+			my @new_data_points = ();
+			@new_data_points = @$values;
+			if (exists($results{$test_src}{$test_dest}{$key}) && @{$results{$test_src}{$test_dest}{$key}} > 0) { 
+			    my @existing_data_points = @{$results{$test_src}{$test_dest}{$key}};
+			    @new_data_points = (@existing_data_points, @new_data_points);
+			}
+			$results{$test_src}{$test_dest}{$key} = \@new_data_points if @new_data_points > 0; 
+		    }                        
+		}
+	    }
+	}
     }
 
     # CONSOLIDATE ALL TESTS IN ONE DATASTRUCTURE
     my %consolidated;
-
+    
     while (my ($src, $values) = each %results) {
         while (my ($dst, $result_types) = each %$values) {
 
@@ -282,6 +210,139 @@ sub get_data {
     print to_json(\%consolidated);
 }
 
+sub _get_test_data {
+    my $test_src           = shift;
+    my $test_dest          = shift;
+    my $start              = shift;
+    my $end                = shift;
+    my $summary_window     = shift;
+    my $url                = shift;
+    my $base_event_types   = shift;
+    my $mapped_event_types = shift;
+    my $types_to_ignore    = shift;
+
+    my @mapped_event_types = @$mapped_event_types;
+
+    my $filter = new perfSONAR_PS::Client::Esmond::ApiFilters();
+    $filter->source($test_src);
+    $filter->destination($test_dest);
+    
+    my $client = new perfSONAR_PS::Client::Esmond::ApiConnect(url     => $url,
+							      filters => $filter);
+
+    my $metadata = $client->get_metadata();
+    
+    if ($client->error){
+	warn $client->error;
+	return undef;
+    }
+
+    my @return_values;
+    
+    foreach my $metadatum (@$metadata) {
+	for (my $i = 0; $i < @$base_event_types; $i++){
+	    my $event_type = $base_event_types->[$i];
+	    
+	    my $event = $metadatum->get_event_type($event_type);			    
+	    next if !$event;
+	    
+	    # Figure out how to map into prettier names that don't reveal
+	    # underlying constructs			    	    		   
+	    my $remapped_name = $mapped_event_types[$i];
+
+	    $event->filters->time_start($start);
+	    $event->filters->time_end($end);
+	    my $source_host = $metadatum->input_source();
+	    my $destination_host = $metadatum->input_destination();
+	    my $tool_name = $metadatum->tool_name();
+	    
+	    #my @data_points;
+	    my $data;
+	    my $total = 0;
+	    my $average;
+	    my $min = undef;
+	    my $max = undef; 
+	    my $multiple_values = 0;
+	    my @summary_fields = ();
+	    my $summary_type = 'none';
+	    
+	    if ($event_type eq 'histogram-owdelay' || $event_type eq 'histogram-rtt') {
+		my $stats_summ;
+		$summary_type = 'statistics';
+		my $req_summary_window = select_summary_window($event_type, $summary_type, $summary_window, $event);
+		
+		$stats_summ = $event->get_summary($summary_type, $req_summary_window);
+		error($event->error) if ($event->error);
+		$multiple_values = 1;
+		@summary_fields = ( 'minimum', 'median' );
+		$data = $stats_summ->get_data() if defined $stats_summ;
+		if (defined($data) && @$data > 0){
+		    foreach my $datum (@$data){
+			$total += $datum->val->{mean};
+			$max = $datum->val->{maximum} if !defined($max) || $datum->val->{maximum} > $max;
+			$min = $datum->val->{minimum} if !defined($min) || $datum->val->{minimum} < $min;
+		    }
+		    $average = $total / @$data;
+		}
+	    } 
+	    else {
+		if ($event_type eq 'packet-loss-rate') {
+		    $summary_type = 'aggregation';
+		    my $req_summary_window = select_summary_window($event_type, $summary_type, $summary_window, $event);
+		    if ($req_summary_window != -1) {
+			my $stats_summ = $event->get_summary($summary_type, $req_summary_window);
+			error($event->error) if ($event->error);
+			$data = $stats_summ->get_data() if defined $stats_summ;
+		    } else {
+			$data = $event->get_data();
+		    }
+		} 
+		else {
+		    $data = $event->get_data();
+		}
+		if (defined($data) && @$data > 0) {
+		    foreach my $datum (@$data){
+			$total += $datum->val;
+			$max = $datum->val if !defined($max) || $datum->val > $max;
+			$min = $datum->val if !defined($min) || $datum->val < $min;
+		    }
+		    $average = $total / @$data;
+		}
+	    }
+	    
+	    my @data_points = ();
+	    my %additional_data = ();
+	    foreach my $datum (@$data){
+		my $ts = $datum->ts;
+		my $val;
+		my $median_val;
+		if ($multiple_values) {
+		    $types_to_ignore->{$remapped_name} = 1;	    
+		    foreach my $field(@summary_fields) {
+			my $key = $remapped_name . '_' . $field;
+            #push @mapped_event_types, $key if !grep {$_ eq $key} @mapped_event_types;
+			push @{$additional_data{$key}}, {'ts' => $ts, 'val' => $datum->{val}->{$field}};
+		    }
+		} else {    
+		    $val = $datum->val;
+		    push(@data_points, {'ts' => $ts, 'val' => $val});		    
+		}
+	    }
+
+	    push(@return_values,  {
+		test_src           => $test_src,
+		test_dest          => $test_dest,
+		data               => \@data_points,
+		multiple_values    => $multiple_values,
+		remapped_name      => $remapped_name,
+		additional_data    => \%additional_data,
+		summary_fields     => \@summary_fields
+		 });
+	}
+    }		
+    
+    return \@return_values;
+}
 
 # has_traceroute_data is the webservice that is called to see if a source/dest pair
 # has traceroute data defined in the specified MA
@@ -815,10 +876,6 @@ sub error {
     print $err;
 
     exit 1;
-}
-
-sub by_ts {
-    $a->{ts} <=> $b->{ts};
 }
 
 sub select_summary_window {
