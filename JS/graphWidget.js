@@ -6,7 +6,7 @@ var now = Math.round(new Date().getTime() / 1000);
 var timePeriod = ioQuery.queryToObject(theHash()).timeframe || '1w';  // get hash
 var time_diff = 0;
 var summary_window = 0;
-
+var field_name;
 
 var setTimeVars = function (period) {
 
@@ -275,6 +275,25 @@ function drawChart(url) {
 	    var prevLink = d3.selectAll('.ps-timerange-nav .prev');	 		
 	    var nextLink = d3.selectAll('.ps-timerange-nav .next');
 
+        var retransmits_src = {};
+        var retransmits_dst = {};
+        if (ps_data.packet_retransmits_src) {
+            for (var i=0; i < ps_data.packet_retransmits_src.length; i++) {
+                var ts = ps_data.packet_retransmits_src[i][0];
+                var val = ps_data.packet_retransmits_src[i][1];
+                retransmits_src[ts] = val;
+            }
+
+        }
+        if (ps_data.packet_retransmits_dst) {
+            for (var i=0; i < ps_data.packet_retransmits_dst.length; i++) {
+                var ts = ps_data.packet_retransmits_dst[i][0];
+                var val = ps_data.packet_retransmits_dst[i][1];
+                retransmits_dst[ts] = val;
+            }
+
+        }
+
 	    if (! next_prev_registered){
 		prevLink.on("click", function() { 
 			d3.event.preventDefault(); 			
@@ -338,12 +357,19 @@ function drawChart(url) {
                     // Add        
                     function(p, v) {                
                         ++p.total_count;
+                        console.log(field_name);
                         if ( v[1] !== null ) {
                             ++p.count;
                             p.sum += v[1];
                             p.avg = p.sum/p.count;
                             p.val = v[1];
                             p.isNull = false; 
+                            if (field_name == 'throughput_src_val') {
+                                p.retrans = retransmits_src[v[0]] || 0;
+                            }
+                            if (field_name == 'throughput_dst_val') {
+                                p.retrans = retransmits_dst[v[0]] || 0;
+                            }
                         } else {
                             // Mark p as null, but only if it hasn't already been flagged as not null
                             if (!p.isNull) { 
@@ -535,6 +561,7 @@ function drawChart(url) {
                     c.crossfilter = crossfilter(ps_data[c.tableName]);
                     c.dimension = c.crossfilter.dimension(function (d) { return new Date( d[0] * 1000); });
                     if (c.valType == 'avg') { 
+                        field_name = c.fieldName;
                         c.group = c.dimension.group().reduce.apply(c.dimension, make_functions(c.fieldName));
                         var topMin = c.group.order(avgOrderInv).top(1);
                         var topMax = c.group.order(avgOrder).top(1);
