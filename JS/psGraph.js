@@ -73,7 +73,11 @@ require(["dijit/Dialog", "dijit/form/Button", "dojo/domReady!", "dojox/widget/Di
                 var inactive_threshold = now_seconds - 86400 * 7; // now minus 7 days
                 var order = 'asc';
 
-                dataTable.on("postRender", function(chart){ d3.select('#loading').style('display', 'none');  });
+                dataTable.on("postRender", function(chart){ d3.select('#loading').style('display', 'none'); 
+                    order = 'desc';
+                    set_sort('source_name');
+                        
+                        });
 
                 dataTable.renderlet(function(table) {
                     var rows = d3.selectAll('#summaryTable tr.dc-table-row');
@@ -95,11 +99,11 @@ require(["dijit/Dialog", "dijit/form/Button", "dojo/domReady!", "dojox/widget/Di
                 var destDiv = d3.select('#destHeader span.sort');
 
                 sourceHeader.on('click', function(node){ 
-                        set_sort('source');
+                        set_sort('source_name');
                         } );
 
                 destHeader.on('click', function(node){ 
-                        set_sort('destination');
+                        set_sort('destination_name');
                         } );
 
                 var set_sort = function(sort_field) {
@@ -115,7 +119,7 @@ require(["dijit/Dialog", "dijit/form/Button", "dojo/domReady!", "dojox/widget/Di
                         // order is currently asc, change to desc
                         order = 'desc';
                         dataTable.order(d3.descending);
-                        if (sort_field == 'source') {
+                        if (sort_field == 'source_name') {
                             sourceDiv.classed("desc", true);
                         } else {
                             destDiv.classed("desc", true);
@@ -124,7 +128,7 @@ require(["dijit/Dialog", "dijit/form/Button", "dojo/domReady!", "dojox/widget/Di
                         // order is currently desc, change to asc
                         order = 'asc';
                         dataTable.order(d3.ascending);
-                        if (sort_field == 'source') {
+                        if (sort_field == 'source_name') {
                             sourceDiv.classed("asc", true);
                         } else {
                             destDiv.classed("asc", true);
@@ -157,6 +161,7 @@ require(["dijit/Dialog", "dijit/form/Button", "dojo/domReady!", "dojox/widget/Di
                     ]);
                     d3.selectAll('.detailedOnly').style('display', 'none');
                 }
+
 
                 var format_stats = function(d, prefix) {
                     var format_str = '';
@@ -275,6 +280,7 @@ require(["dijit/Dialog", "dijit/form/Button", "dojo/domReady!", "dojox/widget/Di
                     } else {
                         ret = d[type];
                     }
+                    d[type + '_name'] = ret;
                     if (d.last_updated < inactive_threshold) {
                         ret = '<span class="inactive">' + ret + '</span>';
                     }
@@ -291,8 +297,9 @@ require(["dijit/Dialog", "dijit/form/Button", "dojo/domReady!", "dojox/widget/Di
                         ret = d['loss_' + type + '_host']; 
                     }
                     ret += '  (' + d[type]  + ')';
+                            d[type + '_name'] = ret;
                             return ret;                                    
-                            }
+                }
 
                             var format_bidirectional = function(d) {
                             var ret = '';
