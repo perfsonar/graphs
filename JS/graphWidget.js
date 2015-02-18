@@ -1,4 +1,4 @@
-require(["dojo/parser", "dijit/registry", "dojo/dom-style", "dojo/dom", "dojo/on", "dojo/hash", "dojo/io-query", "dojo/_base/connect", "dojo/_base/event", "dijit/form/TextBox", "dojo/domReady!"], function(parser, registry, domStyle, theDom, theOn, theHash, ioQuery, connect, event, TextBox, ready){
+require(["dojo/parser", "dijit/registry", "dojo/dom-style", "dojo/dom", "dojo/on", "dojo/hash", "dojo/io-query", "dojo/_base/connect", "dojo/_base/event", "dijit/form/TextBox", "dijit/TooltipDialog", "dijit/popup", "dojo/dom-geometry", "dojo/domReady!"], function(parser, registry, domStyle, dom, on, theHash, ioQuery, connect, event, TextBox, TooltipDialog, popup, domGeom){
 
 var ma_url = '';
 var now = Math.round(new Date().getTime() / 1000);
@@ -6,7 +6,7 @@ var now = Math.round(new Date().getTime() / 1000);
 var timePeriod = ioQuery.queryToObject(theHash()).timeframe || '1w';  // get hash
 var time_diff = 0;
 var summary_window = 0;
-var field_name;
+var tooltips = [];
 
 var setTimeVars = function (period) {
 
@@ -275,6 +275,14 @@ function drawChart(url) {
 	    var prevLink = d3.selectAll('.ps-timerange-nav .prev');	 		
 	    var nextLink = d3.selectAll('.ps-timerange-nav .next');
 
+            var errorDiv = d3.select('#chartError');
+            // No data to plot
+            if (typeof ps_data == 'undefined' || ps_data.length == 0) {
+                //cleanupObjects(); 
+                errorDiv.html('Error retrieving data from the webservice.');
+                d3.select('#legend').html('');
+           } else {
+
         var retransmits_src = {};
         var retransmits_dst = {};
         if (ps_data.packet_retransmits_src) {
@@ -293,6 +301,24 @@ function drawChart(url) {
             }
 
         }
+      
+        var error_tool_src = {}; 
+        var error_tool_dst = {}; 
+        if (ps_data.error_tool_src) {
+            for (var i=0; i < ps_data.error_tool_src.length; i++) {
+                var ts = ps_data.error_tool_src[i][0];
+                var val = ps_data.error_tool_src[i][1];
+                error_tool_src[ts] = val;
+            }
+        }
+        if (ps_data.error_tool_dst) {
+            for (var i=0; i < ps_data.error_tool_dst.length; i++) {
+                var ts = ps_data.error_tool_dst[i][0];
+                var val = ps_data.error_tool_dst[i][1];
+                error_tool_dst[ts] = val;
+            }
+        }
+        
 
 	    if (! next_prev_registered){
 		prevLink.on("click", function() { 
@@ -352,12 +378,11 @@ function drawChart(url) {
             var ndx = crossfilter(ps_data);
             var lineDimension = ndx.dimension(function (d) { return new Date( d.ts * 1000); });
 
-            function make_functions(param) {
+            function make_functions(field_name) {
                 return [
                     // Add        
                     function(p, v) {                
                         ++p.total_count;
-                        console.log(field_name);
                         if ( v[1] !== null ) {
                             ++p.count;
                             p.sum += v[1];
@@ -369,6 +394,20 @@ function drawChart(url) {
                             }
                             if (field_name == 'throughput_dst_val') {
                                 p.retrans = retransmits_dst[v[0]] || 0;
+                            }
+                            if (field_name == 'error_src_val') {
+                                p.sum = 1;
+                                p.val = 1;
+                                p.error_text = v[1];
+                                p.avg = 1; 
+                                p.tool = error_tool_src[v[0]] || '';
+                            }
+                            if (field_name == 'error_dst_val') {
+                                p.sum = 1;
+                                p.val = 1;
+                                p.error_text = v[1];
+                                p.avg = 1; 
+                                p.tool = error_tool_dst[v[0]] || '';
                             }
                         } else {
                             // Mark p as null, but only if it hasn't already been flagged as not null
@@ -518,6 +557,20 @@ function drawChart(url) {
             charts.retrans.tickFormat = function(d) { return d };
             charts.retrans.hide = true; 
 
+            // Error charts 
+            
+            charts.errors = {};
+            charts.errors.name = 'Errors';
+            charts.errors.type = 'errors';
+            charts.errors.unit = 'errors';
+            charts.errors.fieldName = 'error';
+            charts.errors.valType = 'value';
+            charts.errors.color = '#ff0000'; 
+            charts.errors.showByDefault = true;
+            charts.errors.tickFormat = function(d) { return d };
+            charts.errors.hide = false; 
+            charts.errors.chart_type = 'bubble';
+
             var parentChart = allTestsChart;
 
             charts.createReverseCharts = function() {
@@ -555,13 +608,16 @@ function drawChart(url) {
                         continue;
                     }
 
-                    c.chart = dc.psLineChart(parentChart);
+                    if (c.chart_type == 'bubble') {
+                        c.chart = dc.bubbleChart(parentChart);
+                    } else {
+                        c.chart = dc.psLineChart(parentChart);
+                    }
 
                     if (!ps_data[c.tableName]) { continue; }
                     c.crossfilter = crossfilter(ps_data[c.tableName]);
                     c.dimension = c.crossfilter.dimension(function (d) { return new Date( d[0] * 1000); });
                     if (c.valType == 'avg') { 
-                        field_name = c.fieldName;
                         c.group = c.dimension.group().reduce.apply(c.dimension, make_functions(c.fieldName));
                         var topMin = c.group.order(avgOrderInv).top(1);
                         var topMax = c.group.order(avgOrder).top(1);
@@ -585,6 +641,16 @@ function drawChart(url) {
                             c.min = c.group.order(valOrderInv).top(1)[0].value;
                             c.hasValues = true;
                         }
+                    } else if (c.valType == 'value') {
+                        c.group = c.dimension.group().reduce.apply(c.dimension, make_functions(c.fieldName));
+                        c.hasValues = false;
+                        c.min = 0;
+                        c.max = 0;
+                        if (c.group.size() > 0) {
+                            c.hasValues = true;
+                            c.max = 1;
+                        }
+
                     }
                     var type = this[c.type];
 
@@ -652,10 +718,9 @@ function drawChart(url) {
                 if (isFunction(c)) {
                     return;
                 }
-                c.chart = dc.psLineChart(parentChart);
                 // The groups were created above, but we have to add them here
                 c.chart.group(c.group, c.name);
-                if (c.valType == 'avg') { 
+                if (c.valType == 'avg') {
                     c.chart.valueAccessor(function (d) { return yAxisMax * d.value.avg / c.unitMax; });
                     if (c.type == 'loss') {
                         c.chart.valueAccessor(function(d) { 
@@ -686,13 +751,26 @@ function drawChart(url) {
                     c.chart.valueAccessor(function(d) { return yAxisMax * d.value / c.unitMax; }); 
                     c.title = function(d) { return c.name + ': ' + format_values(d.value, c.type)
                         + "\n" + format_values(d.key, 'ts'); };
+                } else if (c.valType == 'value') {
+                    // Set value to yAxisMax to display the errors at the top of the chart
+                    c.chart.valueAccessor(function(d) { return yAxisMax; });
+                    // Leaving the title here commented out in case we want to go back to the native tooltip
+                    //c.title = function(d) { return 'Error from ' + d.value.tool + ":\n" + d.value.error_text + "\n" + format_values(d.key, 'ts'); };
+                    c.title = function(d) { return ''; };
+                    c.chart.renderTitle(false); // we rolled our own tooltips 
+                    c.chart.radiusValueAccessor(function (d) { return 1.5; });
+                    c.chart.MIN_RADIUS = 2;
+                    c.chart.label(function (d) { return ''; });
+                    // By setting the chart's filter function to empty,
+                    // we disable the filter on click default event handling
+                    c.chart.filter = function(e) { };
                 }
                 var type = this[c.type];
                 if (c.valueAccessor) { c.chart.valueAccessor(c.valueAccessor) };
                 if (c.tickFormat) { c.chart.yAxis().tickFormat(c.tickFormat); }
                 c.chart.colors(c.color);
                 c.chart.title(c.title);
-                if (c.direction == 'reverse') {
+                if (c.direction == 'reverse' && c.chart_type != 'bubble') {
                     c.chart.dashStyle([3, 3]);
                     c.dashstyle = [3, 3];
                 } 
@@ -753,7 +831,7 @@ function drawChart(url) {
                             var c = this[type + direction];                            
                             var theType = c.type + (c.direction == 'reverse' ? '_rev' : '');
                             var cb = d3.select('#' + theType + "_checkbox");
-                            if (cb !== null && !cb.empty()) {
+                            if (cb !== null && !cb.empty() && typeof cb !== 'undefined') {
                                     cb.on("change", this.checkboxCallBack);
                                 if (get_hash_val('hide_' + theType) == 'true') {
                                     cb.property('checked', false);                                
@@ -761,8 +839,10 @@ function drawChart(url) {
                                     cb.property('checked', true);
                                 }
                             }
-                                if (cb.property('checked') == false) {
+                                if (cb !== null && !cb.empty() && typeof cb !== 'undefined') {
+                                   if (cb.property('checked') == false) {
                                     continue;
+                                   }
                                 } 
                             
                             theCharts.push(c);
@@ -781,7 +861,7 @@ function drawChart(url) {
                 return theCharts;
             }
             charts.getChartOrder = function() {
-                var chartOrder = ['throughput', 'latency', 'ping', 'loss', 'retrans'];
+                var chartOrder = ['throughput', 'latency', 'ping', 'loss', 'retrans', 'errors'];
                 return chartOrder;
             };
             charts.getAxes = function() {                
@@ -998,6 +1078,11 @@ function drawChart(url) {
                 allTestsChart.rightYAxisLabel(axes[1].name + ' (' + axes[1].unit + ')')
                     .rightY(d3.scale.linear().domain([0, yAxisMax * axisScale]))
                     .rightYAxis().ticks(5);
+                if (axes[1].unit == 'errors') {
+                    allTestsChart.rightY(d3.scale.linear().domain([0, yAxisMax * axisScale]))
+                        .rightYAxis().ticks(1);
+                    
+                } 
                 allTestsChart.rightYAxis().tickFormat(make_formatter(charts, 1));
            }
 
@@ -1079,6 +1164,36 @@ function drawChart(url) {
                         postRenderTasks();
                         });
 
+                var bubble_selection = chartSVG.selectAll('g.node circle.bubble');
+
+                bubble_selection.each( function (d, i) {
+                    var label = '<b>' + format_values(d.key, 'ts') + '</b><br>';
+                    label += '<b>Error from ' + d.value.tool + ":</b><br />"
+                        + d.value.error_text + "<br>" + format_values(d.key, 'ts');
+                    var tooltip = new TooltipDialog({
+                        content: label,
+                        style: "width: 300px;word-wrap:break-word;",
+                        onMouseLeave: function(){
+                            popup.close(tooltip);
+                        }
+                    });
+                    tooltips.push(tooltip);
+                    on(this, 'mouseover', function(d){
+                        var x = domGeom.position(this).x - 4;
+                        var y = domGeom.position(this).y + 12;
+                        var pop = popup.open({
+                            popup: tooltip,
+                            x: x,
+                            y: y
+                        });
+                        if (pop.corner == 'TR') {
+                            pop.x = pop.x + 21;
+                            tooltip._popupWrapper.style.left = pop.x;
+                        }
+                        
+                    });
+                    });
+
             } // end function postRenderTasks()
 
             function addAxis(minVal, maxVal, label, axisFormat, color) {
@@ -1087,6 +1202,9 @@ function drawChart(url) {
                 var yAxisRight = d3.svg.axis().scale(y1)  // This is the new declaration for the 'Right', 'y1'
                     .tickFormat(axisFormat)
                     .orient("right").ticks(5);           // and includes orientation of the axis to the right.
+                if (endsWith(label, 'Errors')) {
+                    yAxisRight.ticks(1);
+                }
                 yAxisRight.scale(y1);
                 // Set a default range, so we don't get a broken axis if there's no data
                 if(maxVal == 0) {
@@ -1173,6 +1291,13 @@ function drawChart(url) {
                     rangeChart.select("svg").remove();
                 }
 
+                // Cleanup tooltips
+                for(var i=tooltips.length-1; i>=0; i--) {
+                    tooltips[i].destroy();
+                    tooltips[i] = null;
+                    tooltips.splice(i, 1);
+                }
+
 
                 d3.selectAll("#chart").selectAll("svg").remove();
                 d3.selectAll("#range-chart").selectAll("svg").remove();
@@ -1189,12 +1314,15 @@ function drawChart(url) {
                 active_objects = null;
 
             }
-
+            function endsWith(str, suffix) {
+                    return str.indexOf(suffix, str.length - suffix.length) !== -1;
+            }
             function isFunction(functionToCheck) {
                 var getType = {};
                 return functionToCheck && getType.toString.call(functionToCheck) === '[object Function]';
             }
             } // end drawChartAfterCall()
+    } // end if there is data
             }); // end d3.json call
     }; // end drawChart() function
 
