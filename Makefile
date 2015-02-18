@@ -1,6 +1,6 @@
 PACKAGE=perfSONAR_PS-serviceTest
 ROOTPATH=/opt/perfsonar_ps/serviceTest
-VERSION=3.4.1
+VERSION=3.4.2
 RELEASE=1
 
 default:
