@@ -74,6 +74,13 @@ function isEmpty(obj) {
 
     return true;
 }
+function endsWith(str, suffix) {
+    return str.indexOf(suffix, str.length - suffix.length) !== -1;
+}
+function isFunction(functionToCheck) {
+    var getType = {};
+    return functionToCheck && getType.toString.call(functionToCheck) === '[object Function]';
+}
 
 var share_button = dojo.byId('share_button');
 dojo.connect(share_button, 'onclick', function() {
@@ -1103,10 +1110,6 @@ function drawChart(url) {
 
             dc.renderAll();
 
-            postRenderTasks();
-
-        } // end if the axes are not empty
-
 
             function postRenderTasks() {
 
@@ -1237,7 +1240,13 @@ function drawChart(url) {
                 return yAxisRight;
             }
 
-            //var reloadChart = function(timePeriod) {
+            postRenderTasks();
+
+        } // end if the axes are not empty
+
+
+
+
             function reloadChart(timePeriod) {
                 var url = base_url;
                 summary_window = 3600;
@@ -1314,17 +1323,10 @@ function drawChart(url) {
                 active_objects = null;
 
             }
-            function endsWith(str, suffix) {
-                    return str.indexOf(suffix, str.length - suffix.length) !== -1;
-            }
-            function isFunction(functionToCheck) {
-                var getType = {};
-                return functionToCheck && getType.toString.call(functionToCheck) === '[object Function]';
-            }
-            } // end drawChartAfterCall()
-    } // end if there is data
+            } // end  if there is data
+    } // end drawSameCall
             }); // end d3.json call
-    }; // end drawChart() function
+    } // end drawChart() function
 
     function array2param(name, array){	
 	var joiner = "&" + name + "=";
