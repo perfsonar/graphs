@@ -1166,7 +1166,7 @@ function drawChart(url) {
                         allTestsChart.render();
                         postRenderTasks();
                         });
-
+                var chartSVG = allTestsChart.svg();
                 var bubble_selection = chartSVG.selectAll('g.node circle.bubble');
 
                 bubble_selection.each( function (d, i) {
