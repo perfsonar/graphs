@@ -27,7 +27,14 @@ my $cgi = new CGI;
 my @ma_urls          = $cgi->param("url");      # adding option to query MA directly
 my @sources          = $cgi->param("source");
 my @dests            = $cgi->param("dest");
+my @ipversions       = $cgi->param('ipversion');
+my @agents           = $cgi->param('agent');
+my @tools            = $cgi->param('tool');
+my @protocols        = $cgi->param('protocol');
+my @filters          = $cgi->param('filter');
 my $window           = $cgi->param('window');
+
+
 
 # If we're handling a request to an old MA
 # figure out where it needs to go
@@ -66,7 +73,12 @@ sub handle_esmond {
     my %vars = (
 	sources             => \@sources,
 	dests               => \@dests,
-	window              => $window
+	window              => $window,
+	ipversions           => \@ipversions,
+	agents              => \@agents,
+	tools               => \@tools,
+	protocols           => \@protocols,
+	filters             => \@filters,
 	);
     
     #open template

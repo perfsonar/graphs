@@ -18,6 +18,33 @@ var dests = [];
 [% FOREACH dest IN dests %]
 dests.push("[% dest %]");
 [% END %]
+
+var ipversions = [];
+[% FOREACH ipv IN ipversions %]
+ipversions.push("[% ipv %]");
+[% END %]
+
+var agents = [];
+[% FOREACH agent IN agents %]
+agents.push("[% agent %]");
+[% END %]
+
+var tools = [];
+[% FOREACH tool IN tools %]
+tools.push("[% tool %]");
+[% END %]
+
+var protocols = [];
+[% FOREACH protocol IN protocols %]
+protocols.push("[% protocol %]");
+[% END %]
+
+var custom_ma_filters = [];
+[% FOREACH filter IN filters %]
+custom_ma_filters.push("[% filter %]");
+[% END %]
+
+
 </script>
 
 <script type="text/javascript" src="JS/dojo/dojo/dojo.js" djConfig="parseOnLoad:true"></script>

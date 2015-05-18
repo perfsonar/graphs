@@ -75,11 +75,17 @@ sub get_data {
     $summary_window = 3600;
     $summary_window = $window if (defined($window) && (grep {$_ eq $window} @valid_windows));
 
-    my @urls    = $cgi->param('url');     
-    my @sources = $cgi->param('src');     
-    my @dests   = $cgi->param('dest');    
-    my $start   = $cgi->param('start')   || error("Missing required parameter \"start\"");
-    my $end     = $cgi->param('end')     || error("Missing required parameter \"end\"");
+    my @urls        = $cgi->param('url');     
+    my @sources     = $cgi->param('src');     
+    my @dests       = $cgi->param('dest');    
+    my @ipversions  = $cgi->param('ipversion');
+    my @agents      = $cgi->param('agent');
+    my @tools       = $cgi->param('tool');
+    my @protocols   = $cgi->param('protocol');
+    my @filters     = $cgi->param('filter');
+
+    my $start       = $cgi->param('start')   || error("Missing required parameter \"start\"");
+    my $end         = $cgi->param('end')     || error("Missing required parameter \"end\"");
 
     if (@sources == 0 || @sources != @dests || @sources != @urls){
 	error("There must be an equal non-zero amount of src, dest, and url options passed.");
@@ -106,6 +112,11 @@ sub get_data {
 					 $end,
 					 $summary_window,
 					 $urls[$j],
+					 $ipversions[$j],
+					 $agents[$j],
+					 $tools[$j],
+					 $protocols[$j],
+					 $filters[$j],
 					 \@base_event_types,
 					 \@mapped_event_types,
 					 \%types_to_ignore
@@ -216,6 +227,11 @@ sub _get_test_data {
     my $end                = shift;
     my $summary_window     = shift;
     my $url                = shift;
+    my $ipversion          = shift;
+    my $agent              = shift;
+    my $tool               = shift;
+    my $protocol           = shift;
+    my $custom_filters     = shift;
     my $base_event_types   = shift;
     my $mapped_event_types = shift;
     my $types_to_ignore    = shift;
@@ -225,6 +241,25 @@ sub _get_test_data {
     my $filter = new perfSONAR_PS::Client::Esmond::ApiFilters();
     $filter->source($test_src);
     $filter->destination($test_dest);
+    $filter->measurement_agent($agent) if($agent);
+    $filter->tool_name($tool) if($tool);
+    $filter->{metadata_filters}->{'ip-transport-protocol'} = $protocol if($protocol);
+    if($ipversion){
+        if($ipversion eq '6'){
+            $filter->dns_match_only_v6();
+        }elsif($ipversion eq '4'){
+            $filter->dns_match_only_v4();
+        }
+    }
+    #custom params in the form of key1:value1;key2:value2
+    if($custom_filters){
+        foreach my $filter_pair_str(split(',', $custom_filters)){
+            my @filter_pair = split(':', $filter_pair_str);
+            next if(@filter_pair != 2);
+            $filter->{metadata_filters}->{$filter_pair[0]} = $filter_pair[1];
+        }
+    }
+    
     
     my $client = new perfSONAR_PS::Client::Esmond::ApiConnect(url     => $url,
 							      filters => $filter);

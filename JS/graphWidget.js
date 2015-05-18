@@ -218,7 +218,11 @@ var base_url = '/serviceTest/graphData.cgi?action=data';
 base_url += array2param('url', ma_urls);
 base_url += array2param('src', sources);
 base_url += array2param('dest', dests);
-
+base_url += array2param('ipversion', ipversions);
+base_url += array2param('agent', agents);
+base_url += array2param('tool', tools);
+base_url += array2param('protocol', protocols);
+base_url += array2param('filter', custom_ma_filters);
 
 // do a DNS lookup on the source/dests
 d3.json('/serviceTest/graphData.cgi?action=hosts' + array2param('src', sources) + array2param('dest', dests), function(error, hosts) {
