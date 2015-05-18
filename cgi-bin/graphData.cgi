@@ -32,7 +32,7 @@ use perfSONAR_PS::Client::Esmond::ApiConnect;
 use SimpleLookupService::Client::SimpleLS;
 use perfSONAR_PS::Client::LS::PSRecords::PSService;
 use perfSONAR_PS::Client::LS::PSRecords::PSInterface;
-use SimpleLookupService::Client::Bootstrap;
+use perfSONAR_PS::Utils::LookupService qw(discover_lookup_services);
 use SimpleLookupService::Client::Query;
 use SimpleLookupService::QueryObjects::Network::InterfaceQueryObject;
 
@@ -777,15 +777,9 @@ sub get_tests {
 }
 
 sub get_ls_hosts {
-    my %hosts;
-
-    my %results;
-    my $ls_bootstrap_client = SimpleLookupService::Client::Bootstrap->new();
-    $ls_bootstrap_client->init();
-    my $urls = $ls_bootstrap_client->query_urls();
-
     print $cgi->header('text/json');
-    print to_json($urls);
+    my @ls_hosts = map { $_->{locator} } @{discover_lookup_services()};
+    print to_json(\@ls_hosts);
 
 }
 
