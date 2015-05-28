@@ -482,6 +482,8 @@ sub get_test_list {
 
     my $filter = new perfSONAR_PS::Client::Esmond::ApiFilters(); 
     $filter->time_range( 86400*31 );
+    $filter->subject_type('point-to-point');
+    
     my $client = new perfSONAR_PS::Client::Esmond::ApiConnect(url     => $url,
 							      filters => $filter);
     
@@ -589,7 +591,6 @@ sub get_tests {
             my $type        = $event_type->event_type();
             my $last_update = $event_type->time_updated(); 
 
-
             # TEMP HACK
             next unless ($type eq 'throughput' || $type eq 'packet-loss-rate' || $type eq 'histogram-owdelay');
 
@@ -602,6 +603,9 @@ sub get_tests {
             $event_type->filters->time_end($now);
             $event_type->filters->source($src);
             $event_type->filters->destination($dst);
+           
+            # we only want to see point-to-point tests 
+            $event_type->filters->subject_type('point-to-point');
 
             $start_time = [Time::HiRes::gettimeofday()];
             my $data;
@@ -609,7 +613,6 @@ sub get_tests {
             my $average;
             my $min = undef;
             my $max = undef;
-            #warn "event type: " . Dumper $event_type;            
             if ($type eq 'owdelay') {
                 if ($show_details || 1) {
                     my $stats_summ = $event_type->get_summary('statistics', $summary_window);
