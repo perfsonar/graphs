@@ -82,8 +82,12 @@ require(["dijit/Dialog", "dijit/form/Button", "dojo/domReady!", "dojox/widget/Di
                 dataTable.renderlet(function(table) {
                     var rows = d3.selectAll('#summaryTable tr.dc-table-row');
                     rows.on('click', function(node) {
-                        var src = node.source;
-                        var dest = node.destination;
+                        console.log('node');
+                        console.log(node);
+                        var src = node.source_host;
+                        var dest = node.destination_host;
+                        console.log('src: ' + src);
+                        console.log('dest: ' + dest);
                         createDialog(src, dest);
                         });
                     });
@@ -107,7 +111,7 @@ require(["dijit/Dialog", "dijit/form/Button", "dojo/domReady!", "dojox/widget/Di
                         } );
 
                 var set_sort = function(sort_field) {
-                    dataTable.sortBy( function(d) { return format_host(d, sort_field); } );
+                    dataTable.sortBy( function(d) { return TestResultUtils.formatHost(d, sort_field, inactive_threshold); } );
 
                     // Remove all icon classes
                     destDiv.classed("asc", false);
@@ -145,188 +149,26 @@ require(["dijit/Dialog", "dijit/form/Button", "dojo/domReady!", "dojox/widget/Di
                     .size(100)
                 if (detailed) {
                     dataTable.columns([
-                            function(d) { return '<span class="psgraph-val">' + format_host(d, 'source') + '</span>'; }, 
-                            function(d) { return '<span class="psgraph-val">' + format_host(d, 'destination') + '</span>'; },
-                            function(d) { return format_stats(d, 'throughput_src'); }, 
-                            function(d) { return format_stats(d, 'throughput_dst'); }, 
-                            function(d) { return format_stats(d, 'owdelay_src'); }, 
-                            function(d) { return format_stats(d, 'owdelay_dst'); }, 
-                            function(d) { return format_stats(d, 'loss_src'); }, 
-                            function(d) { return format_stats(d, 'loss_dst'); }
+                            function(d) { return '<span class="psgraph-val">' + TestResultUtils.formatHost(d, 'source', inactive_threshold) + '</span>'; }, 
+                            function(d) { return '<span class="psgraph-val">' + TestResultUtils.formatHost(d, 'destination', inactive_threshold) + '</span>'; },
+                            function(d) { return TestResultUtils.formatStats(d, 'throughput_src', inactive_threshold); }, 
+                            function(d) { return TestResultUtils.formatStats(d, 'throughput_dst', inactive_threshold); }, 
+                            function(d) { return TestResultUtils.formatStats(d, 'owdelay_src', inactive_threshold); }, 
+                            function(d) { return TestResultUtils.formatStats(d, 'owdelay_dst', inactive_threshold); }, 
+                            function(d) { return TestResultUtils.formatStats(d, 'loss_src', inactive_threshold); }, 
+                            function(d) { return TestResultUtils.formatStats(d, 'loss_dst', inactive_threshold); }
                             ]);
                 } else {
                     dataTable.columns([
-                        function(d) { return '<span class="psgraph-val">' + format_host_list(d, 'source') + '</span>'; }, 
-                        function(d) { return '<span class="psgraph-val">' + format_host_list(d, 'destination') + '</span>'; }
+                        function(d) { return '<span class="psgraph-val">' + TestResultUtils.formatHost(d, 'source', inactive_threshold) + '</span>'; }, 
+                        function(d) { return '<span class="psgraph-val">' + TestResultUtils.formatHost(d, 'destination', inactive_threshold) + '</span>'; }
                     ]);
                     d3.selectAll('.detailedOnly').style('display', 'none');
                 }
 
 
-                var format_stats = function(d, prefix) {
-                    var format_str = '';
-                    var suffix = '';
-                    var avg = null;
-                    var min = null;
-                    var max = null;
-
-                    avg = d[prefix + '_average'];
-                    min = d[prefix + '_min'];
-                    max = d[prefix + '_max'];
-
-                    if ((/^throughput_/).test(prefix)) {
-                        format_str = '.3s';
-                        suffix = 'bps';
-                    } else if ((/^owdelay_/).test(prefix)) {
-                        format_str = '.2f';
-                    } else if ((/^loss_/).test(prefix)) {
-                        format_str = '.2f';
-                    }
-
-                    // Account for the last_update field name not including _src or _dst
-                    prefix = prefix.replace('_src', '');
-                    prefix = prefix.replace('_dst', '');
-
-                    var data = new Array();
-
-                    var inactive;
-                    var last_update_key = prefix + '_last_update';
-                    if (d[last_update_key] != null && d[last_update_key] < inactive_threshold) {
-                        inactive = true;
-                    } else {
-                        inactive = false;
-                    }
 
 
-                    data[0] = new Object();
-
-                    if (avg !== null && ! isNaN(avg)){
-                        var prefix = d3.formatPrefix(avg);
-                        data[0].value = prefix.scale(avg).toFixed(2) + " " + prefix.symbol + suffix;
-                    }
-                    else {
-                        data[0].value = "n/a";
-                    }
-
-                    data[0].inactive = inactive;
-
-                    var ret = format_output(data);
-                    return ret;
-                }
-
-                var format_output = function(data) {
-                    var ret = '';
-                    var inactive_class = '';
-                    ret += '<table class="grid-value' + inactive_class  + '">';
-                    for(var d in data) {
-                        inactive_class = '';
-                        if (data[d].inactive) { 
-                            inactive_class = ' inactive';
-                        }		    
-                        ret += '<tr class="' + inactive_class + '">';
-                        ret += '<td>' + 
-                            '</td><td><span class="psgraph-val">' + 
-                            ((data[d].value !== null 
-                              && typeof data[d].value !== 'undefined') 
-                             ? data[d].value 
-                             : 'n/a ') 
-                            +  '</span></td>';
-                        ret += '</tr>';
-                    }
-                    ret += "</table>";
-                    return ret;
-                }
-
-                var format_test_values = function(d, suffix) {
-                    var ret = '';
-                    var data = new Array();
-                    data[0] = new Object();
-                    data[0].label = 'throughput';
-                    data[0].value = d["throughput_" + suffix];
-                    if (d["throughput_last_update"] < inactive_threshold) {
-                        data[0].inactive = true;
-                    } else {
-                        data[0].inactive = false;
-                    }
-                    data[1] = new Object();
-                    data[1].label = 'latency';
-                    data[1].value = d["owdelay_" + suffix];
-                    if (d["owdelay_last_update"] < inactive_threshold) {
-                        data[1].inactive = true;
-                    } else {
-                        data[1].inactive = false;
-                    }
-                    data[2] = new Object();
-                    data[2].label = 'loss';
-                    data[2].value = d["loss_" + suffix];
-                    if (d["loss_last_update"] < inactive_threshold) {
-                        data[2].inactive = true;
-                    } else {
-                        data[2].inactive = false;
-                    }
-
-                    ret = format_output(data);
-
-                    return ret;
-                }
-
-                var format_host_list = function(d, type) {
-                    var ret = '';
-                    if (d[type + '_host']) { 
-                       ret += d[type + '_host'];
-                    }
-                    if (d[type + '_ip'] && d[type + '_ip'] != d[type + '_host']) {
-                        ret += ' (' + d[type + '_ip'] + ') ';
-                    } else {
-                        ret = d[type];
-                    }
-                    d[type + '_name'] = ret;
-                    if (d.last_updated < inactive_threshold) {
-                        ret = '<span class="inactive">' + ret + '</span>';
-                    }
-                    return ret;
-                }
-
-                var format_host = function(d, type) {
-                    var ret = '';
-                    if (d['throughput_' + type + '_host'] !== undefined && d['throughput_' + type + '_host'] !== null) {
-                        ret = d['throughput_' + type + '_host'];
-                    } else if (d['owdelay_' + type + '_host'] !== undefined && d['owdelay_' + type + '_host'] !== null) {
-                        ret = d['owdelay_' + type + '_host'];
-                    } else if (d['loss_' + type + '_host'] !== undefined && d['loss_' + type + '_host'] !== null) {
-                        ret = d['loss_' + type + '_host']; 
-                    }
-                    ret += '  (' + d[type]  + ')';
-                            d[type + '_name'] = ret;
-                            return ret;                                    
-                }
-
-                            var format_bidirectional = function(d) {
-                            var ret = '';
-                            var data = new Array();
-                            data[0] = new Object();
-                            data[0].label = 'throughput';
-                            data[0].value = format_boolean(d.throughput_bidirectional);
-                            data[1] = new Object();
-                            data[1].label = 'latency';
-                            data[1].value = format_boolean(d.owdelay_bidirectional);
-                            data[2] = new Object();
-                            data[2].label = 'loss';
-                            data[2].value = format_boolean(d.loss_bidirectional);
-                            ret = format_output(data);
-
-                            return ret;
-                            }
-
-                            var format_boolean = function(val) {
-                                var ret = '';
-                                if (val === 1) {
-                                    ret = 'yes';
-                                } else {
-                                    ret = 'no';
-                                }
-                                return ret;
-                            }
 
                             dc.renderAll();
 

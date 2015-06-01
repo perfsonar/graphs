@@ -580,11 +580,8 @@ sub get_tests {
 
         my $protocol = $metadatum->get_field('ip-transport-protocol');
         my $duration = $metadatum->get_field('time-duration');
-        my $hostnames = host_info( {src => $src, dest => $dst} );
-        my $source_host = $hostnames->{source_host};
-        my $destination_host = $hostnames->{dest_host};
-        my $source_ip = $hostnames->{source_ip};
-        my $destination_ip = $hostnames->{dest_ip};
+        my $source_ip = $src;
+        my $destination_ip = $dst;
 
         foreach my $event_type (@$event_types){
 
@@ -663,12 +660,6 @@ sub get_tests {
                     week_max     => $max,
                     duration     => $duration,
                     protocol     => $protocol,
-                    src          => $src,
-                    dst           => $dst,
-                    source_host  => $source_host,
-                    destination_host => $destination_host,
-                    source_ip => $source_ip,
-                    destination_ip => $destination_ip,
                     bidirectional => 0};
             }
         }
@@ -689,8 +680,6 @@ sub get_tests {
                         $src_min = $src_res->{'week_min'};
                         $src_max = $src_res->{'week_max'};
                         $protocol = $src_res->{'protocol'};
-                        $source_host = $src_res->{'source_host'};
-                        $destination_host = $src_res->{'destination_host'};
 
                     }
                     if (exists($results{$dst}{$src}{$type})) {
@@ -705,8 +694,6 @@ sub get_tests {
                         $duration = $dst_res->{'duration'};
                         $last_update = $dst_res->{'last_update'} || 0;
                         $protocol = $dst_res->{'protocol'};
-                        $source_host = $dst_res->{'destination_host'}; 
-                        $destination_host = $dst_res->{'source_host'};
                         $bidirectional = 1 if (defined ($results{$dst}{$src}{$type}->{'week_average'}) && defined ($results{$src}{$dst}{$type}->{'week_average'}) );
 
                         # Now combine with the source values
@@ -733,8 +720,6 @@ sub get_tests {
                         $results{$src}{$dst}{$type}->{'last_update'} = $last_update;
                         $results{$src}{$dst}{$type}->{'duration'} = $duration;
                         $results{$src}{$dst}{$type}->{'protocol'} = $protocol;
-                        $results{$src}{$dst}{$type}->{'source_host'} = $source_host;
-                        $results{$src}{$dst}{$type}->{'destination_host'} = $destination_host;
                         $results{$src}{$dst}{$type}->{'src_average'} = $src_average;
                         $results{$src}{$dst}{$type}->{'dst_average'} = $dst_average;
                         $results{$src}{$dst}{$type}->{'src_min'} = $src_min;
@@ -761,8 +746,14 @@ sub get_tests {
                     while (my ($key, $value) = each %{$results{$src}{$dst}{$type}}) {
                         $row->{"${type}_$key"} = $value;
                     }
-                    $row->{'source'} = $src;
-                    $row->{'destination'} = $dst;
+                    $row->{'source_ip'} = $src;
+                    $row->{'destination_ip'} = $dst;
+                    # TODO: optimize this (reduce the number of DNS calls)
+                    my $hostnames = host_info( {src => $src, dest => $dst} );
+                    my $source_host = $hostnames->{source_host};
+                    my $destination_host = $hostnames->{dest_host};
+                    $row->{'source_host'} = $source_host;
+                    $row->{'destination_host'} = $destination_host;
                 }
                 push @results_arr, $row;
             }
