@@ -3,11 +3,11 @@
 # cron/apache entries are located in the 'etc' directory
 %define apacheconf apache-serviceTest.conf
 
-%define relnum    4 
+%define relnum   0.0.a1
 %define disttag pSPS
 
 Name:			perl-perfSONAR_PS-serviceTest
-Version:		3.4.2
+Version:		3.5
 Release:		%{relnum}.%{disttag}
 Summary:		perfSONAR_PS serviceTest
 License:		Distributable, see LICENSE
