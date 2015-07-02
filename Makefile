@@ -1,7 +1,7 @@
 PACKAGE=perfSONAR_PS-serviceTest
 ROOTPATH=/opt/perfsonar_ps/serviceTest
 VERSION=3.5
-RELEASE=0.0.a1
+RELEASE=0.1.rc1
 
 default:
 	@echo No need to build the package. Just run \"make install\"
