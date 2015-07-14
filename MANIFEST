@@ -131,7 +131,7 @@ lib/SimpleLookupService/Records/Network/Interface.pm
 lib/SimpleLookupService/Records/Network/Service.pm
 lib/SimpleLookupService/Records/Record.pm
 lib/SimpleLookupService/Records/RecordFactory.pm
-perl-perfSONAR_PS-serviceTest.spec
+perl-perfSONAR-graphs.spec
 templates/bw_error.tmpl
 templates/bw_graphing.tmpl
 templates/bw_pageDisplay.tmpl

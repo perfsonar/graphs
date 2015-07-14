@@ -3,17 +3,17 @@
 # cron/apache entries are located in the 'etc' directory
 %define apacheconf apache-serviceTest.conf
 
-%define relnum   0.1.rc1
+%define relnum   0.2.rc1
 %define disttag pSPS
 
-Name:			perl-perfSONAR_PS-serviceTest
+Name:			perl-perfSONAR-graphs
 Version:		3.5
 Release:		%{relnum}.%{disttag}
-Summary:		perfSONAR_PS serviceTest
+Summary:		perfSONAR_PS Graphs
 License:		Distributable, see LICENSE
 Group:			Development/Libraries
-URL:			http://search.cpan.org/dist/perfSONAR_PS-serviceTest/
-Source0:		perfSONAR_PS-serviceTest-%{version}.%{relnum}.tar.gz
+URL:			http://www.perfsonar.net
+Source0:		perfSONAR-graphs-%{version}.%{relnum}.tar.gz
 BuildRoot:		%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildArch:		noarch
 Requires:		perl
@@ -43,9 +43,10 @@ Requires:		perl(Time::Local)
 Requires:		perl(XML::LibXML) >= 1.60
 Requires:		perl(YAML::Syck)
 Requires:		httpd
+Obsoletes:		perl-perfSONAR_PS-serviceTest
 
 %description
-The perfSONAR-PS serviceTest package is a series of simple web-based GUIs that
+The perfSONAR-PS Graphs package is a series of simple web-based GUIs that
 interact with the perfSONAR Information Services (IS) to locate and display
 remote datasets.
 
@@ -54,7 +55,7 @@ remote datasets.
 /usr/sbin/useradd -g perfsonar -r -s /sbin/nologin -c "perfSONAR User" -d /tmp perfsonar 2> /dev/null || :
 
 %prep
-%setup -q -n perfSONAR_PS-serviceTest-%{version}.%{relnum}
+%setup -q -n perfSONAR_PS-graphs-%{version}.%{relnum}
 
 %build
 
