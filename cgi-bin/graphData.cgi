@@ -512,6 +512,7 @@ sub get_tests {
     my $start_time = [Time::HiRes::gettimeofday()];
 
     my $filter = new perfSONAR_PS::Client::Esmond::ApiFilters();
+    $filter->time_range( 86400*31 );
     #$filter->limit(10); #return up to 10 results
     #$filter->offset(0); # return the first results you find
    
