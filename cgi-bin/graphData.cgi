@@ -87,9 +87,21 @@ sub get_data {
     my $start       = $cgi->param('start')   || error("Missing required parameter \"start\"");
     my $end         = $cgi->param('end')     || error("Missing required parameter \"end\"");
 
+    #front end passes only 1 url even if there are multiple src-dst pairs to the same MA. As a result, this script
+    #returns error. The following code block is a work around to address this issue.
+    if(@sources != 0 && @urls==1 && @sources != @urls){
+        my $tmp = $urls[0];
+
+        for (my $j = 0; $j < @sources; $j++){
+            $urls[$j] = $tmp;
+
+        }
+    }
+
     if (@sources == 0 || @sources != @dests || @sources != @urls){
 	error("There must be an equal non-zero amount of src, dest, and url options passed.");
     }
+
 
     my @base_event_types   = ('throughput', 'histogram-owdelay', 'packet-loss-rate', 'packet-retransmits', 'histogram-rtt', 'failures');
     my @mapped_event_types = ('throughput', 'owdelay', 'loss', 'packet_retransmits', 'ping', 'errors', 'owdelay_minimum', 'owdelay_median', 'ping_minimum', 'ping_maximum', 'error', 'error_tool');
@@ -132,35 +144,39 @@ sub get_data {
 
 	foreach my $ret (@$ret_array){
 
-	    my $test_src        = $ret->{'test_src'};
-	    my $test_dest       = $ret->{'test_dest'};
-	    my $multiple_values = $ret->{'multiple_values'};
-	    my $remapped_name   = $ret->{'remapped_name'};
-	    my @data_points     = @{$ret->{'data'}};
-	    my @summary_fields  = @{$ret->{'summary_fields'}};
-	    my %additional_data = %{$ret->{'additional_data'}};
-	    
-	    
-        if (!$multiple_values) {
-            if (exists($results{$test_src}{$test_dest}{$remapped_name}) && @{$results{$test_src}{$test_dest}{$remapped_name}} > 0) { 
-                my @existing_data_points = @{$results{$test_src}{$test_dest}{$remapped_name}};
-                @data_points = (@existing_data_points, @data_points);
-            }
-            $results{$test_src}{$test_dest}{$remapped_name} = \@data_points if @data_points > 0; 
+        if($ret){
+            my $test_src        = $ret->{'test_src'};
+            my $test_dest       = $ret->{'test_dest'};
+            my $multiple_values = $ret->{'multiple_values'};
+            my $remapped_name   = $ret->{'remapped_name'};
+            my @data_points     = @{$ret->{'data'}};
+            my @summary_fields  = @{$ret->{'summary_fields'}};
+            my %additional_data = %{$ret->{'additional_data'}};
+            
+            
+            if (!$multiple_values) {
+                if (exists($results{$test_src}{$test_dest}{$remapped_name}) && @{$results{$test_src}{$test_dest}{$remapped_name}} > 0) { 
+                    my @existing_data_points = @{$results{$test_src}{$test_dest}{$remapped_name}};
+                    @data_points = (@existing_data_points, @data_points);
+                }
+                $results{$test_src}{$test_dest}{$remapped_name} = \@data_points if @data_points > 0; 
 
-        } else {
-            if (@summary_fields > 0 && keys(%additional_data) > 0) {
-                while (my ($key, $values) = each (%additional_data)) {
-                    my @new_data_points = ();
-                    @new_data_points = @$values;
-                    if (exists($results{$test_src}{$test_dest}{$key}) && @{$results{$test_src}{$test_dest}{$key}} > 0) { 
-                        my @existing_data_points = @{$results{$test_src}{$test_dest}{$key}};
-                        @new_data_points = (@existing_data_points, @new_data_points);
-                    }
-                    $results{$test_src}{$test_dest}{$key} = \@new_data_points if @new_data_points > 0; 
-                }                        
+            } else {
+                if (@summary_fields > 0 && keys(%additional_data) > 0) {
+                    while (my ($key, $values) = each (%additional_data)) {
+                        my @new_data_points = ();
+                        @new_data_points = @$values;
+                        if (exists($results{$test_src}{$test_dest}{$key}) && @{$results{$test_src}{$test_dest}{$key}} > 0) { 
+                            my @existing_data_points = @{$results{$test_src}{$test_dest}{$key}};
+                            @new_data_points = (@existing_data_points, @new_data_points);
+                        }
+                        $results{$test_src}{$test_dest}{$key} = \@new_data_points if @new_data_points > 0; 
+                    }                        
+                }
             }
         }
+
+
 	}
     }
 
