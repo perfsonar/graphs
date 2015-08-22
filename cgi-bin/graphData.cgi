@@ -87,17 +87,6 @@ sub get_data {
     my $start       = $cgi->param('start')   || error("Missing required parameter \"start\"");
     my $end         = $cgi->param('end')     || error("Missing required parameter \"end\"");
 
-    #front end passes only 1 url even if there are multiple src-dst pairs to the same MA. As a result, this script
-    #returns error. The following code block is a work around to address this issue.
-    if(@sources != 0 && @urls==1 && @sources != @urls){
-        my $tmp = $urls[0];
-
-        for (my $j = 0; $j < @sources; $j++){
-            $urls[$j] = $tmp;
-
-        }
-    }
-
     if (@sources == 0 || @sources != @dests || @sources != @urls){
 	error("There must be an equal non-zero amount of src, dest, and url options passed.");
     }
@@ -139,12 +128,11 @@ sub get_data {
     }
     
     foreach my $thread (@threads){
-	my $ret_array = $thread->join();
-	error("Error fetching data") if (! $ret_array);		
+    	my $ret_array = $thread->join();
+    	#error("Error fetching data") if (! $ret_array);	#do not throw error if a thread fails.	
 
-	foreach my $ret (@$ret_array){
-
-        if($ret){
+    	foreach my $ret (@$ret_array){
+            
             my $test_src        = $ret->{'test_src'};
             my $test_dest       = $ret->{'test_dest'};
             my $multiple_values = $ret->{'multiple_values'};
@@ -174,10 +162,10 @@ sub get_data {
                     }                        
                 }
             }
-        }
+            
 
 
-	}
+    	}
     }
 
     # CONSOLIDATE ALL TESTS IN ONE DATASTRUCTURE
