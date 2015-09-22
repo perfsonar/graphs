@@ -1,7 +1,7 @@
 PACKAGE=perfSONAR-graphs
 ROOTPATH=/opt/perfsonar_ps/serviceTest
 VERSION=3.5
-RELEASE=0.3.rc2
+RELEASE=0.4.rc2
 
 default:
 	@echo No need to build the package. Just run \"make install\"
