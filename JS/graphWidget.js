@@ -225,7 +225,7 @@ base_url += array2param('protocol', protocols);
 base_url += array2param('filter', custom_ma_filters);
 
 // do a DNS lookup on the source/dests
-d3.json('/serviceTest/graphData.cgi?action=hosts' + array2param('src', sources) + array2param('dest', dests), function(error, hosts) {
+d3.json('/serviceTest/graphData.cgi?action=hosts' + array2param('src', sources) + array2param('dest', dests) + array2param('ipversion', ipversions), function(error, hosts) {
 	for (var i = 0; i < hosts.length; i++){
 	    var source_host = d3.select('#source_host_' + i);
 	    source_host.html(hosts[i].source_host);
@@ -235,17 +235,25 @@ d3.json('/serviceTest/graphData.cgi?action=hosts' + array2param('src', sources) 
 	    dest_host.html(hosts[i].dest_host);
 	    var dest_ip = d3.select('#dest_ip_' + i);
         dest_ip.html(hosts[i].dest_ip);
-        var tr_url = '/serviceTest/graphData.cgi?action=has_traceroute_data&url=' + ma_urls[i] 
-            + '&source=' + hosts[i].source_ip + '&dest=' + hosts[i].dest_ip;
-        get_traceroute_data(tr_url, dest_ip);
+        var source_ips = hosts[i].source_ip.split(",");
+        var dest_ips = hosts[i].dest_ip.split(",");
+        var has_traceroute_data = 0;
+        for(var s = 0; s < source_ips.length && !has_traceroute_data; s++){
+            for(var d = 0; d < dest_ips.length && !has_traceroute_data; d++){
+                var tr_url = '/serviceTest/graphData.cgi?action=has_traceroute_data&url=' + ma_urls[i] 
+                    + '&source=' + source_ips[s] + '&dest=' + dest_ips[d];
+                has_traceroute_data = get_traceroute_data(tr_url, dest_ip);
+            }
+        }
 	}
 
 });
 
 function get_traceroute_data(url, div) {
+        var has_traceroute_data = 0;
         d3.json(url, function(trace_error, trace_data) {
             if (typeof trace_data !== "undefined") {
-                if (typeof trace_data.has_traceroute !== "undefined" && trace_data.has_traceroute == 1) {
+                if (typeof trace_data.has_traceroute != "undefined" && trace_data.has_traceroute == 1) {
                     var tr_link = div.append('span');
                     tr_link.classed("traceroute", true);
                     var trace_url = '/toolkit/gui/psTracerouteViewer/index.cgi?';
@@ -256,11 +264,12 @@ function get_traceroute_data(url, div) {
                     trace_url += '&epselect=' + trace_data.traceroute_uri;
                     trace_url += '';
                     tr_link.html('[<a href="' + trace_url + '" target="_blank">traceroute</a>]');
+                    has_traceroute_data = 1;
                 }
             }
 
         });
-
+        return has_traceroute_data;
 }
 
 var loading = d3.select('#chart #loading');
@@ -1338,3 +1347,4 @@ function drawChart(url) {
     }
 
 }); // end dojo require function
+

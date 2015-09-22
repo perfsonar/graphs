@@ -33,6 +33,7 @@ use SimpleLookupService::Client::SimpleLS;
 use perfSONAR_PS::Client::LS::PSRecords::PSService;
 use perfSONAR_PS::Client::LS::PSRecords::PSInterface;
 use perfSONAR_PS::Utils::LookupService qw(discover_lookup_services);
+use perfSONAR_PS::Utils::DNS qw(resolve_address);
 use SimpleLookupService::Client::Query;
 use SimpleLookupService::QueryObjects::Network::InterfaceQueryObject;
 
@@ -785,6 +786,7 @@ sub get_ls_hosts {
 sub get_interfaces {
     my @sources     = $cgi->param('source');
     my @dests       = $cgi->param('dest'); 
+    my @ipversions  = $cgi->param('ipversion'); 
     my $ls_url      = $cgi->param('ls_url')    || error("Missing required parameter \"ls_url\"");
 
     my @results;    
@@ -792,6 +794,7 @@ sub get_interfaces {
     for (my $i = 0; $i < @sources; $i++){
 	my $source = $sources[$i];
 	my $dest   = $dests[$i];
+	my $ipversion   = $ipversions[$i];
 				
 	my $server = SimpleLookupService::Client::SimpleLS->new();
 	$server->setUrl($ls_url);
@@ -800,7 +803,7 @@ sub get_interfaces {
 	my $query_object = SimpleLookupService::QueryObjects::Network::InterfaceQueryObject->new();
 	$query_object->init();
 	
-	my $host_info       = host_info( { src => $source, dest => $dest });
+	my $host_info       = host_info( { src => $source, dest => $dest, ipversion => $ipversion });
 	my $source_hostname = $host_info->{'source_host'};
 	my $dest_hostname   = $host_info->{'dest_host'};
 	
@@ -857,11 +860,12 @@ sub get_interfaces {
 sub get_host_info {
     my @sources   = $cgi->param('src');  
     my @dests     = $cgi->param('dest'); 
-
+    my @ipversions  = $cgi->param('ipversion'); 
+    
     my @all_results;
    
     for (my $i = 0; $i < @sources; $i++){
-	my $results = host_info( { src => $sources[$i], dest => $dests[$i] } );	
+	my $results = host_info( { src => $sources[$i], dest => $dests[$i], ipversion => $ipversions[$i] } );	
 	push(@all_results, $results);
     }  
 
@@ -870,10 +874,11 @@ sub get_host_info {
 }
 
 sub host_info {
-    my $parameters = validate( @_, { src => 1, dest => 1 });
+    my $parameters = validate( @_, { src => 1, dest => 1, ipversion => 0 });
     my $src       = $parameters->{src};
     my $dest      = $parameters->{dest};
-
+    my $ipversion      = $parameters->{ipversion};
+    
 # Create a new object with just source and dest (in case other parameters are passed that we don't want)
     my $hosts = {};
     $hosts->{'source'} = $src;
@@ -890,25 +895,25 @@ sub host_info {
             my ( @names) = getnameinfo( $addrs[2] );
             $results->{$key . '_host'} = $names[0];
         } else {            
-            $results->{$key . '_host'} = $host;            
-            my $err = '';
-            my ( @addrs ) = getaddrinfo( $host, 0 );
-            my $hostout2;
-            my $addr = $addrs[0];
-            $hostout2 = '';
-            my $hostout  = getnameinfo( $addr, NI_NUMERICHOST );
-            my $address;
-            if ($addrs[3]) {
-            if ($addrs[0] == AF_INET) {
-                $address = (unpack_sockaddr_in($addrs[3]))[1]
-            } else {
-                $address = (unpack_sockaddr_in6($addrs[3]))[1]
+            $results->{$key . '_host'} = $host;    
+            $results->{$key . '_ip'} = '';        
+            my @addresses = resolve_address($host);
+            my $ip_count = 0;
+            foreach my $address(@addresses){
+                if($ipversion && $ipversion == 4){
+                    next unless(is_ipv4($address));
+                    $results->{$key . '_ip'} .= $address;
+                    last;
+                }elsif($ipversion && $ipversion == 6){
+                    next unless(is_ipv6($address));
+                    $results->{$key . '_ip'} .= $address;
+                    last;
+                }else{
+                    $results->{$key . '_ip'} .= ',' if($ip_count);
+                    $results->{$key . '_ip'} .= $address;
+                    $ip_count++;
+                }
             }
-            } else {
-                $address = '';
-            }
-            $hostout2 = inet_ntop($addrs[0], $address);
-            $results->{$key . '_ip'} = $hostout2;
         }
     }
 
