@@ -1,6 +1,6 @@
 PACKAGE=perfSONAR-graphs
 ROOTPATH=/opt/perfsonar_ps/serviceTest
-VERSION=3.5
+VERSION=3.5.0.1
 RELEASE=1
 
 default:

@@ -7,7 +7,7 @@
 %define disttag pSPS
 
 Name:			perl-perfSONAR-graphs
-Version:		3.5
+Version:		3.5.0.1
 Release:		%{relnum}.%{disttag}
 Summary:		perfSONAR_PS Graphs
 License:		Distributable, see LICENSE
