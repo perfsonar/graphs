@@ -792,64 +792,77 @@ sub get_interfaces {
     my @results;    
 
     for (my $i = 0; $i < @sources; $i++){
-	my $source = $sources[$i];
-	my $dest   = $dests[$i];
-	my $ipversion   = $ipversions[$i];
-				
-	my $server = SimpleLookupService::Client::SimpleLS->new();
-	$server->setUrl($ls_url);
-	$server->connect();
-	
-	my $query_object = SimpleLookupService::QueryObjects::Network::InterfaceQueryObject->new();
-	$query_object->init();
-	
-	my $host_info       = host_info( { src => $source, dest => $dest, ipversion => $ipversion });
-	my $source_hostname = $host_info->{'source_host'};
-	my $dest_hostname   = $host_info->{'dest_host'};
-	
-	# If source and dest are provided, query both. Otherwise only query source
-	if ($source && $dest) {
-	    $query_object->setInterfaceAddresses( [ $source, $dest, $source_hostname, $dest_hostname ] );
-	} 
-	elsif ($source) { 
-	    $query_object->setInterfaceAddresses( [ $source, $source_hostname ] );
-	}
+        my $source = $sources[$i];
+        my $dest   = $dests[$i];
+        my $ipversion   = $ipversions[$i];
+                
+        my $server = SimpleLookupService::Client::SimpleLS->new();
+        $server->setUrl($ls_url);
+        $server->connect();
+    
+        my $query_object = SimpleLookupService::QueryObjects::Network::InterfaceQueryObject->new();
+        $query_object->init();
+    
+        my $host_info       = host_info( { src => $source, dest => $dest, ipversion => $ipversion });
+        my $source_hostname = $host_info->{'source_host'};
+        my $dest_hostname   = $host_info->{'dest_host'};
+        my @source_ips = ();
+        my @dest_ips = ();
+        my @ifaddrs = (); 
+        
+        @source_ips = split ',', $host_info->{'source_ip'} if($host_info->{'source_ip'});
+        @dest_ips = split ',', $host_info->{'dest_ip'} if($host_info->{'dest_ip'});
+        
+        # If source and dest are provided, query both. Otherwise only query source
+        if ($source && $dest) {
+            push @ifaddrs, @source_ips;
+            push @ifaddrs,  @dest_ips;
+            push @ifaddrs, $source_hostname;
+            push @ifaddrs, $dest_hostname;
+        } 
+        elsif ($source) { 
+            push @ifaddrs, @source_ips;
+            push @ifaddrs, $source_hostname;
+        }
+        $query_object->setInterfaceAddresses( \@ifaddrs );
+        
+        $query_object->setKeyOperator( { key => 'interface-addresses', operator => 'any' } );
+    
+        my $query = new SimpleLookupService::Client::Query;
+        $query->init( { server => $server } );
+    
+        my ($resCode, $result) = $query->query( $query_object );
+    
+        my $capacity = 0;
+        my $mtu = 0;
+        my %source_ip_map = map { $_ => 1 } @source_ips;
+        my %dest_ip_map = map { $_ => 1 } @dest_ips;
 
-	$query_object->setKeyOperator( { key => 'interface-addresses', operator => 'any' } );
-	
-	my $query = new SimpleLookupService::Client::Query;
-	$query->init( { server => $server } );
-	
-	my ($resCode, $result) = $query->query( $query_object );
-	
-	my $capacity = 0;
-	my $mtu = 0;
+        foreach my $res (@$result) {
+            $capacity = $res->getInterfaceCapacity()->[0] unless !$res->getInterfaceCapacity();
+            $mtu      = $res->getInterfaceMTU()->[0] unless !$res->getInterfaceMTU();
 
-	foreach my $res (@$result) {
-    	$capacity = $res->getInterfaceCapacity()->[0] unless !$res->getInterfaceCapacity();
-    	$mtu      = $res->getInterfaceMTU()->[0] unless !$res->getInterfaceMTU();
+            my $addresses = $res->getInterfaceAddresses();
+            foreach my $address (@$addresses) {
+                if ( $source_ip_map{$address} || $address eq $source_hostname) {
+                    push(@results, {'source_capacity'  => $capacity,
+                            'source_mtu'       => $mtu,
+                            'source_ip'        => $source,
+                            'source_addresses' => $addresses
+                        }
+                    );
+                } 
+                elsif ($dest && $dest_ip_map{$address} || $address eq $dest_hostname) {
+                    push(@results, {'dest_capacity'  => $capacity,
+                            'dest_mtu'       => $mtu,
+                            'dest_ip'        => $dest,
+                            'dest_addresses' => $addresses
+                        }
+                    );
 
-	    my $addresses = $res->getInterfaceAddresses();
-        foreach my $address (@$addresses) {
-            if ($address eq $source || $address eq $source_hostname) {
-                push(@results, {'source_capacity'  => $capacity,
-                        'source_mtu'       => $mtu,
-                        'source_ip'        => $source,
-                        'source_addresses' => $addresses
-                    }
-                );
-            } 
-            elsif ($dest && $address eq $dest || $address eq $dest_hostname) {
-                push(@results, {'dest_capacity'  => $capacity,
-                        'dest_mtu'       => $mtu,
-                        'dest_ip'        => $dest,
-                        'dest_addresses' => $addresses
-                    }
-                );
-
+                }
             }
         }
-	}
     }
 
     print $cgi->header('text/json');
