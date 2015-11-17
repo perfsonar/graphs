@@ -594,11 +594,14 @@ sub get_tests {
             my $type        = $event_type->event_type();
             my $last_update = $event_type->time_updated(); 
 
-            # TEMP HACK
-            next unless ($type eq 'throughput' || $type eq 'packet-loss-rate' || $type eq 'histogram-owdelay');
+            # Currently, we hard-code the list of event types we will accept for our listing. If we retrieve all of them, 
+            # performance is too poor and we don't care about many of them.
+            # Ideally, this would be configurable.
+            next unless ($type eq 'throughput' || $type eq 'packet-loss-rate' || $type eq 'histogram-owdelay' || $type eq 'histogram-rtt');
 
             $type = 'loss' if ($type eq 'packet-loss-rate');
             $type = 'owdelay' if ($type eq 'histogram-owdelay');
+            $type = 'rtt' if ($type eq 'histogram-rtt');
 
             # now grab the last 1 weeks worth of data to generate a high level view
             my $start_time = $now - 86400 * 7;
@@ -616,7 +619,7 @@ sub get_tests {
             my $average;
             my $min = undef;
             my $max = undef;
-            if ($type eq 'owdelay') {
+            if ($type eq 'owdelay' || $type eq 'rtt') {
                 if ($show_details || 1) {
                     my $stats_summ = $event_type->get_summary('statistics', $summary_window);
                     error($event_type->error) if ($event_type->error);
