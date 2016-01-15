@@ -26,14 +26,20 @@ TestResultUtils.formatValue = function(value, prefix) {
             format_str = '.2f';
             suffix = '(rtt)';
         } else if ((/^loss_/).test(prefix)) {
-            format_str = '.2f';
+            format_str = '.2e';
         }
         var val_prefix = d3.formatPrefix(value, 3);
        
         if ( (/^owdelay_/).test(prefix) || (/^rtt_/).test(prefix) ) { 
             formatted_value = value.toPrecision(3) + " " + suffix;
+        } else if ((/^loss_/).test(prefix)) {
+            if (value == 0) {
+                formatted_value = 0;
+            } else  {
+                formatted_value = d3.format(format_str)(value * 100);
+            }
         } else {
-            formatted_value = val_prefix.scale(value).toPrecision(3) + " " + val_prefix.symbol + suffix;
+            formatted_value = val_prefix.scale(value).toPrecision(3) + " " + suffix;
         }
     } else { 
         formatted_value = "n/a";
