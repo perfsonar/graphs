@@ -476,9 +476,9 @@ function drawChart(url) {
                     return d + ' ms';
                 } else if (type == 'loss') {
                     if (d ==0) {
-                        return "0%";
+                        return "0";
                     } else {
-                        return d3.format('.2e')(d / 100) + '%';
+                        return d3.format('.2e')(d);
                     }
                 } else if (type == 'ts') {
                     return d3.time.format('%X %x')(d);
@@ -562,7 +562,7 @@ function drawChart(url) {
             charts.loss.valType = 'avg';
             charts.loss.color = '#cc7dbe'; 
             charts.loss.showByDefault = true;
-            charts.loss.tickFormat = function(d) { return d3.format('.2%')(d) };
+            charts.loss.tickFormat = function(d) { return d3.format('.2e')(d); };
 
             // Packet retrans charts 
             

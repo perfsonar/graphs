@@ -36,7 +36,7 @@ TestResultUtils.formatValue = function(value, prefix) {
             if (value == 0) {
                 formatted_value = 0;
             } else  {
-                formatted_value = d3.format(format_str)(value * 100);
+                formatted_value = d3.format(format_str)(value);
             }
         } else {
             formatted_value = val_prefix.scale(value).toPrecision(3) + " " + suffix;
