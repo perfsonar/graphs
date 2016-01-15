@@ -557,7 +557,7 @@ function drawChart(url) {
             charts.loss = {};
             charts.loss.name = 'Loss';
             charts.loss.type = 'loss';
-            charts.loss.unit = 'percent';
+            charts.loss.unit = 'fraction';
             charts.loss.fieldName = 'loss';
             charts.loss.valType = 'avg';
             charts.loss.color = '#cc7dbe'; 
