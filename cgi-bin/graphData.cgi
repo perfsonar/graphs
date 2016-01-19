@@ -500,19 +500,34 @@ sub get_test_list {
     my @active_tests;
     my %active_hosts;
     my $now = time;
-    my $start_time = $now - 86400 * 7;
+    my $start_time = $now - 86400 * 31;
     my $metadata_out = [];
+
+    my $dns_time = 0; # TODO: remove dns_time (benchmarking)
 
     HOSTS: foreach my $metadatum (@$metadata) {
         push @$metadata_out, $metadatum->{data};
         $hosts{ $metadatum->{'data'}->{'source'} } = 1;
         $hosts{ $metadatum->{'data'}->{'destination'} } = 1;
         foreach my $event_type (@{$metadatum->{'data'}->{'event-types'}}) {
+            my $type        = $event_type->{"event-type"};
+
+            next unless ($type eq 'throughput' || $type eq 'packet-loss-rate' || $type eq 'histogram-owdelay' || $type eq 'histogram-rtt');
+
             if (defined ($event_type->{'time-updated'}) && $event_type->{'time-updated'} > $start_time ) {
                 my $source = $metadatum->{'data'}->{'source'};
                 my $dest = $metadatum->{'data'}->{'destination'};
                 $active_hosts{ $source } = 1;
+
+                my $dns_start = Time::HiRes::time();
                 my $hostnames = host_info( {src => $source, dest => $dest} );
+                my $dns_end = Time::HiRes::time();
+                my $dns_delta = $dns_end - $dns_start;
+                $dns_time += $dns_delta;
+                # TODO: take this out (for perf testing only)
+                #warn "hostname parameters: source: $source; dest: $dest";
+                #my $hostnames = { source_host => $source, dest_host => $dest, source_ip => $source, dest_ip => $dest };
+
                 my $source_host = $hostnames->{source_host};
                 my $destination_host = $hostnames->{dest_host};
                 my $source_ip = $hostnames->{source_ip};
@@ -538,6 +553,7 @@ sub get_test_list {
         }
 
     }
+    #warn "dns time: $dns_time";
 
     $results = \@active_tests;
 
@@ -555,6 +571,7 @@ sub get_tests {
 
     my $filter = new perfSONAR_PS::Client::Esmond::ApiFilters();
     $filter->time_range( 86400*31 );
+    $filter->subject_type('point-to-point');
     #$filter->limit(10); #return up to 10 results
     #$filter->offset(0); # return the first results you find
    

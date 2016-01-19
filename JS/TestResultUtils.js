@@ -39,7 +39,7 @@ TestResultUtils.formatValue = function(value, prefix) {
                 formatted_value = d3.format(format_str)(value);
             }
         } else {
-            formatted_value = val_prefix.scale(value).toPrecision(3) + " " + suffix;
+            formatted_value = val_prefix.scale(value).toPrecision(3) + " " + val_prefix.symbol + suffix;
         }
     } else { 
         formatted_value = "n/a";
