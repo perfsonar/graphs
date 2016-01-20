@@ -1,0 +1,8 @@
+JS usr/lib/perfsonar/serviceTest
+html usr/lib/perfsonar/serviceTest
+templates usr/lib/perfsonar/serviceTest
+images usr/lib/perfsonar/serviceTest
+css usr/lib/perfsonar/serviceTest
+cgi-bin usr/lib/perfsonar/serviceTest
+etc/apache-serviceTest.conf etc/apache2/conf.d/
+lib/perfSONAR_PS/Utils/GraphMetadataKey.pm usr/lib/perfsonar/serviceTest/lib/perfSONAR_PS/Utils
