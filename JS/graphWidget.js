@@ -466,20 +466,20 @@ function drawChart(url) {
             var valOrder = function(p) { return p; };
             var valOrderInv = function(p) { return -p; };
 
-
-            var format_throughput = function(d) { return d3.format('.3s')(d) + 'bps';  }
-            var format_latency = function(d) { return d3.format('.3f')(d) + 'ms';  }
-            var format_loss = function(d) { return d3.format('.3%')(d);  }
             var format_ts = function(d) { return d3.time.format('%X %x')(d); }
             var format_ts_header = function(d) { return d3.time.format('%c')(d); }
 
             var format_values = function(d, type) {
                 if (type == 'throughput') {
-                    return d3.format('.2s')(d) + 'bps';
+                    return d3.format('.4s')(d) + 'bps';
                 } else if (type == 'latency' || type == 'ping') {
-                    return d3.format('.3f')(d) + ' ms';
+                    return d + ' ms';
                 } else if (type == 'loss') {
-                    return d3.format('.3%f')(d);
+                    if (d ==0) {
+                        return "0";
+                    } else {
+                        return d3.format('.2e')(d);
+                    }
                 } else if (type == 'ts') {
                     return d3.time.format('%X %x')(d);
                 } else if (type == 'ts_header') {
@@ -557,12 +557,12 @@ function drawChart(url) {
             charts.loss = {};
             charts.loss.name = 'Loss';
             charts.loss.type = 'loss';
-            charts.loss.unit = 'percent';
+            charts.loss.unit = 'fraction';
             charts.loss.fieldName = 'loss';
             charts.loss.valType = 'avg';
             charts.loss.color = '#cc7dbe'; 
             charts.loss.showByDefault = true;
-            charts.loss.tickFormat = function(d) { return d3.format('.2%')(d) };
+            charts.loss.tickFormat = function(d) { return d3.format('.2e')(d); };
 
             // Packet retrans charts 
             

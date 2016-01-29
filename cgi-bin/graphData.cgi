@@ -500,19 +500,34 @@ sub get_test_list {
     my @active_tests;
     my %active_hosts;
     my $now = time;
-    my $start_time = $now - 86400 * 7;
+    my $start_time = $now - 86400 * 31;
     my $metadata_out = [];
+
+    my $dns_time = 0; # TODO: remove dns_time (benchmarking)
 
     HOSTS: foreach my $metadatum (@$metadata) {
         push @$metadata_out, $metadatum->{data};
         $hosts{ $metadatum->{'data'}->{'source'} } = 1;
         $hosts{ $metadatum->{'data'}->{'destination'} } = 1;
         foreach my $event_type (@{$metadatum->{'data'}->{'event-types'}}) {
+            my $type        = $event_type->{"event-type"};
+
+            next unless ($type eq 'throughput' || $type eq 'packet-loss-rate' || $type eq 'histogram-owdelay' || $type eq 'histogram-rtt');
+
             if (defined ($event_type->{'time-updated'}) && $event_type->{'time-updated'} > $start_time ) {
                 my $source = $metadatum->{'data'}->{'source'};
                 my $dest = $metadatum->{'data'}->{'destination'};
                 $active_hosts{ $source } = 1;
+
+                my $dns_start = Time::HiRes::time();
                 my $hostnames = host_info( {src => $source, dest => $dest} );
+                my $dns_end = Time::HiRes::time();
+                my $dns_delta = $dns_end - $dns_start;
+                $dns_time += $dns_delta;
+                # TODO: take this out (for perf testing only)
+                #warn "hostname parameters: source: $source; dest: $dest";
+                #my $hostnames = { source_host => $source, dest_host => $dest, source_ip => $source, dest_ip => $dest };
+
                 my $source_host = $hostnames->{source_host};
                 my $destination_host = $hostnames->{dest_host};
                 my $source_ip = $hostnames->{source_ip};
@@ -538,6 +553,7 @@ sub get_test_list {
         }
 
     }
+    #warn "dns time: $dns_time";
 
     $results = \@active_tests;
 
@@ -555,6 +571,7 @@ sub get_tests {
 
     my $filter = new perfSONAR_PS::Client::Esmond::ApiFilters();
     $filter->time_range( 86400*31 );
+    $filter->subject_type('point-to-point');
     #$filter->limit(10); #return up to 10 results
     #$filter->offset(0); # return the first results you find
    
@@ -594,11 +611,14 @@ sub get_tests {
             my $type        = $event_type->event_type();
             my $last_update = $event_type->time_updated(); 
 
-            # TEMP HACK
-            next unless ($type eq 'throughput' || $type eq 'packet-loss-rate' || $type eq 'histogram-owdelay');
+            # Currently, we hard-code the list of event types we will accept for our listing. If we retrieve all of them, 
+            # performance is too poor and we don't care about many of them.
+            # Ideally, this would be configurable.
+            next unless ($type eq 'throughput' || $type eq 'packet-loss-rate' || $type eq 'histogram-owdelay' || $type eq 'histogram-rtt');
 
             $type = 'loss' if ($type eq 'packet-loss-rate');
             $type = 'owdelay' if ($type eq 'histogram-owdelay');
+            $type = 'rtt' if ($type eq 'histogram-rtt');
 
             # now grab the last 1 weeks worth of data to generate a high level view
             my $start_time = $now - 86400 * 7;
@@ -616,7 +636,7 @@ sub get_tests {
             my $average;
             my $min = undef;
             my $max = undef;
-            if ($type eq 'owdelay') {
+            if ($type eq 'owdelay' || $type eq 'rtt') {
                 if ($show_details || 1) {
                     my $stats_summ = $event_type->get_summary('statistics', $summary_window);
                     error($event_type->error) if ($event_type->error);

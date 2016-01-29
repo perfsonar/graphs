@@ -4,7 +4,6 @@
 var TestResultUtils = {};
 
 TestResultUtils.formatValue = function(value, prefix) { 
-
     var format_str = '';
     var formatted_value;
     var suffix = '';
@@ -14,13 +13,31 @@ TestResultUtils.formatValue = function(value, prefix) {
             suffix = 'bps';
         } else if ((/^owdelay_/).test(prefix)) {
             format_str = '.2f';
-        } else if ((/^loss_/).test(prefix)) {
+            var re = /^owdelay(_\w{3})$/;
+            var match;
+            var results;
+            if ( match = re.exec(prefix) ) {
+                if ( value === null ) {
+                    prefix = 'rtt' + match[1];
+                    suffix = '(rtt)';
+                }
+            }
+        } else if ((/^rtt_/).test(prefix)) {
             format_str = '.2f';
+            suffix = '(rtt)';
+        } else if ((/^loss_/).test(prefix)) {
+            format_str = '.2e';
         }
         var val_prefix = d3.formatPrefix(value, 3);
        
-        if ((/^owdelay_/).test(prefix)) { 
-            formatted_value = value.toPrecision(3);
+        if ( (/^owdelay_/).test(prefix) || (/^rtt_/).test(prefix) ) { 
+            formatted_value = value.toPrecision(3) + " " + suffix;
+        } else if ((/^loss_/).test(prefix)) {
+            if (value == 0) {
+                formatted_value = 0;
+            } else  {
+                formatted_value = d3.format(format_str)(value);
+            }
         } else {
             formatted_value = val_prefix.scale(value).toPrecision(3) + " " + val_prefix.symbol + suffix;
         }
@@ -39,6 +56,20 @@ TestResultUtils.formatStats = function(d, prefix, inactive_threshold) {
     min = d[prefix + '_min'];
     max = d[prefix + '_max'];
 
+    // If there is no value for 'avg', AND we're looking at the owdelay type,
+    // attempt to grab rtt instead
+    var re = /^owdelay(_\w{3})$/;
+    var match;
+    var results;
+    if ( avg === null ) {
+        if ( match = re.exec(prefix) ) {
+            prefix = 'rtt' + match[1];
+            avg = d[prefix + '_average'];
+            min = d[prefix + '_min'];
+            max = d[prefix + '_max'];
+        }
+    }
+
     var data = new Array();
     data[0] = new Object();
     data[0].value = TestResultUtils.formatValue(avg, prefix);
@@ -46,8 +77,6 @@ TestResultUtils.formatStats = function(d, prefix, inactive_threshold) {
     // Account for the last_update field name not including _src or _dst
     prefix = prefix.replace('_src', '');
     prefix = prefix.replace('_dst', '');
-
-
     var inactive;
     var last_update_key = prefix + '_last_update';
     if (d[last_update_key] != null && d[last_update_key] < inactive_threshold) {

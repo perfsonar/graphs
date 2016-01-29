@@ -82,12 +82,8 @@ require(["dijit/Dialog", "dijit/form/Button", "dojo/domReady!", "dojox/widget/Di
                 dataTable.renderlet(function(table) {
                     var rows = d3.selectAll('#summaryTable tr.dc-table-row');
                     rows.on('click', function(node) {
-                        console.log('node');
-                        console.log(node);
                         var src = node.source_host;
                         var dest = node.destination_host;
-                        console.log('src: ' + src);
-                        console.log('dest: ' + dest);
                         createDialog(src, dest);
                         });
                     });
