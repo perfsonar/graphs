@@ -276,8 +276,8 @@ table.hosts tr th { color: darkgrey; }
 /*table.grid-value .inactive:hover { background-color:#dddddd; }*/
 span.psgraph-val { font-family: "Lucida Console", Monaco, monospace; } 
 #summaryTable th.sortHeader span.sort { width:13px; height:12px; display:inline-block; margin-left:5px; }
-#summaryTable th.sortHeader span.sort.asc { background:url(/serviceTest/images/uparrow.png); }
-#summaryTable th.sortHeader span.sort.desc { background:url(/serviceTest/images/downarrow.png); }
+#summaryTable th.sortHeader span.sort.asc { background:url(/perfsonar-graphs/images/uparrow.png); }
+#summaryTable th.sortHeader span.sort.desc { background:url(/perfsonar-graphs/images/downarrow.png); }
 
 .chart { clear:both; }
 

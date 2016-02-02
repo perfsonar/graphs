@@ -1,8 +1,8 @@
 require(["dojo/dom", "dojo/on", "dojo/hash", "dojo/io-query", "dojo/domReady!"], _start_widget);
 
 function _start_widget(theDom, theOn, theHash, ioQuery){
-    var LS_LIST_URL  = '/serviceTest/graphData.cgi?action=ls_hosts';
-    var LS_QUERY_URL = '/serviceTest/graphData.cgi?action=interfaces';
+    var LS_LIST_URL  = '/perfsonar-graphs/graphData.cgi?action=ls_hosts';
+    var LS_QUERY_URL = '/perfsonar-graphs/graphData.cgi?action=interfaces';
 
     lookup_ls_information(LS_LIST_URL, LS_QUERY_URL);
     get_dns_information();
@@ -141,7 +141,7 @@ function show_host_information(data){
 
 
 function get_dns_information(){
-    var url = '/serviceTest/graphData.cgi?action=hosts';
+    var url = '/perfsonar-graphs/graphData.cgi?action=hosts';
     url    += array2param('src', sources);
     url    += array2param('dest', dests); 
 
@@ -263,7 +263,7 @@ GraphWidget = function(hash, ioquery, ma_urls, sources, dests){
 	
 	this.timePeriod     = this.getTimePeriod();
 	
-	this.base_url = '/serviceTest/graphData.cgi?action=data';
+	this.base_url = '/perfsonar-graphs/graphData.cgi?action=data';
 	this.base_url += array2param('url', this.ma_urls);
 	this.base_url += array2param('src', this.sources);
 	this.base_url += array2param('dest', this.dests);

@@ -1,7 +1,9 @@
-PACKAGE=perfSONAR-graphs
-ROOTPATH=/opt/perfsonar_ps/serviceTest
-VERSION=3.5.0.1
-RELEASE=1
+PACKAGE=perfsonar-graphs
+ROOTPATH=/usr/lib/perfsonar/graphs
+CONFIGPATH=${ROOTPATH}/etc
+LIBPATH=/usr/lib/perfsonar/lib
+VERSION=3.5.1
+RELEASE=0.0.a1
 
 default:
 	@echo No need to build the package. Just run \"make install\"
@@ -9,24 +11,17 @@ default:
 dist:
 	mkdir /tmp/$(PACKAGE)-$(VERSION).$(RELEASE)
 	tar ch -T MANIFEST | tar x -C /tmp/$(PACKAGE)-$(VERSION).$(RELEASE)
+	cd /tmp/$(PACKAGE)-$(VERSION).$(RELEASE) && ln -s doc/LICENSE LICENSE
+	cd /tmp/$(PACKAGE)-$(VERSION).$(RELEASE) && ln -s doc/INSTALL INSTALL
+	cd /tmp/$(PACKAGE)-$(VERSION).$(RELEASE) && ln -s doc/README README
 	tar czf $(PACKAGE)-$(VERSION).$(RELEASE).tar.gz -C /tmp $(PACKAGE)-$(VERSION).$(RELEASE)
 	rm -rf /tmp/$(PACKAGE)-$(VERSION).$(RELEASE)
 
-upgrade:
-	mkdir /tmp/$(PACKAGE)-$(VERSION).$(RELEASE)
-	tar ch --exclude=etc/* -T MANIFEST | tar x -C /tmp/$(PACKAGE)-$(VERSION).$(RELEASE)
-	tar czf $(PACKAGE)-$(VERSION).$(RELEASE)-upgrade.tar.gz -C /tmp $(PACKAGE)-$(VERSION).$(RELEASE)
-	rm -rf /tmp/$(PACKAGE)-$(VERSION).$(RELEASE)
-
-rpminstall:
-	mkdir -p ${ROOTPATH}
-	tar ch --exclude=etc/* --exclude=*spec --exclude=MANIFEST --exclude=Makefile -T MANIFEST | tar x -C ${ROOTPATH}
-	for i in `cat MANIFEST | grep ^etc`; do  mkdir -p `dirname $(ROOTPATH)/$${i}`; if [ -e $(ROOTPATH)/$${i} ]; then install -m 640 -c $${i} $(ROOTPATH)/$${i}.new; else install -m 640 -c $${i} $(ROOTPATH)/$${i}; fi; done
-	tar xzf ${ROOTPATH}/JS/dojo-release-ps-toolkit.tar.gz -C ${ROOTPATH}/JS
-	rm -f ${ROOTPATH}/JS/dojo-release-ps-toolkit.tar.gz
-	
 install:
 	mkdir -p ${ROOTPATH}
-	tar ch --exclude=etc/* --exclude=*spec --exclude=MANIFEST --exclude=Makefile -T MANIFEST | tar x -C ${ROOTPATH}
-	for i in `cat MANIFEST | grep ^etc`; do  mkdir -p `dirname $(ROOTPATH)/$${i}`; if [ -e $(ROOTPATH)/$${i} ]; then install -m 640 -c $${i} $(ROOTPATH)/$${i}.new; else install -m 640 -c $${i} $(ROOTPATH)/$${i}; fi; done
+	tar ch --exclude=etc/* --exclude=*spec --exclude=dependencies --exclude=MANIFEST --exclude=Makefile -T MANIFEST | tar x -C ${ROOTPATH}
+	for i in `cat MANIFEST | grep ^etc/ | sed "s/^etc\///"`; do  mkdir -p `dirname $(CONFIGPATH)/$${i}`; if [ -e $(CONFIGPATH)/$${i} ]; then install -m 640 -c etc/$${i} $(CONFIGPATH)/$${i}.new; else install -m 640 -c etc/$${i} $(CONFIGPATH)/$${i}; fi; done
+	tar xzf ${ROOTPATH}/JS/dojo-release-ps-toolkit.tar.gz -C ${ROOTPATH}/JS
+	sed -i 's:.RealBin/\.\./lib:${LIBPATH}:g' ${ROOTPATH}/cgi-bin/*
+	rm -f ${ROOTPATH}/JS/dojo-release-ps-toolkit.tar.gz
 

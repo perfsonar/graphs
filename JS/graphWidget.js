@@ -44,8 +44,8 @@ if (end_ts > now) {
     start_ts = now - time_diff;
 }
 
-var ls_list_url = '/serviceTest/graphData.cgi?action=ls_hosts';
-var ls_query_url = '/serviceTest/graphData.cgi?action=interfaces';
+var ls_list_url = '/perfsonar-graphs/graphData.cgi?action=ls_hosts';
+var ls_query_url = '/perfsonar-graphs/graphData.cgi?action=interfaces';
 
 var src_capacity = 'Unknown';
 var src_mtu = 'Unknown';
@@ -214,7 +214,7 @@ if (uri.indexOf('?') > -1) {
 
 var chartStates = [];
 
-var base_url = '/serviceTest/graphData.cgi?action=data';
+var base_url = '/perfsonar-graphs/graphData.cgi?action=data';
 base_url += array2param('url', ma_urls);
 base_url += array2param('src', sources);
 base_url += array2param('dest', dests);
@@ -225,7 +225,7 @@ base_url += array2param('protocol', protocols);
 base_url += array2param('filter', custom_ma_filters);
 
 // do a DNS lookup on the source/dests
-d3.json('/serviceTest/graphData.cgi?action=hosts' + array2param('src', sources) + array2param('dest', dests) + array2param('ipversion', ipversions), function(error, hosts) {
+d3.json('/perfsonar-graphs/graphData.cgi?action=hosts' + array2param('src', sources) + array2param('dest', dests) + array2param('ipversion', ipversions), function(error, hosts) {
 	for (var i = 0; i < hosts.length; i++){
 	    var source_host = d3.select('#source_host_' + i);
 	    source_host.html(hosts[i].source_host);
@@ -240,7 +240,7 @@ d3.json('/serviceTest/graphData.cgi?action=hosts' + array2param('src', sources) 
         var has_traceroute_data = 0;
         for(var s = 0; s < source_ips.length && !has_traceroute_data; s++){
             for(var d = 0; d < dest_ips.length && !has_traceroute_data; d++){
-                var tr_url = '/serviceTest/graphData.cgi?action=has_traceroute_data&url=' + ma_urls[i] 
+                var tr_url = '/perfsonar-graphs/graphData.cgi?action=has_traceroute_data&url=' + ma_urls[i] 
                     + '&source=' + source_ips[s] + '&dest=' + dest_ips[d];
                 has_traceroute_data = get_traceroute_data(tr_url, dest_ip);
             }
