@@ -8,7 +8,7 @@
 
 Name:			perfsonar-graphs
 Version:		3.5.1
-Release:		%{relnum}.%{disttag}
+Release:		%{relnum}
 Summary:		perfSONAR Graphs
 License:		Distributable, see LICENSE
 Group:			Development/Libraries
