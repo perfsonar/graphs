@@ -89,7 +89,6 @@ chown -R apache:apache %{install_base}/etc
 %defattr(-,perfsonar,perfsonar,-)
 %config %{install_base}/etc/*
 %{install_base}/cgi-bin/*
-%{install_base}/doc/*
 %{install_base}/JS/*
 %{install_base}/templates/bw_error.tmpl
 %{install_base}/templates/bw_graphing.tmpl
