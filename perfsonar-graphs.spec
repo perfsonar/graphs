@@ -48,8 +48,8 @@ Requires:		libperfsonar-esmond-perl
 Requires:		libperfsonar-sls-perl
 Requires:		libperfsonar-toolkit-perl
 Obsoletes:		perl-perfSONAR_PS-serviceTest
-Obsoletes:		perl-perfSONAR_PS-graphs
-Provides:		perl-perfSONAR_PS-graphs
+Obsoletes:		perl-perfSONAR-graphs
+Provides:		perl-perfSONAR-graphs
 
 %description
 The perfSONAR Graphs package is a series of simple web-based GUIs that
