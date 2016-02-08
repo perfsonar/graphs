@@ -9,7 +9,6 @@ JS/result.js
 JS/sorting.js
 JS/TestResultUtils.js
 JS/graphWidget_new.js
-cgi-bin/getData.cgi
 cgi-bin/graphData.cgi
 cgi-bin/graphPage.cgi
 cgi-bin/graphWidget.cgi
