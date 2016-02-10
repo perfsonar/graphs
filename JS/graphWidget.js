@@ -256,7 +256,7 @@ function get_traceroute_data(url, div) {
                 if (typeof trace_data.has_traceroute != "undefined" && trace_data.has_traceroute == 1) {
                     var tr_link = div.append('span');
                     tr_link.classed("traceroute", true);
-                    var trace_url = '/toolkit/gui/psTracerouteViewer/index.cgi?';
+                    var trace_url = '/perfsonar-traceroute-viewer/index.cgi?';
                     trace_url += '&mahost=' + trace_data.ma_url;
                     trace_url += '&stime=yesterday';
                     trace_url += '&etime=now';
