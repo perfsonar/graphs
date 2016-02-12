@@ -16,7 +16,6 @@ use HTML::Entities;
 use perfSONAR_PS::Web::Sidebar qw(set_sidebar_vars);
 use Data::Dumper;
 use JSON;
-use perfSONAR_PS::Utils::GraphMetadataKey qw(lookupGraphKeys);
 
 my $basedir     = "$RealBin/";
 my $templatedir = "$basedir/../templates";
@@ -34,37 +33,7 @@ my @protocols        = $cgi->param('protocol');
 my @filters          = $cgi->param('filter');
 my $window           = $cgi->param('window');
 
-
-
-# If we're handling a request to an old MA
-# figure out where it needs to go
-if ($ma_urls[0] =~ /pSB/){
-    handle_old_ma();
-}
-else {
-    handle_esmond();
-}
-
-
-sub handle_old_ma {
-    # we need to do some guesswork here to figure out which event they were trying to
-    # view, either throughput or delay
-
-    # it looks like bucket_width parameter only shows up for delay tests so
-    # use that to tentatively guess where to emit the redirect
-
-    my $cgi_url   = $cgi->url();
-    my $query_str = $cgi->query_string();
-
-    if ($cgi->param('bucket_width')){
-	$cgi_url =~ s/graphWidget\.cgi/delayGraph\.cgi/;
-    }
-    else {
-	$cgi_url =~ s/graphWidget\.cgi/bandwidthGraph\.cgi/;
-    }
-
-    print $cgi->redirect($cgi_url . "?" . $query_str);    
-}
+handle_esmond();
 
 sub handle_esmond {
     #print cgi-header

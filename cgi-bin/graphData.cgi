@@ -13,7 +13,7 @@ use LWP::UserAgent;
 use HTTP::Request;
 use Params::Validate qw(:all);
 use JSON qw(from_json);
-use FindBin;
+use FindBin qw($RealBin);
 use Time::HiRes;
 use Data::Dumper;
 use Socket;
@@ -22,8 +22,7 @@ use Socket6;
 use Data::Validate::IP;
 use Log::Log4perl qw(get_logger :easy :levels);
 
-#use lib "$FindBin::Bin/../../../../lib";
-use lib "$FindBin::RealBin/../lib";
+use lib "$RealBin/../lib";
 
 use perfSONAR_PS::Client::Esmond::ApiFilters;
 use perfSONAR_PS::Client::Esmond::ApiConnect;
