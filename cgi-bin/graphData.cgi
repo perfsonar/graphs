@@ -36,6 +36,9 @@ use perfSONAR_PS::Utils::DNS qw(resolve_address);
 use SimpleLookupService::Client::Query;
 use SimpleLookupService::QueryObjects::Network::InterfaceQueryObject;
 
+# library for getting host information
+use perfSONAR_PS::Utils::Host qw( discover_primary_address get_ethernet_interfaces get_interface_addresses_by_type );
+
 my $basedir = "$FindBin::Bin";
 
 my $cgi = new CGI;
@@ -103,36 +106,36 @@ sub get_data {
     my @threads;
 
     for (my $j = 0; $j < @sources; $j++){
-	foreach my $ordered ([$sources[$j], $dests[$j]], [$dests[$j], $sources[$j]]){
-	    my ($test_src, $test_dest) = @$ordered;
-	    
-	    my $thread = threads->create(\&_get_test_data,
-					 $test_src,
-					 $test_dest,
-					 $start,
-					 $end,
-					 $summary_window,
-					 $urls[$j],
-					 $ipversions[$j],
-					 $agents[$j],
-					 $tools[$j],
-					 $protocols[$j],
-					 $filters[$j],
-					 \@base_event_types,
-					 \@mapped_event_types,
-					 \%types_to_ignore
-		);
-	    
-	    push(@threads, $thread);	   	    
-	}
+        foreach my $ordered ([$sources[$j], $dests[$j]], [$dests[$j], $sources[$j]]){
+            my ($test_src, $test_dest) = @$ordered;
+
+            my $thread = threads->create(\&_get_test_data,
+                $test_src,
+                $test_dest,
+                $start,
+                $end,
+                $summary_window,
+                $urls[$j],
+                $ipversions[$j],
+                $agents[$j],
+                $tools[$j],
+                $protocols[$j],
+                $filters[$j],
+                \@base_event_types,
+                \@mapped_event_types,
+                \%types_to_ignore
+            );
+
+            push(@threads, $thread);
+        }
     }
-    
+
     foreach my $thread (@threads){
     	my $ret_array = $thread->join();
     	#error("Error fetching data") if (! $ret_array);	#do not throw error if a thread fails.	
 
     	foreach my $ret (@$ret_array){
-            
+
             my $test_src        = $ret->{'test_src'};
             my $test_dest       = $ret->{'test_dest'};
             my $multiple_values = $ret->{'multiple_values'};
@@ -140,8 +143,8 @@ sub get_data {
             my @data_points     = @{$ret->{'data'}};
             my @summary_fields  = @{$ret->{'summary_fields'}};
             my %additional_data = %{$ret->{'additional_data'}};
-            
-            
+
+
             if (!$multiple_values) {
                 if (exists($results{$test_src}{$test_dest}{$remapped_name}) && @{$results{$test_src}{$test_dest}{$remapped_name}} > 0) { 
                     my @existing_data_points = @{$results{$test_src}{$test_dest}{$remapped_name}};
@@ -159,10 +162,10 @@ sub get_data {
                             @new_data_points = (@existing_data_points, @new_data_points);
                         }
                         $results{$test_src}{$test_dest}{$key} = \@new_data_points if @new_data_points > 0; 
-                    }                        
+                    }
                 }
             }
-            
+
 
 
     	}
@@ -170,7 +173,7 @@ sub get_data {
 
     # CONSOLIDATE ALL TESTS IN ONE DATASTRUCTURE
     my %consolidated;
-    
+
     while (my ($src, $values) = each %results) {
         while (my ($dst, $result_types) = each %$values) {
 
@@ -479,18 +482,55 @@ sub check_traceroute_data {
     return $result;
 }
 
+sub _get_local_addresses_hash {
+    my $addr_array = _get_local_addresses();
+    my %addr_hash = ();
+
+    foreach my $addr (@$addr_array) {
+        $addr_hash{ $addr } = 1;
+    }
+    return \%addr_hash;
+
+}
+
+sub _get_local_addresses {
+
+    my @interfaces = get_ethernet_interfaces();
+    my @addresses;
+    foreach my $interface (@interfaces){
+        my $iface;
+
+        my $address = get_interface_addresses_by_type({interface=>$interface});
+        $iface = $address;
+        if ($address->{'ipv4_address'}) {
+            foreach my $addr ( @{ $address->{'ipv4_address'} } ) {
+                push @addresses, $addr;
+            }
+        }
+        if ($address->{'ipv6_address'}) {
+            foreach my $addr ( @{ $address->{'ipv6_address'} } ) {
+                push @addresses, $addr;
+            }
+        }
+        $iface->{iface} = $interface;
+    }
+    return \@addresses;
+}
+
 # get_test_list is used to retrieve just the hostname/ips of source and destination
 # of active tests in an MA. 
 sub get_test_list {
     my $url    = $cgi->param('url')   || error("Missing required parameter \"url\"");
 
+    my $addresses = _get_local_addresses_hash();
+
     my $filter = new perfSONAR_PS::Client::Esmond::ApiFilters(); 
     $filter->time_range( 86400*31 );
     $filter->subject_type('point-to-point');
-    
+
     my $client = new perfSONAR_PS::Client::Esmond::ApiConnect(url     => $url,
 							      filters => $filter);
-    
+
     my $metadata = $client->get_metadata();
     error($client->error) if ($client->error);
 
@@ -514,6 +554,14 @@ sub get_test_list {
             next unless ($type eq 'throughput' || $type eq 'packet-loss-rate' || $type eq 'histogram-owdelay' || $type eq 'histogram-rtt');
 
             if (defined ($event_type->{'time-updated'}) && $event_type->{'time-updated'} > $start_time ) {
+
+                if ( exists $addresses->{ $metadatum->{'data'}->{'destination'} } ) {
+                    # swap 'source' and 'destination' (use 'tmp' as a holder)
+                    $metadatum->{'data'}->{'tmp'} = $metadatum->{'data'}->{'source'};
+                    $metadatum->{'data'}->{'source'} = $metadatum->{'data'}->{'destination'};
+                    $metadatum->{'data'}->{'destination'} = $metadatum->{'data'}->{'tmp'};
+                }
+
                 my $source = $metadatum->{'data'}->{'source'};
                 my $dest = $metadatum->{'data'}->{'destination'};
                 $active_hosts{ $source } = 1;
@@ -568,15 +616,17 @@ sub get_tests {
     my $show_details = 0;
     my $start_time = [Time::HiRes::gettimeofday()];
 
+    my $addresses = _get_local_addresses_hash();
+
     my $filter = new perfSONAR_PS::Client::Esmond::ApiFilters();
     $filter->time_range( 86400*31 );
     $filter->subject_type('point-to-point');
     #$filter->limit(10); #return up to 10 results
     #$filter->offset(0); # return the first results you find
-   
+
     my $client = new perfSONAR_PS::Client::Esmond::ApiConnect(url     => $url,
 							      filters => $filter);
-    
+
     my $total_metadata = 0;
     my $method_start_time = [Time::HiRes::gettimeofday()];
     $start_time = [Time::HiRes::gettimeofday()];
@@ -594,10 +644,8 @@ sub get_tests {
     my $all_types = [];
 
     foreach my $metadatum (@$metadata){
-
         my $src = $metadatum->source();
         my $dst = $metadatum->destination();
-
         my $event_types = $metadatum->get_all_event_types();
 
         my $protocol = $metadatum->get_field('ip-transport-protocol');
@@ -760,6 +808,48 @@ sub get_tests {
             }
         }
     }
+
+    # invert src/dst if dst is one of the local addresses
+    if (1) {
+        while (my ($src, $values) = each %results) {
+            while (my ($dst, $types) = each %$values) {
+                if ( exists $addresses->{ $dst } ) {
+                    my $orig_src = $src;
+                    my $orig_dst = $dst;
+                    $src = $dst;
+                    $dst = $orig_src;
+                    $results{$src}{$dst} = $results{$orig_src}{$orig_dst};
+                    delete $results{$orig_src}{$orig_dst};
+                    delete $results{$orig_src};
+                    if ( $orig_src ne $src ) {
+                        foreach my $type (@$all_types) {
+                            while ( my ( $key, $val ) = each %{ $results{$src}{$dst}{$type} } ) {
+                                my $orig_key = $key;
+                                
+                                # only replace if we're looking at a src_ key
+                                if ( $key =~ /^src_/ ) {
+                                    $key =~ s/^src_/dst_/;
+                                } 
+                                # if the key has been renamed
+                                if ( $orig_key ne $key ) {
+                                    # make a copy of the value stored under the new key
+                                    my $tmp = $results{$src}{$dst}{$type}{$key};
+
+                                    # copy the value from the old key to the new key
+                                    $results{$src}{$dst}{$type}{$key} = $results{$src}{$dst}{$type}{$orig_key};
+                                    # copy the value from the new key to the old key
+                                    $results{$src}{$dst}{$type}{$orig_key} = $tmp;
+                                }
+
+                            }
+                        }
+                    }
+
+                }
+            }
+        }
+    }
+
 
     # FLATTEN DATASTRUCTURE
     my @results_arr;
