@@ -142,35 +142,35 @@ d3.json(ls_list_url, function(error, ls_list_data) {
 		});
         }
 
-        function combineData() {   
+        function combineData() {
 
             for(var i in rows) {
                 var results = rows[i];
 
 		for (var j in results){
 		    row = rows[i][j];
-		
+
 		    for (var k in sources){
 			if (sources[k] == row.source_ip){
 			    var srcCapacity = d3.select('#source_capacity_' + k);
 			    var srcMTU = d3.select('#source_mtu_' + k);
-			    
+
 			    if (row.source_mtu) {
 				src_mtu = row.source_mtu;
 				srcMTU.html( src_mtu );
 			    }
-			    
+
 			    if (row.source_capacity) {
 			    src_capacity = row.source_capacity;
 			    srcCapacity.html( d3.format('.2s')(src_capacity) );
 			    }
-			    
+
 			}
-			
+
 			if(dests[k] == row.dest_ip){
 			    var destCapacity = d3.select('#dest_capacity_' + k);
-			    var destMTU = d3.select('#dest_mtu_' + k);    
-			    
+			    var destMTU = d3.select('#dest_mtu_' + k);
+
 			    if (row.dest_mtu) {
 				dest_mtu = row.dest_mtu;
 				destMTU.html( dest_mtu );
@@ -178,12 +178,12 @@ d3.json(ls_list_url, function(error, ls_list_data) {
 			    if (row.dest_capacity) {
 				dest_capacity = row.dest_capacity;
 				destCapacity.html( d3.format('.2s')(dest_capacity) );
-			    }			
+			    }
 			}
 		    }
 		}
 	    }
-	}   
+	}
     });
 
 // default ma url, pre-encoded
@@ -204,13 +204,13 @@ if (uri.indexOf('?') > -1) {
 
         // remove #whatever from ma_url, if applicable
 	for (var i = 0; i < ma_urls.length; i++){
-	    var ma_url = ma_urls[i];   
+	    var ma_url = ma_urls[i];
             if (ma_url.indexOf('#') > -1) {
                 ma_urls[i] = ma_url.substring(0, ma_url.indexOf('#'));
             }
 	}
     }
-} 
+}
 
 var chartStates = [];
 
@@ -284,6 +284,7 @@ function drawChart(url) {
     loading.style('display', 'block');
 
     d3.json(url, function(error,ps_data) {
+        console.log('ps_data', ps_data);
 
             drawChartSameCall(error, ps_data);
 
@@ -292,57 +293,14 @@ function drawChart(url) {
 
 	    var timePeriod = ioQuery.queryToObject(theHash()).timeframe || '1w';  // get hash
 
-	    var prevLink = d3.selectAll('.ps-timerange-nav .prev');	 		
+	    var prevLink = d3.selectAll('.ps-timerange-nav .prev');
 	    var nextLink = d3.selectAll('.ps-timerange-nav .next');
 
-            var errorDiv = d3.select('#chartError');
-            // No data to plot
-            if (typeof ps_data == 'undefined' || ps_data.length == 0) {
-                //cleanupObjects(); 
-                errorDiv.html('Error retrieving data from the webservice.');
-                d3.select('#legend').html('');
-           } else {
-
-        var retransmits_src = {};
-        var retransmits_dst = {};
-        if (ps_data.packet_retransmits_src) {
-            for (var i=0; i < ps_data.packet_retransmits_src.length; i++) {
-                var ts = ps_data.packet_retransmits_src[i][0];
-                var val = ps_data.packet_retransmits_src[i][1];
-                retransmits_src[ts] = val;
-            }
-
-        }
-        if (ps_data.packet_retransmits_dst) {
-            for (var i=0; i < ps_data.packet_retransmits_dst.length; i++) {
-                var ts = ps_data.packet_retransmits_dst[i][0];
-                var val = ps_data.packet_retransmits_dst[i][1];
-                retransmits_dst[ts] = val;
-            }
-
-        }
-      
-        var error_tool_src = {}; 
-        var error_tool_dst = {}; 
-        if (ps_data.error_tool_src) {
-            for (var i=0; i < ps_data.error_tool_src.length; i++) {
-                var ts = ps_data.error_tool_src[i][0];
-                var val = ps_data.error_tool_src[i][1];
-                error_tool_src[ts] = val;
-            }
-        }
-        if (ps_data.error_tool_dst) {
-            for (var i=0; i < ps_data.error_tool_dst.length; i++) {
-                var ts = ps_data.error_tool_dst[i][0];
-                var val = ps_data.error_tool_dst[i][1];
-                error_tool_dst[ts] = val;
-            }
-        }
-        
+        console.log('draw same call, ps_data', ps_data);
 
 	    if (! next_prev_registered){
-		prevLink.on("click", function() { 
-			d3.event.preventDefault(); 			
+		prevLink.on("click", function() {
+			d3.event.preventDefault();
 			end_ts = end_ts - time_diff;
 			start_ts = start_ts - time_diff;
 			add_to_hash('start_ts', start_ts);
@@ -355,9 +313,9 @@ function drawChart(url) {
 			    nextLink.style('display', 'block');
 			}
 		    });
-		
-		nextLink.on("click", function() { 
-			d3.event.preventDefault(); 
+
+		nextLink.on("click", function() {
+			d3.event.preventDefault();
 			end_ts = end_ts + time_diff;
 			start_ts = start_ts + time_diff;
 			if (end_ts > now) {
@@ -377,9 +335,60 @@ function drawChart(url) {
 	    if (end_ts >= now ) {
 		    nextLink.style('display', 'none');
 	    }
-	    
+
         prevLink.html('<a href="#">Previous ' + timePeriod + '</a>');
         nextLink.html('<a href="#">Next ' + timePeriod + '</a>');
+
+            var errorDiv = d3.select('#chartError');
+            // No data to plot
+            if (typeof ps_data == 'undefined') {
+                //cleanupObjects(); 
+                errorDiv.html('Error retrieving data from the webservice.');
+                d3.select('#legend').html('');
+            } else if ( isEmpty(ps_data) ) {
+                errorDiv.html('ERROR: No data to plot for the hosts and time range selected.');
+                d3.select('#legend').html('');
+
+           } else {
+
+
+
+
+        var retransmits_src = {};
+        var retransmits_dst = {};
+        if (ps_data.packet_retransmits_src) {
+            for (var i=0; i < ps_data.packet_retransmits_src.length; i++) {
+                var ts = ps_data.packet_retransmits_src[i][0];
+                var val = ps_data.packet_retransmits_src[i][1];
+                retransmits_src[ts] = val;
+            }
+
+        }
+        if (ps_data.packet_retransmits_dst) {
+            for (var i=0; i < ps_data.packet_retransmits_dst.length; i++) {
+                var ts = ps_data.packet_retransmits_dst[i][0];
+                var val = ps_data.packet_retransmits_dst[i][1];
+                retransmits_dst[ts] = val;
+            }
+
+        }
+
+        var error_tool_src = {};
+        var error_tool_dst = {};
+        if (ps_data.error_tool_src) {
+            for (var i=0; i < ps_data.error_tool_src.length; i++) {
+                var ts = ps_data.error_tool_src[i][0];
+                var val = ps_data.error_tool_src[i][1];
+                error_tool_src[ts] = val;
+            }
+        }
+        if (ps_data.error_tool_dst) {
+            for (var i=0; i < ps_data.error_tool_dst.length; i++) {
+                var ts = ps_data.error_tool_dst[i][0];
+                var val = ps_data.error_tool_dst[i][1];
+                error_tool_dst[ts] = val;
+            }
+        }
         if (timePeriod != '') {
             dojo.query('#chart #time-selector a.zoomLink').removeClass('active');
             dojo.query('#chart #time-selector a.zoomLink').forEach(function(node, index, nodelist) {
@@ -388,7 +397,7 @@ function drawChart(url) {
                     }
                     });
         }
-	    
+
             var start_date = new Date (start_ts * 1000);
             var end_date = new Date (end_ts * 1000);
 
@@ -400,8 +409,8 @@ function drawChart(url) {
 
             function make_functions(field_name) {
                 return [
-                    // Add        
-                    function(p, v) {                
+                    // Add
+                    function(p, v) {
                         ++p.total_count;
                         if ( v[1] !== null ) {
                             ++p.count;
@@ -419,21 +428,21 @@ function drawChart(url) {
                                 p.sum = 1;
                                 p.val = 1;
                                 p.error_text = v[1];
-                                p.avg = 1; 
+                                p.avg = 1;
                                 p.tool = error_tool_src[v[0]] || '';
                             }
                             if (field_name == 'error_dst_val') {
                                 p.sum = 1;
                                 p.val = 1;
                                 p.error_text = v[1];
-                                p.avg = 1; 
+                                p.avg = 1;
                                 p.tool = error_tool_dst[v[0]] || '';
                             }
                         } else {
                             // Mark p as null, but only if it hasn't already been flagged as not null
-                            if (!p.isNull) { 
+                            if (!p.isNull) {
                                 p.isNull = true;
-                            } 
+                            }
                         }
                         return p;
                     },
@@ -444,7 +453,7 @@ function drawChart(url) {
                             --p.count;
                             p.sum -= v[1];
                             p.avg = p.sum/p.count;
-                        } 
+                        }
                         return p;
                     },
 
@@ -457,11 +466,11 @@ function drawChart(url) {
             }
 
 
-            var avgOrder = function(p) { 
-                return p.avg; 
+            var avgOrder = function(p) {
+                return p.avg;
             };
-            var avgOrderInv = function(p) { 
-                return -p.avg; 
+            var avgOrderInv = function(p) {
+                return -p.avg;
             };
             var valOrder = function(p) { return p; };
             var valOrderInv = function(p) { return -p; };
@@ -499,7 +508,7 @@ function drawChart(url) {
                 yNegPadAmt = Math.abs(minY / maxY);
             }
 
-            var setHeader = function() { 
+            var setHeader = function() {
                 var rangeLabel = format_ts_header(new Date(1000 * start_ts)) + ' -- ' + format_ts_header(new Date(1000 * end_ts));
                 var chartHeader = d3.select('.chartTimeRange').html( rangeLabel );
             };
@@ -514,7 +523,7 @@ function drawChart(url) {
             charts.throughput.unit = 'bps';
             charts.throughput.fieldName = 'throughput';
             charts.throughput.valType = 'avg';
-            charts.throughput.color = '#0076b4'; 
+            charts.throughput.color = '#0076b4';
             charts.throughput.showByDefault = true;
             charts.throughput.tickFormat = function(d) { return d3.format('.2s')(d) + 'bps';  };
 
@@ -525,7 +534,7 @@ function drawChart(url) {
             charts.latency.unit = 'ms';
             charts.latency.fieldName = 'owdelay_minimum';
             charts.latency.valType = 'avg';
-            charts.latency.color = '#663333'; 
+            charts.latency.color = '#663333';
 
             charts.latency.showByDefault = true;
             charts.latency.ticks = 5;
@@ -548,12 +557,12 @@ function drawChart(url) {
             charts.ping.unit = 'ms';
             charts.ping.fieldName = 'ping_minimum';
             charts.ping.valType = 'avg';
-            charts.ping.color = '#e5a11c'; 
+            charts.ping.color = '#e5a11c';
             charts.ping.showByDefault = true;
             charts.ping.ticks = 5;
             charts.ping.tickFormat = function(d) { return d3.format('.2f')(d ) };
 
-            // Loss charts 
+            // Loss charts
             charts.loss = {};
             charts.loss.name = 'Loss';
             charts.loss.type = 'loss';
@@ -564,31 +573,31 @@ function drawChart(url) {
             charts.loss.showByDefault = true;
             charts.loss.tickFormat = function(d) { return d3.format('.2e')(d); };
 
-            // Packet retrans charts 
-            
+            // Packet retrans charts
+
             charts.retrans = {};
             charts.retrans.name = 'Packet Retransmissions';
             charts.retrans.type = 'retrans';
             charts.retrans.unit = 'packets';
             charts.retrans.fieldName = 'packet_retransmits';
             charts.retrans.valType = 'sum';
-            charts.retrans.color = '#00ffff'; 
+            charts.retrans.color = '#00ffff';
             charts.retrans.showByDefault = false;
             charts.retrans.tickFormat = function(d) { return d };
-            charts.retrans.hide = true; 
+            charts.retrans.hide = true;
 
-            // Error charts 
-            
+            // Error charts
+
             charts.errors = {};
             charts.errors.name = 'Errors';
             charts.errors.type = 'errors';
             charts.errors.unit = 'errors';
             charts.errors.fieldName = 'error';
             charts.errors.valType = 'value';
-            charts.errors.color = '#ff0000'; 
+            charts.errors.color = '#ff0000';
             charts.errors.showByDefault = true;
             charts.errors.tickFormat = function(d) { return d };
-            charts.errors.hide = false; 
+            charts.errors.hide = false;
             charts.errors.chart_type = 'bubble';
 
             var parentChart = allTestsChart;
@@ -621,7 +630,7 @@ function drawChart(url) {
                 }
 
             }
-            charts.createGroups = function() {                
+            charts.createGroups = function() {
                 for(var key in this) {
                     var c = this[key];   // 'c' is the current chart
                     if (isFunction(c)) {
@@ -637,7 +646,7 @@ function drawChart(url) {
                     if (!ps_data[c.tableName]) { continue; }
                     c.crossfilter = crossfilter(ps_data[c.tableName]);
                     c.dimension = c.crossfilter.dimension(function (d) { return new Date( d[0] * 1000); });
-                    if (c.valType == 'avg') { 
+                    if (c.valType == 'avg') {
                         c.group = c.dimension.group().reduce.apply(c.dimension, make_functions(c.fieldName));
                         var topMin = c.group.order(avgOrderInv).top(1);
                         var topMax = c.group.order(avgOrder).top(1);
@@ -719,7 +728,7 @@ function drawChart(url) {
                             max = c.max;
                         }
                     }
-                } 
+                }
                 return max;
             };
 
@@ -730,7 +739,7 @@ function drawChart(url) {
                     var c = this[key];   // 'c' is the current chart
                     this.createChart(c);
                 }
-                this.createLegend('#legend'); 
+                this.createLegend('#legend');
                 return this;
             };
             charts.createChart = function(currentChart) {
@@ -743,9 +752,9 @@ function drawChart(url) {
                 if (c.valType == 'avg') {
                     c.chart.valueAccessor(function (d) { return yAxisMax * d.value.avg / c.unitMax; });
                     if (c.type == 'loss') {
-                        c.chart.valueAccessor(function(d) { 
-                                if (d.value.avg != 0) { 
-                                    return yAxisMax * d.value.avg / c.unitMax; 
+                        c.chart.valueAccessor(function(d) {
+                                if (d.value.avg != 0) {
+                                    return yAxisMax * d.value.avg / c.unitMax;
                                 } else {
                                     return 0.01; // TODO: fix: hacky -- so we see "0" values
                                 }
@@ -753,17 +762,17 @@ function drawChart(url) {
                         });
 
                     }
-                    c.title = function(d) { return c.name + ': ' 
+                    c.title = function(d) { return c.name + ': '
                         + format_values(d.value.avg, c.type)
                         + "\n" + format_values(d.key, 'ts'); };
                     if (c.type == 'throughput') {
-                        c.title = function(d) { 
+                        c.title = function(d) {
                             var ret = c.name + ': '
                             + format_values(d.value.avg, c.type);
                             if (d.value.retrans > 0) {
                                 ret += "\nPacket Retransmissions: " + d.value.retrans;
                             }
-                            ret += "\n" + format_values(d.key, 'ts'); 
+                            ret += "\n" + format_values(d.key, 'ts');
                             return ret;
                         };
                     }
@@ -777,7 +786,7 @@ function drawChart(url) {
                     // Leaving the title here commented out in case we want to go back to the native tooltip
                     //c.title = function(d) { return 'Error from ' + d.value.tool + ":\n" + d.value.error_text + "\n" + format_values(d.key, 'ts'); };
                     c.title = function(d) { return ''; };
-                    c.chart.renderTitle(false); // we rolled our own tooltips 
+                    c.chart.renderTitle(false); // we rolled our own tooltips
                     c.chart.radiusValueAccessor(function (d) { return 1.5; });
                     c.chart.MIN_RADIUS = 2;
                     c.chart.label(function (d) { return ''; });
@@ -793,8 +802,8 @@ function drawChart(url) {
                 if (c.direction == 'reverse' && c.chart_type != 'bubble') {
                     c.chart.dashStyle([3, 3]);
                     c.dashstyle = [3, 3];
-                } 
-            }; 
+                }
+            };
             charts.getAllObjects = function() {
                 var theCharts = [];
                 var typeOrder = this.getChartOrder();
@@ -834,7 +843,7 @@ function drawChart(url) {
                         remove_from_hash(hide_name);
                     }
 
-                    drawChartSameCall(error, ps_data);                                     
+                    drawChartSameCall(error, ps_data);
 
             };
 
@@ -848,13 +857,13 @@ function drawChart(url) {
                     for(var directionIndex in directionOrder) {
                         var direction = directionOrder[directionIndex];
                         if (typeof this[type + direction] !== 'undefined' && this[type + direction].hasValues && !this[type + direction].hide) {
-                            var c = this[type + direction];                            
+                            var c = this[type + direction];
                             var theType = c.type + (c.direction == 'reverse' ? '_rev' : '');
                             var cb = d3.select('#' + theType + "_checkbox");
                             if (cb !== null && !cb.empty() && typeof cb !== 'undefined') {
                                     cb.on("change", this.checkboxCallBack);
                                 if (get_hash_val('hide_' + theType) == 'true') {
-                                    cb.property('checked', false);                                
+                                    cb.property('checked', false);
                                 } else {
                                     cb.property('checked', true);
                                 }
@@ -863,8 +872,8 @@ function drawChart(url) {
                                    if (cb.property('checked') == false) {
                                     continue;
                                    }
-                                } 
-                            
+                                }
+
                             theCharts.push(c);
                         }
 
@@ -884,11 +893,11 @@ function drawChart(url) {
                 var chartOrder = ['throughput', 'latency', 'ping', 'loss', 'retrans', 'errors'];
                 return chartOrder;
             };
-            charts.getAxes = function() {                
+            charts.getAxes = function() {
                 var theAxes = []; // Use an array to maintain order
                 var unitsAdded = [];
                 var activeObjects = this.getActiveObjects();
-                var j = 0;                
+                var j = 0;
                 for(var i in activeObjects) {
                     var o = activeObjects[i];
                     var thisObj = {};
@@ -967,7 +976,7 @@ function drawChart(url) {
                 }
                 var keys = Object.keys(total_values);
                 var values = keys.map(function(v) { return total_values[v]; });
-                return values; 
+                return values;
             }
 
             charts.createCharts();
@@ -981,9 +990,9 @@ function drawChart(url) {
             var data_warning = '';
 
             if (charts.latency.min < 0 || charts.latency_rev.min < 0) {
-                data_warning += 'Negative latency values found in'; 
+                data_warning += 'Negative latency values found in';
 
-                if (charts.latency.min < 0 && charts.latency_rev.min < 0) { 
+                if (charts.latency.min < 0 && charts.latency_rev.min < 0) {
                     data_warning += ' both directions. '
                 } else {
                     if (charts.latency.min < 0) {
@@ -991,7 +1000,7 @@ function drawChart(url) {
                     }
                     if (charts.latency_rev.min < 0) {
                         data_warning += ' the reverse direction.';
-                    }                    
+                    }
                 }
                 data_warning += " Typically, this occurs when one or both hosts' clocks are out of sync, or the hosts are very close together."
                 warning_div.html(data_warning);
@@ -1023,8 +1032,9 @@ function drawChart(url) {
             var errorDiv = d3.select('#chartError');
             // No data to plot
             if (axes.length == 0) {
-                cleanupObjects(); 
+                cleanupObjects();
                 errorDiv.html('ERROR: No data to plot for the hosts and time range selected.');
+                console.log('draw same call, ps_data', ps_data);
                 d3.select('#legend').html('');
            } else {
                 errorDiv.html('');
@@ -1040,28 +1050,28 @@ function drawChart(url) {
                 .shareTitle(false)
 		        .brushOn(false)
                 .compose(activeCharts)
-                .x(d3.time.scale().domain([start_date, end_date])) 
+                .x(d3.time.scale().domain([start_date, end_date]))
                 .xAxisLabel('Date')
-                .y(d3.scale.linear().domain([format_min(axes[0].min), yAxisMax * axisScale ]).nice()) 
+                .y(d3.scale.linear().domain([format_min(axes[0].min), yAxisMax * axisScale ]).nice())
                 .yAxisLabel(axes[0].name + ' (' + axes[0].unit + ')')
 		        .rangeChart(rangeChart);
 
         allTestsChart.yAxis().ticks(5);
-      
+
         // Add/remove zoom parameters from url
         rangeChart.on("postRedraw", function(chart) {
             var filters = chart.filters() || [];
             if (filters.length == 0) {
                 remove_from_hash('zoom_start');
-                remove_from_hash('zoom_end');             
+                remove_from_hash('zoom_end');
             } else {
                 add_to_hash('zoom_start', +filters[0][0]);
-                add_to_hash('zoom_end', +filters[0][1]);                
+                add_to_hash('zoom_end', +filters[0][1]);
             }
         });
 
 	    var active_objects = charts.getActiveObjects();
-	    
+
         var rangeReducer = function(d) { return d.value; };
 
         var rangeValues = charts.getRangeValues();
@@ -1101,8 +1111,8 @@ function drawChart(url) {
                 if (axes[1].unit == 'errors') {
                     allTestsChart.rightY(d3.scale.linear().domain([0, yAxisMax * axisScale]))
                         .rightYAxis().ticks(1);
-                    
-                } 
+
+                }
                 allTestsChart.rightYAxis().tickFormat(make_formatter(charts, 1));
            }
 
@@ -1133,8 +1143,8 @@ function drawChart(url) {
                 var zoom_start = get_hash_val('zoom_start');
                 var zoom_end = get_hash_val('zoom_end');
 
-                function in_zoom_range(val) { 
-                    return (val/1000 >= start_ts && val/1000 <= end_ts); 
+                function in_zoom_range(val) {
+                    return (val/1000 >= start_ts && val/1000 <= end_ts);
                 }
 
                 if (zoom_start && zoom_end && in_zoom_range(zoom_start) && in_zoom_range(zoom_end)) {
@@ -1206,7 +1216,7 @@ function drawChart(url) {
                             pop.x = pop.x + 21;
                             tooltip._popupWrapper.style.left = pop.x;
                         }
-                        
+
                     });
                     });
 
@@ -1238,11 +1248,11 @@ function drawChart(url) {
                 svg.attr("viewbox", "0 0 750 465")
                     .attr("width", (+svgWidth + axisWidth) );
 
-                svg.append("g")             
-                    .attr("class", "axis yr")    
+                svg.append("g")
+                    .attr("class", "axis yr")
                     .attr("transform", "translate(" + (+svgWidth + 10) + " ,10)")
-                    .style("fill", color)   
-                    .call(yAxisRight);  
+                    .style("fill", color)
+                    .call(yAxisRight);
 
                 var svgLabel = svg.append("text")
                     .text(label)
@@ -1284,32 +1294,32 @@ function drawChart(url) {
 			e.preventDefault();
 			var timePeriod = e.currentTarget.name;
 			dojo.query('#chart #time-selector a.zoomLink').removeClass('active');
-			dojo.addClass(e.currentTarget, 'active');			
+			dojo.addClass(e.currentTarget, 'active');
 			add_to_hash('timeframe', timePeriod);
-            remove_from_hash('start_ts'); 
-            remove_from_hash('end_ts'); 
+            remove_from_hash('start_ts');
+            remove_from_hash('end_ts');
             remove_from_hash('zoom_start');
-            remove_from_hash('zoom_end');             
+            remove_from_hash('zoom_end');
 			reloadChart(timePeriod);
 		    });
         zoom_registered = true;
 	    }
 
             function cleanupObjects() {
-                if (lineDimension !== null) {
+                if (typeof lineDimension != 'undefined' && lineDimension !== null) {
                     lineDimension.dispose();
                     lineDimension = null;
                 }
-                if (ndx !== null && ndx.size() > 0 ) {    
+                if (ndx !== null && typeof ndx != 'undefined' && ndx.size() > 0 ) {
                     dc.filterAll();
                     ndx.remove();
                 }
 
                 // Clear SVG (similar to the resetSVG method, but don't recreate anything)
-                if (allTestsChart !== null) {
+                if (allTestsChart !== null && typeof allTestsChart != 'undefined') {
                     allTestsChart.select("svg").remove();
                 }
-                if (rangeChart !== null) {
+                if (rangeChart !== null && typeof rangeChart != 'undefined') {
                     rangeChart.select("svg").remove();
                 }
 
@@ -1341,9 +1351,9 @@ function drawChart(url) {
             }); // end d3.json call
     } // end drawChart() function
 
-    function array2param(name, array){	
-	var joiner = "&" + name + "=";
-	return joiner + array.join(joiner);
+    function array2param(name, array){
+        var joiner = "&" + name + "=";
+        return joiner + array.join(joiner);
     }
 
 }); // end dojo require function
