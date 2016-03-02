@@ -94,7 +94,7 @@ dojo.connect(share_button, 'onclick', function() {
 
 dojo.connect(dojo.byId('close_url_button'), 'onclick', function() {
     var share_url = dojo.query('#share_chart_url');
-    share_url.style('display', 'none');    
+    share_url.style('display', 'none');
 });
 
 set_share_url();
@@ -284,7 +284,6 @@ function drawChart(url) {
     loading.style('display', 'block');
 
     d3.json(url, function(error,ps_data) {
-        console.log('ps_data', ps_data);
 
             drawChartSameCall(error, ps_data);
 
@@ -296,7 +295,6 @@ function drawChart(url) {
 	    var prevLink = d3.selectAll('.ps-timerange-nav .prev');
 	    var nextLink = d3.selectAll('.ps-timerange-nav .next');
 
-        console.log('draw same call, ps_data', ps_data);
 
 	    if (! next_prev_registered){
 		prevLink.on("click", function() {
@@ -339,15 +337,40 @@ function drawChart(url) {
         prevLink.html('<a href="#">Previous ' + timePeriod + '</a>');
         nextLink.html('<a href="#">Next ' + timePeriod + '</a>');
 
+        // Handle zoom events
+	    if (! zoom_registered){
+            dojo.query('#chart #time-selector a.zoomLink').onclick(function(e){
+                e.preventDefault();
+                var timePeriod = e.currentTarget.name;
+                dojo.query('#chart #time-selector a.zoomLink').removeClass('active');
+                dojo.addClass(e.currentTarget, 'active');
+                add_to_hash('timeframe', timePeriod);
+                remove_from_hash('start_ts');
+                remove_from_hash('end_ts');
+                remove_from_hash('zoom_start');
+                remove_from_hash('zoom_end');
+                reloadChart(timePeriod);
+            });
+        zoom_registered = true;
+	    }
+            var format_ts_header = function(d) { return d3.time.format('%c')(d); }
+
+            var setHeader = function() {
+                var rangeLabel = format_ts_header(new Date(1000 * start_ts)) + ' -- ' + format_ts_header(new Date(1000 * end_ts));
+                var chartHeader = d3.select('.chartTimeRange').html( rangeLabel );
+            };
+
             var errorDiv = d3.select('#chartError');
             // No data to plot
             if (typeof ps_data == 'undefined') {
                 //cleanupObjects(); 
                 errorDiv.html('Error retrieving data from the webservice.');
                 d3.select('#legend').html('');
+                setHeader();
             } else if ( isEmpty(ps_data) ) {
                 errorDiv.html('ERROR: No data to plot for the hosts and time range selected.');
                 d3.select('#legend').html('');
+                setHeader();
 
            } else {
 
@@ -476,7 +499,6 @@ function drawChart(url) {
             var valOrderInv = function(p) { return -p; };
 
             var format_ts = function(d) { return d3.time.format('%X %x')(d); }
-            var format_ts_header = function(d) { return d3.time.format('%c')(d); }
 
             var format_values = function(d, type) {
                 if (type == 'throughput') {
@@ -508,10 +530,6 @@ function drawChart(url) {
                 yNegPadAmt = Math.abs(minY / maxY);
             }
 
-            var setHeader = function() {
-                var rangeLabel = format_ts_header(new Date(1000 * start_ts)) + ' -- ' + format_ts_header(new Date(1000 * end_ts));
-                var chartHeader = d3.select('.chartTimeRange').html( rangeLabel );
-            };
 
             setHeader();
 
@@ -1034,7 +1052,6 @@ function drawChart(url) {
             if (axes.length == 0) {
                 cleanupObjects();
                 errorDiv.html('ERROR: No data to plot for the hosts and time range selected.');
-                console.log('draw same call, ps_data', ps_data);
                 d3.select('#legend').html('');
            } else {
                 errorDiv.html('');
@@ -1288,22 +1305,6 @@ function drawChart(url) {
                 return;
             }
 
-            // Handle zoom events
-	    if (! zoom_registered){
-		dojo.query('#chart #time-selector a.zoomLink').onclick(function(e){ 
-			e.preventDefault();
-			var timePeriod = e.currentTarget.name;
-			dojo.query('#chart #time-selector a.zoomLink').removeClass('active');
-			dojo.addClass(e.currentTarget, 'active');
-			add_to_hash('timeframe', timePeriod);
-            remove_from_hash('start_ts');
-            remove_from_hash('end_ts');
-            remove_from_hash('zoom_start');
-            remove_from_hash('zoom_end');
-			reloadChart(timePeriod);
-		    });
-        zoom_registered = true;
-	    }
 
             function cleanupObjects() {
                 if (typeof lineDimension != 'undefined' && lineDimension !== null) {
