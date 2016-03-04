@@ -81,7 +81,6 @@ custom_ma_filters.push("[% filter %]");
             <div id="share_chart">
                     <a href="" id="share_chart_link" target="_blank">Link to this chart</a>
             </div>
-            <div id="chartError" class="error"></div>
             <table class="hosts">
  	    <tr>
    	        <th>Source</th>
@@ -133,7 +132,7 @@ custom_ma_filters.push("[% filter %]");
 			<b>Zoom: </b>
                 	  <a href="#" id="1dLink" class="zoomLink" name="1d">1d</a>
                	          <a href="#" id="3dLink" class="zoomLink" name="3d">3d</a>
-			              <a href="#" id="1wLink" class="zoomLink" name="1w">1w</a> 
+			              <a href="#" id="1wLink" class="zoomLink active" name="1w">1w</a> 
                           <a href="#" id="1mLink" class="zoomLink" name="1m">1m</a> 
                           <a href="#" id="1yLink" class="zoomLink" name="1y">1y</a>
                 </div>
@@ -174,7 +173,8 @@ custom_ma_filters.push("[% filter %]");
 	        <div class="chartTimeRange" style="text-align: center; width: 350px; margin-left: auto; margin-right: auto;"></div>
 
       </div>
-      
+            <div id="chartError" class="error" style="width: 700px; margin-left: auto; margin-right: auto;"></div>
+
       <div id="ps-all-tests" class="chart"></div>
       <div id="range-chart" class="rangeChart"></div>
 
