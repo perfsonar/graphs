@@ -1,11 +1,11 @@
-perfsonar-toolkit-graphs (3.5.1~2.rc1-1~bpo70+1) perfsonar-wheezy-staging; urgency=low
+perfsonar-toolkit-graphs (3.5.1~beta-1~bpo70+1) perfsonar-wheezy-release; urgency=low
 
   * Backport to Wheezy.
 
- -- Antoine Delvaux <adelvaux@man.poznan.pl>  Sun, 21 Feb 2016 23:58:41 +0000
+ -- Antoine Delvaux <adelvaux@man.poznan.pl>  Fri, 04 Mar 2016 14:46:07 +0100
 
-perfsonar-toolkit-graphs (3.5.1~2.rc1-1) perfsonar-jessie-staging; urgency=low
+perfsonar-toolkit-graphs (3.5.1~beta-1) perfsonar-jessie-release; urgency=low
 
   * Initial release.
 
- -- Valentin Vidic <Valentin.Vidic@CARNet.hr>  Sun, 21 Feb 2016 23:56:09 +0000
+ -- Valentin Vidic <Valentin.Vidic@CARNet.hr>  Fri, 04 Mar 2016 14:44:33 +0100
