@@ -1,2 +1,5 @@
 #Ignore mac hidden file
 .DS_Store
+
+# ignore npm build areas
+node_modules

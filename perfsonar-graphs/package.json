@@ -1,0 +1,26 @@
+{
+  "name": "perfsonar-graphs",
+  "version": "3.6.0",
+  "description": "perfSONAR test result charts",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "webpack",
+    "start": "webpack-dev-server"
+  },
+  "keywords": [
+    "perfsonar",
+    "networking",
+    "analysis"
+  ],
+  "author": "Michael Johnson",
+  "license": "ISC",
+  "devDependencies": {
+    "css-loader": "^0.23.1",
+    "es6-promise": "^3.1.2",
+    "style-loader": "^0.13.0",
+    "webpack": "^1.12.14",
+    "webpack-dev-server": "^1.14.1",
+    "webpack-merge": "^0.8.3"
+  }
+}
