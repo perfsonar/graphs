@@ -24407,11 +24407,11 @@
 	var _pondjs = __webpack_require__(336);
 
 	var ddosData = __webpack_require__(498);
-
-	console.log('ddosData', ddosData);
+	console.log("ddosData", ddosData);
 
 	var requests = [];
 	var connections = [];
+	var esmondValues = [];
 
 	var text = 'Example ddos chart';
 
@@ -24434,6 +24434,8 @@
 	    columns: ["time", "value"],
 	    points: requests
 	});
+
+	var esmondSeries = null;
 
 	var lineStyle = {
 	    node: {
@@ -24475,7 +24477,8 @@
 	            markdown: text,
 	            active: {
 	                requests: true,
-	                connections: true
+	                connections: true,
+	                esmond: true
 	            }
 	        };
 	    },
@@ -24488,9 +24491,20 @@
 	        if (this.state.active.connections) {
 	            charts.push(_react2["default"].createElement(_reactTimeseriesCharts.LineChart, { key: "connections", axis: "axis2", series: connectionsSeries, style: connectionsStyle }));
 	        }
+	        if (this.state.active.esmond && esmondSeries) {
+	            charts.push(_react2["default"].createElement(_reactTimeseriesCharts.LineChart, { key: "esmond", axis: "axis2", series: esmondSeries, style: connectionsStyle }));
+	        }
+	        var timerange;
+	        if (esmondSeries) {
+	            console.log('esmondSeries is defined');
+	            timerange = esmondSeries.timerange();
+	            console.log('esmond timerange', timerange);
+	        } else {
+	            timerange = requestsSeries.timerange();
+	        }
 	        return _react2["default"].createElement(
 	            _reactTimeseriesCharts.ChartContainer,
-	            { timeRange: requestsSeries.timerange() },
+	            { timeRange: timerange },
 	            _react2["default"].createElement(
 	                _reactTimeseriesCharts.ChartRow,
 	                { height: "300", debug: false },
@@ -24501,8 +24515,8 @@
 	                    null,
 	                    charts
 	                ),
-	                _react2["default"].createElement(_reactTimeseriesCharts.YAxis, { id: "axis2", label: "Connections", style: { labelColor: scheme.connections },
-	                    labelOffset: 12, min: 0, format: ",.0f", max: 10000, width: "80", type: "linear" })
+	                _react2["default"].createElement(_reactTimeseriesCharts.YAxis, { id: "axis2", label: "Throughput", style: { labelColor: scheme.connections },
+	                    labelOffset: 12, min: 0, format: ",.0f", max: 100000000, width: "80", type: "linear" })
 	            )
 	        );
 	    },
@@ -24566,6 +24580,42 @@
 	            ),
 	            _react2["default"].createElement("hr", null)
 	        );
+	    },
+
+	    componentDidMount: function componentDidMount() {
+	        var url = 'http://perfsonar-dev.grnoc.iu.edu:8080/esmond/perfsonar/archive/050056d85a8344bc844e2aeaa472db9b/throughput/base';
+	        this.serverRequest = $.get(url, (function (data) {
+	            console.log('ajax request came back; data', data);
+	            this.esmondToTimeSeries(data);
+	            console.log('esmond values', esmondValues);
+	            //this.renderChart();
+	            this.forceUpdate();
+	            /*
+	            this.setState({
+	                username: lastGist.owner.login,
+	                lastGistUrl: lastGist.html_url
+	            });
+	            */
+	        }).bind(this));
+	    },
+
+	    componentWillUnmount: function componentWillUnmount() {
+	        this.serverRequest.abort();
+	    },
+
+	    esmondToTimeSeries: function esmondToTimeSeries(inputData) {
+
+	        _underscore2["default"].each(inputData, function (val) {
+	            var ts = val["ts"];
+	            var timestamp = new _moment2["default"](new Date(ts * 1000)); // 'Date' expects milliseconds
+	            var value = val["val"];
+	            esmondValues.push([timestamp.toDate().getTime(), value]);
+	            esmondSeries = new _pondjs.TimeSeries({
+	                name: "esmond",
+	                columns: ["time", "value"],
+	                points: esmondValues
+	            });
+	        });
 	    }
 	});
 	module.exports = exports["default"];

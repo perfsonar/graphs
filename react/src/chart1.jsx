@@ -9,11 +9,11 @@ import { Charts, ChartContainer, ChartRow, YAxis, LineChart, Highlighter, Resiza
 import { TimeSeries, TimeRange } from "pondjs";
 
 const ddosData = require("../data/ddos.json");
-
-console.log('ddosData', ddosData);
+console.log("ddosData", ddosData);
 
 const requests = [];
 const connections = [];
+var esmondValues = [];
 
 const text = 'Example ddos chart';
 
@@ -36,6 +36,8 @@ const requestsSeries = new TimeSeries({
     columns: ["time", "value"],
     points: requests
 });
+
+var esmondSeries = null;
 
 const lineStyle = {
     node: {
@@ -76,10 +78,12 @@ export default React.createClass({
             markdown: text,
             active: {
                 requests: true,
-                connections: true
+                connections: true,
+                esmond: true
             }
         };
     },
+
 
     renderChart() {
         let charts = [];
@@ -93,16 +97,29 @@ export default React.createClass({
                 <LineChart key="connections" axis="axis2" series={connectionsSeries} style={connectionsStyle}/>
             );
         }
+        if (this.state.active.esmond && esmondSeries) {
+            charts.push(
+                <LineChart key="esmond" axis="axis2" series={esmondSeries} style={connectionsStyle}/>
+            );
+        }
+        var timerange;
+        if (esmondSeries) {
+            console.log('esmondSeries is defined');
+            timerange = esmondSeries.timerange();
+            console.log('esmond timerange', timerange);
+        } else {
+            timerange = requestsSeries.timerange();
+        }
         return (
-            <ChartContainer timeRange={requestsSeries.timerange()}>
+            <ChartContainer timeRange={timerange}>
                 <ChartRow height="300" debug={false}>
                     <YAxis id="axis1" label="Requests" style={{labelColor: scheme.requests}}
                            labelOffset={-10} min={0} max={1000} format=",.0f" width="60" type="linear" />
                     <Charts>
                         {charts}
                     </Charts>
-                    <YAxis id="axis2" label="Connections" style={{labelColor: scheme.connections}}
-                           labelOffset={12} min={0} format=",.0f" max={10000} width="80" type="linear"/>
+                    <YAxis id="axis2" label="Throughput" style={{labelColor: scheme.connections}}
+                           labelOffset={12} min={0} format=",.0f" max={100000000} width="80" type="linear"/>
                 </ChartRow>
             </ChartContainer>
         );
@@ -156,5 +173,41 @@ export default React.createClass({
 
             </div>
         );
+    },
+
+    componentDidMount: function() {
+        var url = 'http://perfsonar-dev.grnoc.iu.edu:8080/esmond/perfsonar/archive/050056d85a8344bc844e2aeaa472db9b/throughput/base';
+        this.serverRequest = $.get(url, function ( data ) {
+            console.log('ajax request came back; data', data);
+            this.esmondToTimeSeries( data );
+            console.log('esmond values', esmondValues);
+            //this.renderChart();
+            this.forceUpdate();
+            /*
+            this.setState({
+                username: lastGist.owner.login,
+                lastGistUrl: lastGist.html_url
+            });
+            */
+        }.bind(this));
+    },
+
+    componentWillUnmount: function() {
+        this.serverRequest.abort();
+    },
+
+    esmondToTimeSeries: function( inputData ) {
+
+        _.each(inputData, val => {
+            const ts = val["ts"];
+            const timestamp = new moment(new Date(ts * 1000)); // 'Date' expects milliseconds
+            const value = val["val"];
+            esmondValues.push([timestamp.toDate().getTime(), value]);
+            esmondSeries = new TimeSeries({
+                name: "esmond",
+                columns: ["time", "value"],
+                points: esmondValues
+            });
+        });
     }
 });
