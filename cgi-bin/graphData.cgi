@@ -314,6 +314,8 @@ sub _get_test_data {
                 my $req_summary_window = select_summary_window($event_type, $summary_type, $summary_window, $event);
 
                 $stats_summ = $event->get_summary($summary_type, $req_summary_window);
+
+                warn "stats_summ: " . Dumper $stats_summ;
                 error($event->error) if ($event->error);
                 @summary_fields = ( 'minimum', 'median' );
                 $data = $stats_summ->get_data() if defined $stats_summ;
