@@ -3,5 +3,7 @@
 # Ignore quilt cache directory
 .pc/
 
-# ignore npm build areas
+# ignore npm build areas etc.
 node_modules
+npm-debug.log
+examples-bundle.js

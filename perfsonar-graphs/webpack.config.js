@@ -25,13 +25,20 @@ const common = {
     },
     module: {
         loaders: [
-        {
-            // Test expects a RegExp! Note the slashes!
-            test: /\.css$/,
-            loaders: ['style', 'css'],
-                // Include accepts either a path or an array of paths.
-            include: PATHS.app
-        }
+            { 
+                test: /\.jsx$/,
+                loader: 'babel-loader',
+                query: {
+                    presets: ['es2015', 'react']
+                }
+            },
+            {
+                // Test expects a RegExp! Note the slashes!
+                test: /\.css$/,
+                loaders: ['style', 'css'],
+                    // Include accepts either a path or an array of paths.
+                include: PATHS.app
+            }
         ]
     }
 
