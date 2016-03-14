@@ -13,7 +13,11 @@ console.log("ddosData", ddosData);
 
 const requests = [];
 const connections = [];
-var esmondValues = [];
+var throughputValues = [];
+var reverseValues = [];
+
+var throughputSeries = null;
+var reverseSeries = null;
 
 const text = 'Example ddos chart';
 
@@ -36,8 +40,6 @@ const requestsSeries = new TimeSeries({
     columns: ["time", "value"],
     points: requests
 });
-
-var esmondSeries = null;
 
 const lineStyle = {
     node: {
@@ -77,9 +79,10 @@ export default React.createClass({
         return {
             markdown: text,
             active: {
-                requests: true,
-                connections: true,
-                esmond: true
+                requests: false,
+                connections: false,
+                throughput: true,
+                reverse: true
             }
         };
     },
@@ -97,16 +100,26 @@ export default React.createClass({
                 <LineChart key="connections" axis="axis2" series={connectionsSeries} style={connectionsStyle}/>
             );
         }
-        if (this.state.active.esmond && esmondSeries) {
+        if (this.state.active.throughput && throughputSeries) {
             charts.push(
-                <LineChart key="esmond" axis="axis2" series={esmondSeries} style={connectionsStyle}/>
+                <LineChart key="throughput" axis="axis2" series={throughputSeries} style={connectionsStyle}/>
+            );
+        }
+        if (this.state.active.reverse && reverseSeries) {
+            charts.push(
+                <LineChart key="reverse" axis="axis2" series={reverseSeries} style={requestsStyle}/>
             );
         }
         var timerange;
-        if (esmondSeries) {
-            console.log('esmondSeries is defined');
-            timerange = esmondSeries.timerange();
-            console.log('esmond timerange', timerange);
+        if (throughputSeries) {
+            console.log('throughputSeries is defined');
+            timerange = throughputSeries.timerange();
+            console.log('throughput timerange', timerange);
+        } else if ( reverseSeries ) {
+            console.log('reverseSeries is defined');
+            timerange = reverseSeries.timerange();
+            console.log('reverse timerange', timerange);
+
         } else {
             timerange = requestsSeries.timerange();
         }
@@ -119,7 +132,7 @@ export default React.createClass({
                         {charts}
                     </Charts>
                     <YAxis id="axis2" label="Throughput" style={{labelColor: scheme.connections}}
-                           labelOffset={12} min={0} format=",.0f" max={100000000} width="80" type="linear"/>
+                           labelOffset={12} min={0} format=",.0f" max={1000000000} width="80" type="linear"/>
                 </ChartRow>
             </ChartContainer>
         );
@@ -143,13 +156,23 @@ export default React.createClass({
                 label: "Connections",
                 disabled: !this.state.active.connections,
                 style: {backgroundColor: scheme.connections}
+            },{
+                key: "throughput",
+                label: "Throughput",
+                disabled: !this.state.active.throughput,
+                style: {backgroundColor: scheme.connections}
+            },{
+                key: "reverse",
+                label: "Reverse",
+                disabled: !this.state.active.reverse,
+                style: {backgroundColor: scheme.requests}
             }
         ];
         return (
             <div>
                 <div className="row">
                     <div className="col-md-12">
-                        <h3>April 2015 DDoS Attack</h3>
+                        <h3>perfSONAR Test Results</h3>
                     </div>
                 </div>
 
@@ -176,38 +199,51 @@ export default React.createClass({
     },
 
     componentDidMount: function() {
-        var url = 'http://perfsonar-dev.grnoc.iu.edu:8080/esmond/perfsonar/archive/050056d85a8344bc844e2aeaa472db9b/throughput/base';
+        var url = 'http://perfsonar-dev.grnoc.iu.edu:8080/esmond/perfsonar/archive/9808c289fc07446e9939330706b896d6/throughput/base';
+        //var url = 'http://perfsonar-dev.grnoc.iu.edu:8080/esmond/perfsonar/archive/050056d85a8344bc844e2aeaa472db9b/throughput/base';
+
         this.serverRequest = $.get(url, function ( data ) {
             console.log('ajax request came back; data', data);
-            this.esmondToTimeSeries( data );
-            console.log('esmond values', esmondValues);
+            var values = this.throughputToTimeSeries( data, 'throughput' );
+            throughputValues = values.values;
+            throughputSeries = values.series;
+            console.log('throughput values', throughputValues);
             //this.renderChart();
             this.forceUpdate();
-            /*
-            this.setState({
-                username: lastGist.owner.login,
-                lastGistUrl: lastGist.html_url
-            });
-            */
+        }.bind(this));
+
+        var url2 = 'http://perfsonar-dev.grnoc.iu.edu:8080/esmond/perfsonar/archive/f1f55c1d158545c29ff8700980948d30/throughput/base';
+
+        this.serverRequest = $.get(url2, function ( data ) {
+            console.log('ajax request came back; reverse data', data);
+            var values = this.throughputToTimeSeries( data, 'reverse' );
+            reverseValues = values.values;
+            reverseSeries = values.series;
+            console.log('reverse throughput values', reverseValues);
+            //this.renderChart();
+            this.forceUpdate();
         }.bind(this));
     },
+
 
     componentWillUnmount: function() {
         this.serverRequest.abort();
     },
 
-    esmondToTimeSeries: function( inputData ) {
-
+    throughputToTimeSeries: function( inputData, seriesName ) {
+        var values = [];
+        var series = {};
         _.each(inputData, val => {
             const ts = val["ts"];
             const timestamp = new moment(new Date(ts * 1000)); // 'Date' expects milliseconds
             const value = val["val"];
-            esmondValues.push([timestamp.toDate().getTime(), value]);
-            esmondSeries = new TimeSeries({
-                name: "esmond",
+            values.push([timestamp.toDate().getTime(), value]);
+            series = new TimeSeries({
+                name: seriesName,
                 columns: ["time", "value"],
-                points: esmondValues
+                points: values
             });
         });
+        return ( { values: values, series: series } );
     }
 });

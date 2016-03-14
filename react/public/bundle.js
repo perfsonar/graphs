@@ -24411,7 +24411,11 @@
 
 	var requests = [];
 	var connections = [];
-	var esmondValues = [];
+	var throughputValues = [];
+	var reverseValues = [];
+
+	var throughputSeries = null;
+	var reverseSeries = null;
 
 	var text = 'Example ddos chart';
 
@@ -24434,8 +24438,6 @@
 	    columns: ["time", "value"],
 	    points: requests
 	});
-
-	var esmondSeries = null;
 
 	var lineStyle = {
 	    node: {
@@ -24476,9 +24478,10 @@
 	        return {
 	            markdown: text,
 	            active: {
-	                requests: true,
-	                connections: true,
-	                esmond: true
+	                requests: false,
+	                connections: false,
+	                throughput: true,
+	                reverse: true
 	            }
 	        };
 	    },
@@ -24491,14 +24494,21 @@
 	        if (this.state.active.connections) {
 	            charts.push(_react2["default"].createElement(_reactTimeseriesCharts.LineChart, { key: "connections", axis: "axis2", series: connectionsSeries, style: connectionsStyle }));
 	        }
-	        if (this.state.active.esmond && esmondSeries) {
-	            charts.push(_react2["default"].createElement(_reactTimeseriesCharts.LineChart, { key: "esmond", axis: "axis2", series: esmondSeries, style: connectionsStyle }));
+	        if (this.state.active.throughput && throughputSeries) {
+	            charts.push(_react2["default"].createElement(_reactTimeseriesCharts.LineChart, { key: "throughput", axis: "axis2", series: throughputSeries, style: connectionsStyle }));
+	        }
+	        if (this.state.active.reverse && reverseSeries) {
+	            charts.push(_react2["default"].createElement(_reactTimeseriesCharts.LineChart, { key: "reverse", axis: "axis2", series: reverseSeries, style: requestsStyle }));
 	        }
 	        var timerange;
-	        if (esmondSeries) {
-	            console.log('esmondSeries is defined');
-	            timerange = esmondSeries.timerange();
-	            console.log('esmond timerange', timerange);
+	        if (throughputSeries) {
+	            console.log('throughputSeries is defined');
+	            timerange = throughputSeries.timerange();
+	            console.log('throughput timerange', timerange);
+	        } else if (reverseSeries) {
+	            console.log('reverseSeries is defined');
+	            timerange = reverseSeries.timerange();
+	            console.log('reverse timerange', timerange);
 	        } else {
 	            timerange = requestsSeries.timerange();
 	        }
@@ -24516,7 +24526,7 @@
 	                    charts
 	                ),
 	                _react2["default"].createElement(_reactTimeseriesCharts.YAxis, { id: "axis2", label: "Throughput", style: { labelColor: scheme.connections },
-	                    labelOffset: 12, min: 0, format: ",.0f", max: 100000000, width: "80", type: "linear" })
+	                    labelOffset: 12, min: 0, format: ",.0f", max: 1000000000, width: "80", type: "linear" })
 	            )
 	        );
 	    },
@@ -24538,6 +24548,16 @@
 	            label: "Connections",
 	            disabled: !this.state.active.connections,
 	            style: { backgroundColor: scheme.connections }
+	        }, {
+	            key: "throughput",
+	            label: "Throughput",
+	            disabled: !this.state.active.throughput,
+	            style: { backgroundColor: scheme.connections }
+	        }, {
+	            key: "reverse",
+	            label: "Reverse",
+	            disabled: !this.state.active.reverse,
+	            style: { backgroundColor: scheme.requests }
 	        }];
 	        return _react2["default"].createElement(
 	            "div",
@@ -24551,7 +24571,7 @@
 	                    _react2["default"].createElement(
 	                        "h3",
 	                        null,
-	                        "April 2015 DDoS Attack"
+	                        "perfSONAR Test Results"
 	                    )
 	                )
 	            ),
@@ -24583,19 +24603,29 @@
 	    },
 
 	    componentDidMount: function componentDidMount() {
-	        var url = 'http://perfsonar-dev.grnoc.iu.edu:8080/esmond/perfsonar/archive/050056d85a8344bc844e2aeaa472db9b/throughput/base';
+	        var url = 'http://perfsonar-dev.grnoc.iu.edu:8080/esmond/perfsonar/archive/9808c289fc07446e9939330706b896d6/throughput/base';
+	        //var url = 'http://perfsonar-dev.grnoc.iu.edu:8080/esmond/perfsonar/archive/050056d85a8344bc844e2aeaa472db9b/throughput/base';
+
 	        this.serverRequest = $.get(url, (function (data) {
 	            console.log('ajax request came back; data', data);
-	            this.esmondToTimeSeries(data);
-	            console.log('esmond values', esmondValues);
+	            var values = this.throughputToTimeSeries(data, 'throughput');
+	            throughputValues = values.values;
+	            throughputSeries = values.series;
+	            console.log('throughput values', throughputValues);
 	            //this.renderChart();
 	            this.forceUpdate();
-	            /*
-	            this.setState({
-	                username: lastGist.owner.login,
-	                lastGistUrl: lastGist.html_url
-	            });
-	            */
+	        }).bind(this));
+
+	        var url2 = 'http://perfsonar-dev.grnoc.iu.edu:8080/esmond/perfsonar/archive/f1f55c1d158545c29ff8700980948d30/throughput/base';
+
+	        this.serverRequest = $.get(url2, (function (data) {
+	            console.log('ajax request came back; reverse data', data);
+	            var values = this.throughputToTimeSeries(data, 'reverse');
+	            reverseValues = values.values;
+	            reverseSeries = values.series;
+	            console.log('reverse throughput values', reverseValues);
+	            //this.renderChart();
+	            this.forceUpdate();
 	        }).bind(this));
 	    },
 
@@ -24603,19 +24633,21 @@
 	        this.serverRequest.abort();
 	    },
 
-	    esmondToTimeSeries: function esmondToTimeSeries(inputData) {
-
+	    throughputToTimeSeries: function throughputToTimeSeries(inputData, seriesName) {
+	        var values = [];
+	        var series = {};
 	        _underscore2["default"].each(inputData, function (val) {
 	            var ts = val["ts"];
 	            var timestamp = new _moment2["default"](new Date(ts * 1000)); // 'Date' expects milliseconds
 	            var value = val["val"];
-	            esmondValues.push([timestamp.toDate().getTime(), value]);
-	            esmondSeries = new _pondjs.TimeSeries({
-	                name: "esmond",
+	            values.push([timestamp.toDate().getTime(), value]);
+	            series = new _pondjs.TimeSeries({
+	                name: seriesName,
 	                columns: ["time", "value"],
-	                points: esmondValues
+	                points: values
 	            });
 	        });
+	        return { values: values, series: series };
 	    }
 	});
 	module.exports = exports["default"];
