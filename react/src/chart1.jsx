@@ -8,11 +8,6 @@ import { Charts, ChartContainer, ChartRow, YAxis, LineChart, Highlighter, Resiza
 
 import { TimeSeries, TimeRange } from "pondjs";
 
-const ddosData = require("../data/ddos.json");
-console.log("ddosData", ddosData);
-
-const requests = [];
-const connections = [];
 var throughputValues = [];
 var reverseValues = [];
 
@@ -20,26 +15,6 @@ var throughputSeries = null;
 var reverseSeries = null;
 
 const text = 'Example ddos chart';
-
-_.each(ddosData, val => {
-    const timestamp = new moment(new Date(`2015-04-03 ${val["time PST"]}`));
-    const numConnection = val["connections"];
-    const httpRequests = val["http requests"];
-    requests.push([timestamp.toDate().getTime(), httpRequests]);
-    connections.push([timestamp.toDate().getTime(), numConnection]);
-});
-
-const connectionsSeries = new TimeSeries({
-    name: "connections",
-    columns: ["time", "value"],
-    points: connections
-});
-
-const requestsSeries = new TimeSeries({
-    name: "requests",
-    columns: ["time", "value"],
-    points: requests
-});
 
 const lineStyle = {
     node: {
@@ -79,8 +54,6 @@ export default React.createClass({
         return {
             markdown: text,
             active: {
-                requests: false,
-                connections: false,
                 throughput: true,
                 reverse: true
             }
@@ -90,24 +63,14 @@ export default React.createClass({
 
     renderChart() {
         let charts = [];
-        if (this.state.active.requests) {
-            charts.push(
-                <LineChart key="requests" axis="axis1" series={requestsSeries} style={requestsStyle}/>
-            );
-        }
-        if (this.state.active.connections) {
-            charts.push(
-                <LineChart key="connections" axis="axis2" series={connectionsSeries} style={connectionsStyle}/>
-            );
-        }
         if (this.state.active.throughput && throughputSeries) {
             charts.push(
-                <LineChart key="throughput" axis="axis2" series={throughputSeries} style={connectionsStyle}/>
+                <LineChart key="throughput" axis="axis2" series={throughputSeries} style={connectionsStyle} smooth={false} />
             );
         }
         if (this.state.active.reverse && reverseSeries) {
             charts.push(
-                <LineChart key="reverse" axis="axis2" series={reverseSeries} style={requestsStyle}/>
+                <LineChart key="reverse" axis="axis2" series={reverseSeries} style={requestsStyle} smooth={false} />
             );
         }
         var timerange;
@@ -115,24 +78,23 @@ export default React.createClass({
             console.log('throughputSeries is defined');
             timerange = throughputSeries.timerange();
             console.log('throughput timerange', timerange);
-        } else if ( reverseSeries ) {
+        } else if (reverseSeries) {
             console.log('reverseSeries is defined');
             timerange = reverseSeries.timerange();
             console.log('reverse timerange', timerange);
 
-        } else {
-            timerange = requestsSeries.timerange();
+        } 
+        if ( ! timerange ) {
+            return ( <div></div> );
         }
         return (
             <ChartContainer timeRange={timerange}>
                 <ChartRow height="300" debug={false}>
-                    <YAxis id="axis1" label="Requests" style={{labelColor: scheme.requests}}
-                           labelOffset={-10} min={0} max={1000} format=",.0f" width="60" type="linear" />
                     <Charts>
                         {charts}
                     </Charts>
                     <YAxis id="axis2" label="Throughput" style={{labelColor: scheme.connections}}
-                           labelOffset={12} min={0} format=",.0f" max={1000000000} width="80" type="linear"/>
+                           labelOffset={20} min={0} format=",.0f" max={1000000000} width="80" type="linear"/>
                 </ChartRow>
             </ChartContainer>
         );
@@ -147,16 +109,6 @@ export default React.createClass({
     render() {
         const legend = [
             {
-                key: "requests",
-                label: "Requests",
-                disabled: !this.state.active.requests,
-                style: {backgroundColor: scheme.requests}
-            },{
-                key: "connections",
-                label: "Connections",
-                disabled: !this.state.active.connections,
-                style: {backgroundColor: scheme.connections}
-            },{
                 key: "throughput",
                 label: "Throughput",
                 disabled: !this.state.active.throughput,
@@ -204,7 +156,7 @@ export default React.createClass({
 
         this.serverRequest = $.get(url, function ( data ) {
             console.log('ajax request came back; data', data);
-            var values = this.throughputToTimeSeries( data, 'throughput' );
+            var values = this.esmondToTimeSeries( data, 'throughput' );
             throughputValues = values.values;
             throughputSeries = values.series;
             console.log('throughput values', throughputValues);
@@ -216,7 +168,7 @@ export default React.createClass({
 
         this.serverRequest = $.get(url2, function ( data ) {
             console.log('ajax request came back; reverse data', data);
-            var values = this.throughputToTimeSeries( data, 'reverse' );
+            var values = this.esmondToTimeSeries( data, 'reverse' );
             reverseValues = values.values;
             reverseSeries = values.series;
             console.log('reverse throughput values', reverseValues);
@@ -230,9 +182,36 @@ export default React.createClass({
         this.serverRequest.abort();
     },
 
-    throughputToTimeSeries: function( inputData, seriesName ) {
+    _checkSortOrder : function( ary, valName='ts' ) {
+        var lastVal = 0;
+        _.each( ary, val => {
+            //console.log('val', val);
+            if ( val.ts <= lastVal ) {
+                console.log('ts is not greater than last ts');
+
+            } else {
+                console.log('ts is greater than last ts');
+
+            }
+            lastVal = val.ts;
+
+
+        });
+    },
+
+    esmondToTimeSeries: function( inputData, seriesName ) {
         var values = [];
         var series = {};
+
+       /* 
+        inputData.sort(function(a, b){
+            var a1 = a.ts, b1 = b.ts;
+            if(a1== b1) return 0;
+            return a1> b1? 1: -1;
+        });
+        */
+        this._checkSortOrder(inputData);
+
         _.each(inputData, val => {
             const ts = val["ts"];
             const timestamp = new moment(new Date(ts * 1000)); // 'Date' expects milliseconds
@@ -244,6 +223,20 @@ export default React.createClass({
                 points: values
             });
         });
+        var lastTS = 0;
+        for (let i=0; i < series.size(); i++) {
+            console.log(series.at(i).toString());
+            console.log('series.at(i)', series.at(i));
+            var ts = series.at(i).timestamp().getTime();
+            if ( ts > lastTS ) {
+                console.log( 'new ts > last TS', ts, lastTS );
+
+            } else {
+                console.log( 'BAD: new ts <= last TS', ts, lastTS );
+
+            }
+            lastTS = ts;
+        }
         return ( { values: values, series: series } );
     }
 });
