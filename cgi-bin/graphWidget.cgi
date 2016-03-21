@@ -14,6 +14,7 @@ use Template;
 use CGI qw(:standard);
 use HTML::Entities;
 use perfSONAR_PS::Web::Sidebar qw(set_sidebar_vars);
+use perfSONAR_PS::Utils::Host qw( is_ip_or_hostname );
 use Data::Dumper;
 use JSON;
 
@@ -33,12 +34,33 @@ my @protocols        = $cgi->param('protocol');
 my @filters          = $cgi->param('filter');
 my $window           = $cgi->param('window');
 
+if ( !is_ip_or_hostname( {address => @sources} ) ) {
+    error("Invalid ip address specified", 400);
+}
+
+if ( !is_ip_or_hostname( {address => @dests} ) ) {
+    error("Invalid ip address specified", 400);
+}
+
+if ( $window && $window !~ /^\d+$/ ) {
+    error("Invalid summary window specified", 400);
+}
+
+if ( @ipversions ) {
+    foreach my $version ( @ipversions ) {
+        warn "version: $version";
+        if ( $version !~ /^\d$/ ) {
+            error("Invalid IP version specified", 400);
+        }
+    }
+}
+
 handle_esmond();
 
 sub handle_esmond {
     #print cgi-header
     print $cgi->header;
-    
+
     my %vars = (
 	sources             => \@sources,
 	dests               => \@dests,
@@ -49,14 +71,24 @@ sub handle_esmond {
 	protocols           => \@protocols,
 	filters             => \@filters,
 	);
-    
+
     #open template
     my $tt = Template->new( INCLUDE_PATH => "$templatedir" )
 	or die("Couldn't initialize template toolkit");
-    
+
     my $html;
     $tt->process( "graphWidget.tmpl", \%vars, \$html ) or die $tt->error();
     print $html;
+}
+
+sub error {
+    my $err = shift;
+    my $error_code = shift || 500; # 500 is general purpose Internal Server Error
+
+    print $cgi->header( -type=>'text/plain', -status=> $error_code );
+    print $err;
+
+    exit 1;
 }
 
 sub errorPage {

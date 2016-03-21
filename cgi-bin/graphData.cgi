@@ -36,14 +36,15 @@ use perfSONAR_PS::Utils::DNS qw(resolve_address);
 use SimpleLookupService::Client::Query;
 use SimpleLookupService::QueryObjects::Network::InterfaceQueryObject;
 
+
 # library for getting host information
-use perfSONAR_PS::Utils::Host qw( discover_primary_address get_ethernet_interfaces get_interface_addresses_by_type );
+use perfSONAR_PS::Utils::Host qw( discover_primary_address get_ethernet_interfaces get_interface_addresses_by_type is_ip_or_hostname );
 
 my $basedir = "$FindBin::Bin";
 
 my $cgi = new CGI;
 
-my $action = $cgi->param('action') || error("Missing required parameter \"action\", must specify data or tests");
+my $action = $cgi->param('action') || error("Missing required parameter \"action\", must specify data or tests", 400);
 
 if ($action eq 'data'){
     get_data();
@@ -67,7 +68,7 @@ elsif ($action eq 'hosts'){
     get_host_info();
 }
 else {
-    error("Unknown action \"$action\", must specify either data, tests, hosts, or interfaces");
+    error("Unknown action; must specify either data, tests, hosts, or interfaces", 400);
 }
 
 sub get_data {
@@ -78,22 +79,29 @@ sub get_data {
     $summary_window = 3600;
     $summary_window = $window if (defined($window) && (grep {$_ eq $window} @valid_windows));
 
-    my @urls        = $cgi->param('url');     
-    my @sources     = $cgi->param('src');     
-    my @dests       = $cgi->param('dest');    
+    my @urls        = $cgi->param('url');
+    my @sources     = $cgi->param('src');
+    my @dests       = $cgi->param('dest');
     my @ipversions  = $cgi->param('ipversion');
     my @agents      = $cgi->param('agent');
     my @tools       = $cgi->param('tool');
     my @protocols   = $cgi->param('protocol');
     my @filters     = $cgi->param('filter');
 
-    my $start       = $cgi->param('start')   || error("Missing required parameter \"start\"");
-    my $end         = $cgi->param('end')     || error("Missing required parameter \"end\"");
+    my $start       = $cgi->param('start')   || error("Missing required parameter \"start\"", 400);
+    my $end         = $cgi->param('end')     || error("Missing required parameter \"end\"", 400);
 
     if (@sources == 0 || @sources != @dests || @sources != @urls){
-	error("There must be an equal non-zero amount of src, dest, and url options passed.");
+	error("There must be an equal non-zero amount of src, dest, and url options passed.", 400);
     }
 
+    if ( !is_ip_or_hostname( {address => @sources} ) ) {
+        error("Invalid ip address specified", 400);
+    }
+
+    if ( !is_ip_or_hostname( {address => @dests} ) ) {
+        error("Invalid ip address specified", 400);
+    }
 
     my @base_event_types   = ('throughput', 'histogram-owdelay', 'packet-loss-rate', 'packet-retransmits', 'histogram-rtt', 'failures');
     my @mapped_event_types = ('throughput', 'owdelay', 'loss', 'packet_retransmits', 'ping', 'errors', 'owdelay_minimum', 'owdelay_median', 'ping_minimum', 'ping_maximum', 'error', 'error_tool');
@@ -132,7 +140,7 @@ sub get_data {
 
     foreach my $thread (@threads){
     	my $ret_array = $thread->join();
-    	#error("Error fetching data") if (! $ret_array);	#do not throw error if a thread fails.	
+    	#error("Error fetching data") if (! $ret_array);	#do not throw error if a thread fails.
 
     	foreach my $ret (@$ret_array){
 
@@ -315,7 +323,6 @@ sub _get_test_data {
 
                 $stats_summ = $event->get_summary($summary_type, $req_summary_window);
 
-                warn "stats_summ: " . Dumper $stats_summ;
                 error($event->error) if ($event->error);
                 @summary_fields = ( 'minimum', 'median' );
                 $data = $stats_summ->get_data() if defined $stats_summ;
@@ -982,16 +989,25 @@ sub get_interfaces {
 }
 
 sub get_host_info {
-    my @sources   = $cgi->param('src');  
-    my @dests     = $cgi->param('dest'); 
-    my @ipversions  = $cgi->param('ipversion'); 
-    
+    my @sources   = $cgi->param('src');
+    my @dests     = $cgi->param('dest');
+    my @ipversions  = $cgi->param('ipversion');
+
+    # check for invalid sources
+    if ( !is_ip_or_hostname( {address => @sources} ) ) {
+        error("Invalid ip address specified", 400);
+    }
+    # check for invalid destinations
+    if ( !is_ip_or_hostname( {address => @dests} ) ) {
+        error("Invalid ip address specified", 400);
+    }
+
     my @all_results;
-   
+
     for (my $i = 0; $i < @sources; $i++){
-	my $results = host_info( { src => $sources[$i], dest => $dests[$i], ipversion => $ipversions[$i] } );	
+	my $results = host_info( { src => $sources[$i], dest => $dests[$i], ipversion => $ipversions[$i] } );
 	push(@all_results, $results);
-    }  
+    }
 
     print $cgi->header('text/json');
     print to_json(\@all_results);
@@ -1002,7 +1018,7 @@ sub host_info {
     my $src       = $parameters->{src};
     my $dest      = $parameters->{dest};
     my $ipversion      = $parameters->{ipversion};
-    
+
 # Create a new object with just source and dest (in case other parameters are passed that we don't want)
     my $hosts = {};
     $hosts->{'source'} = $src;
@@ -1018,9 +1034,9 @@ sub host_info {
             my ($err, @addrs) = getaddrinfo( $host, 0 );
             my ( @names) = getnameinfo( $addrs[2] );
             $results->{$key . '_host'} = $names[0];
-        } else {            
-            $results->{$key . '_host'} = $host;    
-            $results->{$key . '_ip'} = '';        
+        } else {
+            $results->{$key . '_host'} = $host;
+            $results->{$key . '_ip'} = '';
             my @addresses = resolve_address($host);
             my $ip_count = 0;
             foreach my $address(@addresses){
@@ -1047,8 +1063,9 @@ sub host_info {
 
 sub error {
     my $err = shift;
+    my $error_code = shift || 500; # 500 is general purpose Internal Server Error
 
-    print $cgi->header('text/plain');
+    print $cgi->header( -type=>'text/plain', -status=> $error_code );
     print $err;
 
     exit 1;
@@ -1085,7 +1102,7 @@ sub select_summary_window {
         $ret_window = $next_smallest_window if ($ret_window == -1 && !$exact_match);
         # if there's no lower value, take the closest larger value
         $ret_window = $next_largest_window if ($ret_window == -1 && !$exact_match);
-    }   
+    }
     return $ret_window;
 
 }
