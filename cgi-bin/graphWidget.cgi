@@ -16,7 +16,7 @@ use HTML::Entities;
 use perfSONAR_PS::Web::Sidebar qw(set_sidebar_vars);
 use perfSONAR_PS::Utils::Host qw( is_ip_or_hostname );
 use Data::Dumper;
-use JSON;
+use JSON qw( encode_json to_json );
 
 my $basedir     = "$RealBin/";
 my $templatedir = "$basedir/../templates";
@@ -34,12 +34,16 @@ my @protocols        = $cgi->param('protocol');
 my @filters          = $cgi->param('filter');
 my $window           = $cgi->param('window');
 
-if ( !is_ip_or_hostname( {address => @sources} ) ) {
-    error("Invalid ip address specified", 400);
+if ( !is_ip_or_hostname( {address => \@sources} ) ) {
+    error("Invalid source ip address specified", 400);
 }
 
-if ( !is_ip_or_hostname( {address => @dests} ) ) {
-    error("Invalid ip address specified", 400);
+if ( !is_ip_or_hostname( {address => \@dests} ) ) {
+    error("Invalid destination ip address specified", 400);
+}
+
+if ( @agents && !is_ip_or_hostname( {address => \@agents, required => 0} ) ) {
+    error("Invalid measurement agent ip address specified", 400);
 }
 
 if ( $window && $window !~ /^\d+$/ ) {
@@ -48,17 +52,34 @@ if ( $window && $window !~ /^\d+$/ ) {
 
 if ( @ipversions ) {
     foreach my $version ( @ipversions ) {
-        warn "version: $version";
         if ( $version !~ /^\d$/ ) {
             error("Invalid IP version specified", 400);
         }
     }
 }
 
+@tools = encode_js( \@tools );
+
+@protocols = encode_js( \@protocols );
+
+@filters = encode_js( \@filters );
+
 handle_esmond();
 
+sub encode_js {
+    my $arrayref = shift;
+    my @array = @$arrayref;
+
+    my @array_quoted = ();
+    foreach my $value (@array) {
+        next if $value eq '';
+        push @array_quoted, to_json( $value, { allow_nonref => 1 } );
+    }
+    return @array_quoted;
+
+}
+
 sub handle_esmond {
-    #print cgi-header
     print $cgi->header;
 
     my %vars = (

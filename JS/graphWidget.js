@@ -1352,7 +1352,7 @@ function drawChart(url) {
             }); // end d3.json call
     } // end drawChart() function
 
-    function array2param(name, array){
+    function array2param(name, array) {
         var joiner = "&" + name + "=";
         return joiner + array.join(joiner);
     }

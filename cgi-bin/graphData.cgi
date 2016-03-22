@@ -21,6 +21,7 @@ use Socket qw( AF_INET AF_INET6 );
 use Socket6;
 use Data::Validate::IP;
 use Log::Log4perl qw(get_logger :easy :levels);
+use URI;
 
 use lib "$RealBin/../lib";
 
@@ -38,7 +39,7 @@ use SimpleLookupService::QueryObjects::Network::InterfaceQueryObject;
 
 
 # library for getting host information
-use perfSONAR_PS::Utils::Host qw( discover_primary_address get_ethernet_interfaces get_interface_addresses_by_type is_ip_or_hostname );
+use perfSONAR_PS::Utils::Host qw( discover_primary_address get_ethernet_interfaces get_interface_addresses_by_type is_ip_or_hostname is_web_url );
 
 my $basedir = "$FindBin::Bin";
 
@@ -95,13 +96,22 @@ sub get_data {
 	error("There must be an equal non-zero amount of src, dest, and url options passed.", 400);
     }
 
-    if ( !is_ip_or_hostname( {address => @sources} ) ) {
-        error("Invalid ip address specified", 400);
+    if ( !is_web_url( { address => \@urls} ) ) {
+        error("Invalid URL specified", 400);
     }
 
-    if ( !is_ip_or_hostname( {address => @dests} ) ) {
-        error("Invalid ip address specified", 400);
+    if ( !is_ip_or_hostname( {address => \@sources} ) ) {
+        error("Invalid source ip address specified", 400);
     }
+
+    if ( !is_ip_or_hostname( {address => \@dests} ) ) {
+        error("Invalid destination ip address specified", 400);
+    }
+
+    if ( @agents && !is_ip_or_hostname( {address => \@agents, required => 0} ) ) {
+        error("Invalid measurement agent ip address specified", 400);
+    }
+
 
     my @base_event_types   = ('throughput', 'histogram-owdelay', 'packet-loss-rate', 'packet-retransmits', 'histogram-rtt', 'failures');
     my @mapped_event_types = ('throughput', 'owdelay', 'loss', 'packet_retransmits', 'ping', 'errors', 'owdelay_minimum', 'owdelay_median', 'ping_minimum', 'ping_maximum', 'error', 'error_tool');
@@ -225,7 +235,7 @@ sub get_data {
                     }
 
                     push @{$consolidated{$type_key}}, \@row;
-                }               
+                }
             }
         }
     }
@@ -274,29 +284,29 @@ sub _get_test_data {
             $filter->{metadata_filters}->{$filter_pair[0]} = $filter_pair[1];
         }
     }
-    
-    
+
+
     my $client = new perfSONAR_PS::Client::Esmond::ApiConnect(url     => $url,
 							      filters => $filter);
 
     my $metadata = $client->get_metadata();
-    
+
     if ($client->error){
-	warn $client->error;
-	return undef;
+        error("Error reaching MA: " . $client->error);
+        return undef;
     }
 
     my @return_values;
-    
+
     foreach my $metadatum (@$metadata) {
         for (my $i = 0; $i < @$base_event_types; $i++){
             my $event_type = $base_event_types->[$i];
 
-            my $event = $metadatum->get_event_type($event_type);			    
+            my $event = $metadatum->get_event_type($event_type);
             next if !$event;
 
             # Figure out how to map into prettier names that don't reveal
-            # underlying constructs			    	    		   
+            # underlying constructs
             my $remapped_name = $mapped_event_types[$i];
 
             $event->filters->time_start($start);
@@ -374,28 +384,28 @@ sub _get_test_data {
                 my $median_val;
                 if ($multiple_values) {
                     $types_to_ignore->{$remapped_name} = 1;
-                    if ($event_type eq 'failures') { 
+                    if ($event_type eq 'failures') {
                         foreach my $field(@summary_fields) {
                             my $key = $field;
                             if ($key eq 'error_tool') {
                                 $val = $tool_name;
                             } else {
                                 $val = $datum->{val}->{$field};
-                            }                            
+                            }
                             push @{$additional_data{$key}}, {'ts' => $ts, 'val' => $val };
                         }
 
-                    } else {                     
+                    } else {
                         foreach my $field(@summary_fields) {
                             my $key = $remapped_name . '_' . $field;
                             push @{$additional_data{$key}}, {'ts' => $ts, 'val' => $datum->{val}->{$field}};
                         }
                     }
-                } else {   
+                } else {
                     if ($event_type ne 'failures') {
                         $val = $datum->val;
                     }
-                    push(@data_points, {'ts' => $ts, 'val' => $val});		    
+                    push(@data_points, {'ts' => $ts, 'val' => $val});
                 }
             }
 
@@ -409,17 +419,24 @@ sub _get_test_data {
                     summary_fields     => \@summary_fields
                 });
         }
-    }		
-    
+    }
+
     return \@return_values;
 }
 
 # has_traceroute_data is the webservice that is called to see if a source/dest pair
 # has traceroute data defined in the specified MA
 sub has_traceroute_data {
-    my $url    = $cgi->param('url')   || error("Missing required parameter \"url\"");
-    my $source    = $cgi->param('source')   || error("Missing required parameter \"url\"");
-    my $dest    = $cgi->param('dest')   || error("Missing required parameter \"url\"");
+    my $url    = $cgi->param('url')   || error("Missing required parameter \"url\"", 400);
+    my $source    = $cgi->param('source')   || error("Missing required parameter \"url\"", 400);
+    my $dest    = $cgi->param('dest')   || error("Missing required parameter \"url\"", 400);
+    if ( !is_ip_or_hostname( {address => $source} ) ) {
+        error("Invalid source ip address specified", 400);
+    }
+    if ( !is_ip_or_hostname( {address => $dest} ) ) {
+        error("Invalid destination ip address specified", 400);
+    }
+
 
     my $results = check_traceroute_data( { source => $source, dest => $dest, url => $url } );
 
@@ -434,7 +451,7 @@ sub check_traceroute_data {
     my $source = $parameters->{source};
     my $dest = $parameters->{dest};
     my $url = $parameters->{url};
-    
+
     my $time_range = 86400;
 
     my @active_tests;
@@ -457,7 +474,7 @@ sub check_traceroute_data {
     $filter->event_type('packet-trace');
     my $client = new perfSONAR_PS::Client::Esmond::ApiConnect(url     => $url,
 							      filters => $filter);
-    
+
     my $metadata = $client->get_metadata();
     error($client->error) if ($client->error);
 
@@ -907,30 +924,42 @@ sub get_interfaces {
     my @ipversions  = $cgi->param('ipversion'); 
     my $ls_url      = $cgi->param('ls_url')    || error("Missing required parameter \"ls_url\"");
 
-    my @results;    
+
+    if ( !is_ip_or_hostname( {address => \@sources} ) ) {
+        error("Invalid source ip address specified", 400);
+    }
+    if ( !is_ip_or_hostname( {address => \@dests} ) ) {
+        error("Invalid destination ip address specified", 400);
+    }
+
+    if ( !is_web_url( { address => $ls_url} ) ) {
+        error("Invalid LS URL specified", 400);
+    }
+
+    my @results;
 
     for (my $i = 0; $i < @sources; $i++){
         my $source = $sources[$i];
         my $dest   = $dests[$i];
         my $ipversion   = $ipversions[$i];
-                
+
         my $server = SimpleLookupService::Client::SimpleLS->new();
         $server->setUrl($ls_url);
         $server->connect();
-    
+
         my $query_object = SimpleLookupService::QueryObjects::Network::InterfaceQueryObject->new();
         $query_object->init();
-    
+
         my $host_info       = host_info( { src => $source, dest => $dest, ipversion => $ipversion });
         my $source_hostname = $host_info->{'source_host'};
         my $dest_hostname   = $host_info->{'dest_host'};
         my @source_ips = ();
         my @dest_ips = ();
         my @ifaddrs = (); 
-        
+
         @source_ips = split ',', $host_info->{'source_ip'} if($host_info->{'source_ip'});
         @dest_ips = split ',', $host_info->{'dest_ip'} if($host_info->{'dest_ip'});
-        
+
         # If source and dest are provided, query both. Otherwise only query source
         if ($source && $dest) {
             push @ifaddrs, @source_ips;
@@ -943,18 +972,22 @@ sub get_interfaces {
             push @ifaddrs, $source_hostname;
         }
         $query_object->setInterfaceAddresses( \@ifaddrs );
-        
+
         $query_object->setKeyOperator( { key => 'interface-addresses', operator => 'any' } );
-    
+
         my $query = new SimpleLookupService::Client::Query;
         $query->init( { server => $server } );
-    
+
         my ($resCode, $result) = $query->query( $query_object );
-    
+
         my $capacity = 0;
         my $mtu = 0;
         my %source_ip_map = map { $_ => 1 } @source_ips;
         my %dest_ip_map = map { $_ => 1 } @dest_ips;
+
+        if ( $resCode == -1 ) {
+            error("Error: " . $result->{'message'});
+        }
 
         foreach my $res (@$result) {
             $capacity = $res->getInterfaceCapacity()->[0] unless !$res->getInterfaceCapacity();
@@ -994,11 +1027,11 @@ sub get_host_info {
     my @ipversions  = $cgi->param('ipversion');
 
     # check for invalid sources
-    if ( !is_ip_or_hostname( {address => @sources} ) ) {
+    if ( !is_ip_or_hostname( {address => \@sources} ) ) {
         error("Invalid ip address specified", 400);
     }
     # check for invalid destinations
-    if ( !is_ip_or_hostname( {address => @dests} ) ) {
+    if ( !is_ip_or_hostname( {address => \@dests} ) ) {
         error("Invalid ip address specified", 400);
     }
 
