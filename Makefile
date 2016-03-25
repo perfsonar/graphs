@@ -2,7 +2,7 @@ PACKAGE=perfsonar-graphs
 ROOTPATH=/usr/lib/perfsonar/graphs
 CONFIGPATH=${ROOTPATH}/etc
 LIBPATH=/usr/lib/perfsonar/lib
-VERSION=3.5.1
+VERSION=3.5.1.1
 RELEASE=1
 
 default:
