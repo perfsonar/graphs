@@ -846,12 +846,15 @@ sub get_tests {
                     $dst = $orig_src;
                     $results{$src}{$dst} = $results{$orig_src}{$orig_dst};
                     delete $results{$orig_src}{$orig_dst};
-                    delete $results{$orig_src};
+                    # if $results{$orig_src} is empty, delete it
+                    if ( !%{  $results{$orig_src} } ) {
+                        delete $results{$orig_src};
+                    }
                     if ( $orig_src ne $src ) {
                         foreach my $type (@$all_types) {
                             while ( my ( $key, $val ) = each %{ $results{$src}{$dst}{$type} } ) {
                                 my $orig_key = $key;
-                                
+
                                 # only replace if we're looking at a src_ key
                                 if ( $key =~ /^src_/ ) {
                                     $key =~ s/^src_/dst_/;
