@@ -24406,36 +24406,13 @@
 
 	var _pondjs = __webpack_require__(336);
 
-	var ddosData = __webpack_require__(498);
-	console.log("ddosData", ddosData);
+	var throughputValues = [];
+	var reverseValues = [];
 
-	var requests = [];
-	var connections = [];
-	var esmondValues = [];
+	var throughputSeries = null;
+	var reverseSeries = null;
 
 	var text = 'Example ddos chart';
-
-	_underscore2["default"].each(ddosData, function (val) {
-	    var timestamp = new _moment2["default"](new Date("2015-04-03 " + val["time PST"]));
-	    var numConnection = val["connections"];
-	    var httpRequests = val["http requests"];
-	    requests.push([timestamp.toDate().getTime(), httpRequests]);
-	    connections.push([timestamp.toDate().getTime(), numConnection]);
-	});
-
-	var connectionsSeries = new _pondjs.TimeSeries({
-	    name: "connections",
-	    columns: ["time", "value"],
-	    points: connections
-	});
-
-	var requestsSeries = new _pondjs.TimeSeries({
-	    name: "requests",
-	    columns: ["time", "value"],
-	    points: requests
-	});
-
-	var esmondSeries = null;
 
 	var lineStyle = {
 	    node: {
@@ -24476,31 +24453,32 @@
 	        return {
 	            markdown: text,
 	            active: {
-	                requests: true,
-	                connections: true,
-	                esmond: true
+	                throughput: true,
+	                reverse: true
 	            }
 	        };
 	    },
 
 	    renderChart: function renderChart() {
 	        var charts = [];
-	        if (this.state.active.requests) {
-	            charts.push(_react2["default"].createElement(_reactTimeseriesCharts.LineChart, { key: "requests", axis: "axis1", series: requestsSeries, style: requestsStyle }));
+	        if (this.state.active.throughput && throughputSeries) {
+	            charts.push(_react2["default"].createElement(_reactTimeseriesCharts.LineChart, { key: "throughput", axis: "axis2", series: throughputSeries, style: connectionsStyle, smooth: false }));
 	        }
-	        if (this.state.active.connections) {
-	            charts.push(_react2["default"].createElement(_reactTimeseriesCharts.LineChart, { key: "connections", axis: "axis2", series: connectionsSeries, style: connectionsStyle }));
-	        }
-	        if (this.state.active.esmond && esmondSeries) {
-	            charts.push(_react2["default"].createElement(_reactTimeseriesCharts.LineChart, { key: "esmond", axis: "axis2", series: esmondSeries, style: connectionsStyle }));
+	        if (this.state.active.reverse && reverseSeries) {
+	            charts.push(_react2["default"].createElement(_reactTimeseriesCharts.LineChart, { key: "reverse", axis: "axis2", series: reverseSeries, style: requestsStyle, smooth: false }));
 	        }
 	        var timerange;
-	        if (esmondSeries) {
-	            console.log('esmondSeries is defined');
-	            timerange = esmondSeries.timerange();
-	            console.log('esmond timerange', timerange);
-	        } else {
-	            timerange = requestsSeries.timerange();
+	        if (throughputSeries) {
+	            console.log('throughputSeries is defined');
+	            timerange = throughputSeries.timerange();
+	            console.log('throughput timerange', timerange);
+	        } else if (reverseSeries) {
+	            console.log('reverseSeries is defined');
+	            timerange = reverseSeries.timerange();
+	            console.log('reverse timerange', timerange);
+	        }
+	        if (!timerange) {
+	            return _react2["default"].createElement("div", null);
 	        }
 	        return _react2["default"].createElement(
 	            _reactTimeseriesCharts.ChartContainer,
@@ -24508,15 +24486,13 @@
 	            _react2["default"].createElement(
 	                _reactTimeseriesCharts.ChartRow,
 	                { height: "300", debug: false },
-	                _react2["default"].createElement(_reactTimeseriesCharts.YAxis, { id: "axis1", label: "Requests", style: { labelColor: scheme.requests },
-	                    labelOffset: -10, min: 0, max: 1000, format: ",.0f", width: "60", type: "linear" }),
 	                _react2["default"].createElement(
 	                    _reactTimeseriesCharts.Charts,
 	                    null,
 	                    charts
 	                ),
 	                _react2["default"].createElement(_reactTimeseriesCharts.YAxis, { id: "axis2", label: "Throughput", style: { labelColor: scheme.connections },
-	                    labelOffset: 12, min: 0, format: ",.0f", max: 100000000, width: "80", type: "linear" })
+	                    labelOffset: 20, min: 0, format: ",.0f", max: 1000000000, width: "80", type: "linear" })
 	            )
 	        );
 	    },
@@ -24529,15 +24505,15 @@
 
 	    render: function render() {
 	        var legend = [{
-	            key: "requests",
-	            label: "Requests",
-	            disabled: !this.state.active.requests,
-	            style: { backgroundColor: scheme.requests }
-	        }, {
-	            key: "connections",
-	            label: "Connections",
-	            disabled: !this.state.active.connections,
+	            key: "throughput",
+	            label: "Throughput",
+	            disabled: !this.state.active.throughput,
 	            style: { backgroundColor: scheme.connections }
+	        }, {
+	            key: "reverse",
+	            label: "Reverse",
+	            disabled: !this.state.active.reverse,
+	            style: { backgroundColor: scheme.requests }
 	        }];
 	        return _react2["default"].createElement(
 	            "div",
@@ -24551,7 +24527,7 @@
 	                    _react2["default"].createElement(
 	                        "h3",
 	                        null,
-	                        "April 2015 DDoS Attack"
+	                        "perfSONAR Test Results"
 	                    )
 	                )
 	            ),
@@ -24583,19 +24559,29 @@
 	    },
 
 	    componentDidMount: function componentDidMount() {
-	        var url = 'http://perfsonar-dev.grnoc.iu.edu:8080/esmond/perfsonar/archive/050056d85a8344bc844e2aeaa472db9b/throughput/base';
+	        var url = 'http://perfsonar-dev.grnoc.iu.edu:8080/esmond/perfsonar/archive/9808c289fc07446e9939330706b896d6/throughput/base';
+	        //var url = 'http://perfsonar-dev.grnoc.iu.edu:8080/esmond/perfsonar/archive/050056d85a8344bc844e2aeaa472db9b/throughput/base';
+
 	        this.serverRequest = $.get(url, (function (data) {
 	            console.log('ajax request came back; data', data);
-	            this.esmondToTimeSeries(data);
-	            console.log('esmond values', esmondValues);
+	            var values = this.esmondToTimeSeries(data, 'throughput');
+	            throughputValues = values.values;
+	            throughputSeries = values.series;
+	            console.log('throughput values', throughputValues);
 	            //this.renderChart();
 	            this.forceUpdate();
-	            /*
-	            this.setState({
-	                username: lastGist.owner.login,
-	                lastGistUrl: lastGist.html_url
-	            });
-	            */
+	        }).bind(this));
+
+	        var url2 = 'http://perfsonar-dev.grnoc.iu.edu:8080/esmond/perfsonar/archive/f1f55c1d158545c29ff8700980948d30/throughput/base';
+
+	        this.serverRequest = $.get(url2, (function (data) {
+	            console.log('ajax request came back; reverse data', data);
+	            var values = this.esmondToTimeSeries(data, 'reverse');
+	            reverseValues = values.values;
+	            reverseSeries = values.series;
+	            console.log('reverse throughput values', reverseValues);
+	            //this.renderChart();
+	            this.forceUpdate();
 	        }).bind(this));
 	    },
 
@@ -24603,19 +24589,58 @@
 	        this.serverRequest.abort();
 	    },
 
-	    esmondToTimeSeries: function esmondToTimeSeries(inputData) {
+	    _checkSortOrder: function _checkSortOrder(ary) {
+	        var valName = arguments.length <= 1 || arguments[1] === undefined ? 'ts' : arguments[1];
+
+	        var lastVal = 0;
+	        _underscore2["default"].each(ary, function (val) {
+	            //console.log('val', val);
+	            if (val.ts <= lastVal) {
+	                console.log('ts is not greater than last ts');
+	            } else {
+	                console.log('ts is greater than last ts');
+	            }
+	            lastVal = val.ts;
+	        });
+	    },
+
+	    esmondToTimeSeries: function esmondToTimeSeries(inputData, seriesName) {
+	        var values = [];
+	        var series = {};
+
+	        /* 
+	         inputData.sort(function(a, b){
+	             var a1 = a.ts, b1 = b.ts;
+	             if(a1== b1) return 0;
+	             return a1> b1? 1: -1;
+	         });
+	         */
+	        this._checkSortOrder(inputData);
 
 	        _underscore2["default"].each(inputData, function (val) {
 	            var ts = val["ts"];
 	            var timestamp = new _moment2["default"](new Date(ts * 1000)); // 'Date' expects milliseconds
 	            var value = val["val"];
-	            esmondValues.push([timestamp.toDate().getTime(), value]);
-	            esmondSeries = new _pondjs.TimeSeries({
-	                name: "esmond",
+	            values.push([timestamp.toDate().getTime(), value]);
+	            series = new _pondjs.TimeSeries({
+	                name: seriesName,
 	                columns: ["time", "value"],
-	                points: esmondValues
+	                points: values
 	            });
 	        });
+	        var lastTS = 0;
+	        for (var i = 0; i < series.size(); i++) {
+	            console.log(series.at(i).toString());
+	            console.log('series.at(i)', series.at(i));
+	            var ts = series.at(i).timestamp().getTime();
+	            if (ts > lastTS) {
+	                console.log('new ts > last TS', ts, lastTS);
+	            } else {
+	                console.log('BAD: new ts <= last TS', ts, lastTS);
+	            }
+	            lastTS = ts;
+	        }
+	        return { values: values, series: series };
 	    }
 	});
 	module.exports = exports["default"];
@@ -53605,913 +53630,7 @@
 	module.exports = exports["default"];
 
 /***/ },
-/* 498 */
-/***/ function(module, exports) {
-
-	module.exports = [
-		{
-			"time PST": "6:00",
-			"connections": 14,
-			"http requests": 6
-		},
-		{
-			"time PST": "6:01",
-			"connections": 12,
-			"http requests": 9
-		},
-		{
-			"time PST": "6:02",
-			"connections": 8,
-			"http requests": 9
-		},
-		{
-			"time PST": "6:03",
-			"connections": 30,
-			"http requests": 14
-		},
-		{
-			"time PST": "6:04",
-			"connections": 66,
-			"http requests": 30
-		},
-		{
-			"time PST": "6:05",
-			"connections": 42,
-			"http requests": 6
-		},
-		{
-			"time PST": "6:06",
-			"connections": 37,
-			"http requests": 8
-		},
-		{
-			"time PST": "6:07",
-			"connections": 33,
-			"http requests": 16
-		},
-		{
-			"time PST": "6:08",
-			"connections": 73,
-			"http requests": 99
-		},
-		{
-			"time PST": "6:09",
-			"connections": 27,
-			"http requests": 9
-		},
-		{
-			"time PST": "6:10",
-			"connections": 17,
-			"http requests": 7
-		},
-		{
-			"time PST": "6:11",
-			"connections": 13,
-			"http requests": 12
-		},
-		{
-			"time PST": "6:12",
-			"connections": 13,
-			"http requests": 14
-		},
-		{
-			"time PST": "6:13",
-			"connections": 38,
-			"http requests": 9
-		},
-		{
-			"time PST": "6:14",
-			"connections": 30,
-			"http requests": 12
-		},
-		{
-			"time PST": "6:15",
-			"connections": 23,
-			"http requests": 45
-		},
-		{
-			"time PST": "6:16",
-			"connections": 23,
-			"http requests": 12
-		},
-		{
-			"time PST": "6:17",
-			"connections": 25,
-			"http requests": 89
-		},
-		{
-			"time PST": "6:18",
-			"connections": 72,
-			"http requests": 165
-		},
-		{
-			"time PST": "6:19",
-			"connections": 30,
-			"http requests": 11
-		},
-		{
-			"time PST": "6:20",
-			"connections": 12,
-			"http requests": 6
-		},
-		{
-			"time PST": "6:21",
-			"connections": 19,
-			"http requests": 10
-		},
-		{
-			"time PST": "6:22",
-			"connections": 32,
-			"http requests": 87
-		},
-		{
-			"time PST": "6:23",
-			"connections": 13,
-			"http requests": 5
-		},
-		{
-			"time PST": "6:24",
-			"connections": 33,
-			"http requests": 10
-		},
-		{
-			"time PST": "6:25",
-			"connections": 19,
-			"http requests": 4
-		},
-		{
-			"time PST": "6:26",
-			"connections": 16,
-			"http requests": 11
-		},
-		{
-			"time PST": "6:27",
-			"connections": 24,
-			"http requests": 10
-		},
-		{
-			"time PST": "6:28",
-			"connections": 18,
-			"http requests": 5
-		},
-		{
-			"time PST": "6:29",
-			"connections": 55,
-			"http requests": 13
-		},
-		{
-			"time PST": "6:30",
-			"connections": 23,
-			"http requests": 4
-		},
-		{
-			"time PST": "6:31",
-			"connections": 28,
-			"http requests": 80
-		},
-		{
-			"time PST": "6:32",
-			"connections": 16,
-			"http requests": 13
-		},
-		{
-			"time PST": "6:33",
-			"connections": 41,
-			"http requests": 31
-		},
-		{
-			"time PST": "6:34",
-			"connections": 57,
-			"http requests": 57
-		},
-		{
-			"time PST": "6:35",
-			"connections": 21,
-			"http requests": 6
-		},
-		{
-			"time PST": "6:36",
-			"connections": 21,
-			"http requests": 11
-		},
-		{
-			"time PST": "6:37",
-			"connections": 19,
-			"http requests": 21
-		},
-		{
-			"time PST": "6:38",
-			"connections": 15,
-			"http requests": 43
-		},
-		{
-			"time PST": "6:39",
-			"connections": 26,
-			"http requests": 12
-		},
-		{
-			"time PST": "6:40",
-			"connections": 18,
-			"http requests": 52
-		},
-		{
-			"time PST": "6:41",
-			"connections": 32,
-			"http requests": 60
-		},
-		{
-			"time PST": "6:42",
-			"connections": 28,
-			"http requests": 20
-		},
-		{
-			"time PST": "6:43",
-			"connections": 24,
-			"http requests": 68
-		},
-		{
-			"time PST": "6:44",
-			"connections": 51,
-			"http requests": 57
-		},
-		{
-			"time PST": "6:45",
-			"connections": 25,
-			"http requests": 8
-		},
-		{
-			"time PST": "6:46",
-			"connections": 30,
-			"http requests": 52
-		},
-		{
-			"time PST": "6:47",
-			"connections": 15,
-			"http requests": 15
-		},
-		{
-			"time PST": "6:48",
-			"connections": 45,
-			"http requests": 11
-		},
-		{
-			"time PST": "6:49",
-			"connections": 31,
-			"http requests": 12
-		},
-		{
-			"time PST": "6:50",
-			"connections": 19,
-			"http requests": 5
-		},
-		{
-			"time PST": "6:51",
-			"connections": 16,
-			"http requests": 11
-		},
-		{
-			"time PST": "6:52",
-			"connections": 16,
-			"http requests": 15
-		},
-		{
-			"time PST": "6:53",
-			"connections": 18,
-			"http requests": 4
-		},
-		{
-			"time PST": "6:54",
-			"connections": 27,
-			"http requests": 12
-		},
-		{
-			"time PST": "6:55",
-			"connections": 9,
-			"http requests": 5
-		},
-		{
-			"time PST": "6:56",
-			"connections": 17,
-			"http requests": 9
-		},
-		{
-			"time PST": "6:57",
-			"connections": 20,
-			"http requests": 16
-		},
-		{
-			"time PST": "6:58",
-			"connections": 26,
-			"http requests": 28
-		},
-		{
-			"time PST": "6:59",
-			"connections": 25,
-			"http requests": 9
-		},
-		{
-			"time PST": "7:00",
-			"connections": 42,
-			"http requests": 27
-		},
-		{
-			"time PST": "7:01",
-			"connections": 21,
-			"http requests": 14
-		},
-		{
-			"time PST": "7:02",
-			"connections": 13,
-			"http requests": 13
-		},
-		{
-			"time PST": "7:03",
-			"connections": 13,
-			"http requests": 17
-		},
-		{
-			"time PST": "7:04",
-			"connections": 1914,
-			"http requests": 358
-		},
-		{
-			"time PST": "7:05",
-			"connections": 4936,
-			"http requests": 825
-		},
-		{
-			"time PST": "7:06",
-			"connections": 4158,
-			"http requests": 468
-		},
-		{
-			"time PST": "7:07",
-			"connections": 2800,
-			"http requests": 525
-		},
-		{
-			"time PST": "7:08",
-			"connections": 2863,
-			"http requests": 444
-		},
-		{
-			"time PST": "7:09",
-			"connections": 3828,
-			"http requests": 510
-		},
-		{
-			"time PST": "7:10",
-			"connections": 4637,
-			"http requests": 663
-		},
-		{
-			"time PST": "7:11",
-			"connections": 4778,
-			"http requests": 453
-		},
-		{
-			"time PST": "7:12",
-			"connections": 4798,
-			"http requests": 614
-		},
-		{
-			"time PST": "7:13",
-			"connections": 5024,
-			"http requests": 699
-		},
-		{
-			"time PST": "7:14",
-			"connections": 4991,
-			"http requests": 641
-		},
-		{
-			"time PST": "7:15",
-			"connections": 4579,
-			"http requests": 521
-		},
-		{
-			"time PST": "7:16",
-			"connections": 5030,
-			"http requests": 538
-		},
-		{
-			"time PST": "7:17",
-			"connections": 3733,
-			"http requests": 880
-		},
-		{
-			"time PST": "7:18",
-			"connections": 4124,
-			"http requests": 715
-		},
-		{
-			"time PST": "7:19",
-			"connections": 3940,
-			"http requests": 797
-		},
-		{
-			"time PST": "7:20",
-			"connections": 3657,
-			"http requests": 859
-		},
-		{
-			"time PST": "7:21",
-			"connections": 2814,
-			"http requests": 936
-		},
-		{
-			"time PST": "7:22",
-			"connections": 1858,
-			"http requests": 964
-		},
-		{
-			"time PST": "7:23",
-			"connections": 1988,
-			"http requests": 964
-		},
-		{
-			"time PST": "7:24",
-			"connections": 2905,
-			"http requests": 922
-		},
-		{
-			"time PST": "7:25",
-			"connections": 4969,
-			"http requests": 595
-		},
-		{
-			"time PST": "7:26",
-			"connections": 5793,
-			"http requests": 717
-		},
-		{
-			"time PST": "7:27",
-			"connections": 5261,
-			"http requests": 606
-		},
-		{
-			"time PST": "7:28",
-			"connections": 5568,
-			"http requests": 644
-		},
-		{
-			"time PST": "7:29",
-			"connections": 4505,
-			"http requests": 619
-		},
-		{
-			"time PST": "7:30",
-			"connections": 5135,
-			"http requests": 862
-		},
-		{
-			"time PST": "7:31",
-			"connections": 5710,
-			"http requests": 699
-		},
-		{
-			"time PST": "7:32",
-			"connections": 5235,
-			"http requests": 666
-		},
-		{
-			"time PST": "7:33",
-			"connections": 5092,
-			"http requests": 754
-		},
-		{
-			"time PST": "7:34",
-			"connections": 5558,
-			"http requests": 588
-		},
-		{
-			"time PST": "7:35",
-			"connections": 5915,
-			"http requests": 728
-		},
-		{
-			"time PST": "7:36",
-			"connections": 5873,
-			"http requests": 750
-		},
-		{
-			"time PST": "7:37",
-			"connections": 4631,
-			"http requests": 766
-		},
-		{
-			"time PST": "7:38",
-			"connections": 5690,
-			"http requests": 819
-		},
-		{
-			"time PST": "7:39",
-			"connections": 4719,
-			"http requests": 691
-		},
-		{
-			"time PST": "7:40",
-			"connections": 3466,
-			"http requests": 713
-		},
-		{
-			"time PST": "7:41",
-			"connections": 3153,
-			"http requests": 832
-		},
-		{
-			"time PST": "7:42",
-			"connections": 3073,
-			"http requests": 550
-		},
-		{
-			"time PST": "7:43",
-			"connections": 2687,
-			"http requests": 302
-		},
-		{
-			"time PST": "7:44",
-			"connections": 2747,
-			"http requests": 82
-		},
-		{
-			"time PST": "7:45",
-			"connections": 2756,
-			"http requests": 42
-		},
-		{
-			"time PST": "7:46",
-			"connections": 2766,
-			"http requests": 44
-		},
-		{
-			"time PST": "7:47",
-			"connections": 2722,
-			"http requests": 22
-		},
-		{
-			"time PST": "7:48",
-			"connections": 2728,
-			"http requests": 19
-		},
-		{
-			"time PST": "7:49",
-			"connections": 2265,
-			"http requests": 303
-		},
-		{
-			"time PST": "7:50",
-			"connections": 449,
-			"http requests": 204
-		},
-		{
-			"time PST": "7:51",
-			"connections": 535,
-			"http requests": 249
-		},
-		{
-			"time PST": "7:52",
-			"connections": 461,
-			"http requests": 197
-		},
-		{
-			"time PST": "7:53",
-			"connections": 651,
-			"http requests": 233
-		},
-		{
-			"time PST": "7:54",
-			"connections": 626,
-			"http requests": 183
-		},
-		{
-			"time PST": "7:55",
-			"connections": 556,
-			"http requests": 158
-		},
-		{
-			"time PST": "7:56",
-			"connections": 774,
-			"http requests": 19
-		},
-		{
-			"time PST": "7:57",
-			"connections": 768,
-			"http requests": 140
-		},
-		{
-			"time PST": "7:58",
-			"connections": 744,
-			"http requests": 17
-		},
-		{
-			"time PST": "7:59",
-			"connections": 715,
-			"http requests": 30
-		},
-		{
-			"time PST": "8:00",
-			"connections": 709,
-			"http requests": 62
-		},
-		{
-			"time PST": "8:01",
-			"connections": 699,
-			"http requests": 19
-		},
-		{
-			"time PST": "8:02",
-			"connections": 668,
-			"http requests": 24
-		},
-		{
-			"time PST": "8:03",
-			"connections": 700,
-			"http requests": 16
-		},
-		{
-			"time PST": "8:04",
-			"connections": 719,
-			"http requests": 161
-		},
-		{
-			"time PST": "8:05",
-			"connections": 593,
-			"http requests": 73
-		},
-		{
-			"time PST": "8:06",
-			"connections": 1336,
-			"http requests": 354
-		},
-		{
-			"time PST": "8:07",
-			"connections": 1272,
-			"http requests": 360
-		},
-		{
-			"time PST": "8:08",
-			"connections": 1202,
-			"http requests": 250
-		},
-		{
-			"time PST": "8:09",
-			"connections": 1043,
-			"http requests": 240
-		},
-		{
-			"time PST": "8:10",
-			"connections": 1226,
-			"http requests": 285
-		},
-		{
-			"time PST": "8:11",
-			"connections": 946,
-			"http requests": 249
-		},
-		{
-			"time PST": "8:12",
-			"connections": 995,
-			"http requests": 251
-		},
-		{
-			"time PST": "8:13",
-			"connections": 950,
-			"http requests": 262
-		},
-		{
-			"time PST": "8:14",
-			"connections": 890,
-			"http requests": 256
-		},
-		{
-			"time PST": "8:15",
-			"connections": 822,
-			"http requests": 252
-		},
-		{
-			"time PST": "8:16",
-			"connections": 863,
-			"http requests": 218
-		},
-		{
-			"time PST": "8:17",
-			"connections": 754,
-			"http requests": 177
-		},
-		{
-			"time PST": "8:18",
-			"connections": 851,
-			"http requests": 320
-		},
-		{
-			"time PST": "8:19",
-			"connections": 777,
-			"http requests": 255
-		},
-		{
-			"time PST": "8:20",
-			"connections": 608,
-			"http requests": 57
-		},
-		{
-			"time PST": "8:21",
-			"connections": 569,
-			"http requests": 26
-		},
-		{
-			"time PST": "8:22",
-			"connections": 602,
-			"http requests": 109
-		},
-		{
-			"time PST": "8:23",
-			"connections": 565,
-			"http requests": 44
-		},
-		{
-			"time PST": "8:24",
-			"connections": 564,
-			"http requests": 19
-		},
-		{
-			"time PST": "8:25",
-			"connections": 566,
-			"http requests": 25
-		},
-		{
-			"time PST": "8:26",
-			"connections": 542,
-			"http requests": 9
-		},
-		{
-			"time PST": "8:27",
-			"connections": 549,
-			"http requests": 90
-		},
-		{
-			"time PST": "8:28",
-			"connections": 266,
-			"http requests": 267
-		},
-		{
-			"time PST": "8:29",
-			"connections": 175,
-			"http requests": 162
-		},
-		{
-			"time PST": "8:30",
-			"connections": 186,
-			"http requests": 167
-		},
-		{
-			"time PST": "8:31",
-			"connections": 149,
-			"http requests": 133
-		},
-		{
-			"time PST": "8:32",
-			"connections": 38,
-			"http requests": 59
-		},
-		{
-			"time PST": "8:33",
-			"connections": 24,
-			"http requests": 45
-		},
-		{
-			"time PST": "8:34",
-			"connections": 24,
-			"http requests": 45
-		},
-		{
-			"time PST": "8:35",
-			"connections": 56,
-			"http requests": 66
-		},
-		{
-			"time PST": "8:36",
-			"connections": 399,
-			"http requests": 12
-		},
-		{
-			"time PST": "8:37",
-			"connections": 474,
-			"http requests": 14
-		},
-		{
-			"time PST": "8:38",
-			"connections": 309,
-			"http requests": 169
-		},
-		{
-			"time PST": "8:39",
-			"connections": 202,
-			"http requests": 194
-		},
-		{
-			"time PST": "8:40",
-			"connections": 177,
-			"http requests": 167
-		},
-		{
-			"time PST": "8:41",
-			"connections": 170,
-			"http requests": 149
-		},
-		{
-			"time PST": "8:42",
-			"connections": 172,
-			"http requests": 143
-		},
-		{
-			"time PST": "8:43",
-			"connections": 58,
-			"http requests": 31
-		},
-		{
-			"time PST": "8:44",
-			"connections": 29,
-			"http requests": 51
-		},
-		{
-			"time PST": "8:45",
-			"connections": 24,
-			"http requests": 8
-		},
-		{
-			"time PST": "8:46",
-			"connections": 25,
-			"http requests": 47
-		},
-		{
-			"time PST": "8:47",
-			"connections": 16,
-			"http requests": 12
-		},
-		{
-			"time PST": "8:48",
-			"connections": 16,
-			"http requests": 10
-		},
-		{
-			"time PST": "8:49",
-			"connections": 21,
-			"http requests": 14
-		},
-		{
-			"time PST": "8:50",
-			"connections": 21,
-			"http requests": 8
-		},
-		{
-			"time PST": "8:51",
-			"connections": 28,
-			"http requests": 54
-		},
-		{
-			"time PST": "8:52",
-			"connections": 26,
-			"http requests": 9
-		},
-		{
-			"time PST": "8:53",
-			"connections": 20,
-			"http requests": 8
-		},
-		{
-			"time PST": "8:54",
-			"connections": 24,
-			"http requests": 39
-		},
-		{
-			"time PST": "8:55",
-			"connections": 30,
-			"http requests": 48
-		},
-		{
-			"time PST": "8:56",
-			"connections": 16,
-			"http requests": 7
-		},
-		{
-			"time PST": "8:57",
-			"connections": 18,
-			"http requests": 15
-		},
-		{
-			"time PST": "8:58",
-			"connections": 25,
-			"http requests": 14
-		},
-		{
-			"time PST": "8:59",
-			"connections": 16,
-			"http requests": 8
-		}
-	];
-
-/***/ },
+/* 498 */,
 /* 499 */
 /***/ function(module, exports, __webpack_require__) {
 
