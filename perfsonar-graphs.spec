@@ -7,7 +7,7 @@
 %define relnum  1
 
 Name:			perfsonar-graphs
-Version:		3.5.1.1
+Version:		3.5.1.2
 Release:		%{relnum}
 Summary:		perfSONAR Graphs
 License:		Distributable, see LICENSE
