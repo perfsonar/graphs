@@ -1,0 +1,40 @@
+<!doctype html>
+
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>A test chart</title>
+    <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css">
+    <style>
+        html { overflow-y:scroll; }
+        body { padding-top:50px; }
+        ul { font-family: Gotham SSm A; letter-spacing: -.02em; color: rgb(128, 128, 128);}
+        a { color: #9A9A9A !important; text-decoration: none !important; }
+        a.active { color: #424242 !important; }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="row" />
+            <div class="col-md-12">
+                <div id="content">
+                    Content here
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load jQuery from CDN -->
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+     <!-- dev server stuff -->
+    <script src="http://perfsonar-dev.grnoc.iu.edu:8080/webpack-dev-server.js"></script>
+
+    <!-- Our application -->
+    <script src="public/bundle.js"></script>
+</body>
+
+</html>
