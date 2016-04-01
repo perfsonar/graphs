@@ -551,7 +551,7 @@ sub get_test_list {
     my $addresses = _get_local_addresses_hash();
 
     my $filter = new perfSONAR_PS::Client::Esmond::ApiFilters(); 
-    $filter->time_range( 86400*31 );
+    $filter->time_range( 86400*7 );
     $filter->subject_type('point-to-point');
 
     my $client = new perfSONAR_PS::Client::Esmond::ApiConnect(url     => $url,
@@ -565,7 +565,7 @@ sub get_test_list {
     my @active_tests;
     my %active_hosts;
     my $now = time;
-    my $start_time = $now - 86400 * 31;
+    my $start_time = $now - 86400 * 7;
     my $metadata_out = [];
 
     my $dns_time = 0; # TODO: remove dns_time (benchmarking)
@@ -645,7 +645,7 @@ sub get_tests {
     my $addresses = _get_local_addresses_hash();
 
     my $filter = new perfSONAR_PS::Client::Esmond::ApiFilters();
-    $filter->time_range( 86400*31 );
+    $filter->time_range( 86400*7 );
     $filter->subject_type('point-to-point');
     #$filter->limit(10); #return up to 10 results
     #$filter->offset(0); # return the first results you find
