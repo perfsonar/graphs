@@ -65,6 +65,7 @@ export default React.createClass({
             },
             tracker: null,
             timerange: TimeRange.lastThirtyDays(),
+            maxLatency: 1,
         };
     },
 
@@ -84,23 +85,23 @@ export default React.createClass({
         }
         if (this.state.active.throughput && latencySeries) { // TODO: fix state part
             latencyCharts.push(
-                <LineChart key="latency" axis="axis1" series={latencySeries} style={connectionsStyle} smooth={false} breakLine={true} />
+                <LineChart key="latency" axis="axis1" series={latencySeries} style={connectionsStyle} smooth={false} breakLine={false} />
             );
         }
         if (this.state.active.reverse && reverseLatencySeries) { // TODO: fix state part
             latencyCharts.push(
-                <LineChart key="reverseLatency" axis="axis1" series={reverseLatencySeries} style={requestsStyle} smooth={false} breakLine={true} />
+                <LineChart key="reverseLatency" axis="axis1" series={reverseLatencySeries} style={requestsStyle} smooth={false} breakLine={false} />
             );
         }
         var timerange;
         if (throughputSeries) {
-            console.log('throughputSeries is defined');
+            //console.log('throughputSeries is defined');
             timerange = throughputSeries.timerange();
-            console.log('throughput timerange', timerange);
+            //console.log('throughput timerange', timerange);
         } else if (reverseThroughputSeries) {
-            console.log('reverseThroughputSeries is defined');
+            //console.log('reverseThroughputSeries is defined');
             timerange = reverseThroughputSeries.timerange();
-            console.log('reverse timerange', timerange);
+            //console.log('reverse timerange', timerange);
 
         } 
         this.timerange = timerange;
@@ -126,7 +127,7 @@ export default React.createClass({
                         {latencyCharts}
                     </Charts>
                     <YAxis id="axis1" label="Latency" style={{labelColor: scheme.connections}}
-                           labelOffset={20} min={0} format=",.4f"  width="80" type="linear"/>
+                           labelOffset={20} min={0} format=",.4f" max={this.state.maxLatency}  width="80" type="linear"/>
                 </ChartRow>
             </ChartContainer>
         );
@@ -188,7 +189,7 @@ export default React.createClass({
         //var url = 'http://perfsonar-dev.grnoc.iu.edu:8080/esmond/perfsonar/archive/050056d85a8344bc844e2aeaa472db9b/throughput/base';
 
         this.serverRequest = $.get(url, function ( data ) {
-            console.log('ajax request came back; data', data);
+            console.log('ajax request came back; throughput data', data);
             var values = this.esmondToTimeSeries( data, 'throughput' );
             throughputValues = values.values;
             throughputSeries = values.series;
@@ -201,7 +202,7 @@ export default React.createClass({
         url2 += '?time-range=' + 86400 * 30;
 
         this.serverRequest = $.get(url2, function ( data ) {
-            console.log('ajax request came back; reverse data', data);
+            console.log('ajax request came back; reverse throughput data', data);
             var values = this.esmondToTimeSeries( data, 'reverseThroughput' );
             reverseThroughputValues = values.values;
             reverseThroughputSeries = values.series;
@@ -253,7 +254,7 @@ export default React.createClass({
                 console.log('ts is not greater than last ts');
 
             } else {
-                console.log('ts is greater than last ts');
+                //console.log('ts is greater than last ts');
 
             }
             lastVal = val.ts;
@@ -281,7 +282,15 @@ export default React.createClass({
             var value = val["val"];
             if ( seriesName == 'latency' || seriesName == 'reverseLatency' ) {
                 value = val["val"].minimum;
-
+                var maxLatency = this.state.maxLatency;
+                maxLatency =  value > maxLatency ? value : maxLatency ;
+                //console.log('maxLatency', maxLatency);
+                this.setState({maxLatency: maxLatency});
+                /*(
+        const active = this.state.active;
+        active[key] = !disabled;
+        this.setState({active});
+        */
             }
             values.push([timestamp.toDate().getTime(), value]);
             series = new TimeSeries({
@@ -290,13 +299,15 @@ export default React.createClass({
                 points: values
             });
         });
+        /*
+         * Shouldn't need this as _checkSortOrder is called above
         var lastTS = 0;
         for (let i=0; i < series.size(); i++) {
-            console.log(series.at(i).toString());
-            console.log('series.at(i)', series.at(i));
+            //console.log(series.at(i).toString());
+            //console.log('series.at(i)', series.at(i));
             var ts = series.at(i).timestamp().getTime();
             if ( ts > lastTS ) {
-                console.log( 'new ts > last TS', ts, lastTS );
+                //console.log( 'new ts > last TS', ts, lastTS );
 
             } else {
                 console.log( 'BAD: new ts <= last TS', ts, lastTS );
@@ -304,6 +315,7 @@ export default React.createClass({
             }
             lastTS = ts;
         }
+        */
         return ( { values: values, series: series } );
     }
 });
