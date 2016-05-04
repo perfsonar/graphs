@@ -120,7 +120,7 @@ export default React.createClass({
                         {charts}
                     </Charts>
                     <YAxis id="axis2" label="Throughput" style={{labelColor: scheme.connections}}
-                           labelOffset={20} min={0} format=",.0f" max={1000000000} width="80" type="linear"/>
+                           labelOffset={20} min={0} format=".2s" max={1000000000} width="80" type="linear"/>
                 </ChartRow>
                 <ChartRow height="200" debug={false}>
                     <Charts>
