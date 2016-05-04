@@ -127,7 +127,7 @@ export default React.createClass({
                         {latencyCharts}
                     </Charts>
                     <YAxis id="axis1" label="Latency" style={{labelColor: scheme.connections}}
-                           labelOffset={20} min={0} format=",.4f" max={this.state.maxLatency}  width="80" type="linear"/>
+                           labelOffset={20} min={0.000000001} format=",.4f" max={this.state.maxLatency}  width="80" type="log"/>
                 </ChartRow>
             </ChartContainer>
         );
@@ -143,7 +143,7 @@ export default React.createClass({
         const legend = [
             {
                 key: "throughput",
-                label: "Throughput",
+                label: "Forward",
                 disabled: !this.state.active.throughput,
                 style: {backgroundColor: scheme.connections}
             },{
@@ -184,9 +184,9 @@ export default React.createClass({
     },
 
     componentDidMount: function() {
-        var url = 'http://perfsonar-dev.grnoc.iu.edu:8080/esmond/perfsonar/archive/9808c289fc07446e9939330706b896d6/throughput/base';
+        var url = 'http://perfsonar-dev.grnoc.iu.edu/esmond/perfsonar/archive/9808c289fc07446e9939330706b896d6/throughput/base';
         url += '?time-range=' + 86400 * 30;
-        //var url = 'http://perfsonar-dev.grnoc.iu.edu:8080/esmond/perfsonar/archive/050056d85a8344bc844e2aeaa472db9b/throughput/base';
+        //var url = 'http://perfsonar-dev.grnoc.iu.edu/esmond/perfsonar/archive/050056d85a8344bc844e2aeaa472db9b/throughput/base';
 
         this.serverRequest = $.get(url, function ( data ) {
             console.log('ajax request came back; throughput data', data);
@@ -198,7 +198,7 @@ export default React.createClass({
             this.forceUpdate();
         }.bind(this));
 
-        var url2 = 'http://perfsonar-dev.grnoc.iu.edu:8080/esmond/perfsonar/archive/f1f55c1d158545c29ff8700980948d30/throughput/base';
+        var url2 = 'http://perfsonar-dev.grnoc.iu.edu/esmond/perfsonar/archive/f1f55c1d158545c29ff8700980948d30/throughput/base';
         url2 += '?time-range=' + 86400 * 30;
 
         this.serverRequest = $.get(url2, function ( data ) {
@@ -211,8 +211,8 @@ export default React.createClass({
             this.forceUpdate();
         }.bind(this));
 
-        // http://perfsonar-dev.grnoc.iu.edu:8080/esmond/perfsonar/archive/c1eb8fb9fd87429bb3bfaf79aca6424b/histogram-owdelay/statistics/3600
-        var url3 = 'http://perfsonar-dev.grnoc.iu.edu:8080/esmond/perfsonar/archive/c1eb8fb9fd87429bb3bfaf79aca6424b/histogram-owdelay/statistics/3600';
+        // http://perfsonar-dev.grnoc.iu.edu/esmond/perfsonar/archive/c1eb8fb9fd87429bb3bfaf79aca6424b/histogram-owdelay/statistics/3600
+        var url3 = 'http://perfsonar-dev.grnoc.iu.edu/esmond/perfsonar/archive/c1eb8fb9fd87429bb3bfaf79aca6424b/histogram-owdelay/statistics/3600';
         url3 += '?time-range=' + 86400 * 30;
 
         this.serverRequest = $.get(url3, function ( data ) {
@@ -225,8 +225,8 @@ export default React.createClass({
             this.forceUpdate();
         }.bind(this));
 
-        // http://perfsonar-dev.grnoc.iu.edu:8080/esmond/perfsonar/archive/5a1707536a5143759713adddc5cafa66/histogram-rtt/statistics/3600
-        var url4 = 'http://perfsonar-dev.grnoc.iu.edu:8080/esmond/perfsonar/archive/5a1707536a5143759713adddc5cafa66/histogram-rtt/statistics/3600';
+        // http://perfsonar-dev.grnoc.iu.edu/esmond/perfsonar/archive/5a1707536a5143759713adddc5cafa66/histogram-rtt/statistics/3600
+        var url4 = 'http://perfsonar-dev.grnoc.iu.edu/esmond/perfsonar/archive/5a1707536a5143759713adddc5cafa66/histogram-rtt/statistics/3600';
         url4 += '?time-range=' + 86400 * 30;
 
         this.serverRequest = $.get(url4, function ( data ) {
@@ -290,14 +290,25 @@ export default React.createClass({
         const active = this.state.active;
         active[key] = !disabled;
         this.setState({active});
-        */
+*/
+        
+            }
+            if (value <= 0 ) {
+                console.log("VALUE IS ZERO OR LESS");
+                value = 0.000000001;
+            }
+            if ( isNaN(value) ) {
+                console.log("VALUE IS NaN");
             }
             values.push([timestamp.toDate().getTime(), value]);
-            series = new TimeSeries({
-                name: seriesName,
-                columns: ["time", "value"],
-                points: values
-            });
+
+        });
+        console.log('creating series ...');
+
+        series = new TimeSeries({
+            name: seriesName,
+            columns: ["time", "value"],
+            points: values
         });
         /*
          * Shouldn't need this as _checkSortOrder is called above
