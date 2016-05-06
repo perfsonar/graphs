@@ -1,0 +1,11 @@
+--- a/etc/apache-perfsonar-graphs.conf
++++ b/etc/apache-perfsonar-graphs.conf
+@@ -32,7 +32,7 @@
+ 
+ Alias /perfsonar-graphs /usr/lib/perfsonar/graphs/cgi-bin
+ <Directory "/usr/lib/perfsonar/graphs/cgi-bin">
+-    Options FollowSymLinks MultiViews +ExecCGI
++    Options FollowSymLinks MultiViews ExecCGI
+     DirectoryIndex index.cgi
+     AddHandler cgi-script .cgi
+     AllowOverride None
