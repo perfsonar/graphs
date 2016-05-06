@@ -62,7 +62,14 @@ module.exports = {
     module: {
         loaders: [
             { test: /\.(js|jsx)$/,
-              loader: "babel?stage=0" },
+                //loader: 'babel?stage=0',
+                loader: 'babel-loader',
+                exclude: [/node_modules/],
+                //query: {
+                    //presets: ["es2015", "react", "stage-0"]
+                //}
+              //loader: "babel?stage=0" 
+            },
             //{ test: /\.(js|jsx)$/,
             //  loader: "babel-loader", query: { presets: ['es2015', 'react']  } },
             //{ test: /\.(js|jsx)$/, loader: 'babel?optional=es7.objectRestSpread' },
