@@ -8,7 +8,7 @@
 
 Name:			perfsonar-graphs
 Version:		3.5.1.3
-Release:		%{relnum}
+Release:		%{relnum}%{?dist}
 Summary:		perfSONAR Graphs
 License:		Distributable, see LICENSE
 Group:			Development/Libraries
@@ -84,7 +84,7 @@ chown perfsonar:perfsonar /var/log/perfsonar
 chown -R perfsonar:perfsonar %{install_base}
 chown -R apache:apache %{install_base}/etc
 
-/etc/init.d/httpd restart &> /dev/null || :
+service httpd restart &> /dev/null || :
 
 %files
 %defattr(-,perfsonar,perfsonar,-)
