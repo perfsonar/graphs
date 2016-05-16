@@ -4,7 +4,7 @@ import moment from "moment";
 import Markdown from "react-markdown";
 //import Highlighter from "./highlighter";
 
-import { Charts, ChartContainer, ChartRow, YAxis, LineChart, Highlighter, Resizable, Legend } from "react-timeseries-charts";
+import { Charts, ChartContainer, ChartRow, YAxis, LineChart, ScatterChart, Highlighter, Resizable, Legend } from "react-timeseries-charts";
 
 import { TimeSeries, TimeRange } from "pondjs";
 
@@ -14,11 +14,36 @@ var reverseThroughputValues = [];
 var latencyValues = [];
 var reverseLatencyValues = [];
 
+var lossValues = [];
+var reverseLossValues = [];
+
+var failures = [];
+var row = {};
+row.ts = 1460152800; //000;
+row.val = 500000000; //'Generic error message 1';
+failures.push(row);
+
+row = {};
+row.ts = 1460175800; //000;
+row.val = 500000000; //'Generic error message 3';
+failures.push(row);
+row = {};
+
+var failureMessages = [];
+failureMessages[1460152800] = 'Generic error message 1';
+failureMessages[1460175800] = 'Generic error message 3';
+
+var failureSeries = null;
+var failureValues = null;
+
 var throughputSeries = null;
 var reverseThroughputSeries = null;
 
 var latencySeries = null;
 var reverseLatencySeries = null;
+
+var lossSeries = null;
+var reverseLossSeries = null;
 
 const text = 'Example ddos chart';
 
@@ -49,7 +74,8 @@ const connectionsStyle = {
 
 const requestsStyle = {
     color: scheme.requests,
-    width: 2
+    width: 2,
+    strokeDasharray: "4,2"
 };
 
 export default React.createClass({
@@ -66,13 +92,27 @@ export default React.createClass({
             tracker: null,
             timerange: TimeRange.lastThirtyDays(),
             maxLatency: 1,
+            maxLoss: 0.0000000001,
         };
     },
 
 
+    handleTrackerChanged(trackerVal, selection) {
+        const seconds = Math.floor( trackerVal.getTime() / 1000 );
+        //console.log('trackerVal seconds', seconds, 'selection', selection);
+        //var pos = this.state.tracker;
+        this.setState({tracker: trackerVal});
+        if ( failureMessages[ seconds ] ) {
+            console.log('failure message: ', failureMessages[ seconds ] );
+        }
+        //this.setState({selectionType, selection});
+        //return pos;
+    },
+
     renderChart() {
         let charts = [];
         let latencyCharts = [];
+        let lossCharts = [];
         if (this.state.active.throughput && throughputSeries) {
             charts.push(
                 <LineChart key="throughput" axis="axis2" series={throughputSeries} style={connectionsStyle} smooth={false} breakLine={true} />
@@ -93,6 +133,16 @@ export default React.createClass({
                 <LineChart key="reverseLatency" axis="axis1" series={reverseLatencySeries} style={requestsStyle} smooth={false} breakLine={false} />
             );
         }
+        if (this.state.active.throughput && lossSeries) {
+            lossCharts.push(
+                <LineChart key="loss" axis="lossAxis" series={lossSeries} style={connectionsStyle} smooth={false} breakLine={true} />
+            );
+        }
+        if (this.state.active.reverse && reverseLossSeries) {
+            lossCharts.push(
+                <LineChart key="reverseLoss" axis="lossAxis" series={reverseLossSeries} style={requestsStyle} smooth={false} breakLine={true} />
+            );
+        }
         var timerange;
         if (throughputSeries) {
             //console.log('throughputSeries is defined');
@@ -111,23 +161,33 @@ export default React.createClass({
         return (
             <ChartContainer timeRange={timerange}
                 trackerPosition={this.state.tracker}
-                onTrackerChanged={(tracker) => this.setState({tracker})}
+                //onTrackerChanged={(tracker) => this.handleTrackerChanged({tracker})}
+                onTrackerChanged={this.handleTrackerChanged}
+                //onTrackerChanged={(tracker) => this.setState({tracker})}
                 enablePanZoom={true}
                 onTimeRangeChanged={(timerange) => this.setState({timerange})}
                 timeRange={this.state.timerange} >
                 <ChartRow height="200" debug={false}>
                     <Charts>
                         {charts}
+                <ScatterChart axis="axis2" series={failureSeries} style={{color: "steelblue", opacity: 0.5}} /> 
                     </Charts>
                     <YAxis id="axis2" label="Throughput" style={{labelColor: scheme.connections}}
                            labelOffset={20} min={0} format=".2s" max={1000000000} width="80" type="linear"/>
                 </ChartRow>
                 <ChartRow height="200" debug={false}>
                     <Charts>
+                        {lossCharts}
+                    </Charts>
+                    <YAxis id="lossAxis" label="Loss" style={{labelColor: scheme.connections}}
+                           labelOffset={20} min={0.000000001} format=",.4f" max={this.state.maxLoss} width="80" type="log"/>
+                </ChartRow>
+                <ChartRow height="200" debug={false}>
+                    <Charts>
                         {latencyCharts}
                     </Charts>
                     <YAxis id="axis1" label="Latency" style={{labelColor: scheme.connections}}
-                           labelOffset={20} min={0.000000001} format=",.4f" max={this.state.maxLatency}  width="80" type="log"/>
+                           labelOffset={20} min={0.000000001} format=",.4f" max={this.state.maxLatency} width="80" type="log"/>
                 </ChartRow>
             </ChartContainer>
         );
@@ -150,7 +210,9 @@ export default React.createClass({
                 key: "reverse",
                 label: "Reverse",
                 disabled: !this.state.active.reverse,
-                style: {backgroundColor: scheme.requests}
+                style: {backgroundColor: scheme.requests,
+                    strokeDasharray: "4,2"
+                }
             }
         ];
         return (
@@ -189,11 +251,11 @@ export default React.createClass({
         //var url = 'http://perfsonar-dev.grnoc.iu.edu/esmond/perfsonar/archive/050056d85a8344bc844e2aeaa472db9b/throughput/base';
 
         this.serverRequest = $.get(url, function ( data ) {
-            console.log('ajax request came back; throughput data', data);
+            console.log('ajax request came back; throughput data', Date(), data );
             var values = this.esmondToTimeSeries( data, 'throughput' );
             throughputValues = values.values;
             throughputSeries = values.series;
-            console.log('throughput values', throughputValues);
+            console.log('throughput values', Date(), throughputValues);
             //this.renderChart();
             this.forceUpdate();
         }.bind(this));
@@ -202,11 +264,11 @@ export default React.createClass({
         url2 += '?time-range=' + 86400 * 30;
 
         this.serverRequest = $.get(url2, function ( data ) {
-            console.log('ajax request came back; reverse throughput data', data);
+            console.log('ajax request came back; reverse throughput data', Date(), data);
             var values = this.esmondToTimeSeries( data, 'reverseThroughput' );
             reverseThroughputValues = values.values;
             reverseThroughputSeries = values.series;
-            console.log('reverse throughput values', reverseThroughputValues);
+            console.log('reverse throughput values', Date(), reverseThroughputValues );
             //this.renderChart();
             this.forceUpdate();
         }.bind(this));
@@ -216,11 +278,11 @@ export default React.createClass({
         url3 += '?time-range=' + 86400 * 30;
 
         this.serverRequest = $.get(url3, function ( data ) {
-            console.log('ajax request came back; latency data', data);
+            console.log('ajax request came back; latency data', Date(), data );
             var values = this.esmondToTimeSeries( data, 'latency' );
             latencyValues = values.values;
             latencySeries = values.series;
-            console.log('latency values', latencyValues);
+            console.log('latency values', Date(), latencyValues );
             //this.renderChart();
             this.forceUpdate();
         }.bind(this));
@@ -230,14 +292,47 @@ export default React.createClass({
         url4 += '?time-range=' + 86400 * 30;
 
         this.serverRequest = $.get(url4, function ( data ) {
-            console.log('ajax request came back; latency data', data);
+            console.log('ajax request came back; latency data', Date(), data);
             var values = this.esmondToTimeSeries( data, 'reverseLatency' );
             reverseLatencyValues = values.values;
             reverseLatencySeries = values.series;
-            console.log('reverse latency values', reverseLatencyValues);
+            console.log('reverse latency values', Date(), reverseLatencyValues );
             //this.renderChart();
             this.forceUpdate();
         }.bind(this));
+
+        var url5 = 'http://perfsonar-dev.grnoc.iu.edu/esmond/perfsonar/archive/0121d658a72a4f119a99c5e03bfa674b/packet-loss-rate/base';
+        url5 += '?time-range=' + 86400 * 30;
+        this.serverRequest = $.get(url5, function ( data ) {
+            console.log('ajax request came back; loss data', Date(), data);
+            var values = this.esmondToTimeSeries( data, 'loss' );
+            lossValues = values.values;
+            lossSeries = values.series;
+            console.log('loss values', Date(), lossValues );
+            //this.renderChart();
+            this.forceUpdate();
+
+        }.bind(this));
+
+        var url6 = 'http://perfsonar-dev.grnoc.iu.edu/esmond/perfsonar/archive/0acdc51a787a43c4b2b81c66e9d564da/packet-loss-rate/aggregations/86400';
+        url6 += '?time-range=' + 86400 * 30;
+        this.serverRequest = $.get(url6, function ( data ) {
+            console.log('ajax request came back; reverse loss data', Date(), data);
+            var values = this.esmondToTimeSeries( data, 'reverseLoss' );
+            reverseLossValues = values.values;
+            reverseLossSeries = values.series;
+            console.log('reverse loss values', Date(), reverseLossValues );
+            //this.renderChart();
+            this.forceUpdate();
+
+        }.bind(this));
+
+
+var values = this.esmondToTimeSeries( failures, 'failures' );
+failureValues = values.values;
+failureSeries = values.series;
+console.log('failure values', failureValues);
+console.log('failure series', failureSeries);
     },
 
 
@@ -267,14 +362,10 @@ export default React.createClass({
         var values = [];
         var series = {};
 
-       /* 
-        inputData.sort(function(a, b){
-            var a1 = a.ts, b1 = b.ts;
-            if(a1== b1) return 0;
-            return a1> b1? 1: -1;
-        });
-        */
-        this._checkSortOrder(inputData); // TODO: review: do we need this?
+        //this._checkSortOrder(inputData); // TODO: review: do we need this?
+
+        var maxLatency = this.state.maxLatency;
+        var maxLoss = this.state.maxLoss;
 
         _.each(inputData, val => {
             const ts = val["ts"];
@@ -282,10 +373,8 @@ export default React.createClass({
             var value = val["val"];
             if ( seriesName == 'latency' || seriesName == 'reverseLatency' ) {
                 value = val["val"].minimum;
-                var maxLatency = this.state.maxLatency;
                 maxLatency =  value > maxLatency ? value : maxLatency ;
                 //console.log('maxLatency', maxLatency);
-                this.setState({maxLatency: maxLatency});
                 /*(
         const active = this.state.active;
         active[key] = !disabled;
@@ -293,8 +382,12 @@ export default React.createClass({
 */
         
             }
+            if ( seriesName == 'loss' || seriesName == 'reverseLoss' ) {
+                maxLoss =  value > maxLoss ? value : maxLoss ;
+                maxLoss = 1;
+            }
             if (value <= 0 ) {
-                console.log("VALUE IS ZERO OR LESS");
+                console.log("VALUE IS ZERO OR LESS", Date());
                 value = 0.000000001;
             }
             if ( isNaN(value) ) {
@@ -303,7 +396,9 @@ export default React.createClass({
             values.push([timestamp.toDate().getTime(), value]);
 
         });
-        console.log('creating series ...');
+        this.setState({maxLatency: maxLatency});
+        this.setState({maxLoss: maxLoss});
+        console.log('creating series ...', Date());
 
         series = new TimeSeries({
             name: seriesName,
