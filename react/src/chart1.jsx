@@ -64,7 +64,6 @@ const lineStyle = {
 const scheme = {
     requests: "#2ca02c",
     connections: "#990000"
-    //connections: "#9467bd"
 };
 
 const connectionsStyle = {
@@ -205,12 +204,17 @@ export default React.createClass({
                 key: "throughput",
                 label: "Forward",
                 disabled: !this.state.active.throughput,
-                style: {backgroundColor: scheme.connections}
+                style: {
+                    backgroundColor: scheme.connections,
+                    stroke: scheme.connections
+                }
             },{
                 key: "reverse",
                 label: "Reverse",
                 disabled: !this.state.active.reverse,
-                style: {backgroundColor: scheme.requests,
+                style: {
+                    backgroundColor: scheme.requests,
+                    stroke: scheme.requests,
                     strokeDasharray: "4,2"
                 }
             }
