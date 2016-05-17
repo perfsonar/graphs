@@ -1,6 +1,7 @@
 #Ignore mac hidden file
 .DS_Store
-
+# dojo
+JS/dojo
 # ignore npm build areas etc.
 node_modules
 npm-debug.log

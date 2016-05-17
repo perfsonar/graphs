@@ -4,9 +4,11 @@ import moment from "moment";
 import Markdown from "react-markdown";
 //import Highlighter from "./highlighter";
 
-import { Charts, ChartContainer, ChartRow, YAxis, LineChart, ScatterChart, Highlighter, Resizable, Legend } from "react-timeseries-charts";
+import { AreaChart, Brush, Charts, ChartContainer, ChartRow, YAxis, LineChart, ScatterChart, Highlighter, Resizable, Legend } from "react-timeseries-charts";
 
 import { TimeSeries, TimeRange } from "pondjs";
+
+import "./chart1.css";
 
 var throughputValues = [];
 var reverseThroughputValues = [];
@@ -77,6 +79,12 @@ const requestsStyle = {
     strokeDasharray: "4,2"
 };
 
+const brushStyle = {
+    boxShadow: "inset 0px 2px 5px -2px rgba(189, 189, 189, 0.75)",
+    background: "#FEFEFE",
+    paddingTop: 10
+};
+
 export default React.createClass({
 
     mixins: [Highlighter],
@@ -91,6 +99,7 @@ export default React.createClass({
             tracker: null,
             timerange: TimeRange.lastThirtyDays(),
             maxLatency: 1,
+            maxThroughput: 1,
             maxLoss: 0.0000000001,
         };
     },
@@ -134,12 +143,18 @@ export default React.createClass({
         }
         if (this.state.active.throughput && lossSeries) {
             lossCharts.push(
+                    /*
                 <LineChart key="loss" axis="lossAxis" series={lossSeries} style={connectionsStyle} smooth={false} breakLine={true} />
+                */
+                <ScatterChart key="loss" axis="lossAxis" series={lossSeries} style={{color: "#2ca02c", opacity: 0.5}} />
             );
         }
         if (this.state.active.reverse && reverseLossSeries) {
             lossCharts.push(
-                <LineChart key="reverseLoss" axis="lossAxis" series={reverseLossSeries} style={requestsStyle} smooth={false} breakLine={true} />
+                 <LineChart key="reverseLoss" axis="lossAxis" series={reverseLossSeries} style={requestsStyle} smooth={false} breakLine={true} />
+/*
+                <ScatterChart key="reverseLoss" axis="lossAxis" series={reverseLossSeries} style={{color: "#2ca02c", opacity: 0.5}} />
+                */
             );
         }
         var timerange;
@@ -158,6 +173,10 @@ export default React.createClass({
             return ( <div></div> );
         }
         return (
+            <div>
+                <div className="row">
+                    <div className="col-md-12">
+                    <Resizable>
             <ChartContainer timeRange={timerange}
                 trackerPosition={this.state.tracker}
                 //onTrackerChanged={(tracker) => this.handleTrackerChanged({tracker})}
@@ -172,7 +191,7 @@ export default React.createClass({
                 <ScatterChart axis="axis2" series={failureSeries} style={{color: "steelblue", opacity: 0.5}} /> 
                     </Charts>
                     <YAxis id="axis2" label="Throughput" style={{labelColor: scheme.connections}}
-                           labelOffset={20} min={0} format=".2s" max={1000000000} width="80" type="linear"/>
+                           labelOffset={20} min={0} format=".2s" max={this.state.maxThroughput} width="80" type="linear"/>
                 </ChartRow>
                 <ChartRow height="200" debug={false}>
                     <Charts>
@@ -186,9 +205,21 @@ export default React.createClass({
                         {latencyCharts}
                     </Charts>
                     <YAxis id="axis1" label="Latency" style={{labelColor: scheme.connections}}
-                           labelOffset={20} min={0.000000001} format=",.4f" max={this.state.maxLatency} width="80" type="log"/>
+                           labelOffset={20} min={0.000000001} format=",.4f" max={this.state.maxLatency} width="80" type="linear"/>
                 </ChartRow>
             </ChartContainer>
+            </Resizable>
+                           </div>
+                               </div>
+
+                <div className="row">
+                    <div className="col-md-12" style={brushStyle}>
+                        <Resizable>
+                            {this.renderBrush()} 
+                        </Resizable>
+                    </div>
+                </div>
+            </div>
         );
     },
 
@@ -219,6 +250,8 @@ export default React.createClass({
                 }
             }
         ];
+
+
         return (
             <div>
                 <div className="row">
@@ -235,17 +268,66 @@ export default React.createClass({
 
                 <hr/>
 
-                <div className="row">
+                {this.renderChart()}
+                {/* <div className="row">
                     <div className="col-md-12">
                         <Resizable>
                             {this.renderChart()}
                         </Resizable>
                     </div>
                 </div>
+                /*}
+
+                {/*
+                <div className="row">
+                    <div className="col-md-12" style={brushStyle}>
+                        <Resizable>
+                            {this.renderBrush()} 
+                        </Resizable>
+                    </div>
+                </div>
+                */}
 
                 <hr/>
 
             </div>
+        );
+    },
+
+    handleTimeRangeChange(timerange) {
+        this.setState({timerange});
+    },
+/*
+    handleTrackerChanged(t) {
+        this.setState({tracker: t});
+    },
+*/
+
+    renderBrush() {
+        return (
+            <ChartContainer
+                timeRange={throughputSeries.timerange()}
+                format="relative"
+                trackerPosition={this.state.tracker}>
+                <ChartRow height="100" debug={false}>
+                    <Brush
+                        timeRange={this.state.timerange}
+                        onTimeRangeChanged={this.handleTimeRangeChange} />
+                    <YAxis
+                        id="brushAxis1"
+                        label="Throughput"
+                        min={0} max={this.state.maxThroughput}
+                        width={70} type="linear" format="d"/>
+                    <Charts>
+                        <LineChart
+                            key="brushThroughput"
+                            axis="brushAxis1"
+                            style={{up: ["#DDD"]}}
+                            columns={{up: ["throughput"], down: []}}
+                            series={throughputSeries} />
+                    </Charts>
+                </ChartRow>
+            </ChartContainer>
         );
     },
 
@@ -337,8 +419,9 @@ failureValues = values.values;
 failureSeries = values.series;
 console.log('failure values', failureValues);
 console.log('failure series', failureSeries);
-    },
 
+
+    },
 
 
     componentWillUnmount: function() {
@@ -368,6 +451,7 @@ console.log('failure series', failureSeries);
 
         //this._checkSortOrder(inputData); // TODO: review: do we need this?
 
+        var maxThroughput = this.state.maxThroughput;
         var maxLatency = this.state.maxLatency;
         var maxLoss = this.state.maxLoss;
 
@@ -386,9 +470,12 @@ console.log('failure series', failureSeries);
 */
         
             }
+            // TODO: change this section to use else if
             if ( seriesName == 'loss' || seriesName == 'reverseLoss' ) {
                 maxLoss =  value > maxLoss ? value : maxLoss ;
-                maxLoss = 1;
+            }
+            if ( seriesName == 'throughput' || seriesName == 'reverseThroughput' ) {
+                maxThroughput =  value > maxThroughput ? value : maxThroughput ;
             }
             if (value <= 0 ) {
                 console.log("VALUE IS ZERO OR LESS", Date());
@@ -400,6 +487,7 @@ console.log('failure series', failureSeries);
             values.push([timestamp.toDate().getTime(), value]);
 
         });
+        this.setState({maxThroughput: maxThroughput});
         this.setState({maxLatency: maxLatency});
         this.setState({maxLoss: maxLoss});
         console.log('creating series ...', Date());

@@ -24,7 +24,6 @@ const history = useScroll(createHistory)();
 render((
     <Router history={history}>
         <Route path="/" component={Chart1}>
-            /* <Route path="chart1" component={Chart1} /> */
         </Route>
     </Router>
 ), document.getElementById("content"));
