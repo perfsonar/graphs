@@ -2,7 +2,8 @@
 .DS_Store
 # Ignore quilt cache directory
 .pc/
-
+# dojo
+JS/dojo
 # ignore npm build areas etc.
 node_modules
 npm-debug.log
