@@ -29,7 +29,8 @@
     "paths-js": "^0.3.4",
     "pondjs": "git+ssh://git@github.com/esnet/pond.git#v0.5",
     "react-flexbox": "^3.0.0",
-    "react-timeseries-charts": "git+ssh://git@github.com/esnet/react-timeseries-charts.git#v0.9",
+    "react-timeseries-charts": "/home/mj82/src/esnet/react-timeseries-charts/",
+
     "underscore": "^1.7.0"
   },
   "peerDependencies": {

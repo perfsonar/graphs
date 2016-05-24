@@ -98,6 +98,7 @@ export default React.createClass({
             },
             tracker: null,
             timerange: TimeRange.lastThirtyDays(),
+            initialTimerange: null,
             maxLatency: 1,
             maxThroughput: 1,
             maxLoss: 0.0000000001,
@@ -171,6 +172,10 @@ export default React.createClass({
         this.timerange = timerange;
         if ( ! timerange ) {
             return ( <div></div> );
+        }
+        if ( this.state.initialTimerange === null ) {
+            console.log("initial timerange", timerange);
+            this.setState({initialTimerange: timerange});
         }
         return (
             <div>
@@ -295,7 +300,21 @@ export default React.createClass({
     },
 
     handleTimeRangeChange(timerange) {
-        this.setState({timerange});
+        //if ( timerange.begin().toString() != timerange.end().toString() ) {
+            this.setState({timerange});
+            /*
+        } else {
+            this.setState({timerange: this.initialTimerange});
+             this.forceUpdate();
+        }
+        */
+    },
+
+    handleBrushCleared(val) {
+        this.setState({timerange: this.state.initialTimerange});
+        //this.setState({timerange: this.state.initialTimerange});
+        console.log("brush cleared, initial timerange", this.state.initialTimerange);
+        //this.forceUpdate();
     },
 /*
     handleTrackerChanged(t) {
@@ -311,8 +330,11 @@ export default React.createClass({
                 trackerPosition={this.state.tracker}>
                 <ChartRow height="100" debug={false}>
                     <Brush
-                        timeRange={this.state.timerange}
-                        onTimeRangeChanged={this.handleTimeRangeChange} />
+                        timeRange={null}
+                        //timeRange={this.state.timerange}
+                        onTimeRangeChanged={this.handleTimeRangeChange}
+                        onBrushCleared={this.handleBrushCleared}
+                        />
                     <YAxis
                         id="brushAxis1"
                         label="Throughput"
