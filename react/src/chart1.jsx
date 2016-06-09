@@ -102,6 +102,7 @@ export default React.createClass({
             maxLatency: 1,
             maxThroughput: 1,
             maxLoss: 0.0000000001,
+            latencySeries: null 
         };
     },
 
@@ -124,7 +125,7 @@ export default React.createClass({
         let lossCharts = [];
         if (this.state.active.throughput && throughputSeries) {
             charts.push(
-                <LineChart key="throughput" axis="axis2" series={throughputSeries} style={connectionsStyle} smooth={false} breakLine={true} />
+                <LineChart key="throughput" axis="axis2" series={throughputSeries} style={connectionsStyle} smooth={false} breakLine={true} min="{throughutSeries.min()" max="{throughputSeries.max()}" />
             );
         }
         if (this.state.active.reverse && reverseThroughputSeries) {
@@ -132,14 +133,14 @@ export default React.createClass({
                 <LineChart key="reverse" axis="axis2" series={reverseThroughputSeries} style={requestsStyle} smooth={false} breakLine={true} />
             );
         }
-        if (this.state.active.throughput && latencySeries) { // TODO: fix state part
+        if (this.state.active.throughput && this.state.latencySeries) { // TODO: fix state part
             latencyCharts.push(
-                <LineChart key="latency" axis="axis1" series={latencySeries} style={connectionsStyle} smooth={false} breakLine={false} />
+                <LineChart key="latency" axis="axis1" series={this.state.latencySeries} style={connectionsStyle} smooth={false} breakLine={false} min={this.state.latencySeries.min()} max={this.state.latencySeries.max()} onTimeRangeChanged={this.handleTimeRangeChange} />
             );
         }
         if (this.state.active.reverse && reverseLatencySeries) { // TODO: fix state part
             latencyCharts.push(
-                <LineChart key="reverseLatency" axis="axis1" series={reverseLatencySeries} style={requestsStyle} smooth={false} breakLine={false} />
+                <LineChart key="reverseLatency" axis="axis1" series={reverseLatencySeries} style={requestsStyle} smooth={false} breakLine={false} min={reverseLatencySeries.min()} max={reverseLatencySeries.max()} />
             );
         }
         if (this.state.active.throughput && lossSeries) {
@@ -188,7 +189,8 @@ export default React.createClass({
                 onTrackerChanged={this.handleTrackerChanged}
                 //onTrackerChanged={(tracker) => this.setState({tracker})}
                 enablePanZoom={true}
-                onTimeRangeChanged={(timerange) => this.setState({timerange})}
+                //onTimeRangeChanged={(timerange) => this.setState({timerange})}
+                onTimeRangeChanged={this.handleTimeRangeChange}
                 timeRange={this.state.timerange} >
                 <ChartRow height="200" debug={false}>
                     <Charts>
@@ -274,24 +276,6 @@ export default React.createClass({
                 <hr/>
 
                 {this.renderChart()}
-                {/* <div className="row">
-                    <div className="col-md-12">
-                        <Resizable>
-                            {this.renderChart()}
-                        </Resizable>
-                    </div>
-                </div>
-                /*}
-
-                {/*
-                <div className="row">
-                    <div className="col-md-12" style={brushStyle}>
-                        <Resizable>
-                            {this.renderBrush()} 
-                        </Resizable>
-                    </div>
-                </div>
-                */}
 
                 <hr/>
 
@@ -302,6 +286,7 @@ export default React.createClass({
     handleTimeRangeChange(timerange) {
         //if ( timerange.begin().toString() != timerange.end().toString() ) {
             this.setState({timerange});
+
             /*
         } else {
             this.setState({timerange: this.initialTimerange});
@@ -312,15 +297,8 @@ export default React.createClass({
 
     handleBrushCleared(val) {
         this.setState({timerange: this.state.initialTimerange});
-        //this.setState({timerange: this.state.initialTimerange});
         console.log("brush cleared, initial timerange", this.state.initialTimerange);
-        //this.forceUpdate();
     },
-/*
-    handleTrackerChanged(t) {
-        this.setState({tracker: t});
-    },
-*/
 
     renderBrush() {
         return (
@@ -339,7 +317,7 @@ export default React.createClass({
                         id="brushAxis1"
                         label="Throughput"
                         min={0} max={this.state.maxThroughput}
-                        width={70} type="linear" format="d"/>
+                        width={70} type="linear" format=".1s"/>
                     <Charts>
                         <LineChart
                             key="brushThroughput"
@@ -389,7 +367,7 @@ export default React.createClass({
             console.log('ajax request came back; latency data', Date(), data );
             var values = this.esmondToTimeSeries( data, 'latency' );
             latencyValues = values.values;
-            latencySeries = values.series;
+            this.setState({latencySeries: values.series});
             console.log('latency values', Date(), latencyValues );
             //this.renderChart();
             this.forceUpdate();
