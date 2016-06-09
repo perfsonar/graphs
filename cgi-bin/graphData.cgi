@@ -268,6 +268,8 @@ sub _get_test_data {
     $filter->destination($test_dest);
     $filter->measurement_agent($agent) if($agent);
     $filter->tool_name($tool) if($tool);
+    $filter->time_start($start) if ($start);
+    $filter->time_end($end) if ($end);
     $filter->{metadata_filters}->{'ip-transport-protocol'} = $protocol if($protocol);
     if($ipversion){
         if($ipversion eq '6'){
