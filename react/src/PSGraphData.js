@@ -2,26 +2,36 @@ var EventEmitter = require('events').EventEmitter;
 
 var emitter = new EventEmitter();
 
+let reqCount = 0;
+let dataReqCount = 0;
 let completedReqs = 0;
+let completedDataReqs = 0;
+
 let startTime = Date.now();
+
 module.exports = {
 
     eventTypes: ['throughput', 'histogram-owdelay', 'packet-loss-rate',
                     'packet-retransmits', 'histogram-rtt', 'failures'],
             //|| ['histogram-rtt'];
+    maURL: null,
+    chartMetadata: [],
+    chartData: [],
 
     getHostPairMetadata: function ( sources, dests, start, end, ma_url ) {
+        this.maURL = new URL(ma_url);
         if ( !$.isArray( sources ) ) {
             sources = [ sources ];
         }
         if ( !$.isArray( dests ) ) {
             dests = [ dests ];
         }
-        let reqCount = 0;
 
+        let urls = [];
         for( let i in sources ) {
             let directions = [ [ sources[i], dests[i] ], 
                 [ dests[i], sources[i] ] ];
+            let direction = [ "forward", "reverse" ];
             console.log("directions", directions);
             for( let j in directions ) {
                 console.log("directions[j]", directions[j]);
@@ -33,12 +43,24 @@ module.exports = {
                 let url = ma_url + "?source=" + src + "&destination=" + dst;
                 url += "&time-start=" + start + "&time-end=" + end;
                 console.log("url: ", url);
+                urls.push(url);
+
                 this.serverRequest = $.get( url, function(data) {
-                    this.handleMetadataReponse(data, reqCount);
-                }.bind(this));
+                    this.handleMetadataResponse(data, direction[j]);
+                }.bind(this)); // TODO: double check this logic. are we using correct reqCount?
+
                 reqCount++;
             }
         }
+/*
+        for(let i in urls) {
+            let url = urls[i];
+            this.serverRequest = $.get( url, function(data) {
+                this.handleMetadataResponse(data);
+            }.bind(this));
+
+        }
+        */
         /*
            this.serverRequest = $.get(url, function ( data ) {
            console.log('ajax request came back; throughput data', Date(), data );
@@ -52,23 +74,30 @@ this.forceUpdate();
 */
 
 },
-    handleMetadataReponse: function( data, reqCount ) {
+    handleMetadataResponse: function( data, direction ) {
+        //data.label = label;
+        for(let i in data) {
+            data[i].direction = direction;
+        }
         console.log("data", data);
+        $.merge( this.chartMetadata, data );
         completedReqs++;
         if ( completedReqs == reqCount ) {
             let endTime = Date.now();
             let duration = ( endTime - startTime ) / 1000;
             console.log("COMPLETED ALL", reqCount, " REQUESTS in", duration);
             completedReqs = 0;
-            data = this.filterEventTypes( data );
-            data = this.getData( data);
+            data = this.filterEventTypes( this.chartMetadata );
+            data = this.getData( this.chartMetadata );
+            console.log("chartMetadata", this.chartMetadata);
 
         }
 
 
     },
     filterEventTypes: function( data, eventTypesParam ) {
-        let eventTypes = this.getEventTypes( eventTypesParam );
+        //let eventTypes = this.getEventTypes( eventTypesParam );
+        let eventTypes = this.getEventTypes();
         console.log("eventTypes", eventTypes);
 
         let tests = $.map( data, function( test, i ) {
@@ -111,10 +140,90 @@ this.forceUpdate();
         return eventTypes;
 
     },
-    getData: function( metaData ) {
+    getData: function( metaData, window ) {
+        //window = 3600; // todo: this should be dynamic
+        window = 86400; // todo: this should be dynamic
+        let summaryType = "statistics";
+        let multipleTypes = [ "histogram-rtt", "histogram-owdelay" ];
+        let baseURL = this.maURL.origin;
+        let urls = [];
+        dataReqCount = 0;
+        for(let i in metaData) {
+            let datum = metaData[i];
+            let direction = datum.direction;
+            console.log("datum", datum);
+            for( let j in datum["event-types"] ) {
+                let eventTypeObj = datum["event-types"][j];
+                let eventType = eventTypeObj["event-type"];
+                let summaries = eventTypeObj["summaries"];
+                let uri = null;
 
+                if ( $.inArray( eventType, multipleTypes ) >= 0 ) {
+                    let win = $.grep( summaries, function( summary, k ) {
+                        return summary["summary-type"] == summaryType && summary["summary-window"] == window;
+                    });
+                    console.log("win", win);
+                    if ( win.length > 1 ) {
+                        console.log("WEIRD: multiple summary windows found. This should not happen.");
+                    } else if ( win.length == 1 ) {
+                        console.log("one summary window found");
+                        uri = win[0].uri;
+                    } else {
+                        console.log("no summary windows found");
 
+                    }
 
+                }
+                if ( uri === null ) {
+                    console.log("uri not found, setting ... ");
+                    uri = eventTypeObj["base-uri"];
+                }
+                //console.log("uri", uri);
+                let url = baseURL + uri;
+                console.log("url", url);
+
+                urls.push( {eventType: eventType, url: url, direction: direction});
+
+                dataReqCount++; // TODO: double check the ordre of this and the request
+
+                this.serverRequest = $.get( url, function(data) {
+                    this.handleDataResponse(data, eventType, direction);
+                }.bind(this));
+
+            }
+        }
+        /*
+        for(let i in urls) {
+            let obj = urls[i];
+            let url = obj.url;
+            let eventType = obj.eventType;
+            this.serverRequest = $.get( url, function( data ) {
+                this.handleDataResponse( data, eventType );
+            }.bind(this));
+        }
+        */
+
+    },
+    handleDataResponse: function( data, eventType, direction ) {
+        //console.log("response data: ", data);
+        let row = {};
+        row.eventType = eventType;
+        row.direction = direction;
+        row.data = data;
+        this.chartData.push( row );
+        //$.merge( this.chartData, data );
+        completedDataReqs++;
+        if ( completedDataReqs == dataReqCount ) {
+            //console.log("done getting data");
+            let endTime = Date.now();
+            let duration = ( endTime - startTime ) / 1000;
+            console.log("COMPLETED ALL DATA ", dataReqCount, " REQUESTS in", duration);
+            console.log("chartData: ", this.chartData);
+            completedDataReqs = 0;
+            dataReqCount = 0;
+            return this.chartData;
+
+        }
     },
     render: function() {
     },
