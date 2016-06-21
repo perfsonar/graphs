@@ -2,17 +2,13 @@ import React from "react";
 import _ from "underscore";
 import moment from "moment";
 import Markdown from "react-markdown";
-import PSGraphData from "./PSGraphData";
 //import Highlighter from "./highlighter";
-
 
 import { AreaChart, Brush, Charts, ChartContainer, ChartRow, YAxis, LineChart, ScatterChart, Highlighter, Resizable, Legend } from "react-timeseries-charts";
 
 import { TimeSeries, TimeRange } from "pondjs";
 
 import "./chart1.css";
-
-
 
 var throughputValues = [];
 var reverseThroughputValues = [];
@@ -109,9 +105,7 @@ export default React.createClass({
             latencySeries: null 
         };
     },
-    contextTypes: {
-        router: React.PropTypes.func
-    },
+
 
     handleTrackerChanged(trackerVal, selection) {
         const seconds = Math.floor( trackerVal.getTime() / 1000 );
@@ -243,7 +237,6 @@ export default React.createClass({
     },
 
     render() {
-
         const legend = [
             {
                 key: "throughput",
@@ -339,19 +332,6 @@ export default React.createClass({
     },
 
     componentDidMount: function() {
-        //var { status, page, limit } = this.context.router.getCurrentQuery();
-        var qs = this.props.location.query;
-        console.log( "qs", qs );
-        let src = qs.src;
-        let dst = qs.dst;
-        let start = qs.start;
-        let end = qs.end;
-        let ma_url = qs.ma_url || "http://perfsonar-dev.grnoc.iu.edu/esmond/perfsonar/archive/";
-
-
-        PSGraphData.getHostPairMetadata( src, dst, start, end, ma_url );
-
-        if ( false ) {
         var url = 'http://perfsonar-dev.grnoc.iu.edu/esmond/perfsonar/archive/9808c289fc07446e9939330706b896d6/throughput/base';
         url += '?time-range=' + 86400 * 30;
         //var url = 'http://perfsonar-dev.grnoc.iu.edu/esmond/perfsonar/archive/050056d85a8344bc844e2aeaa472db9b/throughput/base';
@@ -432,7 +412,7 @@ export default React.createClass({
             this.forceUpdate();
 
         }.bind(this));
-        }
+
 
 var values = this.esmondToTimeSeries( failures, 'failures' );
 failureValues = values.values;
@@ -442,6 +422,7 @@ console.log('failure series', failureSeries);
 
 
     },
+
 
     componentWillUnmount: function() {
         this.serverRequest.abort();

@@ -8,6 +8,8 @@ let completedReqs = 0;
 let completedDataReqs = 0;
 
 let startTime = Date.now();
+let start = Math.floor( Date.now() - 7 * 86400 / 1000 );
+let end = Math.ceil( Date.now() / 1000 );
 
 module.exports = {
 
@@ -18,7 +20,10 @@ module.exports = {
     chartMetadata: [],
     chartData: [],
 
-    getHostPairMetadata: function ( sources, dests, start, end, ma_url ) {
+    getHostPairMetadata: function ( sources, dests, startInput, endInput, ma_url ) {
+        start = startInput;
+        end = endInput;
+
         this.maURL = new URL(ma_url);
         if ( !$.isArray( sources ) ) {
             sources = [ sources ];
@@ -26,6 +31,16 @@ module.exports = {
         if ( !$.isArray( dests ) ) {
             dests = [ dests ];
         }
+
+        if ( ! end ) {
+            end = Math.ceil( Date.now() / 1000 ); 
+        }
+
+        if ( ! start ) {
+            start = Math.floor( end - 86400 * 7 ); // TODO: 7 days a good default?
+        }
+        console.log("start", start);
+        console.log("end", end);
 
         let urls = [];
         for( let i in sources ) {
@@ -141,9 +156,9 @@ this.forceUpdate();
 
     },
     getData: function( metaData, window ) {
-        //window = 3600; // todo: this should be dynamic
-        window = 86400; // todo: this should be dynamic
-        let summaryType = "statistics";
+        window = 3600; // todo: this should be dynamic
+        //window = 86400; // todo: this should be dynamic
+        let defaultSummaryType = "aggregation"; // TODO: allow other aggregate types
         let multipleTypes = [ "histogram-rtt", "histogram-owdelay" ];
         let baseURL = this.maURL.origin;
         let urls = [];
@@ -156,9 +171,12 @@ this.forceUpdate();
                 let eventTypeObj = datum["event-types"][j];
                 let eventType = eventTypeObj["event-type"];
                 let summaries = eventTypeObj["summaries"];
+                let summaryType = defaultSummaryType;
+                
                 let uri = null;
 
                 if ( $.inArray( eventType, multipleTypes ) >= 0 ) {
+                    summaryType = "statistics";
                     let win = $.grep( summaries, function( summary, k ) {
                         return summary["summary-type"] == summaryType && summary["summary-window"] == window;
                     });
@@ -170,15 +188,33 @@ this.forceUpdate();
                         uri = win[0].uri;
                     } else {
                         console.log("no summary windows found");
-
                     }
 
+                } else {
+                    let win = $.grep( summaries, function( summary, k ) {
+                        return summary["summary-type"] == summaryType && summary["summary-window"] == window;
+                    });
+                    console.log("single value window", win);
+                    // TODO: allow lower summary windows
+                    if ( win.length > 1 ) {
+                        console.log("WEIRD: multiple summary windows found. This should not happen.");
+                    } else if ( win.length == 1 ) {
+                        console.log("one summary window found");
+                        uri = win[0].uri;
+                    } else {
+                        console.log("no summary windows found");
+                    }
+
+
                 }
+
                 if ( uri === null ) {
                     console.log("uri not found, setting ... ");
                     uri = eventTypeObj["base-uri"];
                 }
                 //console.log("uri", uri);
+                // TODO: add timerange to URL
+                uri += "?time-start=" + start + "&time-end=" + end;
                 let url = baseURL + uri;
                 console.log("url", url);
 
@@ -189,6 +225,7 @@ this.forceUpdate();
                 this.serverRequest = $.get( url, function(data) {
                     this.handleDataResponse(data, eventType, direction);
                 }.bind(this));
+                
 
             }
         }
