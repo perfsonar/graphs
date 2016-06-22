@@ -1,3 +1,7 @@
+import moment from "moment";
+
+import { TimeSeries, TimeRange } from "pondjs";
+
 var EventEmitter = require('events').EventEmitter;
 
 var emitter = new EventEmitter();
@@ -172,7 +176,7 @@ this.forceUpdate();
                 let eventType = eventTypeObj["event-type"];
                 let summaries = eventTypeObj["summaries"];
                 let summaryType = defaultSummaryType;
-                
+
                 let uri = null;
 
                 if ( $.inArray( eventType, multipleTypes ) >= 0 ) {
@@ -208,6 +212,8 @@ this.forceUpdate();
 
                 }
 
+                // TODO: change failures so they are per event type
+
                 if ( uri === null ) {
                     console.log("uri not found, setting ... ");
                     uri = eventTypeObj["base-uri"];
@@ -225,7 +231,7 @@ this.forceUpdate();
                 this.serverRequest = $.get( url, function(data) {
                     this.handleDataResponse(data, eventType, direction);
                 }.bind(this));
-                
+
 
             }
         }
@@ -255,12 +261,118 @@ this.forceUpdate();
             let endTime = Date.now();
             let duration = ( endTime - startTime ) / 1000;
             console.log("COMPLETED ALL DATA ", dataReqCount, " REQUESTS in", duration);
-            console.log("chartData: ", this.chartData);
+            //console.log("chartData: ", this.chartData);
             completedDataReqs = 0;
             dataReqCount = 0;
-            return this.chartData;
+
+            // TODO: change this so it creates the esmond time series upon completion of each request, rather than after all requests has completed
+
+            let newChartData = this.esmondToTimeSeries( this.chartData );
+
+            this.chartData = newChartData;
+
+            endTime = Date.now();
+            duration = ( endTime - startTime ) / 1000;
+            console.log("COMPLETED CREATING TIMESERIES in " , duration);
+            console.log("chartData: ", this.chartData);
+            emitter.emit("get");
 
         }
+    },
+    getChartData: function() {
+        return this.chartData;
+
+    },
+    esmondToTimeSeries: function( inputData, seriesName ) {
+        let outputData = {};
+        $.each( inputData, function( index, datum ) {
+            let eventType = datum.eventType;
+            let direction = datum.direction;
+
+            var values = [];
+            var series = {};
+
+            //this._checkSortOrder(inputData); // TODO: review: do we need this?
+/*
+            var maxThroughput = this.state.maxThroughput;
+            var maxLatency = this.state.maxLatency;
+            var maxLoss = this.state.maxLoss;
+            */
+
+            $.each(datum.data, function( valIndex, val ) {
+                const ts = val["ts"];
+                const timestamp = new moment(new Date(ts * 1000)); // 'Date' expects milliseconds
+                var value = val["val"];
+                if ( eventType == 'histogram-owdelay') {
+                    //eventType = 'owdelay';
+                    //datum.eventType = 'owdelay';
+                    value = val["val"].minimum;
+                } else if ( eventType == 'histogram-rtt' ) {
+                    //eventType = 'rtt';
+                    value = val["val"].minimum;
+                }
+                // TODO: fix failures
+                if (value <= 0 ) {
+                    console.log("VALUE IS ZERO OR LESS", Date());
+                    value = 0.000000001;
+                }
+                if ( isNaN(value) ) {
+                    console.log("VALUE IS NaN", eventType);
+                }
+                values.push([timestamp.toDate().getTime(), value]);
+
+            });
+            console.log('creating series ...', Date());
+
+            series = new TimeSeries({
+                name: eventType + "." + direction,
+                columns: ["time", "value"],
+                points: values
+            });
+            console.log('created series ...', series, "values", values);
+
+            //outputData[eventType][direction] = series;
+            if ( !( eventType in outputData ) ) {
+                outputData[eventType] = {};
+
+            }
+            if ( ! ( direction in outputData[eventType] ) ) {
+                outputData[eventType][direction] = series;
+            }  else {
+                $.merge( outputData[eventType][direction], series );
+            }
+
+            //$.merge( this.chartMetadata, data );
+
+            //outputData.push( series );
+            //outputData.push( { values: values, series: series } );
+
+            /*
+             * Shouldn't need this as _checkSortOrder is called above
+             var lastTS = 0;
+             for (let i=0; i < series.size(); i++) {
+            //console.log(series.at(i).toString());
+            //console.log('series.at(i)', series.at(i));
+            var ts = series.at(i).timestamp().getTime();
+            if ( ts > lastTS ) {
+            //console.log( 'new ts > last TS', ts, lastTS );
+
+            } else {
+            console.log( 'BAD: new ts <= last TS', ts, lastTS );
+
+            }
+            lastTS = ts;
+            }
+            */
+        });
+        //return ( { values: values, series: series } );
+        return outputData;
+    },
+    subscribe: function( callback ) {
+        emitter.on("get", callback);
+    },
+    unsubscribe: function( callback ) {
+        emitter.off("get", callback);
     },
     render: function() {
     },
