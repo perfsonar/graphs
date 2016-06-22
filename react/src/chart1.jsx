@@ -133,30 +133,45 @@ export default React.createClass({
         let chartSeries = this.state.chartSeries;
 
         if ( this.state.active.throughput && this.checkEventType("throughput", "forward") ) { 
-            console.log("pushing forward throughput series");
             charts.push(
                 <LineChart key="throughput" axis="axis2" series={chartSeries.throughput.forward} style={connectionsStyle} smooth={false} breakLine={true} min="{chartSeries.throughput.forward.min()}" max="{chartSeries.throughput.forward.max()}" />
             );
         }
         if ( this.state.active.throughput && this.checkEventType("throughput", "reverse") ) { //  chartSeries && chartSeries.throughput && chartSeries.throughput.reverse ) {
             // TODO: fix this to forward instead of reverse
-            console.log("pushing throughput series");
             charts.push(
                 <LineChart key="reverseThroughput" axis="axis2" series={chartSeries.throughput.reverse} style={requestsStyle} smooth={false} breakLine={true} min="{chartSeries.throughput.reverse.min()}" max="{chartSeries.throughput.reverse.max()}" />
             );
         }
         if (this.state.active.throughput && this.checkEventType("histogram-owdelay", "forward") ) { // TODO: fix state part
-            console.log("pushing owdelay series");
             latencyCharts.push(
                 <LineChart key="latency" axis="axis1" series={chartSeries["histogram-owdelay"].forward} style={connectionsStyle} smooth={false} breakLine={false} min={chartSeries["histogram-owdelay"].forward.min()} max={chartSeries["histogram-owdelay"].forward.max()} onTimeRangeChanged={this.handleTimeRangeChange} />
             );
         }
         
         if (this.state.active.reverse && this.checkEventType("histogram-owdelay", "reverse") ) { // TODO: fix state part
-            console.log("pushing histogram-owdelay series REVERSE");
             latencyCharts.push(
                 <LineChart key="reverseLatency" axis="axis1" series={chartSeries["histogram-owdelay"].reverse} style={requestsStyle} smooth={false} breakLine={false} min={chartSeries["histogram-owdelay"].reverse.min()} max={chartSeries["histogram-owdelay"].reverse.max()} onTimeRangeChanged={this.handleTimeRangeChange} />
             );
+        }
+
+        if (this.state.active.throughput && this.checkEventType("packet-loss-rate", "forward") ) {
+            lossCharts.push(
+                    /*
+                <LineChart key="loss" axis="lossAxis" series={lossSeries} style={connectionsStyle} smooth={false} breakLine={true} />
+                */
+                <ScatterChart key="loss" axis="lossAxis" series={chartSeries["packet-loss-rate"].forward} style={{color: "#2ca02c", opacity: 0.5}} />
+            );
+        }
+        if (this.state.active.reverse && this.checkEventType("packet-loss-rate", "reverse") ) {
+            lossCharts.push(
+                    /*
+                 <LineChart key="reverseLoss" axis="lossAxis" series={chartSeries["packet-loss-rate"].reverse} style={requestsStyle} smooth={false} breakLine={true} />
+                 */
+
+                <ScatterChart key="reverseLoss" axis="lossAxis" series={chartSeries["packet-loss-rate"].reverse} style={{color: "#990000", opacity: 0.5}} />
+                
+        );        
         }
         
         /*
@@ -244,7 +259,6 @@ export default React.createClass({
                     <YAxis id="axis2" label="Throughput" style={{labelColor: scheme.connections}}
                            labelOffset={20} min={0} format=".2s" max={chartSeries.throughput.reverse.max()} width="80" type="linear"/>
                 </ChartRow>
-                {/*
                 <ChartRow height="200" debug={false}>
                     <Charts>
                         {lossCharts}
@@ -252,7 +266,6 @@ export default React.createClass({
                     <YAxis id="lossAxis" label="Loss" style={{labelColor: scheme.connections}}
                            labelOffset={20} min={0.000000001} format=",.4f" max={this.state.maxLoss} width="80" type="linear"/>
                 </ChartRow>
-                */}
                 <ChartRow height="200" debug={false}>
                     <Charts>
                         {latencyCharts}
