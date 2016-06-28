@@ -102,8 +102,8 @@ export default React.createClass({
             },
             tracker: null,
             chartSeries: null,
-            timerange: TimeRange.lastThirtyDays(),
-            initialTimerange: null,
+            timerange: TimeRange.lastSevenDays(),
+            brushrange: null,// TimeRange.lastSevenDays(),
             maxLatency: 1,
             maxThroughput: 1,
             maxLoss: 0.0000000001,
@@ -145,32 +145,33 @@ export default React.createClass({
         }
         if (this.state.active.throughput && this.checkEventType("histogram-owdelay", "forward") ) { // TODO: fix state part
             latencyCharts.push(
-                <LineChart key="latency" axis="axis1" series={chartSeries["histogram-owdelay"].forward} style={connectionsStyle} smooth={false} breakLine={false} min={chartSeries["histogram-owdelay"].forward.min()} max={chartSeries["histogram-owdelay"].forward.max()} onTimeRangeChanged={this.handleTimeRangeChange} />
+                <LineChart key="latency" axis="axis1" series={chartSeries["histogram-owdelay"].forward} style={connectionsStyle} smooth={false} breakLine={false} min={chartSeries["histogram-owdelay"].forward.min()} max={chartSeries["histogram-owdelay"].forward.max()} />
             );
         }
         
         if (this.state.active.reverse && this.checkEventType("histogram-owdelay", "reverse") ) { // TODO: fix state part
             latencyCharts.push(
-                <LineChart key="reverseLatency" axis="axis1" series={chartSeries["histogram-owdelay"].reverse} style={requestsStyle} smooth={false} breakLine={false} min={chartSeries["histogram-owdelay"].reverse.min()} max={chartSeries["histogram-owdelay"].reverse.max()} onTimeRangeChanged={this.handleTimeRangeChange} />
+                <LineChart key="reverseLatency" axis="axis1" series={chartSeries["histogram-owdelay"].reverse} style={requestsStyle} smooth={false} breakLine={false} min={chartSeries["histogram-owdelay"].reverse.min()} max={chartSeries["histogram-owdelay"].reverse.max()} />
             );
         }
 
         if (this.state.active.throughput && this.checkEventType("packet-loss-rate", "forward") ) {
             lossCharts.push(
-                    /*
-                <LineChart key="loss" axis="lossAxis" series={lossSeries} style={connectionsStyle} smooth={false} breakLine={true} />
-                */
+                    
+                <LineChart key="loss" axis="lossAxis" series={chartSeries["packet-loss-rate"].forward} style={connectionsStyle} smooth={false} breakLine={true} />
+                /*
                 <ScatterChart key="loss" axis="lossAxis" series={chartSeries["packet-loss-rate"].forward} style={{color: "#2ca02c", opacity: 0.5}} />
+                */
             );
         }
         if (this.state.active.reverse && this.checkEventType("packet-loss-rate", "reverse") ) {
             lossCharts.push(
-                    /*
+                    
                  <LineChart key="reverseLoss" axis="lossAxis" series={chartSeries["packet-loss-rate"].reverse} style={requestsStyle} smooth={false} breakLine={true} />
-                 */
-
+                 
+                /*
                 <ScatterChart key="reverseLoss" axis="lossAxis" series={chartSeries["packet-loss-rate"].reverse} style={{color: "#990000", opacity: 0.5}} />
-                
+                */
         );        
         }
         
@@ -225,7 +226,7 @@ export default React.createClass({
             //console.log('reverse timerange', timerange);
 
         } 
-        this.state.timerange = timerange;
+        //this.state.timerange = timerange;
         if ( ! timerange ) {
             return ( <div></div> );
         }
@@ -240,14 +241,14 @@ export default React.createClass({
                 <div className="row">
                     <div className="col-md-12">
                     <Resizable>
-            <ChartContainer timeRange={timerange}
+            <ChartContainer 
                 trackerPosition={this.state.tracker}
-                //onTrackerChanged={(tracker) => this.handleTrackerChanged({tracker})}
                 onTrackerChanged={this.handleTrackerChanged}
-                //onTrackerChanged={(tracker) => this.setState({tracker})}
                 enablePanZoom={true}
-                //onTimeRangeChanged={(timerange) => this.setState({timerange})}
                 onTimeRangeChanged={this.handleTimeRangeChange}
+                minTime={this.state.timerange.begin()}
+                maxTime={this.state.timerange.end()}
+                minDuration={10 * 60 * 1000}
                 timeRange={this.state.timerange} >
                 <ChartRow height="200" debug={false}>
                     <Charts>
@@ -264,7 +265,7 @@ export default React.createClass({
                         {lossCharts}
                     </Charts>
                     <YAxis id="lossAxis" label="Loss" style={{labelColor: scheme.connections}}
-                           labelOffset={20} min={0.000000001} format=",.4f" max={this.state.maxLoss} width="80" type="linear"/>
+                           labelOffset={20} min={0.000000001} format=",.4f" max={chartSeries["packet-loss-rate"].forward.max()} width="80" type="linear"/>
                 </ChartRow>
                 <ChartRow height="200" debug={false}>
                     <Charts>
@@ -277,7 +278,6 @@ export default React.createClass({
             </Resizable>
                            </div>
                                </div>
-                               {/*
                 <div className="row">
                     <div className="col-md-12" style={brushStyle}>
                         <Resizable>
@@ -285,7 +285,6 @@ export default React.createClass({
                         </Resizable>
                     </div>
                 </div>
-            */}
             </div>
         );
     },
@@ -345,39 +344,33 @@ export default React.createClass({
     },
 
     handleTimeRangeChange(timerange) {
-        //if ( timerange.begin().toString() != timerange.end().toString() ) {
-            this.setState({timerange});
-
-            /*
+        if (timerange) {
+            this.setState({timerange, brushrange: timerange});
         } else {
-            this.setState({timerange: this.initialTimerange});
-             this.forceUpdate();
+            this.setState({timerange: this.state.timerange, brushrange: null});
         }
-        */
+
+        //this.setState({timerange});
     },
 
-    handleBrushCleared(val) {
-        this.setState({timerange: this.state.initialTimerange});
-        console.log("brush cleared, initial timerange", this.state.initialTimerange);
-    },
 
     renderBrush() {
+        // TODO: update not to be hardcoded to reverse
         return (
             <ChartContainer
-                timeRange={throughputSeries.timerange()}
+                timeRange={this.state.timerange}
                 format="relative"
                 trackerPosition={this.state.tracker}>
                 <ChartRow height="100" debug={false}>
                     <Brush
-                        timeRange={null}
-                        //timeRange={this.state.timerange}
+                        timeRange={this.state.brushrange}
                         onTimeRangeChanged={this.handleTimeRangeChange}
-                        onBrushCleared={this.handleBrushCleared}
+                        allowSelectionClear={true}
                         />
                     <YAxis
                         id="brushAxis1"
                         label="Throughput"
-                        min={0} max={this.state.maxThroughput}
+                        min={0} max={this.state.chartSeries.throughput.reverse.max()}
                         width={70} type="linear" format=".1s"/>
                     <Charts>
                         <LineChart
@@ -385,7 +378,7 @@ export default React.createClass({
                             axis="brushAxis1"
                             style={{up: ["#DDD"]}}
                             columns={{up: ["throughput"], down: []}}
-                            series={throughputSeries} />
+                            series={this.state.chartSeries.throughput.reverse} />
                     </Charts>
                 </ChartRow>
             </ChartContainer>
@@ -412,95 +405,12 @@ export default React.createClass({
 
         PSGraphData.getHostPairMetadata( src, dst, start, end, ma_url );
 
-        if ( false ) {
-            var url = 'http://perfsonar-dev.grnoc.iu.edu/esmond/perfsonar/archive/9808c289fc07446e9939330706b896d6/throughput/base';
-            url += '?time-range=' + 86400 * 30;
-            //var url = 'http://perfsonar-dev.grnoc.iu.edu/esmond/perfsonar/archive/050056d85a8344bc844e2aeaa472db9b/throughput/base';
 
-            this.serverRequest = $.get(url, function ( data ) {
-                console.log('ajax request came back; throughput data', Date(), data );
-                var values = this.esmondToTimeSeries( data, 'throughput' );
-                throughputValues = values.values;
-                throughputSeries = values.series;
-                console.log('throughput values', Date(), throughputValues);
-                //this.renderChart();
-                this.forceUpdate();
-            }.bind(this));
-
-            var url2 = 'http://perfsonar-dev.grnoc.iu.edu/esmond/perfsonar/archive/f1f55c1d158545c29ff8700980948d30/throughput/base';
-            url2 += '?time-range=' + 86400 * 30;
-
-            this.serverRequest = $.get(url2, function ( data ) {
-                console.log('ajax request came back; reverse throughput data', Date(), data);
-                var values = this.esmondToTimeSeries( data, 'reverseThroughput' );
-                reverseThroughputValues = values.values;
-                reverseThroughputSeries = values.series;
-                console.log('reverse throughput values', Date(), reverseThroughputValues );
-                //this.renderChart();
-                this.forceUpdate();
-            }.bind(this));
-
-            // http://perfsonar-dev.grnoc.iu.edu/esmond/perfsonar/archive/c1eb8fb9fd87429bb3bfaf79aca6424b/histogram-owdelay/statistics/3600
-            var url3 = 'http://perfsonar-dev.grnoc.iu.edu/esmond/perfsonar/archive/c1eb8fb9fd87429bb3bfaf79aca6424b/histogram-owdelay/statistics/3600';
-            url3 += '?time-range=' + 86400 * 30;
-
-            this.serverRequest = $.get(url3, function ( data ) {
-                console.log('ajax request came back; latency data', Date(), data );
-                var values = this.esmondToTimeSeries( data, 'latency' );
-                latencyValues = values.values;
-                this.setState({latencySeries: values.series});
-                console.log('latency values', Date(), latencyValues );
-                //this.renderChart();
-                this.forceUpdate();
-            }.bind(this));
-
-            // http://perfsonar-dev.grnoc.iu.edu/esmond/perfsonar/archive/5a1707536a5143759713adddc5cafa66/histogram-rtt/statistics/3600
-            var url4 = 'http://perfsonar-dev.grnoc.iu.edu/esmond/perfsonar/archive/5a1707536a5143759713adddc5cafa66/histogram-rtt/statistics/3600';
-            url4 += '?time-range=' + 86400 * 30;
-
-            this.serverRequest = $.get(url4, function ( data ) {
-                console.log('ajax request came back; latency data', Date(), data);
-                var values = this.esmondToTimeSeries( data, 'reverseLatency' );
-                reverseLatencyValues = values.values;
-                reverseLatencySeries = values.series;
-                console.log('reverse latency values', Date(), reverseLatencyValues );
-                //this.renderChart();
-                this.forceUpdate();
-            }.bind(this));
-
-            var url5 = 'http://perfsonar-dev.grnoc.iu.edu/esmond/perfsonar/archive/0121d658a72a4f119a99c5e03bfa674b/packet-loss-rate/base';
-            url5 += '?time-range=' + 86400 * 30;
-            this.serverRequest = $.get(url5, function ( data ) {
-                console.log('ajax request came back; loss data', Date(), data);
-                var values = this.esmondToTimeSeries( data, 'loss' );
-                lossValues = values.values;
-                lossSeries = values.series;
-                console.log('loss values', Date(), lossValues );
-                //this.renderChart();
-                this.forceUpdate();
-
-            }.bind(this));
-
-            var url6 = 'http://perfsonar-dev.grnoc.iu.edu/esmond/perfsonar/archive/0acdc51a787a43c4b2b81c66e9d564da/packet-loss-rate/aggregations/86400';
-            url6 += '?time-range=' + 86400 * 30;
-            this.serverRequest = $.get(url6, function ( data ) {
-                console.log('ajax request came back; reverse loss data', Date(), data);
-                var values = this.esmondToTimeSeries( data, 'reverseLoss' );
-                reverseLossValues = values.values;
-                reverseLossSeries = values.series;
-                console.log('reverse loss values', Date(), reverseLossValues );
-                //this.renderChart();
-                this.forceUpdate();
-
-            }.bind(this));
-        }
-
-var values = this.esmondToTimeSeries( failures, 'failures' );
-failureValues = values.values;
-failureSeries = values.series;
-console.log('failure values', failureValues);
-console.log('failure series', failureSeries);
-
+        var values = this.esmondToTimeSeries( failures, 'failures' );
+        failureValues = values.values;
+        failureSeries = values.series;
+        console.log('failure values', failureValues);
+        console.log('failure series', failureSeries);
 
     },
 
