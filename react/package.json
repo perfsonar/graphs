@@ -28,9 +28,9 @@
     "moment": "^2.8.4",
     "moment-duration-format": "^1.3.0",
     "paths-js": "^0.3.4",
-    "pondjs": "/home/mj82/src/esnet/pond/",
+    "pondjs": "^0.6.0",
     "react-flexbox": "^3.0.0",
-    "react-timeseries-charts": "/home/mj82/src/esnet/react-timeseries-charts/",
+    "react-timeseries-charts": "http://git@github.com/esnet/react-timeseries-charts.git",
     "underscore": "^1.7.0"
   },
   "peerDependencies": {

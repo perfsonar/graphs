@@ -12,8 +12,6 @@ import { TimeSeries, TimeRange } from "pondjs";
 
 import "./chart1.css";
 
-
-
 var throughputValues = [];
 var reverseThroughputValues = [];
 
@@ -51,7 +49,7 @@ var reverseLatencySeries = null;
 var lossSeries = null;
 var reverseLossSeries = null;
 
-const text = 'Example ddos chart';
+const text = 'perfSONAR chart';
 
 const lineStyle = {
     node: {
@@ -103,7 +101,8 @@ export default React.createClass({
             tracker: null,
             chartSeries: null,
             timerange: TimeRange.lastSevenDays(),
-            brushrange: null,// TimeRange.lastSevenDays(),
+            brushrange: null,
+            //brushrange: TimeRange.lastSevenDays(),
             maxLatency: 1,
             maxThroughput: 1,
             maxLoss: 0.0000000001,
@@ -115,13 +114,13 @@ export default React.createClass({
     },
 
     handleTrackerChanged(trackerVal, selection) {
-        const seconds = Math.floor( trackerVal.getTime() / 1000 );
-        //console.log('trackerVal seconds', seconds, 'selection', selection);
-        //var pos = this.state.tracker;
+        //const seconds = Math.floor( trackerVal.getTime() / 1000 );
+        /*
         this.setState({tracker: trackerVal});
         if ( failureMessages[ seconds ] ) {
             console.log('failure message: ', failureMessages[ seconds ] );
         }
+        */
         //this.setState({selectionType, selection});
         //return pos;
     },
@@ -134,13 +133,13 @@ export default React.createClass({
 
         if ( this.state.active.throughput && this.checkEventType("throughput", "forward") ) { 
             charts.push(
-                <LineChart key="throughput" axis="axis2" series={chartSeries.throughput.forward} style={connectionsStyle} smooth={false} breakLine={true} min="{chartSeries.throughput.forward.min()}" max="{chartSeries.throughput.forward.max()}" />
+                <LineChart key="throughput" axis="axis2" series={chartSeries.throughput.forward} style={connectionsStyle} smooth={false} breakLine={false} min="{chartSeries.throughput.forward.min()}" max="{chartSeries.throughput.forward.max()}" />
             );
         }
-        if ( this.state.active.throughput && this.checkEventType("throughput", "reverse") ) { //  chartSeries && chartSeries.throughput && chartSeries.throughput.reverse ) {
+        if ( this.state.active.throughput && this.checkEventType("throughput", "reverse") ) { 
             // TODO: fix this to forward instead of reverse
             charts.push(
-                <LineChart key="reverseThroughput" axis="axis2" series={chartSeries.throughput.reverse} style={requestsStyle} smooth={false} breakLine={true} min="{chartSeries.throughput.reverse.min()}" max="{chartSeries.throughput.reverse.max()}" />
+                <LineChart key="reverseThroughput" axis="axis2" series={chartSeries.throughput.reverse} style={requestsStyle} smooth={false} breakLine={false} min="{chartSeries.throughput.reverse.min()}" max="{chartSeries.throughput.reverse.max()}" />
             );
         }
         if (this.state.active.throughput && this.checkEventType("histogram-owdelay", "forward") ) { // TODO: fix state part
@@ -158,7 +157,7 @@ export default React.createClass({
         if (this.state.active.throughput && this.checkEventType("packet-loss-rate", "forward") ) {
             lossCharts.push(
                     
-                <LineChart key="loss" axis="lossAxis" series={chartSeries["packet-loss-rate"].forward} style={connectionsStyle} smooth={false} breakLine={true} />
+                <LineChart key="loss" axis="lossAxis" series={chartSeries["packet-loss-rate"].forward} style={connectionsStyle} smooth={false} breakLine={false} />
                 /*
                 <ScatterChart key="loss" axis="lossAxis" series={chartSeries["packet-loss-rate"].forward} style={{color: "#2ca02c", opacity: 0.5}} />
                 */
@@ -167,7 +166,7 @@ export default React.createClass({
         if (this.state.active.reverse && this.checkEventType("packet-loss-rate", "reverse") ) {
             lossCharts.push(
                     
-                 <LineChart key="reverseLoss" axis="lossAxis" series={chartSeries["packet-loss-rate"].reverse} style={requestsStyle} smooth={false} breakLine={true} />
+                 <LineChart key="reverseLoss" axis="lossAxis" series={chartSeries["packet-loss-rate"].reverse} style={requestsStyle} smooth={false} breakLine={false} />
                  
                 /*
                 <ScatterChart key="reverseLoss" axis="lossAxis" series={chartSeries["packet-loss-rate"].reverse} style={{color: "#990000", opacity: 0.5}} />
@@ -175,46 +174,6 @@ export default React.createClass({
         );        
         }
         
-        /*
-        if (this.state.active.reverse && reverseThroughputSeries) {
-            charts.push(
-                <LineChart key="reverse" axis="axis2" series={reverseThroughputSeries} style={requestsStyle} smooth={false} breakLine={true} />
-            );
-        }
-        if (this.state.active.throughput && this.state.latencySeries) { // TODO: fix state part
-            latencyCharts.push(
-                <LineChart key="latency" axis="axis1" series={this.state.latencySeries} style={connectionsStyle} smooth={false} breakLine={false} min={this.state.latencySeries.min()} max={this.state.latencySeries.max()} onTimeRangeChanged={this.handleTimeRangeChange} />
-            );
-        }
-        if (this.state.active.reverse && reverseLatencySeries) { // TODO: fix state part
-            latencyCharts.push(
-                <LineChart key="reverseLatency" axis="axis1" series={reverseLatencySeries} style={requestsStyle} smooth={false} breakLine={false} min={reverseLatencySeries.min()} max={reverseLatencySeries.max()} />
-            );
-        }
-        */
-
-        /*
-        if (this.state.active.throughput && lossSeries) {
-            lossCharts.push(
-        */
-                    /*
-                <LineChart key="loss" axis="lossAxis" series={lossSeries} style={connectionsStyle} smooth={false} breakLine={true} />
-                */
-        /*
-                <ScatterChart key="loss" axis="lossAxis" series={lossSeries} style={{color: "#2ca02c", opacity: 0.5}} />
-            );
-        }
-        if (this.state.active.reverse && reverseLossSeries) {
-            lossCharts.push(
-                 <LineChart key="reverseLoss" axis="lossAxis" series={reverseLossSeries} style={requestsStyle} smooth={false} breakLine={true} />
-                 */
-/*
-                <ScatterChart key="reverseLoss" axis="lossAxis" series={reverseLossSeries} style={{color: "#2ca02c", opacity: 0.5}} />
-                */
-    /*
-        );        
-        }
-    */
         var timerange;
         if (throughputSeries) {
             //console.log('throughputSeries is defined');
@@ -344,6 +303,11 @@ export default React.createClass({
     },
 
     handleTimeRangeChange(timerange) {
+        //console.log("timerange changed", timerange.begin(), "end", timerange.end());
+        //if ( timerange.begin().toString() == timerange.end().toString() ) {
+        //    timerange = null;
+        //}
+        
         if (timerange) {
             this.setState({timerange, brushrange: timerange});
         } else {
@@ -377,7 +341,7 @@ export default React.createClass({
                             key="brushThroughput"
                             axis="brushAxis1"
                             style={{up: ["#DDD"]}}
-                            columns={{up: ["throughput"], down: []}}
+                            columns={["throughput", "reverse"]}
                             series={this.state.chartSeries.throughput.reverse} />
                     </Charts>
                 </ChartRow>
@@ -393,6 +357,11 @@ export default React.createClass({
 
     componentDidMount: function() {
         //var { status, page, limit } = this.context.router.getCurrentQuery();
+        /*
+        if ( ! this.state.timerange ) {
+            this.handleTimeRangeChange(null);
+        }
+        */
         var qs = this.props.location.query;
         console.log( "qs", qs );
         let src = qs.src;
