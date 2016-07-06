@@ -51,7 +51,29 @@ var reverseLossSeries = null;
 
 const text = 'perfSONAR chart';
 
-const lineStyle = {
+
+const scheme = {
+    requests: "#2ca02c",
+    connections: "#990000"
+};
+
+const connectionsStyle = {
+    color: scheme.requests,
+    strokeWidth: 1
+};
+
+const requestsStyle = {
+    stroke: "#990000",
+    strokeWidth: 2,
+    strokeDasharray: "4,2"
+};
+
+const lineStyles = {
+    value: { 
+        stroke: scheme.requests,
+        strokeWidth: 1
+    }
+/*
     node: {
         normal: {stroke: "#737373", strokeWidth: 4, fill: "none"},
         highlighted: {stroke: "#b1b1b1", strokeWidth: 4, fill: "#b1b1b1"}
@@ -63,23 +85,16 @@ const lineStyle = {
     label: {
         normal: {fill: "#9D9D9D",fontFamily: "verdana, sans-serif",fontSize: 10}
     }
+    */
 };
 
-const scheme = {
-    requests: "#2ca02c",
-    connections: "#990000"
-};
-
-const connectionsStyle = {
-    color: scheme.connections,
-    width: 1
-};
-
-const requestsStyle = {
-    color: scheme.requests,
-    width: 2,
-    strokeDasharray: "4,2"
-};
+const reverseStyles = {
+    value: { 
+        stroke: scheme.connections,
+        strokeDasharray: "4,2",
+        strokeWidth: 1
+    }
+}
 
 const brushStyle = {
     boxShadow: "inset 0px 2px 5px -2px rgba(189, 189, 189, 0.75)",
@@ -133,31 +148,31 @@ export default React.createClass({
 
         if ( this.state.active.throughput && this.checkEventType("throughput", "forward") ) { 
             charts.push(
-                <LineChart key="throughput" axis="axis2" series={chartSeries.throughput.forward} style={connectionsStyle} smooth={false} breakLine={false} min="{chartSeries.throughput.forward.min()}" max="{chartSeries.throughput.forward.max()}" />
+                <LineChart key="throughput" axis="axis2" series={chartSeries.throughput.forward} style={lineStyles} smooth={false} breakLine={true} min="{chartSeries.throughput.forward.min()}" max="{chartSeries.throughput.forward.max()}" columns={[ "value" ]} />
             );
         }
         if ( this.state.active.throughput && this.checkEventType("throughput", "reverse") ) { 
             // TODO: fix this to forward instead of reverse
             charts.push(
-                <LineChart key="reverseThroughput" axis="axis2" series={chartSeries.throughput.reverse} style={requestsStyle} smooth={false} breakLine={false} min="{chartSeries.throughput.reverse.min()}" max="{chartSeries.throughput.reverse.max()}" />
+                <LineChart key="reverseThroughput" axis="axis2" series={chartSeries.throughput.reverse} style={reverseStyles} smooth={false} breakLine={true} min="{chartSeries.throughput.reverse.min()}" max="{chartSeries.throughput.reverse.max()}" />
             );
         }
         if (this.state.active.throughput && this.checkEventType("histogram-owdelay", "forward") ) { // TODO: fix state part
             latencyCharts.push(
-                <LineChart key="latency" axis="axis1" series={chartSeries["histogram-owdelay"].forward} style={connectionsStyle} smooth={false} breakLine={false} min={chartSeries["histogram-owdelay"].forward.min()} max={chartSeries["histogram-owdelay"].forward.max()} />
+                <LineChart key="latency" axis="axis1" series={chartSeries["histogram-owdelay"].forward} style={lineStyles} smooth={false} breakLine={true} min={chartSeries["histogram-owdelay"].forward.min()} max={chartSeries["histogram-owdelay"].forward.max()} />
             );
         }
         
         if (this.state.active.reverse && this.checkEventType("histogram-owdelay", "reverse") ) { // TODO: fix state part
             latencyCharts.push(
-                <LineChart key="reverseLatency" axis="axis1" series={chartSeries["histogram-owdelay"].reverse} style={requestsStyle} smooth={false} breakLine={false} min={chartSeries["histogram-owdelay"].reverse.min()} max={chartSeries["histogram-owdelay"].reverse.max()} />
+                <LineChart key="reverseLatency" axis="axis1" series={chartSeries["histogram-owdelay"].reverse} style={reverseStyles} smooth={false} breakLine={true} min={chartSeries["histogram-owdelay"].reverse.min()} max={chartSeries["histogram-owdelay"].reverse.max()} />
             );
         }
 
         if (this.state.active.throughput && this.checkEventType("packet-loss-rate", "forward") ) {
             lossCharts.push(
                     
-                <LineChart key="loss" axis="lossAxis" series={chartSeries["packet-loss-rate"].forward} style={connectionsStyle} smooth={false} breakLine={false} />
+                <LineChart key="loss" axis="lossAxis" series={chartSeries["packet-loss-rate"].forward} style={lineStyles} smooth={false} breakLine={true} />
                 /*
                 <ScatterChart key="loss" axis="lossAxis" series={chartSeries["packet-loss-rate"].forward} style={{color: "#2ca02c", opacity: 0.5}} />
                 */
@@ -166,7 +181,7 @@ export default React.createClass({
         if (this.state.active.reverse && this.checkEventType("packet-loss-rate", "reverse") ) {
             lossCharts.push(
                     
-                 <LineChart key="reverseLoss" axis="lossAxis" series={chartSeries["packet-loss-rate"].reverse} style={requestsStyle} smooth={false} breakLine={false} />
+                 <LineChart key="reverseLoss" axis="lossAxis" series={chartSeries["packet-loss-rate"].reverse} style={reverseStyles} smooth={false} breakLine={true} />
                  
                 /*
                 <ScatterChart key="reverseLoss" axis="lossAxis" series={chartSeries["packet-loss-rate"].reverse} style={{color: "#990000", opacity: 0.5}} />
