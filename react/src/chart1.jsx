@@ -73,6 +73,12 @@ const lineStyles = {
         stroke: scheme.requests,
         strokeWidth: 1
     }
+
+/*
+ * Colors from mockup
+ * blue: #004987
+ * purple: #750075
+ * orange: #ff8e01
 /*
     node: {
         normal: {stroke: "#737373", strokeWidth: 4, fill: "none"},
