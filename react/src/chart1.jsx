@@ -107,6 +107,10 @@ const offsets = {
     label: -15
 }
 
+const chartRow = {
+    height: 150
+}
+
 const brushStyle = {
     boxShadow: "inset 0px 2px 5px -2px rgba(189, 189, 189, 0.75)",
     background: "#FEFEFE",
@@ -239,7 +243,7 @@ export default React.createClass({
                 maxTime={this.state.initialTimerange.end()}
                 minDuration={10 * 60 * 1000}
                 >
-                <ChartRow height="200" debug={false}>
+                <ChartRow height={chartRow.height} debug={false}>
                     <YAxis id="axis2" label="Throughput" style={axisLabelStyle}
                              labelOffset={offsets.label} min={0} format=".2s" max={chartSeries.throughput.reverse.max()} width={70} type="linear" align="left" />
                     <Charts>
@@ -249,7 +253,7 @@ export default React.createClass({
                 */}
                     </Charts>
                 </ChartRow>
-                <ChartRow height="200" debug={false}>
+                <ChartRow height={chartRow.height} debug={false}>
                     <YAxis id="lossAxis" label="Loss" style={axisLabelStyle}
                             labelOffset={offsets.label} 
                             min={0.000000001} format=",.4f" max={chartSeries["packet-loss-rate"].forward.max()} width="80" type="linear"/>
@@ -257,7 +261,7 @@ export default React.createClass({
                         {lossCharts}
                     </Charts>
                 </ChartRow>
-                <ChartRow height="200" debug={false}>
+                <ChartRow height={chartRow.height} debug={false}>
                     <YAxis id="axis1" label="Latency" style={axisLabelStyle}
                            labelOffset={offsets.label} min={0.000000001} format=",.4f" max={chartSeries["histogram-owdelay"].forward.max()} width="80" type="linear"/>
                     <Charts>
@@ -357,7 +361,7 @@ export default React.createClass({
             <ChartContainer
                 timeRange={this.state.initialTimerange}
                 trackerPosition={this.state.tracker}>
-                <ChartRow height="100" debug={false}>
+                <ChartRow height="50" debug={false}>
                     <Brush
                         timeRange={this.state.brushrange}
                         onTimeRangeChanged={this.handleTimeRangeChange}
@@ -375,6 +379,64 @@ export default React.createClass({
                             style={lineStyles}
                             columns={["value"]}
                             series={this.state.chartSeries.throughput.forward} />
+                        <LineChart
+                            key="reverseBrushThroughput"
+                            axis="brushAxis1"
+                            style={reverseStyles}
+                            columns={["value"]}
+                            series={this.state.chartSeries.throughput.reverse} />
+                    </Charts>
+                </ChartRow>
+                <ChartRow height="50" debug={false}>
+                    <Brush
+                        timeRange={this.state.brushrange}
+                        onTimeRangeChanged={this.handleTimeRangeChange}
+                        allowSelectionClear={true}
+                        />
+                    <YAxis
+                        id="brushAxisLoss"
+                        label="Loss"
+                        min={0} max={this.state.chartSeries["packet-loss-rate"].forward.max()}
+                        width={70} type="linear" format=".1s"/>
+                    <Charts>
+                        <LineChart
+                            key="brushLoss"
+                            axis="brushAxisLoss"
+                            style={lineStyles}
+                            columns={["value"]}
+                            series={this.state.chartSeries["packet-loss-rate"].forward} />
+                        <LineChart
+                            key="reverseBrushLoss"
+                            axis="brushAxisLoss"
+                            style={reverseStyles}
+                            columns={["value"]}
+                            series={this.state.chartSeries["packet-loss-rate"].reverse} />
+                    </Charts>
+                </ChartRow>
+                <ChartRow height="50" debug={false}>
+                    <Brush
+                        timeRange={this.state.brushrange}
+                        onTimeRangeChanged={this.handleTimeRangeChange}
+                        allowSelectionClear={true}
+                        />
+                    <YAxis
+                        id="brushAxis2"
+                        label="Latency"
+                        min={0} max={this.state.chartSeries["histogram-owdelay"].forward.max()}
+                        width={70} type="linear" format=".1s"/>
+                    <Charts>
+                        <LineChart
+                            key="brushOwdelay"
+                            axis="brushAxis2"
+                            style={lineStyles}
+                            columns={["value"]}
+                            series={this.state.chartSeries["histogram-owdelay"].forward} />
+                        <LineChart
+                            key="reverseBrushOwdelay"
+                            axis="brushAxis2"
+                            style={reverseStyles}
+                            columns={["value"]}
+                            series={this.state.chartSeries["histogram-owdelay"].reverse} />
                     </Charts>
                 </ChartRow>
             </ChartContainer>
