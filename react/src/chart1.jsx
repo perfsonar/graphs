@@ -98,9 +98,13 @@ const reverseStyles = {
 
 const axisLabelStyle = {
     labelColor: "black"
-    //labelOffset: 200
+    //labelOffset: -15
     //labelWeight: 100, 
     //labelSize: 12
+}
+
+const offsets = {
+    label: -15
 }
 
 const brushStyle = {
@@ -236,28 +240,29 @@ export default React.createClass({
                 minDuration={10 * 60 * 1000}
                 >
                 <ChartRow height="200" debug={false}>
+                    <YAxis id="axis2" label="Throughput" style={axisLabelStyle}
+                             labelOffset={offsets.label} min={0} format=".2s" max={chartSeries.throughput.reverse.max()} width={70} type="linear" align="left" />
                     <Charts>
                         {charts}
                         {/*
                 <ScatterChart axis="axis2" series={failureSeries} style={{color: "steelblue", opacity: 0.5}} /> 
                 */}
                     </Charts>
-                    <YAxis id="axis2" label="Throughput" style={axisLabelStyle}
-                           labelOffset={20} min={0} format=".2s" max={chartSeries.throughput.reverse.max()} width="80" type="linear"/>
                 </ChartRow>
                 <ChartRow height="200" debug={false}>
+                    <YAxis id="lossAxis" label="Loss" style={axisLabelStyle}
+                            labelOffset={offsets.label} 
+                            min={0.000000001} format=",.4f" max={chartSeries["packet-loss-rate"].forward.max()} width="80" type="linear"/>
                     <Charts>
                         {lossCharts}
                     </Charts>
-                    <YAxis id="lossAxis" label="Loss" style={axisLabelStyle}
-                           labelOffset={20} min={0.000000001} format=",.4f" max={chartSeries["packet-loss-rate"].forward.max()} width="80" type="linear"/>
                 </ChartRow>
                 <ChartRow height="200" debug={false}>
+                    <YAxis id="axis1" label="Latency" style={axisLabelStyle}
+                           labelOffset={offsets.label} min={0.000000001} format=",.4f" max={chartSeries["histogram-owdelay"].forward.max()} width="80" type="linear"/>
                     <Charts>
                         {latencyCharts}
                     </Charts>
-                    <YAxis id="axis1" label="Latency" style={axisLabelStyle}
-                           labelOffset={20} min={0.000000001} format=",.4f" max={chartSeries["histogram-owdelay"].forward.max()} width="80" type="linear"/>
                 </ChartRow>
             </ChartContainer>
             </Resizable>
