@@ -96,6 +96,13 @@ const reverseStyles = {
     }
 }
 
+const axisLabelStyle = {
+    labelColor: "black"
+    //labelOffset: 200
+    //labelWeight: 100, 
+    //labelSize: 12
+}
+
 const brushStyle = {
     boxShadow: "inset 0px 2px 5px -2px rgba(189, 189, 189, 0.75)",
     background: "#FEFEFE",
@@ -116,8 +123,10 @@ export default React.createClass({
             tracker: null,
             chartSeries: null,
             timerange: TimeRange.lastSevenDays(),
-            brushrange: null,
+            initialTimerange: TimeRange.lastSevenDays(),
+            //brushrange: TimeRange.lastDay(),
             //brushrange: TimeRange.lastSevenDays(),
+            brushrange: null,
             maxLatency: 1,
             maxThroughput: 1,
             maxLoss: 0.0000000001,
@@ -130,8 +139,9 @@ export default React.createClass({
 
     handleTrackerChanged(trackerVal, selection) {
         //const seconds = Math.floor( trackerVal.getTime() / 1000 );
-        /*
+        
         this.setState({tracker: trackerVal});
+        /*
         if ( failureMessages[ seconds ] ) {
             console.log('failure message: ', failureMessages[ seconds ] );
         }
@@ -216,14 +226,15 @@ export default React.createClass({
                     <div className="col-md-12">
                     <Resizable>
             <ChartContainer 
+                timeRange={this.state.timerange} 
                 trackerPosition={this.state.tracker}
                 onTrackerChanged={this.handleTrackerChanged}
                 enablePanZoom={true}
                 onTimeRangeChanged={this.handleTimeRangeChange}
-                minTime={this.state.timerange.begin()}
-                maxTime={this.state.timerange.end()}
+                minTime={this.state.initialTimerange.begin()}
+                maxTime={this.state.initialTimerange.end()}
                 minDuration={10 * 60 * 1000}
-                timeRange={this.state.timerange} >
+                >
                 <ChartRow height="200" debug={false}>
                     <Charts>
                         {charts}
@@ -231,21 +242,21 @@ export default React.createClass({
                 <ScatterChart axis="axis2" series={failureSeries} style={{color: "steelblue", opacity: 0.5}} /> 
                 */}
                     </Charts>
-                    <YAxis id="axis2" label="Throughput" style={{labelColor: scheme.connections}}
+                    <YAxis id="axis2" label="Throughput" style={axisLabelStyle}
                            labelOffset={20} min={0} format=".2s" max={chartSeries.throughput.reverse.max()} width="80" type="linear"/>
                 </ChartRow>
                 <ChartRow height="200" debug={false}>
                     <Charts>
                         {lossCharts}
                     </Charts>
-                    <YAxis id="lossAxis" label="Loss" style={{labelColor: scheme.connections}}
+                    <YAxis id="lossAxis" label="Loss" style={axisLabelStyle}
                            labelOffset={20} min={0.000000001} format=",.4f" max={chartSeries["packet-loss-rate"].forward.max()} width="80" type="linear"/>
                 </ChartRow>
                 <ChartRow height="200" debug={false}>
                     <Charts>
                         {latencyCharts}
                     </Charts>
-                    <YAxis id="axis1" label="Latency" style={{labelColor: scheme.connections}}
+                    <YAxis id="axis1" label="Latency" style={axisLabelStyle}
                            labelOffset={20} min={0.000000001} format=",.4f" max={chartSeries["histogram-owdelay"].forward.max()} width="80" type="linear"/>
                 </ChartRow>
             </ChartContainer>
@@ -323,13 +334,15 @@ export default React.createClass({
         //    timerange = null;
         //}
         
+        
         if (timerange) {
             this.setState({timerange, brushrange: timerange});
         } else {
-            this.setState({timerange: this.state.timerange, brushrange: null});
+            this.setState({timerange: this.state.initialTimerange, brushrange: null});
         }
+       
 
-        //this.setState({timerange});
+       // this.setState({timerange});
     },
 
 
@@ -337,8 +350,7 @@ export default React.createClass({
         // TODO: update not to be hardcoded to reverse
         return (
             <ChartContainer
-                timeRange={this.state.timerange}
-                format="relative"
+                timeRange={this.state.initialTimerange}
                 trackerPosition={this.state.tracker}>
                 <ChartRow height="100" debug={false}>
                     <Brush
@@ -349,15 +361,15 @@ export default React.createClass({
                     <YAxis
                         id="brushAxis1"
                         label="Throughput"
-                        min={0} max={this.state.chartSeries.throughput.reverse.max()}
+                        min={0} max={this.state.chartSeries.throughput.forward.max()}
                         width={70} type="linear" format=".1s"/>
                     <Charts>
                         <LineChart
                             key="brushThroughput"
                             axis="brushAxis1"
-                            style={{up: ["#DDD"]}}
-                            columns={["throughput", "reverse"]}
-                            series={this.state.chartSeries.throughput.reverse} />
+                            style={lineStyles}
+                            columns={["value"]}
+                            series={this.state.chartSeries.throughput.forward} />
                     </Charts>
                 </ChartRow>
             </ChartContainer>
