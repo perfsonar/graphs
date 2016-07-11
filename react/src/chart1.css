@@ -2,3 +2,14 @@ rect.extent {
     fill: steelblue;
     opacity: 0.25;
 }
+#brushContainer .yaxis > .tick {
+    display: none;
+}
+
+#brushContainer .yaxis > .tick:first-child {
+    display: block;
+}
+
+#brushContainer .yaxis > .tick:last-of-type {
+    display: block;
+}

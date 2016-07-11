@@ -11,6 +11,7 @@ import { AreaChart, Brush, Charts, ChartContainer, ChartRow, YAxis, LineChart, S
 import { TimeSeries, TimeRange } from "pondjs";
 
 import "./chart1.css";
+import "../../css/graphs.css";
 
 var throughputValues = [];
 var reverseThroughputValues = [];
@@ -144,7 +145,7 @@ export default React.createClass({
             maxLatency: 1,
             maxThroughput: 1,
             maxLoss: 0.0000000001,
-            latencySeries: null 
+            latencySeries: null
         };
     },
     contextTypes: {
@@ -153,7 +154,7 @@ export default React.createClass({
 
     handleTrackerChanged(trackerVal, selection) {
         //const seconds = Math.floor( trackerVal.getTime() / 1000 );
-        
+
         this.setState({tracker: trackerVal});
         /*
         if ( failureMessages[ seconds ] ) {
@@ -186,7 +187,7 @@ export default React.createClass({
                 <LineChart key="latency" axis="axis1" series={chartSeries["histogram-owdelay"].forward} style={lineStyles} smooth={false} breakLine={true} min={chartSeries["histogram-owdelay"].forward.min()} max={chartSeries["histogram-owdelay"].forward.max()} />
             );
         }
-        
+
         if (this.state.active.reverse && this.checkEventType("histogram-owdelay", "reverse") ) { // TODO: fix state part
             latencyCharts.push(
                 <LineChart key="reverseLatency" axis="axis1" series={chartSeries["histogram-owdelay"].reverse} style={reverseStyles} smooth={false} breakLine={true} min={chartSeries["histogram-owdelay"].reverse.min()} max={chartSeries["histogram-owdelay"].reverse.max()} />
@@ -195,7 +196,7 @@ export default React.createClass({
 
         if (this.state.active.throughput && this.checkEventType("packet-loss-rate", "forward") ) {
             lossCharts.push(
-                    
+
                 <LineChart key="loss" axis="lossAxis" series={chartSeries["packet-loss-rate"].forward} style={lineStyles} smooth={false} breakLine={true} />
                 /*
                 <ScatterChart key="loss" axis="lossAxis" series={chartSeries["packet-loss-rate"].forward} style={{color: "#2ca02c", opacity: 0.5}} />
@@ -204,15 +205,15 @@ export default React.createClass({
         }
         if (this.state.active.reverse && this.checkEventType("packet-loss-rate", "reverse") ) {
             lossCharts.push(
-                    
+
                  <LineChart key="reverseLoss" axis="lossAxis" series={chartSeries["packet-loss-rate"].reverse} style={reverseStyles} smooth={false} breakLine={true} />
-                 
+
                 /*
                 <ScatterChart key="reverseLoss" axis="lossAxis" series={chartSeries["packet-loss-rate"].reverse} style={{color: "#990000", opacity: 0.5}} />
                 */
-        );        
+        );
         }
-        
+
         var timerange;
         if (throughputSeries) {
             //console.log('throughputSeries is defined');
@@ -223,7 +224,7 @@ export default React.createClass({
             timerange = chartSeries.throughput.reverse.timerange();
             //console.log('reverse timerange', timerange);
 
-        } 
+        }
         //this.state.timerange = timerange;
         if ( ! timerange ) {
             return ( <div></div> );
@@ -239,8 +240,8 @@ export default React.createClass({
                 <div className="row">
                     <div className="col-md-12">
                     <Resizable>
-            <ChartContainer 
-                timeRange={this.state.timerange} 
+            <ChartContainer
+                timeRange={this.state.timerange}
                 trackerPosition={this.state.tracker}
                 onTrackerChanged={this.handleTrackerChanged}
                 enablePanZoom={true}
@@ -255,7 +256,7 @@ export default React.createClass({
                     <Charts>
                         {charts}
                         {/*
-                <ScatterChart axis="axis2" series={failureSeries} style={{color: "steelblue", opacity: 0.5}} /> 
+                <ScatterChart axis="axis2" series={failureSeries} style={{color: "steelblue", opacity: 0.5}} />
                 */}
                     </Charts>
                 </ChartRow>
@@ -279,7 +280,7 @@ export default React.createClass({
                            </div>
                                </div>
                 <div className="row">
-                    <div className="col-md-12" style={brushStyle}>
+                    <div className="col-md-12" style={brushStyle} id="brushContainer">
                         <Resizable>
                            {this.renderBrush()}
                         </Resizable>
@@ -304,7 +305,7 @@ export default React.createClass({
                 disabled: !this.state.active.throughput,
                 style: {
                     backgroundColor: scheme.connections,
-                    stroke: scheme.connections
+                    stroke: scheme.requests
                 }
             },{
                 key: "reverse",
@@ -312,7 +313,7 @@ export default React.createClass({
                 disabled: !this.state.active.reverse,
                 style: {
                     backgroundColor: scheme.requests,
-                    stroke: scheme.requests,
+                    stroke: scheme.connections,
                     strokeDasharray: "4,2"
                 }
             }

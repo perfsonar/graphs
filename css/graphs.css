@@ -1,0 +1,154 @@
+/*----------------------------------------------------------
+
+    Graphs
+
+----------------------------------------------------------*/
+
+.graph-filter {
+    padding: 1em 0;
+}
+
+.graph-label {
+    display: block;
+    float: left;
+    padding-top: .7em;
+    margin-right: .5em;
+}
+
+.graph-filter__list {
+    display: block;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    display: inline-block;
+}
+
+/*
+ * Clear fix
+*/
+.graph:after,
+.graph-filters:after,
+.graph-filter:after,
+.graph-filter__list:after {
+    content: "";
+    clear: both;
+    display: block;
+}
+
+.graph-filter__item {
+    float: left;
+    border-right: 1px solid #ccc;
+    margin: 0;
+}
+
+/*
+ * Filter active states
+*/
+
+.graph-filter__item.graph-filter__item--blue-active a {
+    background-color: #0089ff;
+    color: #fff;
+}
+
+.graph-filter__item:last-child {
+    border-right: none;
+}
+
+.graph-filter__item a {
+    color: #383f44;
+    display: inline-block;
+    padding: .75em 1em;
+}
+
+.graph-filter__item a:hover {
+    background-color: #ccc;
+    color: #383f44;
+}
+
+.graph-settings {
+    border: 1px solid #383f44;
+    border-radius: 4px;
+    color: #383f44;
+    display: inline-block;
+    margin-left: 1em;
+    /*
+     * This is a magic number to make this thing look right.
+    */
+    padding: .71em;
+}
+
+.graph-settings i {
+    font-size: 1.5em;
+}
+
+.graph-wrapper {
+
+}
+
+.graph-header {
+    border-bottom: 1px solid #ccc;
+    margin-top: 1em;
+    padding-bottom: .5em;
+}
+
+.graph-module,
+.graph-holder {
+    min-height: 400px;
+}
+
+.graph-module {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+}
+
+.graph-module--small,
+.graph-holder--small {
+    min-height: 150px;
+}
+
+.graph-holder {
+    background-color: #ddd;
+}
+
+.graph-module__cell {
+    /*
+     * This is sort of brittle because it relies on a
+     * specific amount of padding to veritcally center
+     * the label
+    */
+    padding-top: 4em;
+    text-align: center;
+    border-bottom: 1px solid #ccc;
+    flex-grow: 1;
+    align-content: center;
+}
+
+.graph-module__cell--small {
+    padding-top: 1em;
+}
+
+.graph-module__cell--left {
+    padding-top: 1em;
+    padding-left: 1em;
+    text-align: left;
+}
+
+.graph-module__stat {
+    display: block;
+    line-height: 1.8;
+}
+
+.graph-module__stat i {
+    margin-right: 1em;
+}
+
+.graph-module__controls {
+    color: #383f44;
+}
+
+.graph-small {
+    margin-top: 1em;
+}
