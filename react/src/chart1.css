@@ -2,6 +2,9 @@ rect.extent {
     fill: steelblue;
     opacity: 0.25;
 }
+#graphContainer { 
+    padding: 1em 3em;
+}
 #brushContainer .yaxis > .tick {
     display: none;
 }
@@ -12,4 +15,12 @@ rect.extent {
 
 #brushContainer .yaxis > .tick:last-of-type {
     display: block;
+}
+
+.overview--pad {
+    padding:2em 0;
+}
+
+body {
+    padding: 0;
 }

@@ -10,8 +10,12 @@ import { AreaChart, Brush, Charts, ChartContainer, ChartRow, YAxis, LineChart, S
 
 import { TimeSeries, TimeRange } from "pondjs";
 
+//import "../../toolkit/web-ng/root/css/foundation.min.css";
+//import "../../toolkit/web-ng/root/css/font-awesome/css/font-awesome.min.css";
 import "./chart1.css";
+import ChartLayout from "./chartLayout.jsx";
 import "../../css/graphs.css";
+import "../../toolkit/web-ng/root/css/app.css";
 
 var throughputValues = [];
 var reverseThroughputValues = [];
@@ -322,23 +326,27 @@ export default React.createClass({
 
         return (
             <div>
-                <div className="row">
-                    <div className="col-md-12">
-                        <h3>perfSONAR Test Results</h3>
+                <ChartLayout></ChartLayout>
+                <div>
+                    <div className="row">
+                        <div className="col-md-12">
+                            <h3>perfSONAR Test Results</h3>
+                        </div>
                     </div>
-                </div>
 
-                <div className="row">
-                    <div className="col-md-12">
-                        <Legend type="line" categories={legend} onChange={this.handleActiveChange}/>
+                    <div className="row">
+                        <div className="col-md-12">
+                            <Legend type="line" categories={legend} onChange={this.handleActiveChange}/>
+                        </div>
                     </div>
+
+                    <hr/>
+
+                    {this.renderChart()}
+
+                    <hr/>
+
                 </div>
-
-                <hr/>
-
-                {this.renderChart()}
-
-                <hr/>
 
             </div>
         );
