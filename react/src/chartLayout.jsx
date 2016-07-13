@@ -1,8 +1,9 @@
 import React from "react";
 import _ from "underscore";
 
-import "../../css/graphs.css";
+import Chart1 from "./chart1.jsx";
 
+import "../../css/graphs.css";
 
 const text = 'perfSONAR chart';
 
@@ -50,7 +51,7 @@ const lineStyles = {
 };
 
 const reverseStyles = {
-    value: { 
+    value: {
         stroke: scheme.connections,
         strokeDasharray: "4,2",
         strokeWidth: 1
@@ -60,7 +61,7 @@ const reverseStyles = {
 const axisLabelStyle = {
     labelColor: "black"
     //labelOffset: -15
-    //labelWeight: 100, 
+    //labelWeight: 100,
     //labelSize: 12
 }
 
@@ -84,8 +85,13 @@ export default React.createClass({
     //mixins: [Highlighter],
 
     getInitialState() {
+        var newState = this.getQueryString();
         return {
             title: text,
+            src: newState.src,
+            dst: newState.dst,
+            start: newState.start,
+            end: newState.end
         };
     },
     contextTypes: {
@@ -240,15 +246,21 @@ export default React.createClass({
                             <div className="small-2 columns">
                                 <div className="graph-module">
                                     <div className="graph-module__cell">
-                                        Latency
+                                        Throughput
                                     </div>
                                     <div className="graph-module__cell">Packet Loss</div>
-                                    <div className="graph-module__cell">Throughput</div>
+                                    <div className="graph-module__cell">Latency</div>
                                 </div>
                             </div>
                             <div className="small-8 columns">
-                                <div className="graph-holder">
-                                    The Graph
+                                <div className="graphholder">
+                                    <Chart1
+                                        src={this.state.src}
+                                        dst={this.state.dst}
+                                        start={this.state.start}
+                                        end={this.state.end}
+                                        ma_url={this.state.ma_url}
+                                    />
                                 </div>
 
                             </div>
@@ -323,9 +335,9 @@ export default React.createClass({
                             <div className="row collapse">
                                 <div className="small-2 columns">
                                     <div className="graph-module graph-module--small">
-                                        <div className="graph-module__cell graph-module__cell--small">Latency</div>
-                                        <div className="graph-module__cell graph-module__cell--small">Packet Loss</div>
                                         <div className="graph-module__cell graph-module__cell--small">Throughput</div>
+                                        <div className="graph-module__cell graph-module__cell--small">Packet Loss</div>
+                                        <div className="graph-module__cell graph-module__cell--small">Latency</div>
                                     </div>
                                 </div>
                                 <div className="small-10 columns">
@@ -342,7 +354,28 @@ export default React.createClass({
                 </div>
 
         );
-    }
+    },
 
+    getQueryString: function() {
+        var qs = this.props.location.query;
+        console.log( "qs", qs );
+        let src = qs.src;
+        let dst = qs.dst;
+        let start = qs.start;
+        let end = qs.end;
+        let ma_url = qs.ma_url || "http://perfsonar-dev.grnoc.iu.edu/esmond/perfsonar/archive/";
+        const newState = {
+            src:    src,
+            dst:    dst,
+            start:  start,
+            end:    end,
+            ma_url: ma_url
+        };
+        console.log("newState", newState);
+
+        //this.setState(newState);
+        //this.forceUpdate();
+        return newState;
+    }
 
 });

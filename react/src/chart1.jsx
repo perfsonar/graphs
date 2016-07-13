@@ -54,6 +54,12 @@ var reverseLatencySeries = null;
 var lossSeries = null;
 var reverseLossSeries = null;
 
+/*
+var charts = [];
+var latencyCharts = [];
+var lossCharts = [];
+*/
+
 const text = 'perfSONAR chart';
 
 
@@ -100,7 +106,7 @@ const lineStyles = {
 };
 
 const reverseStyles = {
-    value: { 
+    value: {
         stroke: scheme.connections,
         strokeDasharray: "4,2",
         strokeWidth: 1
@@ -139,6 +145,10 @@ export default React.createClass({
                 throughput: true,
                 reverse: true
             },
+            //src: null,
+            //dst: null,
+            //start: null,
+            //end: null,
             tracker: null,
             chartSeries: null,
             timerange: TimeRange.lastSevenDays(),
@@ -175,12 +185,12 @@ export default React.createClass({
         let lossCharts = [];
         let chartSeries = this.state.chartSeries;
 
-        if ( this.state.active.throughput && this.checkEventType("throughput", "forward") ) { 
+        if ( this.state.active.throughput && this.checkEventType("throughput", "forward") ) {
             charts.push(
                 <LineChart key="throughput" axis="axis2" series={chartSeries.throughput.forward} style={lineStyles} smooth={false} breakLine={true} min="{chartSeries.throughput.forward.min()}" max="{chartSeries.throughput.forward.max()}" columns={[ "value" ]} />
             );
         }
-        if ( this.state.active.throughput && this.checkEventType("throughput", "reverse") ) { 
+        if ( this.state.active.throughput && this.checkEventType("throughput", "reverse") ) {
             // TODO: fix this to forward instead of reverse
             charts.push(
                 <LineChart key="reverseThroughput" axis="axis2" series={chartSeries.throughput.reverse} style={reverseStyles} smooth={false} breakLine={true} min="{chartSeries.throughput.reverse.min()}" max="{chartSeries.throughput.reverse.max()}" />
@@ -286,7 +296,7 @@ export default React.createClass({
                 <div className="row">
                     <div className="col-md-12" style={brushStyle} id="brushContainer">
                         <Resizable>
-                           {this.renderBrush()}
+                            {this.renderBrush()}
                         </Resizable>
                     </div>
                 </div>
@@ -326,21 +336,16 @@ export default React.createClass({
 
         return (
             <div>
-                <ChartLayout></ChartLayout>
                 <div>
-                    <div className="row">
-                        <div className="col-md-12">
-                            <h3>perfSONAR Test Results</h3>
-                        </div>
-                    </div>
-
+                {/*
                     <div className="row">
                         <div className="col-md-12">
                             <Legend type="line" categories={legend} onChange={this.handleActiveChange}/>
                         </div>
-                    </div>
+                    </div>                    
 
                     <hr/>
+                    */}
 
                     {this.renderChart()}
 
@@ -357,14 +362,14 @@ export default React.createClass({
         //if ( timerange.begin().toString() == timerange.end().toString() ) {
         //    timerange = null;
         //}
-        
-        
+
+
         if (timerange) {
             this.setState({timerange, brushrange: timerange});
         } else {
             this.setState({timerange: this.state.initialTimerange, brushrange: null});
         }
-       
+
 
        // this.setState({timerange});
     },
@@ -460,8 +465,12 @@ export default React.createClass({
 
     updateChartData: function() {
         console.log("updating chart data");
-        this.state.chartSeries = PSGraphData.getChartData();
+        let newChartSeries = PSGraphData.getChartData();
+        console.log("new series", newChartSeries);
+        this.setState({ chartSeries: newChartSeries } );
         this.forceUpdate();
+        //ChartLayout.forceUpdate();
+        //ChartLayout.setState({throughputCharts: charts});
     },
 
     componentDidMount: function() {
@@ -471,6 +480,8 @@ export default React.createClass({
             this.handleTimeRangeChange(null);
         }
         */
+
+        /*
         var qs = this.props.location.query;
         console.log( "qs", qs );
         let src = qs.src;
@@ -478,8 +489,20 @@ export default React.createClass({
         let start = qs.start;
         let end = qs.end;
         let ma_url = qs.ma_url || "http://perfsonar-dev.grnoc.iu.edu/esmond/perfsonar/archive/";
+        */
+
+        let src = this.props.src;
+        let dst = this.props.dst;
+        let start = this.props.start;
+        let end = this.props.end;
+        let ma_url = this.props.ma_url || "http://perfsonar-dev.grnoc.iu.edu/esmond/perfsonar/archive/";
+
 
         PSGraphData.subscribe(this.updateChartData);
+
+        if ( src === null || dst === null ) {
+            //return;
+        }
 
         PSGraphData.getHostPairMetadata( src, dst, start, end, ma_url );
 
@@ -489,7 +512,6 @@ export default React.createClass({
         failureSeries = values.series;
         console.log('failure values', failureValues);
         console.log('failure series', failureSeries);
-
     },
 
     componentWillUnmount: function() {
@@ -537,7 +559,7 @@ export default React.createClass({
         active[key] = !disabled;
         this.setState({active});
 */
-        
+
             }
             // TODO: change this section to use else if
             if ( seriesName == 'loss' || seriesName == 'reverseLoss' ) {

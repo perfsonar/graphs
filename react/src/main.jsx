@@ -16,6 +16,7 @@ import { Router, Route, IndexRoute, browserHistory } from "react-router";
 
 import Intro from "./intro";
 import Chart1 from "./chart1";
+import ChartLayout from "./chartLayout";
 import Chart1Webservice from "./chart1webservice";
 
 import createHistory from "history/lib/createHashHistory";
@@ -26,8 +27,8 @@ const history = useScroll(createHistory)();
 
 render((
     <Router history={history}>
-        <Route path="/" component={Chart1}>
-            <IndexRoute component={Intro}/>
+        <Route path="/" component={ChartLayout}>
+            {/* <IndexRoute component={Intro}/> */}
             <Route path="chart1webservice" component={Chart1Webservice} />
 /* This doesn't work, why? */
 
