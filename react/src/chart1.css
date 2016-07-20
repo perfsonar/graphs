@@ -17,6 +17,12 @@ rect.extent {
     display: block;
 }
 
+.yaxis text.yaxis-label {
+    transform: rotate(0)
+        translate(-50px, 0);
+    font-size:14px;
+}
+
 .overview--pad {
     padding:2em 0;
 }
@@ -24,3 +30,4 @@ rect.extent {
 body {
     padding: 0;
 }
+

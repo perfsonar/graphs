@@ -242,6 +242,7 @@ export default React.createClass({
                             </div>
                         </header>
 
+                        {/*
                         <div className="row collapse">
                             <div className="small-2 columns">
                                 <div className="graph-module">
@@ -253,6 +254,7 @@ export default React.createClass({
                                 </div>
                             </div>
                             <div className="small-8 columns">
+                            */}
                                 <div className="graphholder">
                                     <Chart1
                                         src={this.state.src}
@@ -262,6 +264,7 @@ export default React.createClass({
                                         ma_url={this.state.ma_url}
                                     />
                                 </div>
+                                {/*
 
                             </div>
                             <div className="small-2 columns">
@@ -329,6 +332,7 @@ export default React.createClass({
                                 </div>
                             </div>
                         </div> 
+                            */}
                         {/* end row */}
 
                         <div className="graph-small">

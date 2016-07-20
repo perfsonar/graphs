@@ -114,14 +114,15 @@ const reverseStyles = {
 }
 
 const axisLabelStyle = {
-    labelColor: "black"
-    //labelOffset: -15
-    //labelWeight: 100, 
-    //labelSize: 12
+    labelColor: "black",
+    labelFont: "\"Open Sans\", \"Helvetica Neue\", \"Helvetica\", Arial, sans-serif",
+    labelSize: "14",
+    labelOffset: 5,
+    labelWeight: 200
 }
 
 const offsets = {
-    label: -15
+    label: 60
 }
 
 const chartRow = {
@@ -251,48 +252,56 @@ export default React.createClass({
         */
         return (
             <div>
-                <div className="row">
-                    <div className="col-md-12">
-                    <Resizable>
-            <ChartContainer
-                timeRange={this.state.timerange}
-                trackerPosition={this.state.tracker}
-                onTrackerChanged={this.handleTrackerChanged}
-                enablePanZoom={true}
-                onTimeRangeChanged={this.handleTimeRangeChange}
-                minTime={this.state.initialTimerange.begin()}
-                maxTime={this.state.initialTimerange.end()}
-                minDuration={10 * 60 * 1000}
-                >
-                <ChartRow height={chartRow.height} debug={false}>
-                    <YAxis id="axis2" label="Throughput" style={axisLabelStyle}
-                             labelOffset={offsets.label} min={0} format=".2s" max={chartSeries.throughput.reverse.max()} width={70} type="linear" align="left" />
-                    <Charts>
-                        {charts}
+                <Resizable>
+                    <ChartContainer
+                        timeRange={this.state.timerange}
+                        trackerPosition={this.state.tracker}
+                        onTrackerChanged={this.handleTrackerChanged}
+                        enablePanZoom={true}
+                        onTimeRangeChanged={this.handleTimeRangeChange}
+                        minTime={this.state.initialTimerange.begin()}
+                        maxTime={this.state.initialTimerange.end()}
+                        minDuration={10 * 60 * 1000}
+                    >
+                    {/* 
+                    <div className="row collapse">
+                    */}
+                        <ChartRow height={chartRow.height} debug={false}>
                         {/*
-                <ScatterChart axis="axis2" series={failureSeries} style={{color: "steelblue", opacity: 0.5}} />
-                */}
-                    </Charts>
-                </ChartRow>
-                <ChartRow height={chartRow.height} debug={false}>
-                    <YAxis id="lossAxis" label="Loss" style={axisLabelStyle}
-                            labelOffset={offsets.label} 
-                            min={0.000000001} format=",.4f" max={chartSeries["packet-loss-rate"].forward.max()} width="80" type="linear"/>
-                    <Charts>
-                        {lossCharts}
-                    </Charts>
-                </ChartRow>
-                <ChartRow height={chartRow.height} debug={false}>
-                    <YAxis id="axis1" label="Latency" style={axisLabelStyle}
-                           labelOffset={offsets.label} min={0.000000001} format=",.4f" max={chartSeries["histogram-owdelay"].forward.max()} width="80" type="linear"/>
-                    <Charts>
-                        {latencyCharts}
-                    </Charts>
-                </ChartRow>
-            </ChartContainer>
+                <text>Throughput</text>
+                        */}
+                            <YAxis id="axis2" label="Throughput"  style={axisLabelStyle}
+                                labelOffset={offsets.label} min={0} format=".2s"
+                                max={chartSeries.throughput.forward.max()}
+                                width={80} type="linear" align="left" />
+                                <Charts>
+                                    {charts}
+                                    {/*
+                                    <ScatterChart axis="axis2" series={failureSeries} style={{color: "steelblue", opacity: 0.5}} />
+                                    */}
+                                </Charts>
+                        </ChartRow>
+                        {/*
+                    </div>
+                    */}
+                    <ChartRow height={chartRow.height} debug={false}>
+                        <YAxis id="lossAxis" label="Loss" style={axisLabelStyle}
+                                labelOffset={offsets.label} 
+                                min={0.000000001} format=",.4f" max={chartSeries["packet-loss-rate"].forward.max()} width="80" type="linear"/>
+                        <Charts>
+                            {lossCharts}
+                        </Charts>
+                    </ChartRow>
+                    <ChartRow height={chartRow.height} debug={false}>
+                        <YAxis id="axis1" label="Latency" style={axisLabelStyle}
+                               labelOffset={offsets.label} min={0.000000001} format=",.4f" max={chartSeries["histogram-owdelay"].forward.max()} width="80" type="linear"/>
+                        <Charts>
+                            {latencyCharts}
+                        </Charts>
+                    </ChartRow>
+                </ChartContainer>
             </Resizable>
-                           </div>
-                               </div>
+
                 <div className="row">
                     <div className="col-md-12" style={brushStyle} id="brushContainer">
                         <Resizable>
