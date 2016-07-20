@@ -302,7 +302,7 @@ export default React.createClass({
                 </ChartContainer>
             </Resizable>
 
-                <div className="row">
+                <div className="rowg">
                     <div className="col-md-12" style={brushStyle} id="brushContainer">
                         <Resizable>
                             {this.renderBrush()}
@@ -389,7 +389,8 @@ export default React.createClass({
         return (
             <ChartContainer
                 timeRange={this.state.initialTimerange}
-                trackerPosition={this.state.tracker}>
+                trackerPosition={this.state.tracker}
+                className="brush">
                 <ChartRow height="50" debug={false}>
                     <Brush
                         timeRange={this.state.brushrange}
@@ -400,7 +401,7 @@ export default React.createClass({
                         id="brushAxis1"
                         label="Throughput"
                         min={0} max={this.state.chartSeries.throughput.forward.max()}
-                        width={70} type="linear" format=".1s"/>
+                        width={80} type="linear" format=".1s"/>
                     <Charts>
                         <LineChart
                             key="brushThroughput"
@@ -426,7 +427,7 @@ export default React.createClass({
                         id="brushAxisLoss"
                         label="Loss"
                         min={0} max={this.state.chartSeries["packet-loss-rate"].forward.max()}
-                        width={70} type="linear" format=".1s"/>
+                        width={80} type="linear" format=".1s"/>
                     <Charts>
                         <LineChart
                             key="brushLoss"
@@ -452,7 +453,7 @@ export default React.createClass({
                         id="brushAxis2"
                         label="Latency"
                         min={0} max={this.state.chartSeries["histogram-owdelay"].forward.max()}
-                        width={70} type="linear" format=".1s"/>
+                        width={80} type="linear" format=".1s"/>
                     <Charts>
                         <LineChart
                             key="brushOwdelay"
