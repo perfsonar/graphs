@@ -334,7 +334,7 @@ export default React.createClass({
                         </div> 
                             */}
                         {/* end row */}
-
+                        {/*
                         <div className="graph-small">
                             <div className="row collapse">
                                 <div className="small-2 columns">
@@ -351,7 +351,7 @@ export default React.createClass({
                                 </div>
                             </div>
                         </div>
-
+*/}
                     </div>
 
                 {/* End graph */}
