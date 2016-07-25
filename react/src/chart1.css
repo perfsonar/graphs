@@ -3,7 +3,7 @@ rect.extent {
     opacity: 0.25;
 }
 #graphContainer { 
-    padding: 1em 3em;
+    padding: 0 1em;
 }
 #brushContainer .yaxis > .tick {
     display: none;
@@ -27,6 +27,10 @@ rect.extent {
     transform: rotate(0deg) 
         translate(-25px, 65px);
     font-size:10px;
+}
+
+#graphContainer .overview {
+    padding:0.5em 0.5em 0.5em 1em;
 }
 
 .overview--pad {

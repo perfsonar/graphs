@@ -50,6 +50,31 @@ const lineStyles = {
     */
 };
 
+/* colors from old graphs
+ * #0076b4 blue (throughput)
+ * #cc7dbe  purple (loss)
+ * #e5a11c yellow (ping)
+ */
+
+/* original colors, from the design
+const ipv4Color = "#004987"; // blue
+const ipv6Color = "#750075"; // purple
+const tcpColor = "#ff8e01"; // orange
+const udpColor = "#633"; // brown from old graphs
+*/
+
+// Colors from old graphs
+const tcpColor = "#0076b4"; // blue
+const udpColor = "#cc7dbe"; // purple
+const ipv4Color = "#e5a11c"; // yellow
+const ipv6Color = "#633"; // brown from old graphs
+
+const ipv4Style = {
+    color: ipv4Color
+}
+
+
+
 const reverseStyles = {
     value: {
         stroke: scheme.connections,
@@ -191,17 +216,17 @@ export default React.createClass({
                         <div className="graph-filter left">
                             <span className="graph-label">Data:</span>
                             <ul className=" graph-filter__list">
-                                <li className="graph-filter__item graph-filter__item--blue-active">
-                                    <a href="#">IPV4</a>
-                                </li>
-                                <li className="graph-filter__item">
-                                    <a href="#">IPV6</a>
-                                </li>
-                                <li className="graph-filter__item">
+                                <li className="graph-filter__item graph-filter__item tcp-active">
                                     <a href="#">TCP</a>
                                 </li>
-                                <li className="graph-filter__item">
+                                <li className="graph-filter__item udp-active">
                                     <a href="#">UDP</a>
+                                </li>
+                                <li className="graph-filter__item ipv4-active">
+                                    <a href="#">IPv4</a>
+                                </li>
+                                <li className="graph-filter__item ipv6-active">
+                                    <a href="#">IPv6</a>
                                 </li>
                             </ul>
                         </div>
@@ -215,10 +240,10 @@ export default React.createClass({
                                 <li className="graph-filter__item graph-filter__item--blue-active">
                                     <a href="#">Forward</a>
                                 </li>
-                                <li className="graph-filter__item">
+                                <li className="graph-filter__item graph-filter__item--blue-active">
                                     <a href="#">Reverse</a>
                                 </li>
-                                <li className="graph-filter__item">
+                                <li className="graph-filter__item graph-filter__item--blue-active">
                                     <a href="#">Errors</a>
                                 </li>
                             </ul>

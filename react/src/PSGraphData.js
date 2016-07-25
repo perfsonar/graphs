@@ -71,27 +71,6 @@ module.exports = {
                 reqCount++;
             }
         }
-/*
-        for(let i in urls) {
-            let url = urls[i];
-            this.serverRequest = $.get( url, function(data) {
-                this.handleMetadataResponse(data);
-            }.bind(this));
-
-        }
-        */
-        /*
-           this.serverRequest = $.get(url, function ( data ) {
-           console.log('ajax request came back; throughput data', Date(), data );
-           var values = this.esmondToTimeSeries( data, 'throughput' );
-           throughputValues = values.values;
-           throughputSeries = values.series;
-           console.log('throughput values', Date(), throughputValues);
-//this.renderChart();
-this.forceUpdate();
-}.bind(this));
-*/
-
 },
     handleMetadataResponse: function( data, direction ) {
         //data.label = label;
@@ -235,16 +214,6 @@ this.forceUpdate();
 
             }
         }
-        /*
-        for(let i in urls) {
-            let obj = urls[i];
-            let url = obj.url;
-            let eventType = obj.eventType;
-            this.serverRequest = $.get( url, function( data ) {
-                this.handleDataResponse( data, eventType );
-            }.bind(this));
-        }
-        */
 
     },
     handleDataResponse: function( data, eventType, direction ) {
@@ -292,13 +261,6 @@ this.forceUpdate();
             var values = [];
             var series = {};
 
-            //this._checkSortOrder(inputData); // TODO: review: do we need this?
-/*
-            var maxThroughput = this.state.maxThroughput;
-            var maxLatency = this.state.maxLatency;
-            var maxLoss = this.state.maxLoss;
-            */
-
             $.each(datum.data, function( valIndex, val ) {
                 const ts = val["ts"];
                 const timestamp = new moment(new Date(ts * 1000)); // 'Date' expects milliseconds
@@ -331,7 +293,6 @@ this.forceUpdate();
             });
             console.log('created series ...', series, "values", values);
 
-            //outputData[eventType][direction] = series;
             if ( !( eventType in outputData ) ) {
                 outputData[eventType] = {};
 
@@ -341,31 +302,7 @@ this.forceUpdate();
             }  else {
                 $.merge( outputData[eventType][direction], series );
             }
-
-            //$.merge( this.chartMetadata, data );
-
-            //outputData.push( series );
-            //outputData.push( { values: values, series: series } );
-
-            /*
-             * Shouldn't need this as _checkSortOrder is called above
-             var lastTS = 0;
-             for (let i=0; i < series.size(); i++) {
-            //console.log(series.at(i).toString());
-            //console.log('series.at(i)', series.at(i));
-            var ts = series.at(i).timestamp().getTime();
-            if ( ts > lastTS ) {
-            //console.log( 'new ts > last TS', ts, lastTS );
-
-            } else {
-            console.log( 'BAD: new ts <= last TS', ts, lastTS );
-
-            }
-            lastTS = ts;
-            }
-            */
         });
-        //return ( { values: values, series: series } );
         return outputData;
     },
     subscribe: function( callback ) {

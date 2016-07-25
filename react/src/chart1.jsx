@@ -64,8 +64,8 @@ const text = 'perfSONAR chart';
 
 
 const scheme = {
-    requests: "#2ca02c",
-    connections: "#990000"
+    requests: "#0076b4",
+    connections: "#0076b4"
 };
 
 const connectionsStyle = {
@@ -82,7 +82,7 @@ const requestsStyle = {
 const lineStyles = {
     value: { 
         stroke: scheme.requests,
-        strokeWidth: 1
+        strokeWidth: 1.5
     }
 
 /*
@@ -109,7 +109,7 @@ const reverseStyles = {
     value: {
         stroke: scheme.connections,
         strokeDasharray: "4,2",
-        strokeWidth: 1
+        strokeWidth: 1.5
     }
 }
 
