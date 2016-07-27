@@ -177,7 +177,7 @@ export default React.createClass({
                                     <option>Destination Three</option>
                                 </select>
 
-                                {/* GRAPH: Destination Host Ifo*/}
+                                {/* GRAPH: Destination Host Info*/}
                                 <a className="js-sidebar-popover-toggle"href="#">Host info <i className="fa fa-angle-down"></i></a>
 
                                 <div className="sidebar-popover sidebar-popover--overview">
@@ -268,19 +268,6 @@ export default React.createClass({
                             </div>
                         </header>
 
-                        {/*
-                        <div className="row collapse">
-                            <div className="small-2 columns">
-                                <div className="graph-module">
-                                    <div className="graph-module__cell">
-                                        Throughput
-                                    </div>
-                                    <div className="graph-module__cell">Packet Loss</div>
-                                    <div className="graph-module__cell">Latency</div>
-                                </div>
-                            </div>
-                            <div className="small-8 columns">
-                            */}
                                 <div className="graphholder">
                                     <Chart1
                                         src={this.state.src}
@@ -290,94 +277,6 @@ export default React.createClass({
                                         ma_url={this.state.ma_url}
                                     />
                                 </div>
-                                {/*
-
-                            </div>
-                            <div className="small-2 columns">
-                                <div className="graph-module">
-                                    <div className="graph-module__cell graph-module__cell--left">
-                                        <span className="graph-module__stat">
-                                            <i className="fa fa-arrow-right"></i> <strong>20ms</strong>
-                                        </span>
-                                        <span className="graph-module__stat">
-                                            <i className="fa fa-arrow-left"></i> <strong>20ms</strong>
-                                        </span>
-                                        <div className="nav-dropdown">
-                                            <a href="#" className="graph-module__controls nav-dropdown-toggle">
-                                                Interval: 5 mins <i className="fa fa-caret-down"></i>
-                                            </a>
-                                            <ul className="nav-dropdown-menu">
-                                                <li className="nav-dropdown-menu__heading">Set interval</li>
-                                                <li><a href="#">5 mins</a></li>
-                                                <li><a href="#">10 mins</a></li>
-                                                <li><a href="#">30 mins</a></li>
-                                                <li><a href="#">1 hour</a></li>
-                                            </ul>
-                                        </div>
-                                    </div>
-                                    <div className="graph-module__cell graph-module__cell--left">
-                                        <span className="graph-module__stat">
-                                            <i className="fa fa-arrow-right"></i> <strong>20ms</strong>
-                                        </span>
-                                        <span className="graph-module__stat">
-                                            <i className="fa fa-arrow-left"></i> <strong>20ms</strong>
-                                        </span>
-                                        <div className="nav-dropdown">
-                                            <a href="#" className="graph-module__controls nav-dropdown-toggle">
-                                                Interval: 5 mins <i className="fa fa-caret-down"></i>
-                                            </a>
-                                            <ul className="nav-dropdown-menu">
-                                                <li className="nav-dropdown-menu__heading">Set interval</li>
-                                                <li><a href="#">5 mins</a></li>
-                                                <li><a href="#">10 mins</a></li>
-                                                <li><a href="#">30 mins</a></li>
-                                                <li><a href="#">1 hour</a></li>
-                                            </ul>
-                                        </div>
-                                    </div>
-                                    <div className="graph-module__cell graph-module__cell--left">
-                                        <span className="graph-module__stat">
-                                            <i className="fa fa-arrow-right"></i> <strong>20ms</strong>
-                                        </span>
-                                        <span className="graph-module__stat">
-                                            <i className="fa fa-arrow-left"></i> <strong>20ms</strong>
-                                        </span>
-                                        <div className="nav-dropdown">
-                                            <a href="#" className="graph-module__controls nav-dropdown-toggle">
-                                                Interval: 5 mins <i className="fa fa-caret-down"></i>
-                                            </a>
-                                            <ul className="nav-dropdown-menu">
-                                                <li className="nav-dropdown-menu__heading">Set interval</li>
-                                                <li><a href="#">5 mins</a></li>
-                                                <li><a href="#">10 mins</a></li>
-                                                <li><a href="#">30 mins</a></li>
-                                                <li><a href="#">1 hour</a></li>
-                                            </ul>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div> 
-                            */}
-                        {/* end row */}
-                        {/*
-                        <div className="graph-small">
-                            <div className="row collapse">
-                                <div className="small-2 columns">
-                                    <div className="graph-module graph-module--small">
-                                        <div className="graph-module__cell graph-module__cell--small">Throughput</div>
-                                        <div className="graph-module__cell graph-module__cell--small">Packet Loss</div>
-                                        <div className="graph-module__cell graph-module__cell--small">Latency</div>
-                                    </div>
-                                </div>
-                                <div className="small-10 columns">
-                                    <div className="graph-holder graph-holder--small">
-                                        The small graph
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-*/}
                     </div>
 
                 {/* End graph */}
