@@ -6,6 +6,12 @@ import "../../css/graphs.css";
 
 
 export default React.createClass({
+    hostInfo: [],
+    getInitialState() {
+        return {
+            showHostSelectors: false
+        };
+    },
     render() {
         return (
 
@@ -14,19 +20,14 @@ export default React.createClass({
                         <div className="row">
                             {/* GRAPH: Source */}
                             <div className="medium-4 columns">
-                                <label htmlFor="source">Source:</label>
-                                <select className="no-margin" name="source" id="source">
-                                    <option>Source One</option>
-                                    <option>Source Two</option>
-                                    <option>Source Three</option>
-                                </select>
+                                {this.renderHostList("source", "Source")}
 
                                 {/* GRAPH: Source Host Info*/}
                                 <a className="js-sidebar-popover-toggle"href="#">Host info <i className="fa fa-angle-down"></i></a>
 
                                 <div className="sidebar-popover sidebar-popover--overview">
                                     <a className="sidebar-popover__close js-sidebar-popover-close">Close &nbsp;<i className="fa fa-close"></i></a>
-                                    <h4 className="sidebar-popover__heading">Host inhtmlFormation</h4>
+                                    <h4 className="sidebar-popover__heading">Host information</h4>
                                     <ul className="sidebar-popover__list">
                                         <li className="sidebar-popover__item">
                                             <span className="sidebar-popover__param">IP:</span>
@@ -50,19 +51,15 @@ export default React.createClass({
 
                             {/* GRAPH: Destination */}
                             <div className="medium-4 columns">
-                                <label htmlFor="destination">Destination:</label>
-                                <select className="no-margin" name="destination" id="destination">
-                                    <option>Destination One</option>
-                                    <option>Destination Two</option>
-                                    <option>Destination Three</option>
-                                </select>
+                                {this.renderHostList("dest", "Destination")}
+
 
                                 {/* GRAPH: Destination Host Info*/}
                                 <a className="js-sidebar-popover-toggle"href="#">Host info <i className="fa fa-angle-down"></i></a>
 
                                 <div className="sidebar-popover sidebar-popover--overview">
                                     <a className="sidebar-popover__close js-sidebar-popover-close">Close &nbsp;<i className="fa fa-close"></i></a>
-                                    <h4 className="sidebar-popover__heading">Host inhtmlFormation</h4>
+                                    <h4 className="sidebar-popover__heading">Host information</h4>
                                     <ul className="sidebar-popover__list">
                                         <li className="sidebar-popover__item">
                                             <span className="sidebar-popover__param">IP:</span>
@@ -86,7 +83,7 @@ export default React.createClass({
 
                             {/* GRAPH: Reporting range */}
                             <div className="medium-4 columns">
-                                <label>Report range</label>
+                                <label className="hostLabel">Report range</label>
                                 <button className="button-quiet button--full-width">Wed May 4, 2016 - Mon May 16, 2016 <i className="fa fa-calendar"></i></button>
                             </div>
                         </div> {/* End row */}
@@ -95,6 +92,58 @@ export default React.createClass({
         {/* End chartHeader */}
         </div> 
         ); // End render()
+    },
+    renderHostList: function( type, label ) {
+        if ( this.state.showHostSelectors ) {
+            return (
+                <div>
+                                <label htmlFor="source">Source:</label>
+                                <select className="no-margin" name="source" id="source">
+                                    <option>Source One</option>
+                                    <option>Source Two</option>
+                                    <option>Source Three</option>
+                                </select>
+                </div>
+               );
+        } else {
+            let hostInfo = this.hostInfo;
+            let hosts = [];
+            for( var i in hostInfo ) {
+                let row = hostInfo[i];
+                hosts.push( 
+                    <div className="hostname" key="hostname">{row[ type + "_host"]}</div>,
+                    <div className="address" key="ip">{row[ type + "_ip"]}</div>
+                );
+                
+            }
+            if ( hostInfo.length > 1 ) {
+                label += "s";
+            }
+            return (
+                    <div>
+                                    <div className="hostLabel">{label}</div>
+                                    {hosts}
+                    </div>
+                   );
+        }
+    },
+    componentDidMount: function() {
+            HostInfoStore.subscribe(this.updateChartHeader);
+
+    },
+    componentWillUnmount: function() {
+        //this.serverRequest.abort();
+        HostInfoStore.unsubscribe( this.updateChartHeader );
+    },
+    updateChartHeader: function() {
+        console.log("updating chart header");
+        let hostInfo = HostInfoStore.getHostInfoData();
+        console.log("hostInfo", hostInfo);
+        //this.setState({hostInfo: hostInfo});
+        this.hostInfo = hostInfo;
+        this.forceUpdate();
+
     }
+
 
 });

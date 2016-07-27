@@ -2,10 +2,11 @@ import React from "react";
 import _ from "underscore";
 
 import Chart1 from "./chart1.jsx";
-import ChartHeader from "./chartHeader";
+import ChartHeader from "./ChartHeader";
 import HostInfoStore from "./HostInfoStore";
 
 import "../../css/graphs.css";
+import "../../toolkit/web-ng/root/js/app.js"
 
 const text = 'perfSONAR chart';
 

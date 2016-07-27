@@ -18,6 +18,15 @@ module.exports = {
      *   ...
      *  }
      */
+    hostInfo: [],
+    /*
+    getInitialState() {
+        return {
+        };
+
+    },
+    */
+
     getHostInfo: function( source_input, dest_input ) {
         let url = "http://perfsonar-dev.grnoc.iu.edu/perfsonar-graphs/graphData.cgi?action=hosts";
         //url += "&src=140.182.44.162&dest=140.182.45.175";
@@ -46,8 +55,13 @@ module.exports = {
         }.bind(this));
 
     },
+    getHostInfoData: function( ) {
+        return this.hostInfo;
+    },
     handleHostInfoResponse: function( data ) {
         console.log( "HostInfo data", data );
+        //this.setState({hostInfo: data});
+        this.hostInfo = data;
         emitter.emit("get");
     },
     subscribe: function( callback ) {
