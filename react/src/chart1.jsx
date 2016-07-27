@@ -2,7 +2,7 @@ import React from "react";
 import _ from "underscore";
 import moment from "moment";
 import Markdown from "react-markdown";
-import PSGraphData from "./PSGraphData";
+import GraphDataStore from "./GraphDataStore";
 //import Highlighter from "./highlighter";
 
 
@@ -475,7 +475,7 @@ export default React.createClass({
 
     updateChartData: function() {
         console.log("updating chart data");
-        let newChartSeries = PSGraphData.getChartData();
+        let newChartSeries = GraphDataStore.getChartData();
         console.log("new series", newChartSeries);
         this.setState({ chartSeries: newChartSeries } );
         this.forceUpdate();
@@ -508,13 +508,13 @@ export default React.createClass({
         let ma_url = this.props.ma_url || "http://perfsonar-dev.grnoc.iu.edu/esmond/perfsonar/archive/";
 
 
-        PSGraphData.subscribe(this.updateChartData);
+        GraphDataStore.subscribe(this.updateChartData);
 
         if ( src === null || dst === null ) {
             //return;
         }
 
-        PSGraphData.getHostPairMetadata( src, dst, start, end, ma_url );
+        GraphDataStore.getHostPairMetadata( src, dst, start, end, ma_url );
 
 
         var values = this.esmondToTimeSeries( failures, 'failures' );
@@ -526,7 +526,7 @@ export default React.createClass({
 
     componentWillUnmount: function() {
         this.serverRequest.abort();
-        PSGraphData.unsubscribe( this.updateChartData );
+        GraphDataStore.unsubscribe( this.updateChartData );
     },
 
     _checkSortOrder : function( ary, valName='ts' ) {

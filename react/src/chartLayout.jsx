@@ -2,6 +2,7 @@ import React from "react";
 import _ from "underscore";
 
 import Chart1 from "./chart1.jsx";
+import HostInfoStore from "./HostInfoStore";
 
 import "../../css/graphs.css";
 
@@ -401,6 +402,9 @@ export default React.createClass({
             ma_url: ma_url
         };
         console.log("newState", newState);
+
+        // TODO: allow multiple src/dest pairs
+        HostInfoStore.getHostInfo( src, dst );
 
         //this.setState(newState);
         //this.forceUpdate();
