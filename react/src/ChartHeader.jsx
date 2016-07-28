@@ -116,8 +116,8 @@ export default React.createClass({
                 for( var i in hostInfo ) {
                     let row = hostInfo[i];
                     hosts.push( 
-                            <div className="hostname" key="hostname">{row[ type + "_host"]}</div>,
-                            <div className="address" key="ip">{row[ type + "_ip"]}</div>
+                            <div className="hostname" key={"hostname"+i}>{row[ type + "_host"]}</div>,
+                            <div className="address" key={"ip"+i}>{row[ type + "_ip"]}</div>
                             );
 
                 }
