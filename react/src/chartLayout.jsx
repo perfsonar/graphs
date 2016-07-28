@@ -6,6 +6,7 @@ import ChartHeader from "./ChartHeader";
 import HostInfoStore from "./HostInfoStore";
 
 import "../../css/graphs.css";
+//import "../../toolkit/web-ng/root/css/app.css"
 import "../../toolkit/web-ng/root/js/app.js"
 
 const text = 'perfSONAR chart';
@@ -132,7 +133,10 @@ export default React.createClass({
         return (
 
                 <div className="graph">
-                <ChartHeader />
+                <ChartHeader 
+                    sources={this.state.src}
+                    dests={this.state.dst}
+                />
 
                     {/* GRAPH: Select Data*/}
                     <div className="graph-filters">
@@ -225,7 +229,7 @@ export default React.createClass({
         console.log("newState", newState);
 
         // TODO: allow multiple src/dest pairs
-        HostInfoStore.getHostInfo( src, dst );
+        HostInfoStore.retrieveHostInfo( src, dst );
 
         //this.setState(newState);
         //this.forceUpdate();

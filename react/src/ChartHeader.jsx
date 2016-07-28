@@ -2,6 +2,8 @@ import React from "react";
 
 import HostInfoStore from "./HostInfoStore";
 
+import InterfaceInfoStore from "./InterfaceInfoStore";
+
 import "../../css/graphs.css";
 
 
@@ -9,7 +11,9 @@ export default React.createClass({
     hostInfo: [],
     getInitialState() {
         return {
-            showHostSelectors: false
+            showHostSelectors: false,
+            sources: [],
+            dests: []
         };
     },
     render() {
@@ -108,13 +112,17 @@ export default React.createClass({
         } else {
             let hostInfo = this.hostInfo;
             let hosts = [];
-            for( var i in hostInfo ) {
-                let row = hostInfo[i];
-                hosts.push( 
-                    <div className="hostname" key="hostname">{row[ type + "_host"]}</div>,
-                    <div className="address" key="ip">{row[ type + "_ip"]}</div>
-                );
-                
+            if ( hostInfo.length > 0 ) {
+                for( var i in hostInfo ) {
+                    let row = hostInfo[i];
+                    hosts.push( 
+                            <div className="hostname" key="hostname">{row[ type + "_host"]}</div>,
+                            <div className="address" key="ip">{row[ type + "_ip"]}</div>
+                            );
+
+                }
+            } else {
+                hosts.push( <div className="hostname"></div>, <div className="address"></div> );
             }
             if ( hostInfo.length > 1 ) {
                 label += "s";
@@ -129,6 +137,7 @@ export default React.createClass({
     },
     componentDidMount: function() {
             HostInfoStore.subscribe(this.updateChartHeader);
+            InterfaceInfoStore.retrieveInterfaceInfo( this.props.sources, this.props.dests );
 
     },
     componentWillUnmount: function() {
