@@ -40,7 +40,6 @@ module.exports = {
         }.bind(this));
     },
     handleLSListResponse: function( data ) {
-        console.log("ls list", data);
         this.lsURLs = data;
         this.performLSCalls();
 
@@ -55,13 +54,12 @@ module.exports = {
             url += "&ls_url=" + encodeURI( lsURL );
             url += this.array2param("source", sources);
             url += this.array2param("dest", dests);
-            console.log("ls url: " + url);
             this.serverRequest = $.get( url, function(data) {
                 this.lsRequestCount++;
                 this.handleInterfaceInfoResponse( data );
             }.bind(this))
             .fail( function(jqXHR, textStatus, errorThrown) {
-                console.log('fail jqXHR, textStatus, errorThrown', jqXHR, textStatus, errorThrown);
+                //console.log('fail jqXHR, textStatus, errorThrown', jqXHR, textStatus, errorThrown);
             }.bind(this));
 
         }
@@ -85,28 +83,14 @@ module.exports = {
         }
         this.sources = sources;
         this.dests = dests;
-        console.log("sources", sources);
-        console.log("dests", dests);
 
         this.retrieveLSList();
-        /*
-        for (let i=0; i<sources.length; i++ ) {
-            url += "&src=" + sources[i];
-            url += "&dest=" + dests[i];
-
-        }
-        console.log("url", url);
-        this.serverRequest = $.get( url, function(data) {
-            this.handleInterfaceInfoResponse( data );
-        }.bind(this));
-        */
 
     },
     getInterfaceInfoData: function( ) {
         return this.interfaceObj;
     },
     handleInterfaceInfoResponse: function( data ) {
-        console.log( "InterfaceInfo data", data );
         this.addData( data );
         this.interfaceInfo = data;
     },
@@ -147,7 +131,6 @@ module.exports = {
             let newRow = {};
             for (var j in results){
                 let row = rows[i][j];
-                console.log("row", row);
 
                 for (var k in sources){
                     if (sources[k] == row.source_ip){
@@ -198,12 +181,9 @@ module.exports = {
             }
                 if ( !  $.isEmptyObject( newRow ) ) {
                     this.interfaceInfo.push( newRow );
-                    console.log("added new row; interfaceInfo:", this.interfaceInfo);
-                    console.log("newObj", newObj);
                 }
         }
         this.interfaceObj = newObj;
-        console.log("interfaceObj", this.interfaceObj);
         emitter.emit("get");
     },
     // Retrieves interface details for a specific ip and returns them
