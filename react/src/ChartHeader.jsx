@@ -67,21 +67,21 @@ export default React.createClass({
                 for( var i in hostInfo ) {
                     let row = hostInfo[i];
                     hosts.push( 
-                            <div className="hostname" key={"hostname"+i}>{row[ type + "_host"]}</div>,
-                            <div className="address" key={"ip"+i}>{row[ type + "_ip"]}</div>,
-                            <div>{this.showDetailedHostInfo( row[type + "_ip" ] )}</div>
+                            <div className="hostname" key={"hostname"+label+i}>{row[ type + "_host"]}</div>,
+                            <div className="address" key={"ip"+label+i}>{row[ type + "_ip"]}</div>,
+                            <div key={"detailedInfo"+label+i}>{this.showDetailedHostInfo( row[type + "_ip" ] )}</div>
                             );
 
                 }
             } else {
-                hosts.push( <div className="hostname"></div>, <div className="address"></div> );
+                hosts.push( <div className="hostname" key={"nohostname"+label}></div>, <div className="address" key={"noaddress"+label}></div> );
             }
             if ( hostInfo.length > 1 ) {
                 label += "s";
             }
             return (
                     <div>
-                                    <div className="hostLabel">{label}</div>
+                                    <div className="hostLabel" key={"hostLabel"+label}>{label}</div>
                                     {hosts}
                     </div>
                    );
