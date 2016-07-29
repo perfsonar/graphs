@@ -59,8 +59,6 @@ module.exports = {
         return this.hostInfo;
     },
     handleHostInfoResponse: function( data ) {
-        console.log( "HostInfo data", data );
-        //this.setState({hostInfo: data});
         this.hostInfo = data;
         emitter.emit("get");
     },

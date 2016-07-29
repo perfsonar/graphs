@@ -13,10 +13,9 @@ module.exports = {
      *   src: "1.2.3.4,"
      *   dst: "2.3.4.5",
      * }
-     * returns host info as
+     * Createes a cache keyed on ip addressas
      * { 
-     *   src_ip: "1.2.3.4", 
-     *   src_host: "hostname.domain"
+     *   {"ip"}: { addresses, mtu, capacity}
      *   ...
      *  }
      */
@@ -104,7 +103,7 @@ module.exports = {
 
     },
     getInterfaceInfoData: function( ) {
-        return this.interfaceInfo;
+        return this.interfaceObj;
     },
     handleInterfaceInfoResponse: function( data ) {
         console.log( "InterfaceInfo data", data );
@@ -123,23 +122,10 @@ module.exports = {
         return joiner + array.join(joiner);
     },
     addData: function( data ) {
-            this.lsInterfaceResults.push( data );
-            console.log("added interface data", data);
-            /*
-        if (! $.isEmptyObject(data) ) {
-            this.lsInterfaceResults.push( data );
-            console.log("added interface data", data);
-        } else {
-            console.log( "interface data was emtpy!" );
-
-        }
-        */
-        console.log("this.lsInterfaceResults", this.lsInterfaceResults);
-        console.log("lsInterfaceResults.length", this.lsInterfaceResults.length, "requestCount", this.lsRequestCount);
+        this.lsInterfaceResults.push( data );
         if ( this.lsInterfaceResults.length == this.lsRequestCount ) {
             this.combineData();
         }
-
     },
 
     combineData: function( ) {
@@ -216,8 +202,19 @@ module.exports = {
                     console.log("newObj", newObj);
                 }
         }
-        console.log("combined sources: ", sources);
-        console.log("combined dests: ", dests);
+        this.interfaceObj = newObj;
+        console.log("interfaceObj", this.interfaceObj);
         emitter.emit("get");
+    },
+    // Retrieves interface details for a specific ip and returns them
+    // Currently keys on ip; could extend to search all addresses later if needed
+    getInterfaceDetails: function( host ) {
+        let details = this.interfaceObj || {};
+        if ( host in details ) {
+            return details[host];
+
+        }
+        // host not found in the cache, return empty object
+        return {};
     }
 };
