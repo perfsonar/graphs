@@ -62,7 +62,7 @@ module.exports = {
                 let url = ma_url + "?source=" + src + "&destination=" + dst;
                 url += "&time-start=" + start + "&time-end=" + end;
                 console.log("url: ", url);
-                urls.push(url);
+                urls.push(url); // TODO: review -- do we need this?
 
                 this.serverRequest = $.get( url, function(data) {
                     this.handleMetadataResponse(data, direction[j]);
@@ -149,7 +149,7 @@ module.exports = {
         for(let i in metaData) {
             let datum = metaData[i];
             let direction = datum.direction;
-            console.log("datum", datum);
+            console.log("getData datum", datum);
             for( let j in datum["event-types"] ) {
                 let eventTypeObj = datum["event-types"][j];
                 let eventType = eventTypeObj["event-type"];
@@ -163,7 +163,6 @@ module.exports = {
                     let win = $.grep( summaries, function( summary, k ) {
                         return summary["summary-type"] == summaryType && summary["summary-window"] == window;
                     });
-                    console.log("win", win);
                     if ( win.length > 1 ) {
                         console.log("WEIRD: multiple summary windows found. This should not happen.");
                     } else if ( win.length == 1 ) {
@@ -177,7 +176,6 @@ module.exports = {
                     let win = $.grep( summaries, function( summary, k ) {
                         return summary["summary-type"] == summaryType && summary["summary-window"] == window;
                     });
-                    console.log("single value window", win);
                     // TODO: allow lower summary windows
                     if ( win.length > 1 ) {
                         console.log("WEIRD: multiple summary windows found. This should not happen.");
@@ -202,27 +200,41 @@ module.exports = {
                 uri += "?time-start=" + start + "&time-end=" + end;
                 let url = baseURL + uri;
                 console.log("url", url);
+                let row = {
+                    eventType: eventType,
+                    url: url,
+                    direction: direction,
+                    protocol: datum["ip-transport-protocol"]
+                    // TODO: add protocol?
+                };
 
-                urls.push( {eventType: eventType, url: url, direction: direction});
+                urls.push( row );
 
                 dataReqCount++; // TODO: double check the ordre of this and the request
 
                 this.serverRequest = $.get( url, function(data) {
-                    this.handleDataResponse(data, eventType, direction);
+                    this.handleDataResponse(data, eventType, row);
                 }.bind(this));
 
 
             }
         }
+        console.log("urls", urls);
 
     },
-    handleDataResponse: function( data, eventType, direction ) {
-        //console.log("response data: ", data);
+    handleDataResponse: function( data, eventType, datum ) {
+        console.log("data response datum", datum);
+        let direction = datum.direction;
+        let protocol = datum.protocol;
+        console.log("response data: ", data);
         let row = {};
         row.eventType = eventType;
         row.direction = direction;
         row.data = data;
-        this.chartData.push( row );
+        row.protocol = protocol;
+        if (data.length > 0) {
+            this.chartData.push( row );
+        }
         //$.merge( this.chartData, data );
         completedDataReqs++;
         if ( completedDataReqs == dataReqCount ) {
@@ -236,7 +248,7 @@ module.exports = {
 
             // TODO: change this so it creates the esmond time series upon completion of each request, rather than after all requests has completed
 
-            let newChartData = this.esmondToTimeSeries( this.chartData );
+            let newChartData = this.esmondToTimeSeries( this.chartData, datum );
 
             this.chartData = newChartData;
 
@@ -252,11 +264,16 @@ module.exports = {
         return this.chartData;
 
     },
-    esmondToTimeSeries: function( inputData, seriesName ) {
+    esmondToTimeSeries: function( inputData, metadatum ) {
+        console.log("esmondToTimeSeries inputData", inputData);
+        console.log("esmondToTimeSeries metadatum", metadatum);
         let outputData = {};
         $.each( inputData, function( index, datum ) {
             let eventType = datum.eventType;
             let direction = datum.direction;
+            let protocol = datum.protocol;
+            console.log( "esmondToTimeSeries inputData", inputData);
+            console.log( "esmondToTimeSeries datum", datum);
 
             var values = [];
             var series = {};
@@ -284,25 +301,35 @@ module.exports = {
                 values.push([timestamp.toDate().getTime(), value]);
 
             });
-            console.log('creating series ...', Date());
+            //console.log('creating series ...', Date());
 
             series = new TimeSeries({
                 name: eventType + "." + direction,
                 columns: ["time", "value"],
                 points: values
             });
-            console.log('created series ...', series, "values", values);
+            //console.log('created series ...', series, "values", values);
 
             if ( !( eventType in outputData ) ) {
-                outputData[eventType] = {};
+                outputData[eventType] = [];
 
             }
+            let row = {};
+            row.direction = direction;
+            row.protocol = protocol;
+            row.values = series;
+            outputData[eventType].push( row );
+            //row.ipversion = ipversion;
+            /*
             if ( ! ( direction in outputData[eventType] ) ) {
-                outputData[eventType][direction] = series;
+                outputData[eventType][direction] = {};
+                outputData[eventType]["values"] = series;
             }  else {
                 $.merge( outputData[eventType][direction], series );
             }
+            */
         });
+        console.log("outputData", outputData);
         return outputData;
     },
     subscribe: function( callback ) {
