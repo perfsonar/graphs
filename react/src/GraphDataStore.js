@@ -223,10 +223,8 @@ module.exports = {
 
     },
     handleDataResponse: function( data, eventType, datum ) {
-        console.log("data response datum", datum);
         let direction = datum.direction;
         let protocol = datum.protocol;
-        console.log("response data: ", data);
         let row = {};
         row.eventType = eventType;
         row.direction = direction;
@@ -260,13 +258,24 @@ module.exports = {
 
         }
     },
-    getChartData: function() {
-        return this.chartData;
+    getChartData: function( eventType ) {
+        let data = this.chartData;
+        let results;
+        if ( typeof eventType == "undefined" || typeof data[ eventType ] == "undefined" ) {
+            results = data;
+        } else {
+            results = data[ eventType ];
+            /*
+            results = $.grep( data, function(e) {
+                return e[eventType];
+            });
+            */
+
+        }
+        return results;
 
     },
     esmondToTimeSeries: function( inputData, metadatum ) {
-        console.log("esmondToTimeSeries inputData", inputData);
-        console.log("esmondToTimeSeries metadatum", metadatum);
         let outputData = {};
         let max;
         let min;
@@ -274,8 +283,6 @@ module.exports = {
             let eventType = datum.eventType;
             let direction = datum.direction;
             let protocol = datum.protocol;
-            console.log( "esmondToTimeSeries inputData", inputData);
-            console.log( "esmondToTimeSeries datum", datum);
 
             var values = [];
             var series = {};
@@ -313,7 +320,7 @@ module.exports = {
             //console.log('created series ...', series, "values", values);
 
             if ( !( eventType in outputData ) ) {
-                outputData[eventType] = [];
+                outputData[eventType] = {};
             } else {
                 if (typeof outputData[eventType].min != "undefined") {
                     max = outputData[eventType].min;
@@ -323,8 +330,9 @@ module.exports = {
                 }
             }
             let row = {};
-            row.direction = direction;
-            row.protocol = protocol;
+            row.properties = {};
+            row.properties.direction = direction;
+            row.properties.protocol = protocol;
             row.values = series;
 
             // Update the min for the event type
@@ -341,16 +349,11 @@ module.exports = {
                 outputData[eventType].max = series.max();
             }
 
-            outputData[eventType].push( row );
-            //row.ipversion = ipversion;
-            /*
-            if ( ! ( direction in outputData[eventType] ) ) {
-                outputData[eventType][direction] = {};
-                outputData[eventType]["values"] = series;
-            }  else {
-                $.merge( outputData[eventType][direction], series );
+            if ( ! ( "results" in outputData[eventType] ) ) {
+                outputData[eventType].results = [];
             }
-            */
+            outputData[eventType].results.push( row );
+            //row.ipversion = ipversion;
         });
         console.log("outputData", outputData);
         return outputData;

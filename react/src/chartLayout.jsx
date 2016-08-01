@@ -78,7 +78,6 @@ const ipv4Style = {
 }
 
 
-
 const reverseStyles = {
     value: {
         stroke: scheme.connections,
@@ -110,6 +109,18 @@ const brushStyle = {
 
 export default React.createClass({
     displayName: "ChartLayout",
+
+    colors: {
+        tcp: "#0076b4", // blue
+        udp: "#cc7dbe", // purple
+        ipv4: "#e5a11c", // yellow
+        ipv6: "#633" // brown from old graphs
+
+    },
+
+    getColors() {
+        return this.colors;
+    },
 
     //mixins: [Highlighter],
 
