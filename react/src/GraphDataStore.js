@@ -268,6 +268,8 @@ module.exports = {
         console.log("esmondToTimeSeries inputData", inputData);
         console.log("esmondToTimeSeries metadatum", metadatum);
         let outputData = {};
+        let max;
+        let min;
         $.each( inputData, function( index, datum ) {
             let eventType = datum.eventType;
             let direction = datum.direction;
@@ -312,12 +314,33 @@ module.exports = {
 
             if ( !( eventType in outputData ) ) {
                 outputData[eventType] = [];
-
+            } else {
+                if (typeof outputData[eventType].min != "undefined") {
+                    max = outputData[eventType].min;
+                }
+                if (typeof outputData[eventType].max != "undefined") {
+                    max = outputData[eventType].max;
+                }
             }
             let row = {};
             row.direction = direction;
             row.protocol = protocol;
             row.values = series;
+
+            // Update the min for the event type
+            if ( !isNaN( Math.min( series.min(), min ) ) ) {
+                outputData[eventType].min = Math.min( series.min(), min );
+            } else if ( !isNaN( series.min() ) ) {
+                outputData[eventType].min = series.min();
+            }
+
+            // Update the max for the event type
+            if ( !isNaN( Math.max( series.max(), max ) ) ) {
+                outputData[eventType].max = Math.max( series.max(), max );
+            } else if ( !isNaN( series.max() ) ) {
+                outputData[eventType].max = series.max();
+            }
+
             outputData[eventType].push( row );
             //row.ipversion = ipversion;
             /*

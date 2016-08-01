@@ -188,13 +188,13 @@ export default React.createClass({
 
         if ( this.state.active.throughput && this.checkEventType("throughput", "forward") ) {
             charts.push(
-                <LineChart key={"throughput" + Math.floor( Math.random() )} axis="axis2" series={chartSeries.throughput.forward} style={lineStyles} smooth={false} breakLine={true} min="{chartSeries.throughput.forward.min()}" max="{chartSeries.throughput.forward.max()}" columns={[ "value" ]} />
+                <LineChart key={"throughput" + Math.floor( Math.random() )} axis="axis2" series={chartSeries.throughput.forward} style={lineStyles} smooth={false} breakLine={true} min="{chartSeries.throughput.forward.min()}" max="{chartSeries.throughput.max()}" columns={[ "value" ]} />
             );
         }
         if ( this.state.active.throughput && this.checkEventType("throughput", "reverse") ) {
             // TODO: fix this to forward instead of reverse
             charts.push(
-                <LineChart key={"reverseThroughput" + Math.floor( Math.random() )} axis="axis2" series={chartSeries.throughput.reverse} style={reverseStyles} smooth={false} breakLine={true} min="{chartSeries.throughput.reverse.min()}" max="{chartSeries.throughput.reverse.max()}" />
+                <LineChart key={"reverseThroughput" + Math.floor( Math.random() )} axis="axis2" series={chartSeries.throughput.reverse} style={reverseStyles} smooth={false} breakLine={true} min="{chartSeries.throughput.reverse.min()}" max="{chartSeries.throughput.max()}" />
             );
         }
         if (this.state.active.throughput && this.checkEventType("histogram-owdelay", "forward") ) { // TODO: fix state part
