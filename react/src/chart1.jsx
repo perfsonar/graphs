@@ -222,23 +222,28 @@ export default React.createClass({
     },
 
     renderChart() {
-        let charts = [];
+        let charts = {};
+        charts.throughput = {};
+        charts.throughput.ipv4 = [];
+        //charts.throughput.charts = [];
+
         let latencyCharts = [];
         let lossCharts = [];
         let chartSeries = this.state.chartSeries;
 
         let throughputData = GraphDataStore.getChartData("throughput");
         console.log("throughputData", throughputData);
-        if ( this.state.active.throughput ) {
-            for(let i in throughputData.results) {
-                let series = throughputData.results[i].values;
-                let properties = throughputData.results[i].properties;
+        if ( this.state.active.throughput && ( "ipv4" in throughputData  ) ) {
+            for(let i in throughputData.ipv4.results) {
+                let series = throughputData.ipv4.results[i].values;
+                let properties = throughputData.ipv4.results[i].properties;
                 //let protocol = throughputData.results[i].protocol;
                 //let direction = throughputData.results[i].direction;
                 //console.log('pushing chart ', i );
-                charts.push(
+                //let ipversion = properties.ipversion;
+                charts.throughput.ipv4.push(
                     <LineChart key={"throughput" + Math.floor( Math.random() )}
-                        axis="axis2" series={series} 
+                        axis="axis2" series={series}
                         style={getChartStyle( properties )} smooth={false} breakLine={true}
                         min="{chartSeries.throughput.min}"
                         max="{chartSeries.throughput.max}"
@@ -294,7 +299,7 @@ export default React.createClass({
         latencyCharts = []; lossCharts = []; // TODO: remove - debugging only
 
         var timerange;
-        
+
         if (chartSeries) {
             //console.log('throughputSeries is defined');
             //console.log('throughput timerange', timerange);
@@ -345,8 +350,9 @@ export default React.createClass({
                                 max={chartSeries.throughput.max}
                                 width={80} type="linear" align="left" />
                                 <Charts>
-                                    {charts}
+                                    {charts.throughput.ipv4}
                                     {/*
+                                    {charts}
                                     <ScatterChart axis="axis2" series={failureSeries} style={{color: "steelblue", opacity: 0.5}} />
                                     */}
                                 </Charts>

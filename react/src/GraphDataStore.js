@@ -2,9 +2,11 @@ import moment from "moment";
 
 import { TimeSeries, TimeRange } from "pondjs";
 
-var EventEmitter = require('events').EventEmitter;
+let ipaddr = require('ipaddr.js');
 
-var emitter = new EventEmitter();
+let EventEmitter = require('events').EventEmitter;
+
+let emitter = new EventEmitter();
 
 let reqCount = 0;
 let dataReqCount = 0;
@@ -156,6 +158,20 @@ module.exports = {
                 let summaries = eventTypeObj["summaries"];
                 let summaryType = defaultSummaryType;
 
+                let source = datum.source;
+
+                let addr = ipaddr.parse( source );
+
+                let ipversion;
+                if ( ipaddr.isValid( source ) ) {
+                    ipversion = addr.kind( source );
+                    console.log("source", source, ipversion);
+
+                } else {
+                    console.log("invalid IP address");
+
+                }
+
                 let uri = null;
 
                 if ( $.inArray( eventType, multipleTypes ) >= 0 ) {
@@ -200,15 +216,19 @@ module.exports = {
                 uri += "?time-start=" + start + "&time-end=" + end;
                 let url = baseURL + uri;
                 console.log("url", url);
+                let row = pruneDatum( datum );
+                row.protocol = datum["ip-transport-protocol"];
+                row.ipversion = ipversion;
+                console.log("row", row);
+                /*
                 let row = {
                     eventType: eventType,
                     url: url,
                     direction: direction,
-                    protocol: datum["ip-transport-protocol"]
-                    // TODO: add protocol?
+                    protocol: datum["ip-transport-protocol"],
+                    ipversion: ipversion
                 };
-
-                urls.push( row );
+                */
 
                 dataReqCount++; // TODO: double check the ordre of this and the request
 
@@ -219,17 +239,16 @@ module.exports = {
 
             }
         }
-        console.log("urls", urls);
 
     },
     handleDataResponse: function( data, eventType, datum ) {
         let direction = datum.direction;
         let protocol = datum.protocol;
-        let row = {};
+        let row = datum;
         row.eventType = eventType;
-        row.direction = direction;
+        //row.direction = direction;
         row.data = data;
-        row.protocol = protocol;
+        //row.protocol = protocol;
         if (data.length > 0) {
             this.chartData.push( row );
         }
@@ -246,7 +265,7 @@ module.exports = {
 
             // TODO: change this so it creates the esmond time series upon completion of each request, rather than after all requests has completed
 
-            let newChartData = this.esmondToTimeSeries( this.chartData, datum );
+            let newChartData = this.esmondToTimeSeries( this.chartData );
 
             this.chartData = newChartData;
 
@@ -275,10 +294,23 @@ module.exports = {
         return results;
 
     },
-    esmondToTimeSeries: function( inputData, metadatum ) {
+    getIPVersions: function() {
+        let data = this.chartData;
+        $.each( data, function( index, datum ) {
+
+            $.each( datum.data, function( valIndex, val ) {
+
+            });
+
+
+        });
+
+    },
+    esmondToTimeSeries: function( inputData ) {
         let outputData = {};
         let max;
         let min;
+        console.log("esmondToTimeSeries inputData", inputData);
         $.each( inputData, function( index, datum ) {
             let eventType = datum.eventType;
             let direction = datum.direction;
@@ -319,8 +351,12 @@ module.exports = {
             });
             //console.log('created series ...', series, "values", values);
 
+            let ipversion = datum.ipversion;
+            // TODO: add ipversion to the date selector here (maybe not?)
+
             if ( !( eventType in outputData ) ) {
                 outputData[eventType] = {};
+                outputData[eventType][ipversion] = {};
             } else {
                 if (typeof outputData[eventType].min != "undefined") {
                     max = outputData[eventType].min;
@@ -330,9 +366,10 @@ module.exports = {
                 }
             }
             let row = {};
-            row.properties = {};
-            row.properties.direction = direction;
-            row.properties.protocol = protocol;
+            row.properties = pruneDatum( datum );
+            //row.properties = {};
+            //row.properties.direction = direction;
+            //row.properties.protocol = protocol;
             row.values = series;
 
             // Update the min for the event type
@@ -349,10 +386,10 @@ module.exports = {
                 outputData[eventType].max = series.max();
             }
 
-            if ( ! ( "results" in outputData[eventType] ) ) {
-                outputData[eventType].results = [];
+            if ( ! ( "results" in outputData[eventType][ipversion] ) ) {
+                outputData[eventType][ipversion].results = [];
             }
-            outputData[eventType].results.push( row );
+            outputData[eventType][ipversion].results.push( row );
             //row.ipversion = ipversion;
         });
         console.log("outputData", outputData);
@@ -368,3 +405,14 @@ module.exports = {
     },
 
 };
+
+let pruneDatum = function( oldDatum ) {
+        let datum = {};
+        for(let i in oldDatum) {
+            console.log("oldDatum", i);
+            if ( i != "data" ) {
+                datum[i] = oldDatum[i];
+            }
+        }
+        return datum;
+    };
