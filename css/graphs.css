@@ -47,10 +47,30 @@
  * Filter active states
 */
 
-.graph-filter__item.graph-filter__item--blue-active a {
-    background-color: #0089ff;
+.graph-filter__item.graph-filter__item a {
     color: #fff;
 }
+
+.graph-filter__item.graph-filter__item--blue-active a {
+    background-color: #0076b4;
+}
+
+.graph-filter__item.graph-filter__item.tcp-active a {
+    background-color: #0076b4;
+}
+
+.graph-filter__item.graph-filter__item.udp-active a {
+    background-color: #cc7dbe;
+}
+
+.graph-filter__item.graph-filter__item.ipv4-active a {
+    background-color: #e5a11c;
+}
+
+.graph-filter__item.graph-filter__item.ipv6-active a {
+    background-color: #633;
+}
+
 
 .graph-filter__item:last-child {
     border-right: none;
@@ -151,4 +171,12 @@
 
 .graph-small {
     margin-top: 1em;
+}
+
+.graph .hostLabel {
+    font-weight:700;
+}
+
+.sidebar-popover__close span {
+    float:left;
 }
