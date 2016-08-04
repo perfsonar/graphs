@@ -277,7 +277,7 @@ module.exports = {
 
         }
     },
-    getChartData: function( eventType ) {
+    getChartDataOld: function( eventType ) {
         let data = this.chartData;
         let results;
         if ( typeof eventType == "undefined" || typeof data[ eventType ] == "undefined" ) {
@@ -291,6 +291,24 @@ module.exports = {
             */
 
         }
+        return results;
+
+    },
+    getChartData: function( filters ) {
+        let data = this.chartData;
+        console.log("getting chart data ... filters", filters); // TODO: figure out why filters sometimes undefined
+        let results = $.grep( data, function( e, i ) {
+            console.log("grepping e", e, "i", i, "filters", filters);
+            let found = true;
+            for (var key in filters ) {
+                if ( ( key in e.properties ) && e.properties[key] == val ) {
+                    found = found && true;
+                } else {
+                    return false;
+                }
+            }
+            return found;
+        });
         return results;
 
     },
@@ -310,6 +328,7 @@ module.exports = {
         let outputData = {};
         let max;
         let min;
+        let output = [];
         console.log("esmondToTimeSeries inputData", inputData);
         $.each( inputData, function( index, datum ) {
             let eventType = datum.eventType;
@@ -365,12 +384,16 @@ module.exports = {
                     max = outputData[eventType].max;
                 }
             }
+            //let row = pruneDatum( datum );
             let row = {};
             row.properties = pruneDatum( datum );
             //row.properties = {};
             //row.properties.direction = direction;
             //row.properties.protocol = protocol;
+            row.properties.eventType = eventType;
             row.values = series;
+            output.push(row);
+            console.log("output", output);
 
             // Update the min for the event type
             if ( !isNaN( Math.min( series.min(), min ) ) ) {
@@ -393,7 +416,7 @@ module.exports = {
             //row.ipversion = ipversion;
         });
         console.log("outputData", outputData);
-        return outputData;
+        return output;
     },
     subscribe: function( callback ) {
         emitter.on("get", callback);
@@ -409,7 +432,6 @@ module.exports = {
 let pruneDatum = function( oldDatum ) {
         let datum = {};
         for(let i in oldDatum) {
-            console.log("oldDatum", i);
             if ( i != "data" ) {
                 datum[i] = oldDatum[i];
             }

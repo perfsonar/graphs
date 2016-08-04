@@ -115,7 +115,7 @@ function getChartStyle( options ) {
     style.value.stroke = color;
     style.value.strokeWidth = width;
     style.value.strokeDasharray = strokeStyle;
-    console.log("style", style, "options", options);
+    //console.log("style", style, "options", options);
     return style;
 
 }
@@ -231,7 +231,11 @@ export default React.createClass({
         let lossCharts = [];
         let chartSeries = this.state.chartSeries;
 
-        let throughputData = GraphDataStore.getChartData("throughput");
+        let filter = {
+            eventType: "throughput",
+            ipversion: "ip4"
+        };
+        let throughputData = GraphDataStore.getChartData( filter );
         console.log("throughputData", throughputData);
         if ( this.state.active.throughput && ( "ipv4" in throughputData  ) ) {
             for(let i in throughputData.ipv4.results) {
