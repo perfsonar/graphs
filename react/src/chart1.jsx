@@ -233,14 +233,15 @@ export default React.createClass({
 
         let filter = {
             eventType: "throughput",
-            ipversion: "ip4"
+            ipversion: "4"
         };
         let throughputData = GraphDataStore.getChartData( filter );
         console.log("throughputData", throughputData);
-        if ( this.state.active.throughput && ( "ipv4" in throughputData  ) ) {
-            for(let i in throughputData.ipv4.results) {
-                let series = throughputData.ipv4.results[i].values;
-                let properties = throughputData.ipv4.results[i].properties;
+        if ( this.state.active.throughput && ( throughputData.results.length > 0 ) ) {
+            for(let i in throughputData.results) {
+                let data = throughputData.results[i];
+                let series = data.values;
+                let properties = data.properties;
                 //let protocol = throughputData.results[i].protocol;
                 //let direction = throughputData.results[i].direction;
                 //console.log('pushing chart ', i );
@@ -249,12 +250,13 @@ export default React.createClass({
                     <LineChart key={"throughput" + Math.floor( Math.random() )}
                         axis="axis2" series={series}
                         style={getChartStyle( properties )} smooth={false} breakLine={true}
-                        min="{chartSeries.throughput.min}"
-                        max="{chartSeries.throughput.max}"
+                        min="{throughputData.stats.min}"
+                        max="{throughputData.stats.max}"
                         columns={[ "value" ]} />
 
                 );
             }
+            console.log("charts with throughput", charts);
 
         }
 
@@ -351,7 +353,7 @@ export default React.createClass({
                         */}
                             <YAxis id="axis2" label="Throughput"  style={axisLabelStyle}
                                 labelOffset={offsets.label} min={0} format=".2s"
-                                max={chartSeries.throughput.max}
+                                max={throughputData.stats.max}
                                 width={80} type="linear" align="left" />
                                 <Charts>
                                     {charts.throughput.ipv4}

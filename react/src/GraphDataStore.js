@@ -164,7 +164,7 @@ module.exports = {
 
                 let ipversion;
                 if ( ipaddr.isValid( source ) ) {
-                    ipversion = addr.kind( source );
+                    ipversion = addr.kind( source ).substring(3);
                     console.log("source", source, ipversion);
 
                 } else {
@@ -297,19 +297,52 @@ module.exports = {
     getChartData: function( filters ) {
         let data = this.chartData;
         console.log("getting chart data ... filters", filters); // TODO: figure out why filters sometimes undefined
+        let min;
+        let max;
         let results = $.grep( data, function( e, i ) {
-            console.log("grepping e", e, "i", i, "filters", filters);
+            //console.log("grepping e", e, "i", i, "filters", filters);
             let found = true;
             for (var key in filters ) {
+                let val = filters[key];
+                //console.log("key", key, "val", val);
                 if ( ( key in e.properties ) && e.properties[key] == val ) {
-                    found = found && true;
+                    found = true;
                 } else {
                     return false;
                 }
             }
             return found;
         });
-        return results;
+        $.each( results, function( i, val ) {
+            console.log("i", i, "val", val);
+            let values = val.values;
+            let valmin = values.min();
+
+            // Update the min for the filtered data
+            if ( !isNaN( Math.min( valmin, min ) ) ) {
+                min = Math.min( valmin, min );
+            } else if ( !isNaN( valmin ) ) {
+                min = valmin;
+            }
+
+            // Update the max for the event type
+            let valmax = values.max();
+            // Update the max for the filtered data
+            if ( !isNaN( Math.max( valmax, max ) ) ) {
+                max = Math.max( valmax, max );
+            } else if ( !isNaN( valmax ) ) {
+                max = valmax;
+            }
+        });
+        let stats = {
+            min: min,
+            max: max
+        };
+
+        return {
+            stats: stats,
+            results: results
+        };
 
     },
     getIPVersions: function() {
@@ -395,6 +428,8 @@ module.exports = {
             output.push(row);
             console.log("output", output);
 
+            /*
+
             // Update the min for the event type
             if ( !isNaN( Math.min( series.min(), min ) ) ) {
                 outputData[eventType].min = Math.min( series.min(), min );
@@ -413,6 +448,7 @@ module.exports = {
                 outputData[eventType][ipversion].results = [];
             }
             outputData[eventType][ipversion].results.push( row );
+            */
             //row.ipversion = ipversion;
         });
         console.log("outputData", outputData);
