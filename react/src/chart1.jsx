@@ -224,40 +224,72 @@ export default React.createClass({
     renderChart() {
         let charts = {};
         charts.throughput = {};
-        charts.throughput.ipv4 = [];
+        charts.throughput.chartRows = [];
+
+        let typesToChart = [ "throughput", "packet-loss-rate", "latency" ];
         //charts.throughput.charts = [];
 
         let latencyCharts = [];
         let lossCharts = [];
         let chartSeries = this.state.chartSeries;
 
-        let filter = {
-            eventType: "throughput",
-            ipversion: "4"
-        };
-        let throughputData = GraphDataStore.getChartData( filter );
-        console.log("throughputData", throughputData);
-        if ( this.state.active.throughput && ( throughputData.results.length > 0 ) ) {
-            for(let i in throughputData.results) {
-                let data = throughputData.results[i];
-                let series = data.values;
-                let properties = data.properties;
-                //let protocol = throughputData.results[i].protocol;
-                //let direction = throughputData.results[i].direction;
-                //console.log('pushing chart ', i );
-                //let ipversion = properties.ipversion;
-                charts.throughput.ipv4.push(
-                    <LineChart key={"throughput" + Math.floor( Math.random() )}
-                        axis="axis2" series={series}
-                        style={getChartStyle( properties )} smooth={false} breakLine={true}
-                        min="{throughputData.stats.min}"
-                        max="{throughputData.stats.max}"
-                        columns={[ "value" ]} />
+        // start for loop involving unique ipversion values here?
+        let unique = GraphDataStore.getUniqueValues( {"ipversion": 1} );
+        // TODO: get min/max for ALL throughput tests
+        let ipversions = unique.ipversion;
+        console.log("ipversions", ipversions);
+        let self = this;
+        let throughputData;
+        if ( ( typeof ipversions ) != "undefined" ) {
+            $.each( ipversions, function( i, ipversion ) {
+                let ipv = "ipv" + ipversion;
+                charts.throughput[ipv] = [];
+                charts.throughput[ipv].axes = [];
 
-                );
-            }
-            console.log("charts with throughput", charts);
+                let filter = {
+                    eventType: "throughput",
+                    ipversion: ipversion
+                };
+                throughputData = GraphDataStore.getChartData( filter );
+                console.log("throughputData", throughputData);
+                if ( self.state.active.throughput && ( throughputData.results.length > 0 ) ) {
+                    for(let i in throughputData.results) {
+                        let data = throughputData.results[i];
+                        let series = data.values;
+                        let properties = data.properties;
+                        //let protocol = throughputData.results[i].protocol;
+                        //let direction = throughputData.results[i].direction;
+                        //console.log('pushing chart ', i );
+                        //let ipversion = properties.ipversion;
+                        charts.throughput[ipv].push(
+                            <LineChart key={"throughput" + Math.floor( Math.random() )}
+                                axis="axis2" series={series}
+                                style={getChartStyle( properties )} smooth={false} breakLine={true}
+                                min="{throughputData.stats.min}"
+                                max="{throughputData.stats.max}"
+                                columns={[ "value" ]} />
+                        );
+                    }
+                        charts.throughput.chartRows.push(
+                            <ChartRow height={chartRow.height} debug={false}>
+                                <YAxis id="axis2" label={"Throughput (" + ipv + ")"}
+                                    style={axisLabelStyle}
+                                    labelOffset={offsets.label} min={0} format=".2s"
+                                    max={throughputData.stats.max}
+                                    width={80} type="linear" align="left" />
+                                <Charts>
+                                    {charts.throughput[ipv]}
+                                    {/*
+                                    {charts}
+                                    <ScatterChart axis="axis2" series={failureSeries} style={{color: "steelblue", opacity: 0.5}} />
+                                    */}
+                                </Charts>
+                            </ChartRow>
+                        );
+                    console.log("charts with throughput", charts);
 
+                }
+            });
         }
 
         /*
@@ -312,7 +344,7 @@ export default React.createClass({
             timerange = this.state.timerange;
             //timerange = chartSeries.throughput.values.timerange();
             //timerange = throughputSeries.timerange();
-        } 
+        }
         /*
          * else if ( chartSeries && chartSeries.throughput && chartSeries.throughput.reverse ) {
             //console.log('reverseThroughputSeries is defined');
@@ -331,6 +363,7 @@ export default React.createClass({
             this.setState({initialTimerange: timerange});
         }
         */
+
         return (
             <div>
                 <Resizable>
@@ -347,22 +380,7 @@ export default React.createClass({
                     {/* 
                     <div className="row collapse">
                     */}
-                        <ChartRow height={chartRow.height} debug={false}>
-                        {/*
-                <text>Throughput</text>
-                        */}
-                            <YAxis id="axis2" label="Throughput"  style={axisLabelStyle}
-                                labelOffset={offsets.label} min={0} format=".2s"
-                                max={throughputData.stats.max}
-                                width={80} type="linear" align="left" />
-                                <Charts>
-                                    {charts.throughput.ipv4}
-                                    {/*
-                                    {charts}
-                                    <ScatterChart axis="axis2" series={failureSeries} style={{color: "steelblue", opacity: 0.5}} />
-                                    */}
-                                </Charts>
-                        </ChartRow>
+                    {charts.throughput.chartRows}
                         {/*
                     </div>
                     */}

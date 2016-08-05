@@ -314,7 +314,6 @@ module.exports = {
             return found;
         });
         $.each( results, function( i, val ) {
-            console.log("i", i, "val", val);
             let values = val.values;
             let valmin = values.min();
 
@@ -345,16 +344,26 @@ module.exports = {
         };
 
     },
-    getIPVersions: function() {
+    getUniqueValues: function( fields ) {
         let data = this.chartData;
+        let unique = {};
         $.each( data, function( index, datum ) {
-
-            $.each( datum.data, function( valIndex, val ) {
-
+            $.each( fields, function( field ) {
+                let val = datum.properties[field];
+                console.log("field", field, "val", val, "unique", unique);
+                if ( ! ( field in unique) ) {
+                    unique[field] = {};
+                    unique[field][val] = 1;
+                }
+                unique[field][val] = 1;
             });
-
+        });
+        $.each( unique, function( key, val ) {
+            unique[key] = Object.keys( val );
 
         });
+        console.log("unique", unique);
+        return unique;
 
     },
     esmondToTimeSeries: function( inputData ) {
