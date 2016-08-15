@@ -185,7 +185,9 @@ export default React.createClass({
             markdown: text,
             active: {
                 throughput: true,
-                reverse: true
+                reverse: true,
+                "packet-loss-rate": true,
+                latency: true
             },
             //src: null,
             //dst: null,
@@ -223,10 +225,23 @@ export default React.createClass({
 
     renderChart() {
         let charts = {};
-        charts.throughput = {};
-        charts.throughput.chartRows = [];
+        //charts.throughput = {};
+        //charts.throughput.chartRows = [];
 
-        let typesToChart = [ "throughput", "packet-loss-rate", "latency" ];
+        let typesToChart = [
+            {
+                name: "throughput",
+                label: "Throughput",
+            },
+            {
+                name: "packet-loss-rate",
+                label: "Packet Loss",
+            },
+            {
+                name: "latency",
+                label: "Latency"
+            }
+        ];
         //charts.throughput.charts = [];
 
         let latencyCharts = [];
@@ -238,58 +253,71 @@ export default React.createClass({
         // TODO: get min/max for ALL throughput tests
         let ipversions = unique.ipversion;
         console.log("ipversions", ipversions);
-        let self = this;
-        let throughputData;
+        //let self = this;
+        let data;
         if ( ( typeof ipversions ) != "undefined" ) {
-            $.each( ipversions, function( i, ipversion ) {
-                let ipv = "ipv" + ipversion;
-                charts.throughput[ipv] = [];
-                charts.throughput[ipv].axes = [];
+            for (let h in typesToChart) {
+                let eventType = typesToChart[h];
+                let type = eventType.name;
+                let label = eventType.label;
 
-                let filter = {
-                    eventType: "throughput",
-                    ipversion: ipversion
-                };
-                throughputData = GraphDataStore.getChartData( filter );
-                console.log("throughputData", throughputData);
-                if ( self.state.active.throughput && ( throughputData.results.length > 0 ) ) {
-                    for(let i in throughputData.results) {
-                        let data = throughputData.results[i];
-                        let series = data.values;
-                        let properties = data.properties;
-                        //let protocol = throughputData.results[i].protocol;
-                        //let direction = throughputData.results[i].direction;
-                        //console.log('pushing chart ', i );
-                        //let ipversion = properties.ipversion;
-                        charts.throughput[ipv].push(
-                            <LineChart key={"throughput" + Math.floor( Math.random() )}
-                                axis="axis2" series={series}
-                                style={getChartStyle( properties )} smooth={false} breakLine={true}
-                                min="{throughputData.stats.min}"
-                                max="{throughputData.stats.max}"
-                                columns={[ "value" ]} />
-                        );
-                    }
-                        charts.throughput.chartRows.push(
-                            <ChartRow height={chartRow.height} debug={false}>
-                                <YAxis id="axis2" label={"Throughput (" + ipv + ")"}
-                                    style={axisLabelStyle}
-                                    labelOffset={offsets.label} min={0} format=".2s"
-                                    max={throughputData.stats.max}
-                                    width={80} type="linear" align="left" />
+                for( var i in ipversions ) {
+                    let ipversion = ipversions[i];
+                    //$.each( ipversions, function( i, ipversion ) {
+                    let ipv = "ipv" + ipversion;
+
+                    // Get throughput data and build charts
+                    charts[type] = {};
+                    charts[type].chartRows = [];
+                    charts[type][ipv] = [];
+                    charts[type][ipv].axes = [];
+
+                    let filter = {
+                        eventType: type,
+                        ipversion: ipversion
+                    };
+                    data = GraphDataStore.getChartData( filter );
+                    console.log("data", data);
+                    if ( this.state.active[type] && ( data.results.length > 0 ) ) {
+                        for(let j in data.results) {
+                            let result = data.results[j];
+                            let series = result.values;
+                            let properties = result.properties;
+                            //let protocol = result.results[j].protocol;
+                            //let direction = result.results[j].direction;
+                            //console.log('pushing chart ', j );
+                            //let ipversion = properties.ipversion;
+                            charts[type][ipv].push(
+                                    <LineChart key={[type] + Math.floor( Math.random() )}
+                                    axis={"axis" + [type]} series={series}
+                                    style={getChartStyle( properties )} smooth={false} breakLine={true}
+                                    min="{result.stats.min}"
+                                    max="{result.stats.max}"
+                                    columns={[ "value" ]} />
+                                    );
+                        }
+                        charts[type].chartRows.push(
+                                <ChartRow height={chartRow.height} debug={false}>
+                                <YAxis id={"axis" + type} label={label + " (" + ipv + ")"}
+                                style={axisLabelStyle}
+                                labelOffset={offsets.label} min={0} format=".2s"
+                                max={data.stats.max}
+                                width={80} type="linear" align="left" />
                                 <Charts>
-                                    {charts.throughput[ipv]}
-                                    {/*
+                                {charts[type][ipv]}
+                                {/*
                                     {charts}
                                     <ScatterChart axis="axis2" series={failureSeries} style={{color: "steelblue", opacity: 0.5}} />
                                     */}
                                 </Charts>
-                            </ChartRow>
-                        );
-                    console.log("charts with throughput", charts);
+                                </ChartRow>
+                                );
+                        console.log("charts with throughput", charts);
 
+                    }
                 }
-            });
+                //});
+            }
         }
 
         /*
@@ -381,6 +409,8 @@ export default React.createClass({
                     <div className="row collapse">
                     */}
                     {charts.throughput.chartRows}
+                    {charts["packet-loss-rate"].chartRows}
+                    {charts["latency"].chartRows}
                         {/*
                     </div>
                     */}
