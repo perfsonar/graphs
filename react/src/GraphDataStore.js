@@ -344,6 +344,31 @@ module.exports = {
         };
 
     },
+    getMin: function( val1, val2  ) {
+            // Get the min of the provided values
+            let min;
+            if ( !isNaN( Math.min( val1, val2 ) ) ) {
+                min = Math.min( val1, val2 );
+            } else if ( !isNaN( val1 ) ) {
+                min = val1;
+            } else if ( ! isNaN( val2 ) ) {
+                min = val2;
+            }
+            return min;
+    },
+    getMax: function( val1, val2 ) {
+            // Get the max of the provided values
+            let max;
+            if ( !isNaN( Math.max( val1, val2 ) ) ) {
+                max = Math.max( val1, val2 );
+            } else if ( !isNaN( val1 ) ) {
+                max = val1;
+            } else if ( !isNaN( val2 ) ) {
+                max = val2;
+
+            }
+            return max;
+    },
     getUniqueValues: function( fields ) {
         let data = this.chartData;
         let unique = {};

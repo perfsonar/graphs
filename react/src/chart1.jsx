@@ -239,8 +239,15 @@ export default React.createClass({
             },
             {
                 name: "latency",
+                esmondName: "histogram-owdelay",
+                label: "Latency"
+            },
+            {
+                name: "latency",
+                esmondName: "histogram-rtt",
                 label: "Latency"
             }
+            // TODO: improve handling of multiple event types in one row
         ];
         //charts.throughput.charts = [];
 
@@ -260,6 +267,8 @@ export default React.createClass({
                 let eventType = typesToChart[h];
                 let type = eventType.name;
                 let label = eventType.label;
+                let esmondName = eventType.esmondName;
+                let stats = {};
 
                 for( var i in ipversions ) {
                     let ipversion = ipversions[i];
@@ -267,13 +276,24 @@ export default React.createClass({
                     let ipv = "ipv" + ipversion;
 
                     // Get throughput data and build charts
-                    charts[type] = {};
-                    charts[type].chartRows = [];
+                    if ( ! ( type in charts ) ) {
+                        charts[type] = {};
+                        charts[type].stats = {};
+                    } else {
+                        stats = charts[type].stats;
+                    }
+                    //if ( ! ( "chartRows" in charts[type] ) ) {
+                        charts[type].chartRows = [];
+                    //}
+                    if ( ! ( ipv in charts[type] ) ) {
                     charts[type][ipv] = [];
-                    charts[type][ipv].axes = [];
+                    }
+                    if ( ! ( "axes" in charts[type][ipv] ) )  {
+                        charts[type][ipv].axes = [];
+                    }
 
                     let filter = {
-                        eventType: type,
+                        eventType: esmondName || type,
                         ipversion: ipversion
                     };
                     data = GraphDataStore.getChartData( filter );
@@ -283,36 +303,42 @@ export default React.createClass({
                             let result = data.results[j];
                             let series = result.values;
                             let properties = result.properties;
+                            stats.min = GraphDataStore.getMin( data.stats.min, stats.min );
+                            stats.max = GraphDataStore.getMax( data.stats.max, stats.max );
+                            console.log("data.stats", data.stats, "stats", stats);
                             //let protocol = result.results[j].protocol;
                             //let direction = result.results[j].direction;
                             //console.log('pushing chart ', j );
                             //let ipversion = properties.ipversion;
                             charts[type][ipv].push(
                                     <LineChart key={[type] + Math.floor( Math.random() )}
-                                    axis={"axis" + [type]} series={series}
-                                    style={getChartStyle( properties )} smooth={false} breakLine={true}
-                                    min="{result.stats.min}"
-                                    max="{result.stats.max}"
-                                    columns={[ "value" ]} />
+                                        axis={"axis" + [type]} series={series}
+                                        style={getChartStyle( properties )} smooth={false} breakLine={true}
+                                        min={stats.min}
+                                        max={stats.max}
+                                        columns={[ "value" ]} />
                                     );
                         }
+                        charts[type].stats = stats;
                         charts[type].chartRows.push(
                                 <ChartRow height={chartRow.height} debug={false}>
-                                <YAxis id={"axis" + type} label={label + " (" + ipv + ")"}
-                                style={axisLabelStyle}
-                                labelOffset={offsets.label} min={0} format=".2s"
-                                max={data.stats.max}
-                                width={80} type="linear" align="left" />
-                                <Charts>
-                                {charts[type][ipv]}
-                                {/*
-                                    {charts}
-                                    <ScatterChart axis="axis2" series={failureSeries} style={{color: "steelblue", opacity: 0.5}} />
-                                    */}
-                                </Charts>
+                                    <YAxis id={"axis" + type} label={label + " (" + ipv + ")"}
+                                        style={axisLabelStyle}
+                                        labelOffset={offsets.label}
+                                        format=".2s"
+                                        min={charts[type].stats.min}
+                                        max={charts[type].stats.max}
+                                        width={80} type="linear" align="left" />
+                                    <Charts>
+                                        {charts[type][ipv]}
+                                        {/*
+                                            {charts}
+                                            <ScatterChart axis="axis2" series={failureSeries} style={{color: "steelblue", opacity: 0.5}} />
+                                            */}
+                                    </Charts>
                                 </ChartRow>
                                 );
-                        console.log("charts with throughput", charts);
+                        console.log("charts", charts, "current type", type);
 
                     }
                 }
