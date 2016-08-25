@@ -277,23 +277,6 @@ module.exports = {
 
         }
     },
-    getChartDataOld: function( eventType ) {
-        let data = this.chartData;
-        let results;
-        if ( typeof eventType == "undefined" || typeof data[ eventType ] == "undefined" ) {
-            results = data;
-        } else {
-            results = data[ eventType ];
-            /*
-            results = $.grep( data, function(e) {
-                return e[eventType];
-            });
-            */
-
-        }
-        return results;
-
-    },
     getChartData: function( filters ) {
         let data = this.chartData;
         console.log("getting chart data ... filters", filters); // TODO: figure out why filters sometimes undefined
@@ -313,25 +296,14 @@ module.exports = {
             }
             return found;
         });
+        let self = this;
         $.each( results, function( i, val ) {
             let values = val.values;
             let valmin = values.min();
-
-            // Update the min for the filtered data
-            if ( !isNaN( Math.min( valmin, min ) ) ) {
-                min = Math.min( valmin, min );
-            } else if ( !isNaN( valmin ) ) {
-                min = valmin;
-            }
-
-            // Update the max for the event type
             let valmax = values.max();
-            // Update the max for the filtered data
-            if ( !isNaN( Math.max( valmax, max ) ) ) {
-                max = Math.max( valmax, max );
-            } else if ( !isNaN( valmax ) ) {
-                max = valmax;
-            }
+
+            min = self.getMin( min, valmin );
+            max = self.getMax( max, valmax );
         });
         let stats = {
             min: min,
@@ -391,16 +363,33 @@ module.exports = {
         return unique;
 
     },
+    getMainEventType: function( eventTypes ) {
+        let mainTypes = {
+            "throughput": 1,
+            "histogram-owdelay": 1,
+            "histogram-rtt": 1
+        };
+        for( var i in eventTypes ) {
+            let type = eventTypes[i]["event-type"];
+            if ( type in mainTypes ) {
+                return type;
+            }
+        }
+        return;
+    },
     esmondToTimeSeries: function( inputData ) {
         let outputData = {};
         let max;
         let min;
         let output = [];
+        let self = this;
         console.log("esmondToTimeSeries inputData", inputData);
         $.each( inputData, function( index, datum ) {
             let eventType = datum.eventType;
             let direction = datum.direction;
             let protocol = datum.protocol;
+            let mainEventType = self.getMainEventType( datum["event-types"] );
+            //datum.mainEventType = mainEventType;
 
             var values = [];
             var series = {};
@@ -458,6 +447,7 @@ module.exports = {
             //row.properties.direction = direction;
             //row.properties.protocol = protocol;
             row.properties.eventType = eventType;
+            row.properties.mainEventType = mainEventType;
             row.values = series;
             output.push(row);
             console.log("output", output);

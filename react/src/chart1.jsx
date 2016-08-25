@@ -67,7 +67,11 @@ const scheme = {
     tcp: "#0076b4", // blue
     udp: "#cc7dbe", // purple
     ipv4: "#e5a11c", // yellow
-    ipv6: "#633" // brown
+    ipv6: "#633", // brown
+    throughput: "#0076b4", // blue
+    "histogram-rtt": "#e5a11c", // yellow
+    "histogram-owdelay": "#633", // brown
+    "packet-loss-rate": "#cc7dbe" // purple
 };
 
 
@@ -99,14 +103,34 @@ function getChartStyle( options ) {
     style.value = {};
     let color = scheme.tcp;
     let strokeStyle = "";
-    let width = 1.5;
+    let width = 1;
+    let opacity = 1;
+
     switch ( options.protocol ) {
         case "tcp":
             color = scheme.tcp;
+            width = 4;
+            opacity = 0.7;
             break;
         case "udp":
             color = scheme.udp;
             break;
+    }
+
+    switch ( options.eventType ) {
+        case "throughput":
+            color = scheme.throughput;
+            break;
+        case "histogram-owdelay":
+            color = scheme["histogram-owdelay"];
+            break;
+        case "histogram-rtt":
+            color = scheme["histogram-rtt"];
+            break;
+        case "packet-loss-rate":
+            color = scheme[options.mainEventType];
+            break;
+
     }
     if ( options.direction == "reverse" ) {
         strokeStyle = "4,2";
@@ -115,6 +139,7 @@ function getChartStyle( options ) {
     style.value.stroke = color;
     style.value.strokeWidth = width;
     style.value.strokeDasharray = strokeStyle;
+    style.value.strokeOpacity = opacity;
     //console.log("style", style, "options", options);
     return style;
 
@@ -297,7 +322,7 @@ export default React.createClass({
                         ipversion: ipversion
                     };
                     data = GraphDataStore.getChartData( filter );
-                    console.log("data", data);
+                    console.log("datas", data);
                     if ( this.state.active[type] && ( data.results.length > 0 ) ) {
                         for(let j in data.results) {
                             let result = data.results[j];
@@ -305,7 +330,6 @@ export default React.createClass({
                             let properties = result.properties;
                             stats.min = GraphDataStore.getMin( data.stats.min, stats.min );
                             stats.max = GraphDataStore.getMax( data.stats.max, stats.max );
-                            console.log("data.stats", data.stats, "stats", stats);
                             //let protocol = result.results[j].protocol;
                             //let direction = result.results[j].direction;
                             //console.log('pushing chart ', j );
