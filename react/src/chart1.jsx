@@ -370,48 +370,6 @@ export default React.createClass({
             }
         }
 
-        /*
-        if ( this.state.active.throughput && this.checkEventType("throughput", "forward") ) {
-            charts.push(
-                <LineChart key={"throughput" + Math.floor( Math.random() )} axis="axis2" series={chartSeries.throughput.forward} style={lineStyles} smooth={false} breakLine={true} min="{chartSeries.throughput.min}" max="{chartSeries.throughput.max}" columns={[ "value" ]} />
-            );
-        }
-        if ( this.state.active.throughput && this.checkEventType("throughput", "reverse") ) {
-            // TODO: fix this to forward instead of reverse
-            charts.push(
-                <LineChart key={"reverseThroughput" + Math.floor( Math.random() )} axis="axis2" series={chartSeries.throughput.reverse} style={reverseStyles} smooth={false} breakLine={true} min="{chartSeries.throughput.min}" max="{chartSeries.throughput.max}" />
-            );
-        }*/
-
-        /*
-        if (this.state.active.throughput && this.checkEventType("histogram-owdelay", "forward") ) { // TODO: fix state part
-            latencyCharts.push(
-                <LineChart key="latency" axis="axis1" series={chartSeries["histogram-owdelay"]} style={lineStyles} smooth={false} breakLine={true} min={chartSeries["histogram-owdelay"].min} max={chartSeries["histogram-owdelay"].max} />
-            );
-        }
-
-        if (this.state.active && this.checkEventType("histogram-owdelay", "reverse") ) { // TODO: fix state part
-            latencyCharts.push(
-                <LineChart key="reverseLatency" axis="axis1" series={chartSeries["histogram-owdelay"]} style={reverseStyles} smooth={false} breakLine={true} min={chartSeries["histogram-owdelay"].min} max={chartSeries["histogram-owdelay"].max} />
-            );
-        }
-*/
-        /*
-        if (this.state.active.throughput && this.checkEventType("packet-loss-rate", "forward") ) {
-            lossCharts.push(
-
-                <LineChart key="loss" axis="lossAxis" series={chartSeries["packet-loss-rate"]} style={lineStyles} smooth={false} breakLine={true} />
-            );
-        }
-        if (this.state.active.reverse && this.checkEventType("packet-loss-rate", "reverse") ) {
-            lossCharts.push(
-
-                 <LineChart key="reverseLoss" axis="lossAxis" series={chartSeries["packet-loss-rate"]} style={reverseStyles} smooth={false} breakLine={true} />
-
-        );
-        }
-        */
-
         latencyCharts = []; lossCharts = []; // TODO: remove - debugging only
 
         var timerange;
@@ -461,26 +419,6 @@ export default React.createClass({
                     {charts.throughput.chartRows}
                     {charts["packet-loss-rate"].chartRows}
                     {charts["latency"].chartRows}
-                        {/*
-                    </div>
-                    */}
-                    {/*
-                    <ChartRow height={chartRow.height} debug={false}>
-                        <YAxis id="lossAxis" label="Loss" style={axisLabelStyle}
-                                labelOffset={offsets.label} 
-                                min={0.000000001} format=",.4f" max={chartSeries["packet-loss-rate"].forward.max()} width="80" type="linear"/>
-                        <Charts>
-                            {lossCharts}
-                        </Charts>
-                    </ChartRow>
-                    <ChartRow height={chartRow.height} debug={false}>
-                        <YAxis id="axis1" label="Latency" style={axisLabelStyle}
-                               labelOffset={offsets.label} min={0.000000001} format=",.4f" max={chartSeries["histogram-owdelay"].forward.max()} width="80" type="linear"/>
-                        <Charts>
-                            {latencyCharts}
-                        </Charts>
-                    </ChartRow>
-                    */}
                 </ChartContainer>
             </Resizable>
 
@@ -782,23 +720,6 @@ export default React.createClass({
             columns: ["time", "value"],
             points: values
         });
-        /*
-         * Shouldn't need this as _checkSortOrder is called above
-        var lastTS = 0;
-        for (let i=0; i < series.size(); i++) {
-            //console.log(series.at(i).toString());
-            //console.log('series.at(i)', series.at(i));
-            var ts = series.at(i).timestamp().getTime();
-            if ( ts > lastTS ) {
-                //console.log( 'new ts > last TS', ts, lastTS );
-
-            } else {
-                console.log( 'BAD: new ts <= last TS', ts, lastTS );
-
-            }
-            lastTS = ts;
-        }
-        */
         return ( { values: values, series: series } );
     }, 
     checkEventType: function ( eventType, direction ) {
