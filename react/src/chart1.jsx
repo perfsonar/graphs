@@ -192,7 +192,8 @@ const offsets = {
 }
 
 const chartRow = {
-    height: 150
+    height: 150,
+    brushHeight: 50
 }
 
 const brushStyle = {
@@ -250,6 +251,7 @@ export default React.createClass({
 
     renderChart() {
         let charts = {};
+        let brushCharts = {};
         //charts.throughput = {};
         //charts.throughput.chartRows = [];
 
@@ -294,6 +296,7 @@ export default React.createClass({
                 let label = eventType.label;
                 let esmondName = eventType.esmondName;
                 let stats = {};
+                let brushStats = {};
 
                 for( var i in ipversions ) {
                     let ipversion = ipversions[i];
@@ -307,14 +310,36 @@ export default React.createClass({
                     } else {
                         stats = charts[type].stats;
                     }
-                    //if ( ! ( "chartRows" in charts[type] ) ) {
-                        charts[type].chartRows = [];
-                    //}
+
+                    if ( ! ( type in brushCharts) ) {
+                        brushCharts[type] = {};
+                        //brushCharts[type].stats = {};
+                    } else {
+                        //brushStats = brushCharts[type].stats;
+
+                    }
+
+                    // for now, we'll reuse 'stats' for brushCharts as well since they 
+                    // should be the same
+                    brushStats = stats;
+
+                    charts[type].chartRows = [];
+                    brushCharts[type].chartRows = [];
+
+                    // Initialize ipv and axes for main charts
                     if ( ! ( ipv in charts[type] ) ) {
-                    charts[type][ipv] = [];
+                        charts[type][ipv] = [];
                     }
                     if ( ! ( "axes" in charts[type][ipv] ) )  {
                         charts[type][ipv].axes = [];
+                    }
+
+                    // Initialize ipv and axes for brush charts
+                    if ( ! ( ipv in brushCharts[type] ) ) {
+                        brushCharts[type][ipv] = [];
+                    }
+                    if ( ! ( "axes" in brushCharts[type][ipv] ) )  {
+                        brushCharts[type][ipv].axes = [];
                     }
 
                     let filter = {
@@ -334,6 +359,8 @@ export default React.createClass({
                             //let direction = result.results[j].direction;
                             //console.log('pushing chart ', j );
                             //let ipversion = properties.ipversion;
+
+                            // push the charts for the main charts
                             charts[type][ipv].push(
                                     <LineChart key={[type] + Math.floor( Math.random() )}
                                         axis={"axis" + [type]} series={series}
@@ -342,11 +369,26 @@ export default React.createClass({
                                         max={stats.max}
                                         columns={[ "value" ]} />
                                     );
+                            // push the brush charts
+                            brushCharts[type][ipv].push(
+                                    <LineChart key={"brush" + [type] + Math.floor( Math.random() )}
+                                        axis={"brush_axis" + [type]} series={series}
+                                        style={getChartStyle( properties )} smooth={false} breakLine={true}
+                                        min={stats.min}
+                                        max={stats.max}
+                                        columns={[ "value" ]} />
+                                    );
                         }
                         charts[type].stats = stats;
+                        brushCharts[type].stats = stats;
+
+                        // push the chartrows for the main charts
                         charts[type].chartRows.push(
                                 <ChartRow height={chartRow.height} debug={false}>
-                                    <YAxis id={"axis" + type} label={label + " (" + ipv + ")"}
+                                    <YAxis
+                                        key={"axis" + type}
+                                        id={"axis" + type}
+                                        label={label + " (" + ipv + ")"}
                                         style={axisLabelStyle}
                                         labelOffset={offsets.label}
                                         format=".2s"
@@ -362,6 +404,31 @@ export default React.createClass({
                                     </Charts>
                                 </ChartRow>
                                 );
+
+                        // push the chartrows for the brush charts
+                        brushCharts[type].chartRows.push(
+                                <ChartRow height={chartRow.brushHeight} debug={false} key={"brush" + type}>
+                                    <Brush
+                                        timeRange={this.state.brushrange}
+                                        onTimeRangeChanged={this.handleTimeRangeChange}
+                                        allowSelectionClear={true}
+                                    />
+                                    <YAxis 
+                                        key={"brush_axis" + type}
+                                        id={"brush_axis" + type}
+                                        label={label + " (" + ipv + ")"}
+                                        style={axisLabelStyle}
+                                        labelOffset={offsets.label}
+                                        format=".2s"
+                                        min={brushCharts[type].stats.min}
+                                        max={brushCharts[type].stats.max}
+                                        width={80} type="linear" align="left" />
+                                    <Charts>
+                                        {brushCharts[type][ipv]}
+                                    </Charts>
+                                </ChartRow>
+                                );
+
                         console.log("charts", charts, "current type", type);
 
                     }
@@ -412,6 +479,7 @@ export default React.createClass({
                         minTime={this.state.initialTimerange.begin()}
                         maxTime={this.state.initialTimerange.end()}
                         minDuration={10 * 60 * 1000}
+                        id="mainChartContainer"
                     >
                     {/* 
                     <div className="row collapse">
@@ -424,11 +492,9 @@ export default React.createClass({
 
                 <div className="rowg">
                     <div className="col-md-12" style={brushStyle} id="brushContainer">
-                    {/*
                         <Resizable>
-                            {this.renderBrush()}
+                            {this.renderBrush( brushCharts )}
                         </Resizable>
-                        */}
                     </div>
                 </div>
             </div>
@@ -506,93 +572,25 @@ export default React.createClass({
     },
 
 
-    renderBrush() {
-        // TODO: update not to be hardcoded to reverse
+    renderBrush( brushCharts ) {
         return (
-            <ChartContainer
-                timeRange={this.state.initialTimerange}
-                trackerPosition={this.state.tracker}
-                className="brush">
-                <ChartRow height="50" debug={false}>
-                    <Brush
-                        timeRange={this.state.brushrange}
-                        onTimeRangeChanged={this.handleTimeRangeChange}
-                        allowSelectionClear={true}
-                        />
-                    <YAxis
-                        id="brushAxis1"
-                        label="Throughput"
-                        min={0} max={this.state.chartSeries.throughput.max}
-                        width={80} type="linear" format=".1s"/>
-                    <Charts>
-                        <LineChart
-                            key="brushThroughput"
-                            axis="brushAxis1"
-                            style={lineStyles}
-                            columns={["value"]}
-                            series={this.state.chartSeries.throughput.forward} />
-                        <LineChart
-                            key="reverseBrushThroughput"
-                            axis="brushAxis1"
-                            style={reverseStyles}
-                            columns={["value"]}
-                            series={this.state.chartSeries.throughput.reverse} />
-                    </Charts>
-                </ChartRow>
-                <ChartRow height="50" debug={false}>
-                    <Brush
-                        timeRange={this.state.brushrange}
-                        onTimeRangeChanged={this.handleTimeRangeChange}
-                        allowSelectionClear={true}
-                        />
-                    <YAxis
-                        id="brushAxisLoss"
-                        label="Loss"
-                        min={0} max={this.state.chartSeries["packet-loss-rate"].forward.max()}
-                        width={80} type="linear" format=".1s"/>
-                    <Charts>
-                        <LineChart
-                            key="brushLoss"
-                            axis="brushAxisLoss"
-                            style={lineStyles}
-                            columns={["value"]}
-                            series={this.state.chartSeries["packet-loss-rate"].forward} />
-                        <LineChart
-                            key="reverseBrushLoss"
-                            axis="brushAxisLoss"
-                            style={reverseStyles}
-                            columns={["value"]}
-                            series={this.state.chartSeries["packet-loss-rate"].reverse} />
-                    </Charts>
-                </ChartRow>
-                <ChartRow height="50" debug={false}>
-                    <Brush
-                        timeRange={this.state.brushrange}
-                        onTimeRangeChanged={this.handleTimeRangeChange}
-                        allowSelectionClear={true}
-                        />
-                    <YAxis
-                        id="brushAxis2"
-                        label="Latency"
-                        min={0} max={this.state.chartSeries["histogram-owdelay"].forward.max()}
-                        width={80} type="linear" format=".1s"/>
-                    <Charts>
-                        <LineChart
-                            key="brushOwdelay"
-                            axis="brushAxis2"
-                            style={lineStyles}
-                            columns={["value"]}
-                            series={this.state.chartSeries["histogram-owdelay"].forward} />
-                        <LineChart
-                            key="reverseBrushOwdelay"
-                            axis="brushAxis2"
-                            style={reverseStyles}
-                            columns={["value"]}
-                            series={this.state.chartSeries["histogram-owdelay"].reverse} />
-                    </Charts>
-                </ChartRow>
-            </ChartContainer>
-        );
+                <ChartContainer
+                    timeRange={this.state.initialTimerange}
+                    trackerPosition={this.state.tracker}
+                    className="brush"
+                    /*
+                    enablePanZoom={true}
+                    onTimeRangeChanged={this.handleTimeRangeChange}
+                    minTime={this.state.initialTimerange.begin()}
+                    maxTime={this.state.initialTimerange.end()}
+                    minDuration={10 * 60 * 1000}
+                    */
+                >
+                    {brushCharts.throughput.chartRows}
+                    {brushCharts["packet-loss-rate"].chartRows}
+                    {brushCharts["latency"].chartRows}
+                </ChartContainer>
+               );
     },
 
     updateChartData: function() {
