@@ -407,7 +407,12 @@ export default React.createClass({
 
                         // push the chartrows for the brush charts
                         brushCharts[type].chartRows.push(
-                                <ChartRow height={chartRow.brushHeight} debug={false} key={"brush" + type}>
+                                <ChartRow
+                                    height={chartRow.brushHeight}
+                                    debug={false}
+                                    key={"brush" + type}
+                                    className="brush"
+                                >
                                     <Brush
                                         timeRange={this.state.brushrange}
                                         onTimeRangeChanged={this.handleTimeRangeChange}
