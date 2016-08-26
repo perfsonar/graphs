@@ -2,3 +2,42 @@ rect.extent {
     fill: steelblue;
     opacity: 0.25;
 }
+#graphContainer { 
+    padding: 0 1em;
+}
+#brushContainer .yaxis > .tick {
+    display: none;
+}
+
+#brushContainer .yaxis > .tick:first-child {
+    display: block;
+}
+
+#brushContainer .yaxis > .tick:last-of-type {
+    display: block;
+}
+
+.yaxis text.yaxis-label {
+    transform: rotate(-90deg) 
+        translate(-50px, -80px);
+    font-size:14px;
+}
+
+#brushContainer .yaxis text.yaxis-label {
+    transform: rotate(0deg) 
+        translate(-10px, 9px);
+    font-size:10px;
+}
+
+#graphContainer .overview {
+    padding:0.5em 0.5em 0.5em 1em;
+}
+
+.overview--pad {
+    padding:2em 0;
+}
+
+body {
+    padding: 0;
+}
+

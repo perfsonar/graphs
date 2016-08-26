@@ -2,13 +2,20 @@ import React from "react";
 import _ from "underscore";
 import moment from "moment";
 import Markdown from "react-markdown";
+import GraphDataStore from "./GraphDataStore";
 //import Highlighter from "./highlighter";
+
 
 import { AreaChart, Brush, Charts, ChartContainer, ChartRow, YAxis, LineChart, ScatterChart, Highlighter, Resizable, Legend } from "react-timeseries-charts";
 
 import { TimeSeries, TimeRange } from "pondjs";
 
+//import "../../toolkit/web-ng/root/css/foundation.min.css";
+//import "../../toolkit/web-ng/root/css/font-awesome/css/font-awesome.min.css";
 import "./chart1.css";
+import ChartLayout from "./chartLayout.jsx";
+import "../../css/graphs.css";
+import "../../toolkit/web-ng/root/css/app.css";
 
 var throughputValues = [];
 var reverseThroughputValues = [];
@@ -47,9 +54,109 @@ var reverseLatencySeries = null;
 var lossSeries = null;
 var reverseLossSeries = null;
 
-const text = 'Example ddos chart';
+/*
+var charts = [];
+var latencyCharts = [];
+var lossCharts = [];
+*/
 
-const lineStyle = {
+const text = 'perfSONAR chart';
+
+
+const scheme = {
+    tcp: "#0076b4", // blue
+    udp: "#cc7dbe", // purple
+    ipv4: "#e5a11c", // yellow
+    ipv6: "#633", // brown
+    throughput: "#0076b4", // blue
+    "histogram-rtt": "#e5a11c", // yellow
+    "histogram-owdelay": "#633", // brown
+    "packet-loss-rate": "#cc7dbe" // purple
+};
+
+
+console.log("scheme", scheme);
+const connectionsStyle = {
+    color: scheme.tcp,
+    strokeWidth: 1
+};
+
+const requestsStyle = {
+    stroke: "#990000",
+    strokeWidth: 2,
+    strokeDasharray: "4,2"
+};
+
+const chartStyles = {
+    tcp: {
+        color: scheme.tcp
+    },
+    udp: {
+        color: scheme.tcp
+
+    }
+
+};
+
+function getChartStyle( options ) {
+    let style = {};
+    style.value = {};
+    let color = scheme.tcp;
+    let strokeStyle = "";
+    let width = 1;
+    let opacity = 1;
+
+    switch ( options.protocol ) {
+        case "tcp":
+            color = scheme.tcp;
+            width = 4;
+            opacity = 0.7;
+            break;
+        case "udp":
+            color = scheme.udp;
+            break;
+    }
+
+    switch ( options.eventType ) {
+        case "throughput":
+            color = scheme.throughput;
+            break;
+        case "histogram-owdelay":
+            color = scheme["histogram-owdelay"];
+            break;
+        case "histogram-rtt":
+            color = scheme["histogram-rtt"];
+            break;
+        case "packet-loss-rate":
+            color = scheme[options.mainEventType];
+            break;
+
+    }
+    if ( options.direction == "reverse" ) {
+        strokeStyle = "4,2";
+        width = 3;
+    }
+    style.value.stroke = color;
+    style.value.strokeWidth = width;
+    style.value.strokeDasharray = strokeStyle;
+    style.value.strokeOpacity = opacity;
+    //console.log("style", style, "options", options);
+    return style;
+
+}
+
+const lineStyles = {
+    value: { 
+        stroke: scheme.udp,
+        strokeWidth: 1.5
+    }
+
+/*
+ * Colors from mockup
+ * blue: #004987
+ * purple: #750075
+ * orange: #ff8e01
+/*
     node: {
         normal: {stroke: "#737373", strokeWidth: 4, fill: "none"},
         highlighted: {stroke: "#b1b1b1", strokeWidth: 4, fill: "#b1b1b1"}
@@ -61,23 +168,33 @@ const lineStyle = {
     label: {
         normal: {fill: "#9D9D9D",fontFamily: "verdana, sans-serif",fontSize: 10}
     }
+    */
 };
 
-const scheme = {
-    requests: "#2ca02c",
-    connections: "#990000"
-};
+const reverseStyles = {
+    value: {
+        stroke: scheme.connections,
+        strokeDasharray: "4,2",
+        strokeWidth: 1.5
+    }
+}
 
-const connectionsStyle = {
-    color: scheme.connections,
-    width: 1
-};
+const axisLabelStyle = {
+    labelColor: "black",
+    labelFont: "\"Open Sans\", \"Helvetica Neue\", \"Helvetica\", Arial, sans-serif",
+    labelSize: "14",
+    labelOffset: 5,
+    labelWeight: 200
+}
 
-const requestsStyle = {
-    color: scheme.requests,
-    width: 2,
-    strokeDasharray: "4,2"
-};
+const offsets = {
+    label: 60
+}
+
+const chartRow = {
+    height: 150,
+    brushHeight: 50
+}
 
 const brushStyle = {
     boxShadow: "inset 0px 2px 5px -2px rgba(189, 189, 189, 0.75)",
@@ -94,133 +211,294 @@ export default React.createClass({
             markdown: text,
             active: {
                 throughput: true,
-                reverse: true
+                reverse: true,
+                "packet-loss-rate": true,
+                latency: true
             },
+            //src: null,
+            //dst: null,
+            //start: null,
+            //end: null,
             tracker: null,
-            timerange: TimeRange.lastThirtyDays(),
-            initialTimerange: null,
+            chartSeries: null,
+            timerange: TimeRange.lastSevenDays(),
+            initialTimerange: TimeRange.lastSevenDays(),
+            //brushrange: TimeRange.lastDay(),
+            //brushrange: TimeRange.lastSevenDays(),
+            brushrange: null,
             maxLatency: 1,
             maxThroughput: 1,
             maxLoss: 0.0000000001,
+            latencySeries: null
         };
     },
-
+    contextTypes: {
+        router: React.PropTypes.func
+    },
 
     handleTrackerChanged(trackerVal, selection) {
-        const seconds = Math.floor( trackerVal.getTime() / 1000 );
-        //console.log('trackerVal seconds', seconds, 'selection', selection);
-        //var pos = this.state.tracker;
+        //const seconds = Math.floor( trackerVal.getTime() / 1000 );
+
         this.setState({tracker: trackerVal});
+        /*
         if ( failureMessages[ seconds ] ) {
             console.log('failure message: ', failureMessages[ seconds ] );
         }
+        */
         //this.setState({selectionType, selection});
         //return pos;
     },
 
     renderChart() {
-        let charts = [];
+        let charts = {};
+        let brushCharts = {};
+        //charts.throughput = {};
+        //charts.throughput.chartRows = [];
+
+        let typesToChart = [
+            {
+                name: "throughput",
+                label: "Throughput",
+            },
+            {
+                name: "packet-loss-rate",
+                label: "Packet Loss",
+            },
+            {
+                name: "latency",
+                esmondName: "histogram-owdelay",
+                label: "Latency"
+            },
+            {
+                name: "latency",
+                esmondName: "histogram-rtt",
+                label: "Latency"
+            }
+            // TODO: improve handling of multiple event types in one row
+        ];
+        //charts.throughput.charts = [];
+
         let latencyCharts = [];
         let lossCharts = [];
-        if (this.state.active.throughput && throughputSeries) {
-            charts.push(
-                <LineChart key="throughput" axis="axis2" series={throughputSeries} style={connectionsStyle} smooth={false} breakLine={true} />
-            );
+        let chartSeries = this.state.chartSeries;
+
+        // start for loop involving unique ipversion values here?
+        let unique = GraphDataStore.getUniqueValues( {"ipversion": 1} );
+        // TODO: get min/max for ALL throughput tests
+        let ipversions = unique.ipversion;
+        console.log("ipversions", ipversions);
+        //let self = this;
+        let data;
+        if ( ( typeof ipversions ) != "undefined" ) {
+            for (let h in typesToChart) {
+                let eventType = typesToChart[h];
+                let type = eventType.name;
+                let label = eventType.label;
+                let esmondName = eventType.esmondName;
+                let stats = {};
+                let brushStats = {};
+
+                for( var i in ipversions ) {
+                    let ipversion = ipversions[i];
+                    //$.each( ipversions, function( i, ipversion ) {
+                    let ipv = "ipv" + ipversion;
+
+                    // Get throughput data and build charts
+                    if ( ! ( type in charts ) ) {
+                        charts[type] = {};
+                        charts[type].stats = {};
+                    } else {
+                        stats = charts[type].stats;
+                    }
+
+                    if ( ! ( type in brushCharts) ) {
+                        brushCharts[type] = {};
+                        //brushCharts[type].stats = {};
+                    } else {
+                        //brushStats = brushCharts[type].stats;
+
+                    }
+
+                    // for now, we'll reuse 'stats' for brushCharts as well since they 
+                    // should be the same
+                    brushStats = stats;
+
+                    charts[type].chartRows = [];
+                    brushCharts[type].chartRows = [];
+
+                    // Initialize ipv and axes for main charts
+                    if ( ! ( ipv in charts[type] ) ) {
+                        charts[type][ipv] = [];
+                    }
+                    if ( ! ( "axes" in charts[type][ipv] ) )  {
+                        charts[type][ipv].axes = [];
+                    }
+
+                    // Initialize ipv and axes for brush charts
+                    if ( ! ( ipv in brushCharts[type] ) ) {
+                        brushCharts[type][ipv] = [];
+                    }
+                    if ( ! ( "axes" in brushCharts[type][ipv] ) )  {
+                        brushCharts[type][ipv].axes = [];
+                    }
+
+                    let filter = {
+                        eventType: esmondName || type,
+                        ipversion: ipversion
+                    };
+                    data = GraphDataStore.getChartData( filter );
+                    console.log("datas", data);
+                    if ( this.state.active[type] && ( data.results.length > 0 ) ) {
+                        for(let j in data.results) {
+                            let result = data.results[j];
+                            let series = result.values;
+                            let properties = result.properties;
+                            stats.min = GraphDataStore.getMin( data.stats.min, stats.min );
+                            stats.max = GraphDataStore.getMax( data.stats.max, stats.max );
+                            //let protocol = result.results[j].protocol;
+                            //let direction = result.results[j].direction;
+                            //console.log('pushing chart ', j );
+                            //let ipversion = properties.ipversion;
+
+                            // push the charts for the main charts
+                            charts[type][ipv].push(
+                                    <LineChart key={[type] + Math.floor( Math.random() )}
+                                        axis={"axis" + [type]} series={series}
+                                        style={getChartStyle( properties )} smooth={false} breakLine={true}
+                                        min={stats.min}
+                                        max={stats.max}
+                                        columns={[ "value" ]} />
+                                    );
+                            // push the brush charts
+                            brushCharts[type][ipv].push(
+                                    <LineChart key={"brush" + [type] + Math.floor( Math.random() )}
+                                        axis={"brush_axis" + [type]} series={series}
+                                        style={getChartStyle( properties )} smooth={false} breakLine={true}
+                                        min={stats.min}
+                                        max={stats.max}
+                                        columns={[ "value" ]} />
+                                    );
+                        }
+                        charts[type].stats = stats;
+                        brushCharts[type].stats = stats;
+
+                        // push the chartrows for the main charts
+                        charts[type].chartRows.push(
+                                <ChartRow height={chartRow.height} debug={false}>
+                                    <YAxis
+                                        key={"axis" + type}
+                                        id={"axis" + type}
+                                        label={label + " (" + ipv + ")"}
+                                        style={axisLabelStyle}
+                                        labelOffset={offsets.label}
+                                        format=".2s"
+                                        min={charts[type].stats.min}
+                                        max={charts[type].stats.max}
+                                        width={80} type="linear" align="left" />
+                                    <Charts>
+                                        {charts[type][ipv]}
+                                        {/*
+                                            {charts}
+                                            <ScatterChart axis="axis2" series={failureSeries} style={{color: "steelblue", opacity: 0.5}} />
+                                            */}
+                                    </Charts>
+                                </ChartRow>
+                                );
+
+                        // push the chartrows for the brush charts
+                        brushCharts[type].chartRows.push(
+                                <ChartRow
+                                    height={chartRow.brushHeight}
+                                    debug={false}
+                                    key={"brush" + type}
+                                    className="brush"
+                                >
+                                    <Brush
+                                        timeRange={this.state.brushrange}
+                                        onTimeRangeChanged={this.handleTimeRangeChange}
+                                        allowSelectionClear={true}
+                                    />
+                                    <YAxis 
+                                        key={"brush_axis" + type}
+                                        id={"brush_axis" + type}
+                                        label={label + " (" + ipv + ")"}
+                                        style={axisLabelStyle}
+                                        labelOffset={offsets.label}
+                                        format=".2s"
+                                        min={brushCharts[type].stats.min}
+                                        max={brushCharts[type].stats.max}
+                                        width={80} type="linear" align="left" />
+                                    <Charts>
+                                        {brushCharts[type][ipv]}
+                                    </Charts>
+                                </ChartRow>
+                                );
+
+                        console.log("charts", charts, "current type", type);
+
+                    }
+                }
+                //});
+            }
         }
-        if (this.state.active.reverse && reverseThroughputSeries) {
-            charts.push(
-                <LineChart key="reverse" axis="axis2" series={reverseThroughputSeries} style={requestsStyle} smooth={false} breakLine={true} />
-            );
-        }
-        if (this.state.active.throughput && latencySeries) { // TODO: fix state part
-            latencyCharts.push(
-                <LineChart key="latency" axis="axis1" series={latencySeries} style={connectionsStyle} smooth={false} breakLine={false} />
-            );
-        }
-        if (this.state.active.reverse && reverseLatencySeries) { // TODO: fix state part
-            latencyCharts.push(
-                <LineChart key="reverseLatency" axis="axis1" series={reverseLatencySeries} style={requestsStyle} smooth={false} breakLine={false} />
-            );
-        }
-        if (this.state.active.throughput && lossSeries) {
-            lossCharts.push(
-                    /*
-                <LineChart key="loss" axis="lossAxis" series={lossSeries} style={connectionsStyle} smooth={false} breakLine={true} />
-                */
-                <ScatterChart key="loss" axis="lossAxis" series={lossSeries} style={{color: "#2ca02c", opacity: 0.5}} />
-            );
-        }
-        if (this.state.active.reverse && reverseLossSeries) {
-            lossCharts.push(
-                 <LineChart key="reverseLoss" axis="lossAxis" series={reverseLossSeries} style={requestsStyle} smooth={false} breakLine={true} />
-/*
-                <ScatterChart key="reverseLoss" axis="lossAxis" series={reverseLossSeries} style={{color: "#2ca02c", opacity: 0.5}} />
-                */
-            );
-        }
+
+        latencyCharts = []; lossCharts = []; // TODO: remove - debugging only
+
         var timerange;
-        if (throughputSeries) {
+
+        if (chartSeries) {
             //console.log('throughputSeries is defined');
-            timerange = throughputSeries.timerange();
             //console.log('throughput timerange', timerange);
-        } else if (reverseThroughputSeries) {
+            timerange = this.state.timerange;
+            //timerange = chartSeries.throughput.values.timerange();
+            //timerange = throughputSeries.timerange();
+        }
+        /*
+         * else if ( chartSeries && chartSeries.throughput && chartSeries.throughput.reverse ) {
             //console.log('reverseThroughputSeries is defined');
-            timerange = reverseThroughputSeries.timerange();
+            timerange = chartSeries.throughput.reverse.timerange();
             //console.log('reverse timerange', timerange);
 
-        } 
-        this.timerange = timerange;
+        }
+        */
+        //this.state.timerange = timerange;
         if ( ! timerange ) {
             return ( <div></div> );
         }
+        /*
         if ( this.state.initialTimerange === null ) {
             console.log("initial timerange", timerange);
             this.setState({initialTimerange: timerange});
         }
+        */
+
         return (
             <div>
-                <div className="row">
-                    <div className="col-md-12">
-                    <Resizable>
-            <ChartContainer timeRange={timerange}
-                trackerPosition={this.state.tracker}
-                //onTrackerChanged={(tracker) => this.handleTrackerChanged({tracker})}
-                onTrackerChanged={this.handleTrackerChanged}
-                //onTrackerChanged={(tracker) => this.setState({tracker})}
-                enablePanZoom={true}
-                onTimeRangeChanged={(timerange) => this.setState({timerange})}
-                timeRange={this.state.timerange} >
-                <ChartRow height="200" debug={false}>
-                    <Charts>
-                        {charts}
-                <ScatterChart axis="axis2" series={failureSeries} style={{color: "steelblue", opacity: 0.5}} /> 
-                    </Charts>
-                    <YAxis id="axis2" label="Throughput" style={{labelColor: scheme.connections}}
-                           labelOffset={20} min={0} format=".2s" max={this.state.maxThroughput} width="80" type="linear"/>
-                </ChartRow>
-                <ChartRow height="200" debug={false}>
-                    <Charts>
-                        {lossCharts}
-                    </Charts>
-                    <YAxis id="lossAxis" label="Loss" style={{labelColor: scheme.connections}}
-                           labelOffset={20} min={0.000000001} format=",.4f" max={this.state.maxLoss} width="80" type="log"/>
-                </ChartRow>
-                <ChartRow height="200" debug={false}>
-                    <Charts>
-                        {latencyCharts}
-                    </Charts>
-                    <YAxis id="axis1" label="Latency" style={{labelColor: scheme.connections}}
-                           labelOffset={20} min={0.000000001} format=",.4f" max={this.state.maxLatency} width="80" type="linear"/>
-                </ChartRow>
-            </ChartContainer>
+                <Resizable>
+                    <ChartContainer
+                        timeRange={this.state.timerange}
+                        trackerPosition={this.state.tracker}
+                        onTrackerChanged={this.handleTrackerChanged}
+                        enablePanZoom={true}
+                        onTimeRangeChanged={this.handleTimeRangeChange}
+                        minTime={this.state.initialTimerange.begin()}
+                        maxTime={this.state.initialTimerange.end()}
+                        minDuration={10 * 60 * 1000}
+                        id="mainChartContainer"
+                    >
+                    {/* 
+                    <div className="row collapse">
+                    */}
+                    {charts.throughput.chartRows}
+                    {charts["packet-loss-rate"].chartRows}
+                    {charts["latency"].chartRows}
+                </ChartContainer>
             </Resizable>
-                           </div>
-                               </div>
 
-                <div className="row">
-                    <div className="col-md-12" style={brushStyle}>
+                <div className="rowg">
+                    <div className="col-md-12" style={brushStyle} id="brushContainer">
                         <Resizable>
-                            {this.renderBrush()} 
+                            {this.renderBrush( brushCharts )}
                         </Resizable>
                     </div>
                 </div>
@@ -235,6 +513,7 @@ export default React.createClass({
     },
 
     render() {
+
         const legend = [
             {
                 key: "throughput",
@@ -242,7 +521,7 @@ export default React.createClass({
                 disabled: !this.state.active.throughput,
                 style: {
                     backgroundColor: scheme.connections,
-                    stroke: scheme.connections
+                    stroke: scheme.requests
                 }
             },{
                 key: "reverse",
@@ -250,7 +529,7 @@ export default React.createClass({
                 disabled: !this.state.active.reverse,
                 style: {
                     backgroundColor: scheme.requests,
-                    stroke: scheme.requests,
+                    stroke: scheme.connections,
                     strokeDasharray: "4,2"
                 }
             }
@@ -259,195 +538,120 @@ export default React.createClass({
 
         return (
             <div>
-                <div className="row">
-                    <div className="col-md-12">
-                        <h3>perfSONAR Test Results</h3>
-                    </div>
-                </div>
-
-                <div className="row">
-                    <div className="col-md-12">
-                        <Legend type="line" categories={legend} onChange={this.handleActiveChange}/>
-                    </div>
-                </div>
-
-                <hr/>
-
-                {this.renderChart()}
-                {/* <div className="row">
-                    <div className="col-md-12">
-                        <Resizable>
-                            {this.renderChart()}
-                        </Resizable>
-                    </div>
-                </div>
-                /*}
-
+                <div>
                 {/*
-                <div className="row">
-                    <div className="col-md-12" style={brushStyle}>
-                        <Resizable>
-                            {this.renderBrush()} 
-                        </Resizable>
-                    </div>
-                </div>
-                */}
+                    <div className="row">
+                        <div className="col-md-12">
+                            <Legend type="line" categories={legend} onChange={this.handleActiveChange}/>
+                        </div>
+                    </div>                    
 
-                <hr/>
+                    <hr/>
+                    */}
+
+                    {this.renderChart()}
+
+                    <hr/>
+
+                </div>
 
             </div>
         );
     },
 
     handleTimeRangeChange(timerange) {
-        //if ( timerange.begin().toString() != timerange.end().toString() ) {
-            this.setState({timerange});
-            /*
+        //console.log("timerange changed", timerange.begin(), "end", timerange.end());
+        //if ( timerange.begin().toString() == timerange.end().toString() ) {
+        //    timerange = null;
+        //}
+
+
+        if (timerange) {
+            this.setState({timerange, brushrange: timerange});
         } else {
-            this.setState({timerange: this.initialTimerange});
-             this.forceUpdate();
+            this.setState({timerange: this.state.initialTimerange, brushrange: null});
         }
-        */
+
+
+       // this.setState({timerange});
     },
 
-    handleBrushCleared(val) {
-        this.setState({timerange: this.state.initialTimerange});
-        //this.setState({timerange: this.state.initialTimerange});
-        console.log("brush cleared, initial timerange", this.state.initialTimerange);
-        //this.forceUpdate();
-    },
-/*
-    handleTrackerChanged(t) {
-        this.setState({tracker: t});
-    },
-*/
 
-    renderBrush() {
+    renderBrush( brushCharts ) {
         return (
-            <ChartContainer
-                timeRange={throughputSeries.timerange()}
-                format="relative"
-                trackerPosition={this.state.tracker}>
-                <ChartRow height="100" debug={false}>
-                    <Brush
-                        timeRange={null}
-                        //timeRange={this.state.timerange}
-                        onTimeRangeChanged={this.handleTimeRangeChange}
-                        onBrushCleared={this.handleBrushCleared}
-                        />
-                    <YAxis
-                        id="brushAxis1"
-                        label="Throughput"
-                        min={0} max={this.state.maxThroughput}
-                        width={70} type="linear" format="d"/>
-                    <Charts>
-                        <LineChart
-                            key="brushThroughput"
-                            axis="brushAxis1"
-                            style={{up: ["#DDD"]}}
-                            columns={{up: ["throughput"], down: []}}
-                            series={throughputSeries} />
-                    </Charts>
-                </ChartRow>
-            </ChartContainer>
-        );
+                <ChartContainer
+                    timeRange={this.state.initialTimerange}
+                    trackerPosition={this.state.tracker}
+                    className="brush"
+                    /*
+                    enablePanZoom={true}
+                    onTimeRangeChanged={this.handleTimeRangeChange}
+                    minTime={this.state.initialTimerange.begin()}
+                    maxTime={this.state.initialTimerange.end()}
+                    minDuration={10 * 60 * 1000}
+                    */
+                >
+                    {brushCharts.throughput.chartRows}
+                    {brushCharts["packet-loss-rate"].chartRows}
+                    {brushCharts["latency"].chartRows}
+                </ChartContainer>
+               );
+    },
+
+    updateChartData: function() {
+        console.log("updating chart data");
+        let newChartSeries = GraphDataStore.getChartData();
+        console.log("new series", newChartSeries);
+        this.setState({ chartSeries: newChartSeries } );
+        this.forceUpdate();
+        //ChartLayout.forceUpdate();
+        //ChartLayout.setState({throughputCharts: charts});
     },
 
     componentDidMount: function() {
-        var url = 'http://perfsonar-dev.grnoc.iu.edu/esmond/perfsonar/archive/9808c289fc07446e9939330706b896d6/throughput/base';
-        url += '?time-range=' + 86400 * 30;
-        //var url = 'http://perfsonar-dev.grnoc.iu.edu/esmond/perfsonar/archive/050056d85a8344bc844e2aeaa472db9b/throughput/base';
+        //var { status, page, limit } = this.context.router.getCurrentQuery();
+        /*
+        if ( ! this.state.timerange ) {
+            this.handleTimeRangeChange(null);
+        }
+        */
 
-        this.serverRequest = $.get(url, function ( data ) {
-            console.log('ajax request came back; throughput data', Date(), data );
-            var values = this.esmondToTimeSeries( data, 'throughput' );
-            throughputValues = values.values;
-            throughputSeries = values.series;
-            console.log('throughput values', Date(), throughputValues);
-            //this.renderChart();
-            this.forceUpdate();
-        }.bind(this));
+        /*
+        var qs = this.props.location.query;
+        console.log( "qs", qs );
+        let src = qs.src;
+        let dst = qs.dst;
+        let start = qs.start;
+        let end = qs.end;
+        let ma_url = qs.ma_url || "http://perfsonar-dev.grnoc.iu.edu/esmond/perfsonar/archive/";
+        */
 
-        var url2 = 'http://perfsonar-dev.grnoc.iu.edu/esmond/perfsonar/archive/f1f55c1d158545c29ff8700980948d30/throughput/base';
-        url2 += '?time-range=' + 86400 * 30;
-
-        this.serverRequest = $.get(url2, function ( data ) {
-            console.log('ajax request came back; reverse throughput data', Date(), data);
-            var values = this.esmondToTimeSeries( data, 'reverseThroughput' );
-            reverseThroughputValues = values.values;
-            reverseThroughputSeries = values.series;
-            console.log('reverse throughput values', Date(), reverseThroughputValues );
-            //this.renderChart();
-            this.forceUpdate();
-        }.bind(this));
-
-        // http://perfsonar-dev.grnoc.iu.edu/esmond/perfsonar/archive/c1eb8fb9fd87429bb3bfaf79aca6424b/histogram-owdelay/statistics/3600
-        var url3 = 'http://perfsonar-dev.grnoc.iu.edu/esmond/perfsonar/archive/c1eb8fb9fd87429bb3bfaf79aca6424b/histogram-owdelay/statistics/3600';
-        url3 += '?time-range=' + 86400 * 30;
-
-        this.serverRequest = $.get(url3, function ( data ) {
-            console.log('ajax request came back; latency data', Date(), data );
-            var values = this.esmondToTimeSeries( data, 'latency' );
-            latencyValues = values.values;
-            latencySeries = values.series;
-            console.log('latency values', Date(), latencyValues );
-            //this.renderChart();
-            this.forceUpdate();
-        }.bind(this));
-
-        // http://perfsonar-dev.grnoc.iu.edu/esmond/perfsonar/archive/5a1707536a5143759713adddc5cafa66/histogram-rtt/statistics/3600
-        var url4 = 'http://perfsonar-dev.grnoc.iu.edu/esmond/perfsonar/archive/5a1707536a5143759713adddc5cafa66/histogram-rtt/statistics/3600';
-        url4 += '?time-range=' + 86400 * 30;
-
-        this.serverRequest = $.get(url4, function ( data ) {
-            console.log('ajax request came back; latency data', Date(), data);
-            var values = this.esmondToTimeSeries( data, 'reverseLatency' );
-            reverseLatencyValues = values.values;
-            reverseLatencySeries = values.series;
-            console.log('reverse latency values', Date(), reverseLatencyValues );
-            //this.renderChart();
-            this.forceUpdate();
-        }.bind(this));
-
-        var url5 = 'http://perfsonar-dev.grnoc.iu.edu/esmond/perfsonar/archive/0121d658a72a4f119a99c5e03bfa674b/packet-loss-rate/base';
-        url5 += '?time-range=' + 86400 * 30;
-        this.serverRequest = $.get(url5, function ( data ) {
-            console.log('ajax request came back; loss data', Date(), data);
-            var values = this.esmondToTimeSeries( data, 'loss' );
-            lossValues = values.values;
-            lossSeries = values.series;
-            console.log('loss values', Date(), lossValues );
-            //this.renderChart();
-            this.forceUpdate();
-
-        }.bind(this));
-
-        var url6 = 'http://perfsonar-dev.grnoc.iu.edu/esmond/perfsonar/archive/0acdc51a787a43c4b2b81c66e9d564da/packet-loss-rate/aggregations/86400';
-        url6 += '?time-range=' + 86400 * 30;
-        this.serverRequest = $.get(url6, function ( data ) {
-            console.log('ajax request came back; reverse loss data', Date(), data);
-            var values = this.esmondToTimeSeries( data, 'reverseLoss' );
-            reverseLossValues = values.values;
-            reverseLossSeries = values.series;
-            console.log('reverse loss values', Date(), reverseLossValues );
-            //this.renderChart();
-            this.forceUpdate();
-
-        }.bind(this));
+        let src = this.props.src;
+        let dst = this.props.dst;
+        let start = this.props.start;
+        let end = this.props.end;
+        let ma_url = this.props.ma_url || "http://perfsonar-dev.grnoc.iu.edu/esmond/perfsonar/archive/";
 
 
-var values = this.esmondToTimeSeries( failures, 'failures' );
-failureValues = values.values;
-failureSeries = values.series;
-console.log('failure values', failureValues);
-console.log('failure series', failureSeries);
+        GraphDataStore.subscribe(this.updateChartData);
+
+        if ( src === null || dst === null ) {
+            //return;
+        }
+
+        GraphDataStore.getHostPairMetadata( src, dst, start, end, ma_url );
 
 
+        var values = this.esmondToTimeSeries( failures, 'failures' );
+        failureValues = values.values;
+        failureSeries = values.series;
+        console.log('failure values', failureValues);
+        console.log('failure series', failureSeries);
     },
-
 
     componentWillUnmount: function() {
         this.serverRequest.abort();
+        GraphDataStore.unsubscribe( this.updateChartData );
     },
 
     _checkSortOrder : function( ary, valName='ts' ) {
@@ -490,7 +694,7 @@ console.log('failure series', failureSeries);
         active[key] = !disabled;
         this.setState({active});
 */
-        
+
             }
             // TODO: change this section to use else if
             if ( seriesName == 'loss' || seriesName == 'reverseLoss' ) {
@@ -519,23 +723,11 @@ console.log('failure series', failureSeries);
             columns: ["time", "value"],
             points: values
         });
-        /*
-         * Shouldn't need this as _checkSortOrder is called above
-        var lastTS = 0;
-        for (let i=0; i < series.size(); i++) {
-            //console.log(series.at(i).toString());
-            //console.log('series.at(i)', series.at(i));
-            var ts = series.at(i).timestamp().getTime();
-            if ( ts > lastTS ) {
-                //console.log( 'new ts > last TS', ts, lastTS );
-
-            } else {
-                console.log( 'BAD: new ts <= last TS', ts, lastTS );
-
-            }
-            lastTS = ts;
-        }
-        */
         return ( { values: values, series: series } );
+    }, 
+    checkEventType: function ( eventType, direction ) {
+        return this.state.chartSeries 
+            && this.state.chartSeries[ eventType ]
+            && ( direction === null || this.state.chartSeries[ eventType ][ direction ] );
     }
 });
