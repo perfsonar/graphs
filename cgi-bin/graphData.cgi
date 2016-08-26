@@ -119,8 +119,6 @@ sub get_data {
     my %results;
     my %types_to_ignore = ();
 
-    share(%types_to_ignore);
-
     my @threads;
 
     for (my $j = 0; $j < @sources; $j++){
@@ -268,6 +266,8 @@ sub _get_test_data {
     $filter->destination($test_dest);
     $filter->measurement_agent($agent) if($agent);
     $filter->tool_name($tool) if($tool);
+    $filter->time_start($start) if ($start);
+    $filter->time_end($end) if ($end);
     $filter->{metadata_filters}->{'ip-transport-protocol'} = $protocol if($protocol);
     if($ipversion){
         if($ipversion eq '6'){
@@ -547,11 +547,16 @@ sub _get_local_addresses {
 # of active tests in an MA. 
 sub get_test_list {
     my $url    = $cgi->param('url')   || error("Missing required parameter \"url\"");
+    # timeperiod in the url is really "timeperiod,summary_window"
+    my $timeperiod = 86400 * 7;
+    if (defined $cgi->param('timeperiod')) {
+        ($timeperiod, my $y) = split(',' , $cgi->param('timeperiod')); 
+    } 
 
     my $addresses = _get_local_addresses_hash();
 
     my $filter = new perfSONAR_PS::Client::Esmond::ApiFilters(); 
-    $filter->time_range( 86400*7 );
+    $filter->time_range( $timeperiod );
     $filter->subject_type('point-to-point');
 
     my $client = new perfSONAR_PS::Client::Esmond::ApiConnect(url     => $url,
@@ -565,7 +570,7 @@ sub get_test_list {
     my @active_tests;
     my %active_hosts;
     my $now = time;
-    my $start_time = $now - 86400 * 7;
+    my $start_time = $now - $timeperiod;
     my $metadata_out = [];
 
     my $dns_time = 0; # TODO: remove dns_time (benchmarking)
@@ -635,9 +640,26 @@ sub get_test_list {
 }
 
 sub get_tests {
+    # Get averages for test summary table
     my $url    = $cgi->param('url')   || error("Missing required parameter \"url\"");
+    my $timeperiod = 86400 * 7;
+    my $summary_window = 3600;
+    # timeperiod in the url is really "timeperiod,summary_window"
+    if (defined $cgi->param('timeperiod')) {
+        ($timeperiod, my $y) = split(',' , $cgi->param('timeperiod')); 
+        $summary_window = $y if($y);
+    } 
     my $flatten = 1;
     $flatten = $cgi->param('flatten') if (defined $cgi->param('flatten'));
+    # put sources and dests in the url to limit to those only. 
+    # src=x.x.x.x;src=y.y.y.y;... or src=x.x.x.x;dest=z.z.z.z;src=y.y.y.y..., just watch the order.
+    my @sources;
+    my @dests;
+    @sources     = $cgi->param('src') if (defined $cgi->param('src'));
+    @dests       = $cgi->param('dest') if (defined $cgi->param('dest'));
+    if ( (@sources or @dests) and @sources != @dests ) {
+        error("get_tests: There must be an equal number of src and dest params, if any", 400);
+    }
 
     my $show_details = 0;
     my $start_time = [Time::HiRes::gettimeofday()];
@@ -645,7 +667,7 @@ sub get_tests {
     my $addresses = _get_local_addresses_hash();
 
     my $filter = new perfSONAR_PS::Client::Esmond::ApiFilters();
-    $filter->time_range( 86400*7 );
+    $filter->time_range( $timeperiod );
     $filter->subject_type('point-to-point');
     #$filter->limit(10); #return up to 10 results
     #$filter->offset(0); # return the first results you find
@@ -663,8 +685,6 @@ sub get_tests {
 
     my %results;
 
-    my $summary_window = 3600; # try 0 or 86400
-
     my $now = time;
     my $total_data = 0;
     my $all_types = [];
@@ -672,6 +692,23 @@ sub get_tests {
     foreach my $metadatum (@$metadata){
         my $src = $metadatum->source();
         my $dst = $metadatum->destination();
+
+        # Do this test if it's in the lists of sources and destinations (forward or reverse)
+        # (Do all tests if no sources/dests are given)
+        my $dothistest = 0;
+        if (!@sources) {
+            $dothistest = 1;
+        } else { 
+            for my $i (0 .. $#sources) {
+                if ( ($src eq $sources[$i] and $dst eq $dests[$i])  
+                     or ($src eq $dests[$i] and $dst eq $sources[$i]) ) {
+                    $dothistest = 1;
+                    last;
+                } 
+            }
+        }
+        next if ( !$dothistest );
+
         my $event_types = $metadatum->get_all_event_types();
 
         my $protocol = $metadatum->get_field('ip-transport-protocol');
@@ -681,20 +718,22 @@ sub get_tests {
 
         foreach my $event_type (@$event_types){
 
-            my $type        = $event_type->event_type();
+            my $full_type   = $event_type->event_type();
             my $last_update = $event_type->time_updated(); 
 
             # Currently, we hard-code the list of event types we will accept for our listing. If we retrieve all of them, 
             # performance is too poor and we don't care about many of them.
             # Ideally, this would be configurable.
-            next unless ($type eq 'throughput' || $type eq 'packet-loss-rate' || $type eq 'histogram-owdelay' || $type eq 'histogram-rtt');
+            next unless ($full_type eq 'throughput' || $full_type eq 'packet-loss-rate' || 
+                         $full_type eq 'histogram-owdelay' || $full_type eq 'histogram-rtt');
 
-            $type = 'loss' if ($type eq 'packet-loss-rate');
-            $type = 'owdelay' if ($type eq 'histogram-owdelay');
-            $type = 'rtt' if ($type eq 'histogram-rtt');
+            my $type = $full_type;
+            $type = 'loss' if ($full_type eq 'packet-loss-rate');
+            $type = 'owdelay' if ($full_type eq 'histogram-owdelay');
+            $type = 'rtt' if ($full_type eq 'histogram-rtt');
 
-            # now grab the last 1 weeks worth of data to generate a high level view
-            my $start_time = $now - 86400 * 7;
+            # now grab the last $timeperiod seconds worth of data to generate a high level view
+            my $start_time = $now - $timeperiod;
             $event_type->filters->time_start($start_time);
             $event_type->filters->time_end($now);
             $event_type->filters->source($src);
@@ -709,9 +748,12 @@ sub get_tests {
             my $average;
             my $min = undef;
             my $max = undef;
+            my $actual_window = $summary_window;
             if ($type eq 'owdelay' || $type eq 'rtt') {
+                # latency
                 if ($show_details || 1) {
-                    my $stats_summ = $event_type->get_summary('statistics', $summary_window);
+                    $actual_window = select_summary_window($full_type, 'statistics', $summary_window, $event_type);
+                    my $stats_summ = $event_type->get_summary('statistics', $actual_window);
                     error($event_type->error) if ($event_type->error);
                     $data = $stats_summ->get_data() if defined $stats_summ;
                     if (defined($data) && @$data > 0){
@@ -732,10 +774,13 @@ sub get_tests {
                 }
             } else {
                 if ($type eq 'loss') {
-                    my $stats_summ = $event_type->get_summary('aggregation', $summary_window);
+                    # loss
+                    $actual_window = select_summary_window($full_type, 'aggregation', $summary_window, $event_type);
+                    my $stats_summ = $event_type->get_summary('aggregation', $actual_window);
                     error($event_type->error) if ($event_type->error);
                     $data = $stats_summ->get_data() if defined $stats_summ;
                 } else {
+                    # throughput
                     $data = $event_type->get_data();
                 }
                 if (defined($data) && @$data > 0){
@@ -754,9 +799,9 @@ sub get_tests {
         
             if (defined($data) && @$data > 0 ) {
                 $results{$src}{$dst}{$type} = {last_update  => $last_update,
-                    week_average => $average,
-                    week_min     => $min,
-                    week_max     => $max,
+                    timeperiod_average => $average,
+                    timeperiod_min     => $min,
+                    timeperiod_max     => $max,
                     duration     => $duration,
                     protocol     => $protocol,
                     bidirectional => 0};
@@ -775,29 +820,29 @@ sub get_tests {
                     my ($average, $min, $max, $duration, $last_update, $protocol);
                     if (exists($results{$src}{$dst}{$type})) {
                         $src_res = $results{$src}{$dst}{$type};
-                        $src_average = $src_res->{'week_average'};
-                        $src_min = $src_res->{'week_min'};
-                        $src_max = $src_res->{'week_max'};
+                        $src_average = $src_res->{'timeperiod_average'};
+                        $src_min = $src_res->{'timeperiod_min'};
+                        $src_max = $src_res->{'timeperiod_max'};
                         $protocol = $src_res->{'protocol'};
 
                     }
                     if (exists($results{$dst}{$src}{$type})) {
                         $dst_res = $results{$dst}{$src}{$type};
                         $average = undef;
-                        $dst_average = $dst_res->{'week_average'};
-                        $dst_min = $dst_res->{'week_min'};
-                        $dst_max = $dst_res->{'week_max'};
+                        $dst_average = $dst_res->{'timeperiod_average'};
+                        $dst_min = $dst_res->{'timeperiod_min'};
+                        $dst_max = $dst_res->{'timeperiod_max'};
 
-                        $min = $dst_res->{'week_min'};
-                        $max = $dst_res->{'week_max'};
+                        $min = $dst_res->{'timeperiod_min'};
+                        $max = $dst_res->{'timeperiod_max'};
                         $duration = $dst_res->{'duration'};
                         $last_update = $dst_res->{'last_update'} || 0;
                         $protocol = $dst_res->{'protocol'};
-                        $bidirectional = 1 if (defined ($results{$dst}{$src}{$type}->{'week_average'}) && defined ($results{$src}{$dst}{$type}->{'week_average'}) );
+                        $bidirectional = 1 if (defined ($results{$dst}{$src}{$type}->{'timeperiod_average'}) && defined ($results{$src}{$dst}{$type}->{'timeperiod_average'}) );
 
                         # Now combine with the source values
-                        $min = $src_res->{'week_min'} if (defined($src_res->{'week_min'}) && (!defined($min) || $src_res->{'week_min'} < $min));
-                        $max = $src_res->{'week_max'} if (defined($src_res->{'week_max'}) && (!defined($max) || $src_res->{'week_max'} > $max));
+                        $min = $src_res->{'timeperiod_min'} if (defined($src_res->{'timeperiod_min'}) && (!defined($min) || $src_res->{'timeperiod_min'} < $min));
+                        $max = $src_res->{'timeperiod_max'} if (defined($src_res->{'timeperiod_max'}) && (!defined($max) || $src_res->{'timeperiod_max'} > $max));
 
                         if (defined $src_average && defined($dst_average)) {
                             $average = ($src_average + $dst_average) / 2;
@@ -813,9 +858,9 @@ sub get_tests {
     
                         delete $results{$dst}{$src}{$type};
                     }
-                        $results{$src}{$dst}{$type}->{'week_max'} = $max;
-                        $results{$src}{$dst}{$type}->{'week_min'} = $min;
-                        $results{$src}{$dst}{$type}->{'week_average'} = $average;
+                        $results{$src}{$dst}{$type}->{'timeperiod_max'} = $max;
+                        $results{$src}{$dst}{$type}->{'timeperiod_min'} = $min;
+                        $results{$src}{$dst}{$type}->{'timeperiod_average'} = $average;
                         $results{$src}{$dst}{$type}->{'last_update'} = $last_update;
                         $results{$src}{$dst}{$type}->{'duration'} = $duration;
                         $results{$src}{$dst}{$type}->{'protocol'} = $protocol;

@@ -123,68 +123,68 @@ function get_hash_val(key) {
     return ioQuery.queryToObject(theHash())[key];
 }
 
-d3.json(ls_list_url, function(error, ls_list_data) { 
-        var rows = [];
-        var remaining = ls_list_data.length;
-        for(var ls_index in ls_list_data) {
-	    var url = ls_list_data[ls_index];
-	    var ls = ls_query_url + '&ls_url=' + encodeURI(url) + array2param('source', sources) + array2param('dest', dests);
-	    d3.json(ls, function(ls_error, interface_data) {
-		    if (ls_error){
-			// should do something with this
-		    }
-		    if(!isEmpty(interface_data)) {
-			rows.push(interface_data);
-		    }
-		    if (!--remaining){
-			combineData();
-		    }
-		});
+d3.json(ls_list_url, function(error, ls_list_data) {
+    var rows = [];
+    var remaining = ls_list_data.length;
+    for(var ls_index in ls_list_data) {
+        var url = ls_list_data[ls_index];
+        var ls = ls_query_url + '&ls_url=' + encodeURI(url) + array2param('source', sources) + array2param('dest', dests);
+        d3.json(ls, function(ls_error, interface_data) {
+            if (ls_error){
+                // should do something with this
+            }
+            if(!isEmpty(interface_data)) {
+                rows.push(interface_data);
+            }
+            if (!--remaining){
+                combineData();
+            }
+        });
+    }
+
+    function combineData() {
+
+        for(var i in rows) {
+            var results = rows[i];
+
+            for (var j in results){
+                row = rows[i][j];
+
+                for (var k in sources){
+                    if (sources[k] == row.source_ip){
+                        var srcCapacity = d3.select('#source_capacity_' + k);
+                        var srcMTU = d3.select('#source_mtu_' + k);
+
+                        if (row.source_mtu) {
+                            src_mtu = row.source_mtu;
+                            srcMTU.html( src_mtu );
+                        }
+
+                        if (row.source_capacity) {
+                            src_capacity = row.source_capacity;
+                            srcCapacity.html( d3.format('.2s')(src_capacity) );
+                        }
+
+                    }
+
+                    if(dests[k] == row.dest_ip){
+                        var destCapacity = d3.select('#dest_capacity_' + k);
+                        var destMTU = d3.select('#dest_mtu_' + k);
+
+                        if (row.dest_mtu) {
+                            dest_mtu = row.dest_mtu;
+                            destMTU.html( dest_mtu );
+                        }
+                        if (row.dest_capacity) {
+                            dest_capacity = row.dest_capacity;
+                            destCapacity.html( d3.format('.2s')(dest_capacity) );
+                        }
+                    }
+                }
+            }
         }
-
-        function combineData() {
-
-            for(var i in rows) {
-                var results = rows[i];
-
-		for (var j in results){
-		    row = rows[i][j];
-
-		    for (var k in sources){
-			if (sources[k] == row.source_ip){
-			    var srcCapacity = d3.select('#source_capacity_' + k);
-			    var srcMTU = d3.select('#source_mtu_' + k);
-
-			    if (row.source_mtu) {
-				src_mtu = row.source_mtu;
-				srcMTU.html( src_mtu );
-			    }
-
-			    if (row.source_capacity) {
-			    src_capacity = row.source_capacity;
-			    srcCapacity.html( d3.format('.2s')(src_capacity) );
-			    }
-
-			}
-
-			if(dests[k] == row.dest_ip){
-			    var destCapacity = d3.select('#dest_capacity_' + k);
-			    var destMTU = d3.select('#dest_mtu_' + k);
-
-			    if (row.dest_mtu) {
-				dest_mtu = row.dest_mtu;
-				destMTU.html( dest_mtu );
-			    }
-			    if (row.dest_capacity) {
-				dest_capacity = row.dest_capacity;
-				destCapacity.html( d3.format('.2s')(dest_capacity) );
-			    }
-			}
-		    }
-		}
-	    }
-	}
-    });
+    }
+});
 
 // default ma url, pre-encoded
 var ma_urls = ['http%3A%2F%2Flocalhost%2Fesmond%2Fperfsonar%2Farchive%2F'];
