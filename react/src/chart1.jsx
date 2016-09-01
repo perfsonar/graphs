@@ -146,7 +146,7 @@ function getChartStyle( options ) {
 }
 
 const lineStyles = {
-    value: { 
+    value: {
         stroke: scheme.udp,
         strokeWidth: 1.5
     }
@@ -217,8 +217,8 @@ export default React.createClass({
             },
             //src: null,
             //dst: null,
-            //start: null,
-            //end: null,
+            start: this.props.start,
+            end: this.props.end,
             tracker: null,
             chartSeries: null,
             timerange: TimeRange.lastSevenDays(),
@@ -411,7 +411,6 @@ export default React.createClass({
                                     height={chartRow.brushHeight}
                                     debug={false}
                                     key={"brush" + type}
-                                    className="brush"
                                 >
                                     <Brush
                                         timeRange={this.state.brushrange}
@@ -513,6 +512,7 @@ export default React.createClass({
     },
 
     render() {
+        console.log("in render() in chart1.jsx");
 
         const legend = [
             {
@@ -603,7 +603,7 @@ export default React.createClass({
         let newChartSeries = GraphDataStore.getChartData();
         console.log("new series", newChartSeries);
         this.setState({ chartSeries: newChartSeries } );
-        this.forceUpdate();
+        //this.forceUpdate();
         //ChartLayout.forceUpdate();
         //ChartLayout.setState({throughputCharts: charts});
     },
@@ -628,18 +628,11 @@ export default React.createClass({
 
         let src = this.props.src;
         let dst = this.props.dst;
-        let start = this.props.start;
-        let end = this.props.end;
+        let start = this.state.start;
+        let end = this.state.end;
         let ma_url = this.props.ma_url || "http://perfsonar-dev.grnoc.iu.edu/esmond/perfsonar/archive/";
-
-
-        GraphDataStore.subscribe(this.updateChartData);
-
-        if ( src === null || dst === null ) {
-            //return;
-        }
-
-        GraphDataStore.getHostPairMetadata( src, dst, start, end, ma_url );
+        this.getDataFromMA(src, dst, start, end, ma_url);
+        //ChartHeader.subscribe( "timerangeChange" );
 
 
         var values = this.esmondToTimeSeries( failures, 'failures' );
@@ -647,6 +640,35 @@ export default React.createClass({
         failureSeries = values.series;
         console.log('failure values', failureValues);
         console.log('failure series', failureSeries);
+    },
+
+    getDataFromMA: function(src, dst, start, end, ma_url ) {
+        console.log("getDataFromMA state: ", this.state);
+
+        console.log("getDataFromMA parameters: src", src, "dst", dst, "start", start, "end", end, "ma_url", ma_url);
+
+        GraphDataStore.subscribe(this.updateChartData);
+
+        GraphDataStore.getHostPairMetadata( src, dst, start, end, ma_url );
+    },
+    /*
+    componentDidUpdate: function() {
+        this.getDataFromMA();
+
+    },
+    */
+    componentWillReceiveProps( nextProps ) {
+        console.log('chart1 new props', nextProps);
+        // You don't have to do this check first, but it can help prevent an unneeded render
+        /*
+           if (nextProps.startTime !== this.state.startTime) {
+           this.setState({ startTime: nextProps.startTime });
+           }
+           */
+        console.log("prev props", this.props);
+        this.setState({start: nextProps.start, end: nextProps.end, chartSeries: null});
+        //this.forceUpdate();
+        this.getDataFromMA(nextProps.src, nextProps.dst, nextProps.start, nextProps.end, nextProps.ma_url);
     },
 
     componentWillUnmount: function() {

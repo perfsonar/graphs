@@ -11,6 +11,13 @@ import "../../toolkit/web-ng/root/js/app.js"
 
 const text = 'perfSONAR chart';
 
+const now = Math.floor( new Date().getTime() / 1000 );
+
+const defaults = {
+    start: now - 86400*7,
+    end: now,
+    timerange: "1w"
+};
 
 const scheme = {
     requests: "#2ca02c",
@@ -131,7 +138,9 @@ export default React.createClass({
             src: newState.src,
             dst: newState.dst,
             start: newState.start,
-            end: newState.end
+            end: newState.end,
+            timerange: newState.timerange,
+            ma_url: newState.ma_url
         };
     },
     contextTypes: {
@@ -140,13 +149,17 @@ export default React.createClass({
 
 
     render() {
-
+        console.log("in chartLayout render; start", this.state.start, "end", this.state.end)
         return (
 
                 <div className="graph">
                 <ChartHeader 
                     sources={this.state.src}
                     dests={this.state.dst}
+                    start={this.state.start}
+                    end={this.state.end}
+                    timerange={this.state.timerange}
+                    updateTimerange={this.handleTimerangeChange} 
                 />
 
                     {/* GRAPH: Select Data*/}
@@ -222,20 +235,44 @@ export default React.createClass({
         );
     },
 
+    componentDidMount: function() {
+            ChartHeader.subscribe("timerangeChange", this.handleTimerangeChange);
+
+    },
+    componentWillUnmount: function() {
+        ChartHeader.unsubscribe("timerangeChange", this.handleTimerangeChange);
+    },
+
+    handleTimerangeChange: function( newTime ) {
+        console.log("time from ChartHeader", newTime);
+        this.setState( newTime );
+        this.forceUpdate();
+
+    },
+
     getQueryString: function() {
         var qs = this.props.location.query;
         console.log( "qs", qs );
         let src = qs.src;
         let dst = qs.dst;
-        let start = qs.start;
-        let end = qs.end;
+        let start = defaults.start;
+        let end = defaults.end;
+        let timerange = defaults.timerange;
+        //let timeRange = this.getTimeVars( defaults.timerange );
+        if ( typeof qs.start != "undefined" ) {
+            start = qs.start || defaults.start;
+        }
+        if ( typeof qs.end != "undefined" ) {
+            let end = qs.end || defaults.end;
+        }
         let ma_url = qs.ma_url || "http://perfsonar-dev.grnoc.iu.edu/esmond/perfsonar/archive/";
         const newState = {
             src:    src,
             dst:    dst,
             start:  start,
             end:    end,
-            ma_url: ma_url
+            ma_url: ma_url,
+            timerange: timerange
         };
         console.log("newState", newState);
 

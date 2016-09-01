@@ -14,8 +14,11 @@ let completedReqs = 0;
 let completedDataReqs = 0;
 
 let startTime = Date.now();
-let start = Math.floor( Date.now() - 7 * 86400 / 1000 );
-let end = Math.ceil( Date.now() / 1000 );
+let start;// = Math.floor( Date.now() - 7 * 86400 / 1000 );
+let end; // = Math.ceil( Date.now() / 1000 );
+
+let chartMetadata = [];
+let chartData = [];
 
 module.exports = {
 
@@ -23,12 +26,20 @@ module.exports = {
                     'packet-retransmits', 'histogram-rtt', 'failures'],
             //|| ['histogram-rtt'];
     maURL: null,
-    chartMetadata: [],
-    chartData: [],
+
+    initVars: function() {
+        chartMetadata = [];
+        chartData = [];
+        this.eventTypes = ['throughput', 'histogram-owdelay', 'packet-loss-rate',
+                    'packet-retransmits', 'histogram-rtt', 'failures'];
+
+    },
 
     getHostPairMetadata: function ( sources, dests, startInput, endInput, ma_url ) {
         start = startInput;
         end = endInput;
+
+        this.initVars();
 
         this.maURL = new URL(ma_url);
         if ( !$.isArray( sources ) ) {
@@ -39,16 +50,15 @@ module.exports = {
         }
 
         if ( ! end ) {
-            end = Math.ceil( Date.now() / 1000 ); 
+            //end = Math.ceil( Date.now() / 1000 ); 
         }
 
         if ( ! start ) {
-            start = Math.floor( end - 86400 * 7 ); // TODO: 7 days a good default?
+            //start = Math.floor( end - 86400 * 7 ); // TODO: 7 days a good default?
         }
-        console.log("start", start);
-        console.log("end", end);
+        console.log("gds start", start, "end", end);
 
-        let urls = [];
+
         for( let i in sources ) {
             let directions = [ [ sources[i], dests[i] ], 
                 [ dests[i], sources[i] ] ];
@@ -62,9 +72,8 @@ module.exports = {
 
 
                 let url = ma_url + "?source=" + src + "&destination=" + dst;
-                url += "&time-start=" + start + "&time-end=" + end;
-                console.log("url: ", url);
-                urls.push(url); // TODO: review -- do we need this?
+                // url += "&time-start=" + start + "&time-end=" + end; TODO: add this back?
+                console.log("metadata url: ", url);
 
                 this.serverRequest = $.get( url, function(data) {
                     this.handleMetadataResponse(data, direction[j]);
@@ -80,16 +89,20 @@ module.exports = {
             data[i].direction = direction;
         }
         console.log("data", data);
-        $.merge( this.chartMetadata, data );
+        $.merge( chartMetadata, data );
         completedReqs++;
         if ( completedReqs == reqCount ) {
             let endTime = Date.now();
             let duration = ( endTime - startTime ) / 1000;
             console.log("COMPLETED ALL", reqCount, " REQUESTS in", duration);
             completedReqs = 0;
-            data = this.filterEventTypes( this.chartMetadata );
-            data = this.getData( this.chartMetadata );
-            console.log("chartMetadata", this.chartMetadata);
+            reqCount = 0;
+            data = this.filterEventTypes( chartMetadata );
+            data = this.getData( chartMetadata );
+            console.log("chartMetadata", chartMetadata);
+
+        } else {
+            console.log("completed " + reqCount + " requests");
 
         }
 
@@ -101,7 +114,7 @@ module.exports = {
         console.log("eventTypes", eventTypes);
 
         let tests = $.map( data, function( test, i ) {
-            console.log("test", test);
+            //console.log("test", test);
             let matchingEventTypes = $.map( test['event-types'], function( eventType, j ) {
                 let ret = $.inArray( eventType['event-type'], eventTypes );
                 if ( ret >= 0 ) {
@@ -146,7 +159,6 @@ module.exports = {
         let defaultSummaryType = "aggregation"; // TODO: allow other aggregate types
         let multipleTypes = [ "histogram-rtt", "histogram-owdelay" ];
         let baseURL = this.maURL.origin;
-        let urls = [];
         dataReqCount = 0;
         for(let i in metaData) {
             let datum = metaData[i];
@@ -215,11 +227,11 @@ module.exports = {
                 // TODO: add timerange to URL
                 uri += "?time-start=" + start + "&time-end=" + end;
                 let url = baseURL + uri;
-                console.log("url", url);
+                console.log("data url", url);
                 let row = pruneDatum( datum );
                 row.protocol = datum["ip-transport-protocol"];
                 row.ipversion = ipversion;
-                console.log("row", row);
+                //console.log("row", row);
                 /*
                 let row = {
                     eventType: eventType,
@@ -250,35 +262,35 @@ module.exports = {
         row.data = data;
         //row.protocol = protocol;
         if (data.length > 0) {
-            this.chartData.push( row );
+            chartData.push( row );
         }
-        //$.merge( this.chartData, data );
+        //$.merge( chartData, data );
         completedDataReqs++;
         if ( completedDataReqs == dataReqCount ) {
             //console.log("done getting data");
             let endTime = Date.now();
             let duration = ( endTime - startTime ) / 1000;
             console.log("COMPLETED ALL DATA ", dataReqCount, " REQUESTS in", duration);
-            //console.log("chartData: ", this.chartData);
+            //console.log("chartData: ", chartData);
             completedDataReqs = 0;
             dataReqCount = 0;
 
             // TODO: change this so it creates the esmond time series upon completion of each request, rather than after all requests has completed
 
-            let newChartData = this.esmondToTimeSeries( this.chartData );
+            let newChartData = this.esmondToTimeSeries( chartData );
 
-            this.chartData = newChartData;
+            chartData = newChartData;
 
             endTime = Date.now();
             duration = ( endTime - startTime ) / 1000;
             console.log("COMPLETED CREATING TIMESERIES in " , duration);
-            console.log("chartData: ", this.chartData);
+            console.log("chartData: ", chartData);
             emitter.emit("get");
 
         }
     },
     getChartData: function( filters ) {
-        let data = this.chartData;
+        let data = chartData;
         console.log("getting chart data ... filters", filters); // TODO: figure out why filters sometimes undefined
         let min;
         let max;
@@ -342,12 +354,12 @@ module.exports = {
             return max;
     },
     getUniqueValues: function( fields ) {
-        let data = this.chartData;
+        let data = chartData;
         let unique = {};
         $.each( data, function( index, datum ) {
             $.each( fields, function( field ) {
                 let val = datum.properties[field];
-                console.log("field", field, "val", val, "unique", unique);
+                //console.log("field", field, "val", val, "unique", unique);
                 if ( ! ( field in unique) ) {
                     unique[field] = {};
                     unique[field][val] = 1;
@@ -450,7 +462,7 @@ module.exports = {
             row.properties.mainEventType = mainEventType;
             row.values = series;
             output.push(row);
-            console.log("output", output);
+            //console.log("output", output);
 
             /*
 

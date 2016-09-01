@@ -8,6 +8,10 @@ import SIValue from "./SIValue";
 
 import "../../css/graphs.css";
 
+let EventEmitter = require('events').EventEmitter;
+
+let emitter = new EventEmitter();
+
 // TODO: add traceroute calls/links
 
 export default React.createClass({
@@ -15,11 +19,26 @@ export default React.createClass({
     getInitialState() {
         return {
             showHostSelectors: false,
-            sources: [],
-            dests: []
+            //sources: [],
+            //dests: [],
+            start: this.props.start,
+            end: this.props.end,
+            timerange: this.props.timerange
         };
     },
+    getTime() {
+        let obj = {
+            "start": this.state.start,
+            "end": this.state.end,
+            "timerange": this.state.timerange
+        };
+        return obj;
+
+
+    },
     render() {
+        let startDate = new Date( this.state.start * 1000 ).toUTCString();
+        let endDate = new Date( this.state.end * 1000 ).toUTCString();
         return (
 
         <div className="chartHeader">
@@ -39,7 +58,16 @@ export default React.createClass({
                             {/* GRAPH: Reporting range */}
                             <div className="medium-4 columns">
                                 <label className="hostLabel">Report range</label>
-                                <button className="button-quiet button--full-width">Wed May 4, 2016 - Mon May 16, 2016 <i className="fa fa-calendar"></i></button>
+                                <button id="headerTimePrevious" className="button-quiet button-timechange" onClick={this.handlePageChange.bind(this, "previous")}>
+                                <i className="fa fa-arrow-left" aria-hidden="true"></i>
+                                </button>
+                                <button id="headerTimeNext" className="button-quiet button-reportrange">
+                                {startDate} - <br /> {endDate} <i className="fa fa-calendar"></i>
+                                </button>
+                                <button className="button-quiet button-timechange" onClick={this.handlePageChange.bind(this, "next")}>
+                                <i className="fa fa-arrow-right" aria-hidden="true"></i>
+                                </button>
+                                <div>timerange: {this.props.timerange}</div>
                             </div>
                         </div> {/* End row */}
                     </div> {/* End overview */}
@@ -135,7 +163,75 @@ export default React.createClass({
         this.hostInfo = hostInfo;
         this.forceUpdate();
 
-    }
+    },
+    handlePageChange: function( direction ) {
+        console.log("handleTimerangeChange direction: ", direction);
+        let timeVars = this.getTimeVars( this.state.timerange );
+        let diff = timeVars.timeDiff;
+        let newStart;
+        let newEnd;
+        let now = Math.floor( new Date().getTime() / 1000 );
+        if ( direction == "next" ) {
+            newStart = this.state.start + diff;
+            newEnd = this.state.end + diff;
+        } else if ( direction == "previous" ) {
+            newStart = this.state.start - diff;
+            newEnd = this.state.end - diff;
+        }
+        if ( newStart >= now || newEnd >= now ) {
+            newEnd = now;
+            newStart = this.state.start - diff;
+        }
+        console.log("start", this.state.start, "end", this.state.end);
+        console.log("newStart", newStart, "newEnd", newEnd);
+        this.handleTimerangeChange({"start": newStart, "end": newEnd});
+
+    },
+    handleTimerangeChange: function( options ) {
+        this.setState( options );
+        this.forceUpdate();
+        this.props.updateTimerange( options );
+        emitter.emit("timerangeChange");
+
+    },
+    subscribe: function( callback ) {
+        emitter.on("timerangeChange", callback);
+    },
+    unsubscribe: function( callback ) {
+        emitter.off("timerangeChange", callback);
+    },
+
+    getTimeVars: function (period) {
+        let timeDiff;
+        let summaryWindow;
+        if (period == '4h') {
+            timeDiff = 60*60 * 4;
+            summaryWindow = 0;
+        } else if (period == '1d') {
+            timeDiff = 86400;
+            summaryWindow = 0;
+        } else if (period == '3d') {
+            timeDiff = 86400 * 3;
+            summaryWindow = 300;
+        } else if (period == '1w') {
+            timeDiff = 86400*7;
+            summaryWindow = 3600;
+        } else if (period == '1m') {
+            timeDiff = 86400*31;
+            summaryWindow = 86400;
+        } else if (period == '1y') {
+            timeDiff = 86400*365;
+            summaryWindow = 86400;
+        }
+        let timeRange = {
+            timeDiff: timeDiff,
+            summaryWindow: summaryWindow,
+            timePeriod: period
+
+        };
+        return timeRange;
+
+    },
 
 
 });
