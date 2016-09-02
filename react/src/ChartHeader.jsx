@@ -23,7 +23,8 @@ export default React.createClass({
             //dests: [],
             start: this.props.start,
             end: this.props.end,
-            timerange: this.props.timerange
+            timerange: this.props.timerange,
+            interfaceInfo: null
         };
     },
     getTime() {
@@ -149,8 +150,15 @@ export default React.createClass({
     },
     componentDidMount: function() {
             HostInfoStore.subscribe(this.updateChartHeader);
-            InterfaceInfoStore.subscribe(this.updateChartHeader);
+            InterfaceInfoStore.subscribe( this.handleInterfaceData );
             InterfaceInfoStore.retrieveInterfaceInfo( this.props.sources, this.props.dests );
+
+    },
+    handleInterfaceData: function() {
+        let interfaceInfo = InterfaceInfoStore.getInterfaceInfo();
+        this.setState({ interfaceInfo: interfaceInfo });
+
+        this.updateChartHeader();
 
     },
     componentWillUnmount: function() {

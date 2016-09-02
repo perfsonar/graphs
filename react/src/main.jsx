@@ -12,26 +12,22 @@
 
 import React from "react";
 import { render } from "react-dom";
-import { Router, Route, IndexRoute, browserHistory } from "react-router";
-
+import { Router, Route, IndexRoute } from "react-router";
+import { browserHistory } from 'react-router';
 import Intro from "./intro";
 import Chart1 from "./chart1";
 import ChartLayout from "./chartLayout";
 import Chart1Webservice from "./chart1webservice";
 
-import createHistory from "history/lib/createHashHistory";
+import createHistory from "history/lib/createBrowserHistory";
 import useScroll from "scroll-behavior/lib/useStandardScroll";
 
 const history = useScroll(createHistory)();
 
-
 render((
     <Router history={history}>
         <Route path="/" component={ChartLayout}>
-            {/* <IndexRoute component={Intro}/> */}
             <Route path="chart1webservice" component={Chart1Webservice} />
-/* This doesn't work, why? */
-
         </Route>
     </Router>
 ), document.getElementById("content"));

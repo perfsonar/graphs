@@ -59,7 +59,7 @@ module.exports = {
                 this.handleInterfaceInfoResponse( data );
             }.bind(this))
             .fail( function(jqXHR, textStatus, errorThrown) {
-                //console.log('fail jqXHR, textStatus, errorThrown', jqXHR, textStatus, errorThrown);
+                console.log('fail jqXHR, textStatus, errorThrown', jqXHR, textStatus, errorThrown);
             }.bind(this));
 
         }
@@ -87,7 +87,7 @@ module.exports = {
         this.retrieveLSList();
 
     },
-    getInterfaceInfoData: function( ) {
+    getInterfaceInfo: function( ) {
         return this.interfaceObj;
     },
     handleInterfaceInfoResponse: function( data ) {
@@ -134,25 +134,27 @@ module.exports = {
 
                 for (var k in sources){
                     if (sources[k] == row.source_ip){
+                        if ( ! ( row.source_ip in newObj )) {
+                            newObj[row.source_ip] = {};
+                        }
 
                         if (row.source_mtu) {
                             src_mtu = row.source_mtu;
+                            newRow.src_mtu = src_mtu;
+                            newObj[row.source_ip].mtu = src_mtu;
                         }
                         if (row.source_addresses) {
                             src_addresses = row.source_addresses;
+                            newRow.src_addresses = src_addresses;
+                            newObj[row.source_ip].addresses = src_addresses;
                         }
 
                         if (row.source_capacity) {
                             src_capacity = row.source_capacity;
+                            newRow.src_capacity = src_capacity;
+                            newObj[row.source_ip].capacity = src_capacity;
                         }
-                        newRow.src_mtu = src_mtu;
-                        newRow.src_capacity = src_capacity;
-                        newRow.src_addresses = src_addresses;
 
-                        newObj[row.source_ip] = {};
-                        newObj[row.source_ip].mtu = src_mtu;
-                        newObj[row.source_ip].addresses = src_addresses;
-                        newObj[row.source_ip].capacity = src_capacity;
 
 
                     }
@@ -192,6 +194,32 @@ module.exports = {
         let details = this.interfaceObj || {};
         if ( host in details ) {
             return details[host];
+        } else {
+            for(let i in details ) {
+                let row = details[i];
+
+                for( let j in row.addresses ) {
+                    let address = row.addresses[j];
+                    if ( address == host ) {
+                        return details[i];
+                    } else {
+                        let addrs = host.split(",");
+                        if ( addrs.length > 1 ) {
+                            // handle case where addresses have comma(s)
+                            for(var k in addrs) {
+                                if ( addrs[k] == address ) {
+                                    return details[i];
+                                }
+                            }
+
+
+                        }
+                    }
+
+                }
+
+
+            }
 
         }
         // host not found in the cache, return empty object

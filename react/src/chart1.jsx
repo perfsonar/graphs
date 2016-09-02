@@ -250,10 +250,6 @@ export default React.createClass({
     },
 
     renderChart() {
-        let charts = {};
-        let brushCharts = {};
-        //charts.throughput = {};
-        //charts.throughput.chartRows = [];
 
         let typesToChart = [
             {
@@ -281,6 +277,8 @@ export default React.createClass({
         let latencyCharts = [];
         let lossCharts = [];
         let chartSeries = this.state.chartSeries;
+        let charts = {};
+        let brushCharts = {};
 
         // start for loop involving unique ipversion values here?
         let unique = GraphDataStore.getUniqueValues( {"ipversion": 1} );
@@ -485,9 +483,6 @@ export default React.createClass({
                         minDuration={10 * 60 * 1000}
                         id="mainChartContainer"
                     >
-                    {/* 
-                    <div className="row collapse">
-                    */}
                     {charts.throughput.chartRows}
                     {charts["packet-loss-rate"].chartRows}
                     {charts["latency"].chartRows}
