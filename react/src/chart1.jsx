@@ -605,7 +605,7 @@ export default React.createClass({
            }
            */
         let timerange = new TimeRange([nextProps.start * 1000, nextProps.end * 1000 ]);
-        this.setState({start: nextProps.start, end: nextProps.end, chartSeries: null, timerange: timerange});
+        this.setState({start: nextProps.start, end: nextProps.end, chartSeries: null, timerange: timerange, brushrange: null, initialTimerange: timerange});
         this.getDataFromMA(nextProps.src, nextProps.dst, nextProps.start, nextProps.end, nextProps.ma_url);
         //this.forceUpdate();
     },
