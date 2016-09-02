@@ -75,7 +75,6 @@ const scheme = {
 };
 
 
-console.log("scheme", scheme);
 const connectionsStyle = {
     color: scheme.tcp,
     strokeWidth: 1
@@ -140,7 +139,6 @@ function getChartStyle( options ) {
     style.value.strokeWidth = width;
     style.value.strokeDasharray = strokeStyle;
     style.value.strokeOpacity = opacity;
-    //console.log("style", style, "options", options);
     return style;
 
 }
@@ -250,7 +248,6 @@ export default React.createClass({
     },
 
     renderChart() {
-        console.log("in renderChart() in chart1.jsx");
 
         let typesToChart = [
             {
@@ -283,9 +280,7 @@ export default React.createClass({
 
         // start for loop involving unique ipversion values here?
         let unique = GraphDataStore.getUniqueValues( {"ipversion": 1} );
-        // TODO: get min/max for ALL throughput tests
         let ipversions = unique.ipversion;
-        console.log("ipversions", ipversions);
         //let self = this;
         let data;
         if ( ( typeof ipversions ) != "undefined" ) {
@@ -346,7 +341,6 @@ export default React.createClass({
                         ipversion: ipversion
                     };
                     data = GraphDataStore.getChartData( filter );
-                    console.log("datas", data);
                     if ( this.state.active[type] && ( data.results.length > 0 ) ) {
                         for(let j in data.results) {
                             let result = data.results[j];
@@ -354,10 +348,6 @@ export default React.createClass({
                             let properties = result.properties;
                             stats.min = GraphDataStore.getMin( data.stats.min, stats.min );
                             stats.max = GraphDataStore.getMax( data.stats.max, stats.max );
-                            //let protocol = result.results[j].protocol;
-                            //let direction = result.results[j].direction;
-                            //console.log('pushing chart ', j );
-                            //let ipversion = properties.ipversion;
 
                             // push the charts for the main charts
                             charts[type][ipv].push(
@@ -432,8 +422,6 @@ export default React.createClass({
                                 </ChartRow>
                                 );
 
-                        console.log("charts", charts, "current type", type);
-
                     }
                 }
                 //});
@@ -445,30 +433,12 @@ export default React.createClass({
         var timerange;
 
         if (chartSeries) {
-            //console.log('throughputSeries is defined');
-            //console.log('throughput timerange', timerange);
             timerange = this.state.timerange;
-            //timerange = chartSeries.throughput.values.timerange();
-            //timerange = throughputSeries.timerange();
         }
-        /*
-         * else if ( chartSeries && chartSeries.throughput && chartSeries.throughput.reverse ) {
-            //console.log('reverseThroughputSeries is defined');
-            timerange = chartSeries.throughput.reverse.timerange();
-            //console.log('reverse timerange', timerange);
 
-        }
-        */
-        //this.state.timerange = timerange;
         if ( ! timerange ) {
             return ( <div></div> );
         }
-        /*
-        if ( this.state.initialTimerange === null ) {
-            console.log("initial timerange", timerange);
-            this.setState({initialTimerange: timerange});
-        }
-        */
 
         return (
             <div>
@@ -508,8 +478,6 @@ export default React.createClass({
     },
 
     render() {
-        console.log("in render() in chart1.jsx");
-
         const legend = [
             {
                 key: "throughput",
@@ -574,18 +542,18 @@ export default React.createClass({
 
 
     renderBrush( brushCharts ) {
-        return (
-                <ChartContainer
-                    timeRange={this.state.initialTimerange}
-                    trackerPosition={this.state.tracker}
-                    className="brush"
-                    /*
+                    {/* TODO: remove (removed from ChartContainer)
                     enablePanZoom={true}
                     onTimeRangeChanged={this.handleTimeRangeChange}
                     minTime={this.state.initialTimerange.begin()}
                     maxTime={this.state.initialTimerange.end()}
                     minDuration={10 * 60 * 1000}
-                    */
+                    */}
+        return (
+                <ChartContainer
+                    timeRange={this.state.initialTimerange}
+                    trackerPosition={this.state.tracker}
+                    className="brush"
                 >
                     {brushCharts.throughput.chartRows}
                     {brushCharts["packet-loss-rate"].chartRows}
@@ -595,32 +563,12 @@ export default React.createClass({
     },
 
     updateChartData: function() {
-        console.log("updating chart data");
         let newChartSeries = GraphDataStore.getChartData();
-        console.log("new series", newChartSeries);
         this.setState({ chartSeries: newChartSeries } );
         this.forceUpdate();
-        //ChartLayout.forceUpdate();
-        //ChartLayout.setState({throughputCharts: charts});
     },
 
     componentDidMount: function() {
-        //var { status, page, limit } = this.context.router.getCurrentQuery();
-        /*
-        if ( ! this.state.timerange ) {
-            this.handleTimeRangeChange(null);
-        }
-        */
-
-        /*
-        var qs = this.props.location.query;
-        console.log( "qs", qs );
-        let src = qs.src;
-        let dst = qs.dst;
-        let start = qs.start;
-        let end = qs.end;
-        let ma_url = qs.ma_url || "http://perfsonar-dev.grnoc.iu.edu/esmond/perfsonar/archive/";
-        */
 
         let src = this.props.src;
         let dst = this.props.dst;
@@ -628,7 +576,6 @@ export default React.createClass({
         let end = this.state.end;
         let ma_url = this.props.ma_url || "http://perfsonar-dev.grnoc.iu.edu/esmond/perfsonar/archive/";
         this.getDataFromMA(src, dst, start, end, ma_url);
-        //ChartHeader.subscribe( "timerangeChange" );
 
 
         var values = this.esmondToTimeSeries( failures, 'failures' );
@@ -639,9 +586,6 @@ export default React.createClass({
     },
 
     getDataFromMA: function(src, dst, start, end, ma_url ) {
-        console.log("getDataFromMA state: ", this.state);
-
-        console.log("getDataFromMA parameters: src", src, "dst", dst, "start", start, "end", end, "ma_url", ma_url);
 
         GraphDataStore.subscribe(this.updateChartData);
 
@@ -654,14 +598,12 @@ export default React.createClass({
     },
     */
     componentWillReceiveProps( nextProps ) {
-        console.log('chart1 new props', nextProps);
         // You don't have to do this check first, but it can help prevent an unneeded render
         /*
            if (nextProps.startTime !== this.state.startTime) {
            this.setState({ startTime: nextProps.startTime });
            }
            */
-        console.log("prev props", this.props);
         let timerange = new TimeRange([nextProps.start * 1000, nextProps.end * 1000 ]);
         this.setState({start: nextProps.start, end: nextProps.end, chartSeries: null, timerange: timerange});
         this.getDataFromMA(nextProps.src, nextProps.dst, nextProps.start, nextProps.end, nextProps.ma_url);
@@ -676,7 +618,6 @@ export default React.createClass({
     _checkSortOrder : function( ary, valName='ts' ) {
         var lastVal = 0;
         _.each( ary, val => {
-            //console.log('val', val);
             if ( val.ts <= lastVal ) {
                 console.log('ts is not greater than last ts');
 

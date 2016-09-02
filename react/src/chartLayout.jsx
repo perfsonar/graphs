@@ -149,7 +149,6 @@ export default React.createClass({
 
 
     render() {
-        console.log("in chartLayout render; start", this.state.start, "end", this.state.end)
         return (
 
                 <div className="graph">
@@ -235,6 +234,7 @@ export default React.createClass({
         );
     },
 
+    /*
     componentDidMount: function() {
             ChartHeader.subscribe("timerangeChange", this.handleTimerangeChange);
 
@@ -242,9 +242,9 @@ export default React.createClass({
     componentWillUnmount: function() {
         ChartHeader.unsubscribe("timerangeChange", this.handleTimerangeChange);
     },
+    */
 
     handleTimerangeChange: function( newTime ) {
-        console.log("time from ChartHeader", newTime);
         this.setState( newTime );
         this.forceUpdate();
 
@@ -274,7 +274,6 @@ export default React.createClass({
             ma_url: ma_url,
             timerange: timerange
         };
-        console.log("newState", newState);
 
         // TODO: allow multiple src/dest pairs
         HostInfoStore.retrieveHostInfo( src, dst );

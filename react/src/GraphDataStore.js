@@ -56,19 +56,15 @@ module.exports = {
         if ( ! start ) {
             //start = Math.floor( end - 86400 * 7 ); // TODO: 7 days a good default?
         }
-        console.log("gds start", start, "end", end);
 
 
         for( let i in sources ) {
             let directions = [ [ sources[i], dests[i] ], 
                 [ dests[i], sources[i] ] ];
             let direction = [ "forward", "reverse" ];
-            console.log("directions", directions);
             for( let j in directions ) {
-                console.log("directions[j]", directions[j]);
                 let src = directions[j][0];
                 let dst = directions[j][1];
-                console.log("got here!", src, dst, start, end);
 
 
                 let url = ma_url + "?source=" + src + "&destination=" + dst;
@@ -88,7 +84,6 @@ module.exports = {
         for(let i in data) {
             data[i].direction = direction;
         }
-        console.log("data", data);
         $.merge( chartMetadata, data );
         completedReqs++;
         if ( completedReqs == reqCount ) {
@@ -111,10 +106,8 @@ module.exports = {
     filterEventTypes: function( data, eventTypesParam ) {
         //let eventTypes = this.getEventTypes( eventTypesParam );
         let eventTypes = this.getEventTypes();
-        console.log("eventTypes", eventTypes);
 
         let tests = $.map( data, function( test, i ) {
-            //console.log("test", test);
             let matchingEventTypes = $.map( test['event-types'], function( eventType, j ) {
                 let ret = $.inArray( eventType['event-type'], eventTypes );
                 if ( ret >= 0 ) {
@@ -137,7 +130,6 @@ module.exports = {
 
 
         });
-        console.log("tests after mapping: ", tests);
 
 
         return tests;
@@ -149,7 +141,6 @@ module.exports = {
 
 
         }
-        console.log("eventTypes", eventTypes);
         return eventTypes;
 
     },
@@ -177,7 +168,6 @@ module.exports = {
                 let ipversion;
                 if ( ipaddr.isValid( source ) ) {
                     ipversion = addr.kind( source ).substring(3);
-                    console.log("source", source, ipversion);
 
                 } else {
                     console.log("invalid IP address");
@@ -223,7 +213,6 @@ module.exports = {
                     console.log("uri not found, setting ... ");
                     uri = eventTypeObj["base-uri"];
                 }
-                //console.log("uri", uri);
                 // TODO: add timerange to URL
                 uri += "?time-start=" + start + "&time-end=" + end;
                 let url = baseURL + uri;
@@ -231,16 +220,6 @@ module.exports = {
                 let row = pruneDatum( datum );
                 row.protocol = datum["ip-transport-protocol"];
                 row.ipversion = ipversion;
-                //console.log("row", row);
-                /*
-                let row = {
-                    eventType: eventType,
-                    url: url,
-                    direction: direction,
-                    protocol: datum["ip-transport-protocol"],
-                    ipversion: ipversion
-                };
-                */
 
                 dataReqCount++; // TODO: double check the ordre of this and the request
 
@@ -267,11 +246,9 @@ module.exports = {
         //$.merge( chartData, data );
         completedDataReqs++;
         if ( completedDataReqs == dataReqCount ) {
-            //console.log("done getting data");
             let endTime = Date.now();
             let duration = ( endTime - startTime ) / 1000;
             console.log("COMPLETED ALL DATA ", dataReqCount, " REQUESTS in", duration);
-            //console.log("chartData: ", chartData);
             completedDataReqs = 0;
             dataReqCount = 0;
 
@@ -291,15 +268,12 @@ module.exports = {
     },
     getChartData: function( filters ) {
         let data = chartData;
-        console.log("getting chart data ... filters", filters); // TODO: figure out why filters sometimes undefined
         let min;
         let max;
         let results = $.grep( data, function( e, i ) {
-            //console.log("grepping e", e, "i", i, "filters", filters);
             let found = true;
             for (var key in filters ) {
                 let val = filters[key];
-                //console.log("key", key, "val", val);
                 if ( ( key in e.properties ) && e.properties[key] == val ) {
                     found = true;
                 } else {
@@ -359,7 +333,6 @@ module.exports = {
         $.each( data, function( index, datum ) {
             $.each( fields, function( field ) {
                 let val = datum.properties[field];
-                //console.log("field", field, "val", val, "unique", unique);
                 if ( ! ( field in unique) ) {
                     unique[field] = {};
                     unique[field][val] = 1;
@@ -371,7 +344,6 @@ module.exports = {
             unique[key] = Object.keys( val );
 
         });
-        console.log("unique", unique);
         return unique;
 
     },
@@ -429,14 +401,12 @@ module.exports = {
                 values.push([timestamp.toDate().getTime(), value]);
 
             });
-            //console.log('creating series ...', Date());
 
             series = new TimeSeries({
                 name: eventType + "." + direction,
                 columns: ["time", "value"],
                 points: values
             });
-            //console.log('created series ...', series, "values", values);
 
             let ipversion = datum.ipversion;
             // TODO: add ipversion to the date selector here (maybe not?)
@@ -452,42 +422,14 @@ module.exports = {
                     max = outputData[eventType].max;
                 }
             }
-            //let row = pruneDatum( datum );
             let row = {};
             row.properties = pruneDatum( datum );
-            //row.properties = {};
-            //row.properties.direction = direction;
-            //row.properties.protocol = protocol;
             row.properties.eventType = eventType;
             row.properties.mainEventType = mainEventType;
             row.values = series;
             output.push(row);
-            //console.log("output", output);
 
-            /*
-
-            // Update the min for the event type
-            if ( !isNaN( Math.min( series.min(), min ) ) ) {
-                outputData[eventType].min = Math.min( series.min(), min );
-            } else if ( !isNaN( series.min() ) ) {
-                outputData[eventType].min = series.min();
-            }
-
-            // Update the max for the event type
-            if ( !isNaN( Math.max( series.max(), max ) ) ) {
-                outputData[eventType].max = Math.max( series.max(), max );
-            } else if ( !isNaN( series.max() ) ) {
-                outputData[eventType].max = series.max();
-            }
-
-            if ( ! ( "results" in outputData[eventType][ipversion] ) ) {
-                outputData[eventType][ipversion].results = [];
-            }
-            outputData[eventType][ipversion].results.push( row );
-            */
-            //row.ipversion = ipversion;
         });
-        console.log("outputData", outputData);
         return output;
     },
     subscribe: function( callback ) {
