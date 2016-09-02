@@ -167,16 +167,18 @@ export default React.createClass({
                             <span className="graph-label">Data:</span>
                             <ul className=" graph-filter__list">
                                 <li className="graph-filter__item graph-filter__item tcp-active">
-                                    <a href="#">TCP</a>
+                                    <a href="#">Throughput</a>
                                 </li>
+                                {/*
                                 <li className="graph-filter__item udp-active">
                                     <a href="#">UDP</a>
                                 </li>
+                                */}
                                 <li className="graph-filter__item ipv4-active">
-                                    <a href="#">IPv4</a>
+                                    <a href="#">Ping</a>
                                 </li>
                                 <li className="graph-filter__item ipv6-active">
-                                    <a href="#">IPv6</a>
+                                    <a href="#">One-way latency</a>
                                 </li>
                             </ul>
                         </div>
