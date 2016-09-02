@@ -250,6 +250,7 @@ export default React.createClass({
     },
 
     renderChart() {
+        console.log("in renderChart() in chart1.jsx");
 
         let typesToChart = [
             {
@@ -598,7 +599,7 @@ export default React.createClass({
         let newChartSeries = GraphDataStore.getChartData();
         console.log("new series", newChartSeries);
         this.setState({ chartSeries: newChartSeries } );
-        //this.forceUpdate();
+        this.forceUpdate();
         //ChartLayout.forceUpdate();
         //ChartLayout.setState({throughputCharts: charts});
     },
@@ -661,9 +662,10 @@ export default React.createClass({
            }
            */
         console.log("prev props", this.props);
-        this.setState({start: nextProps.start, end: nextProps.end, chartSeries: null});
-        //this.forceUpdate();
+        let timerange = new TimeRange([nextProps.start * 1000, nextProps.end * 1000 ]);
+        this.setState({start: nextProps.start, end: nextProps.end, chartSeries: null, timerange: timerange});
         this.getDataFromMA(nextProps.src, nextProps.dst, nextProps.start, nextProps.end, nextProps.ma_url);
+        //this.forceUpdate();
     },
 
     componentWillUnmount: function() {
