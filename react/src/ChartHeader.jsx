@@ -12,6 +12,8 @@ let EventEmitter = require('events').EventEmitter;
 
 let emitter = new EventEmitter();
 
+let moment = require('moment');
+
 // TODO: add traceroute calls/links
 
 export default React.createClass({
@@ -24,6 +26,7 @@ export default React.createClass({
             start: this.props.start,
             end: this.props.end,
             timerange: this.props.timerange,
+            timePeriod: "1w",
             interfaceInfo: null
         };
     },
@@ -38,8 +41,17 @@ export default React.createClass({
 
     },
     render() {
-        let startDate = new Date( this.state.start * 1000 ).toUTCString();
-        let endDate = new Date( this.state.end * 1000 ).toUTCString();
+        let startDate = new Date( this.state.start * 1000 );
+        let endDate = new Date( this.state.end * 1000 );
+
+        let date = "ddd MM/DD/YYYY";
+        let time = "HH:mm:ss ZZ";
+
+        let startMoment = moment( startDate );
+        let endMoment = moment( endDate );
+        //let startOut = startMoment.format( format );
+        let endOut = endMoment.format( date );
+
         return (
 
         <div className="chartHeader">
@@ -62,13 +74,33 @@ export default React.createClass({
                                 <button id="headerTimePrevious" className="button-quiet button-timechange" onClick={this.handlePageChange.bind(this, "previous")}>
                                 <i className="fa fa-arrow-left" aria-hidden="true"></i>
                                 </button>
-                                <button id="headerTimeNext" className="button-quiet button-reportrange">
-                                {startDate} - <br /> {endDate} <i className="fa fa-calendar"></i>
-                                </button>
+                               <select className="no-margin" name="timeperiod" id="timeperiod" onChange={this.changeTimePeriod} value={this.state.timePeriod}>
+                                    <option value="1d">1 day</option>
+                                    <option value="3d">3 days</option>
+                                    <option value="1w">1 week</option>
+                                    <option value="1m">1 month</option>
+                                    <option value="1y">1 year</option>
+
+                                </select>
                                 <button className="button-quiet button-timechange" onClick={this.handlePageChange.bind(this, "next")}>
                                 <i className="fa fa-arrow-right" aria-hidden="true"></i>
                                 </button>
-                                <div>timerange: {this.props.timerange}</div>
+                                <div>
+                                <span className="timerange_holder">
+                                    { startMoment.format( date )}
+                                    <br />
+                                    { startMoment.format( time )}
+                                 </span>
+                                 <span className="timerange_holder">
+                                         to
+                                </span>
+                                <span className="timerange_holder">
+                                    { endMoment.format( date )}
+                                    <br />
+                                    { endMoment.format( time )}
+                                </span> 
+                                </div>
+
                             </div>
                         </div> {/* End row */}
                     </div> {/* End overview */}
@@ -76,6 +108,20 @@ export default React.createClass({
         {/* End chartHeader */}
         </div>
         ); // End render()
+    },
+    changeTimePeriod: function( event ) {
+        let period = event.target.value;
+        let vars = this.getTimeVars(period);
+        let timeDiff = vars.timeDiff;
+        let newEnd = Math.floor( new Date().getTime() / 1000 );
+        let newStart = newEnd - timeDiff;
+
+        let options = {
+            timePeriod: period,
+            start: newStart,
+            end: newEnd
+        };
+        this.handleTimerangeChange( options );
     },
     renderHostList: function( type, label ) {
         if ( this.state.showHostSelectors ) {
