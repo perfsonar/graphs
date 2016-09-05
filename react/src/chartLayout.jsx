@@ -296,8 +296,8 @@ export default React.createClass({
     getQueryString: function() {
         var qs = this.props.location.query;
         console.log( "qs", qs );
-        let src = qs.src;
-        let dst = qs.dst;
+        let src = qs.source;
+        let dst = qs.dest;
         let start = defaults.start;
         let end = defaults.end;
         let timerange = defaults.timerange;
@@ -308,7 +308,7 @@ export default React.createClass({
         if ( typeof qs.end != "undefined" ) {
             let end = qs.end || defaults.end;
         }
-        let ma_url = qs.ma_url || "http://perfsonar-dev.grnoc.iu.edu/esmond/perfsonar/archive/";
+        let ma_url = qs.url;
         const newState = {
             src:    src,
             dst:    dst,

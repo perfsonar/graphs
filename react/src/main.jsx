@@ -29,5 +29,8 @@ render((
         <Route path="/" component={ChartLayout}>
             <Route path="chart1webservice" component={Chart1Webservice} />
         </Route>
+        <Route path="/perfsonar-graphs" component={ChartLayout}>
+            <Route path="chart1webservice" component={Chart1Webservice} />
+        </Route>
     </Router>
 ), document.getElementById("content"));
