@@ -184,7 +184,41 @@ export default React.createClass({
                         </div>
 
                         <div className="graph-filter right">
-                            <a href="#" className="graph-settings"><i className="fa fa-gear"></i></a>
+                              <a href="#" className="graph-settings sidebar-popover-toggle js-sidebar-popover-toggle"><i className="fa fa-gear"></i></a>
+                            <div className="sidebar-popover options-popover">
+                                <a className="sidebar-popover__close js-sidebar-popover-close">Close &nbsp;<i className="fa fa-close"></i></a>
+                                <h4 className="options-popover__heading">Advanced Graph Options</h4>
+                                <ul className="options-popover__list">
+                                    <li><strong>Scale/Smoothing</strong></li>
+                                    <li>
+                                        <ul className="options-popover__row">
+                                            <li>Latency</li>
+                                            <li> <input type="checkbox" name="latency-log" id="latency-log" />
+                                                 <label htmlFor="latency-log">apply logarithmic scale</label> </li>
+                                            <li> <input type="checkbox" name="latency-interp" id="latency-interp" />
+                                                 <label htmlFor="latency-interp">interpolate between intervals</label> </li>
+                                        </ul>
+                                    </li>
+                                    <li>
+                                        <ul className="options-popover__row">
+                                            <li>Loss </li>
+                                            <li> <input type="checkbox" name="loss-log" id="loss-log" />
+                                                 <label htmlFor="loss-log">apply logarithmic scale</label> </li>
+                                            <li> <input type="checkbox" name="loss-interp" id="loss-interp" />
+                                                 <label htmlFor="loss-interp">interpolate between intervals</label> </li>
+                                        </ul>
+                                    </li>
+                                    <li>
+                                        <ul className="options-popover__row">
+                                            <li>Throughput</li>
+                                            <li> <input type="checkbox" name="thruput-log" id="thruput-log" />
+                                                 <label htmlFor="thruput-log">apply logarithmic scale</label> </li>
+                                            <li> <input type="checkbox" name="thruput-interp" id="thruput-interp" />
+                                                 <label htmlFor="thruput-interp">interpolate between intervals</label> </li>
+                                        </ul>
+                                    </li>
+                                </ul>
+                            </div> 
                         </div>
 
                         <div className="graph-filter right">
