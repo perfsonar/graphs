@@ -270,11 +270,18 @@ export default React.createClass({
         );
     },
 
-    /*
-    componentDidMount: function() {
-            ChartHeader.subscribe("timerangeChange", this.handleTimerangeChange);
+    
+    componentDidMount: function() {        
+        if ( $.isArray( this.state.src ) ) {
+            document.title = "pS results between " + this.state.src.join(", ") + " and " + this.state.dst.join(", ");
+        } else {
+            document.title = "pS results between " + this.state.src + " and " + this.state.dst;
+
+        }
+
 
     },
+/*
     componentWillUnmount: function() {
         ChartHeader.unsubscribe("timerangeChange", this.handleTimerangeChange);
     },
@@ -311,7 +318,7 @@ export default React.createClass({
             timerange: timerange
         };
 
-        // TODO: allow multiple src/dest pairs
+        // TODO: allow multiple src/dest pairs ( I think this work, but needs testing)
         HostInfoStore.retrieveHostInfo( src, dst );
 
         //this.setState(newState);

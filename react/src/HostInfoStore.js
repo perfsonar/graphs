@@ -28,8 +28,7 @@ module.exports = {
     */
 
     retrieveHostInfo: function( source_input, dest_input ) {
-        let url = "http://perfsonar-dev.grnoc.iu.edu/perfsonar-graphs/graphData.cgi?action=hosts";
-        //url += "&src=140.182.44.162&dest=140.182.45.175";
+        let url = "graphData.cgi?action=hosts";
         let sources;
         let dests;
         if ( Array.isArray( source_input ) ) {

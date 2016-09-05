@@ -8,7 +8,12 @@ var bodyParser = require("body-parser");
 
 var httpProxy = require('http-proxy');
 var apiProxy = httpProxy.createProxyServer();
-var cgiServer = 'http://localhost';
+var cgiServer = 'http://perfsonar-dev.grnoc.iu.edu';
+
+app.get("/graphData.cgi", function(req, res) {
+    console.log('redirecting to port 80');
+    apiProxy.web(req, res, {target: cgiServer + "/perfsonar-graphs"});
+});
 
 /* 
 app.all("/perfsonar-graphs/*", function(req, res) {
