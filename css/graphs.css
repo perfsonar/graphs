@@ -68,7 +68,8 @@
 }
 
 .graph-filter__item.graph-filter__item.udp-active a {
-    background-color: #cc7dbe;
+    background-color: #d6641e;
+    /*background-color: #cc7dbe;*/ /*pink */
 }
 
 .graph-filter__item.graph-filter__item.ipv4-active a {
@@ -77,6 +78,14 @@
 
 .graph-filter__item.graph-filter__item.ipv6-active a {
     background-color: #633;
+}
+
+.graph-filter__item.graph-filter__item.loss-throughput-active a {
+    background-color: #cc7dbe;
+}
+
+.graph-filter__item.graph-filter__item.loss-latency-active a {
+    background-color: #2b9f78;
 }
 
 

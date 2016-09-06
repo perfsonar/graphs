@@ -24,6 +24,21 @@ const scheme = {
     connections: "#990000"
 };
 
+/* copied frmo chart1.jsx
+const scheme = {
+    tcp: "#0076b4", // blue
+    udp: "#cc7dbe", // purple
+    ipv4: "#e5a11c", // yellow
+    ipv6: "#633", // brown
+    throughput: "#0076b4", // blue
+    throughputTCP: "#0076b4", // blue
+    throughputUDP: "#2b9f78", // green
+    "histogram-rtt": "#e5a11c", // yellow
+    "histogram-owdelay": "#633", // brown
+    "packet-loss-rate": "#cc7dbe" // purple
+};
+*/
+
 const connectionsStyle = {
     color: scheme.requests,
     strokeWidth: 1
@@ -168,18 +183,27 @@ export default React.createClass({
                             <span className="graph-label">Data:</span>
                             <ul className=" graph-filter__list">
                                 <li className="graph-filter__item graph-filter__item tcp-active">
-                                    <a href="#">Throughput</a>
+                                    <a href="#">Throughput (TCP)</a>
+                                </li>
+                                <li className="graph-filter__item graph-filter__item udp-active">
+                                    <a href="#">Throughput (UDP)</a>
                                 </li>
                                 {/*
                                 <li className="graph-filter__item udp-active">
                                     <a href="#">UDP</a>
                                 </li>
                                 */}
-                                <li className="graph-filter__item ipv4-active">
-                                    <a href="#">Ping</a>
+                                <li className="graph-filter__item graph-filter__item loss-throughput-active">
+                                    <a href="#">Loss (Throughput)</a>
+                                </li>
+                                <li className="graph-filter__item graph-filter__item loss-latency-active">
+                                    <a href="#">Loss (Latency)</a>
                                 </li>
                                 <li className="graph-filter__item ipv6-active">
                                     <a href="#">One-way latency</a>
+                                </li>
+                                <li className="graph-filter__item ipv4-active">
+                                    <a href="#">Ping</a>
                                 </li>
                             </ul>
                         </div>
@@ -272,7 +296,7 @@ export default React.createClass({
     },
 
 
-    componentDidMount: function() {        
+    componentDidMount: function() {
         //HostInfoStore.retrieveTracerouteData( this.props.sources, this.props.dests, this.props.ma_url );
         if ( $.isArray( this.state.src ) ) {
             document.title = "pS results between " + this.state.src.join(", ") + " and " + this.state.dst.join(", ");
@@ -311,7 +335,7 @@ export default React.createClass({
             let end = qs.end || defaults.end;
         }
 
-        let ma_url = qs.url || location.origin + "/";
+        let ma_url = qs.url || location.origin + "/esmond/perfsonar/archive/";
         let localhostRe = /localhost/i;
         let found = ma_url.match( localhostRe );
         let host = location.host;

@@ -69,9 +69,14 @@ const scheme = {
     ipv4: "#e5a11c", // yellow
     ipv6: "#633", // brown
     throughput: "#0076b4", // blue
+    throughputTCP: "#0076b4", // blue
+    "packet-loss-rateLatency": "#2b9f78", // green
     "histogram-rtt": "#e5a11c", // yellow
     "histogram-owdelay": "#633", // brown
-    "packet-loss-rate": "#cc7dbe" // purple
+    "packet-loss-rate": "#cc7dbe", // purple
+    "packet-loss-rateThroughput": "#cc7dbe", // purple
+    //"packet-loss-rateThroughput": "#f0e54b" // yellos
+    throughputUDP: "#d6641e" // vermillion
 };
 
 
@@ -102,32 +107,48 @@ function getChartStyle( options ) {
     style.value = {};
     let color = scheme.tcp;
     let strokeStyle = "";
-    let width = 1;
+    let width = 3;
     let opacity = 1;
 
     switch ( options.protocol ) {
         case "tcp":
             color = scheme.tcp;
-            width = 4;
-            opacity = 0.7;
+            //width = 3;
+            opacity = 0.8;
             break;
         case "udp":
             color = scheme.udp;
+            //width = 3;
+            opacity = 0.8;
             break;
     }
 
+        console.log("style options", options);
     switch ( options.eventType ) {
         case "throughput":
-            color = scheme.throughput;
+            if ( options.protocol == "tcp" ) {
+                color = scheme.throughputTCP;
+            } else {
+                color = scheme.throughputUDP;
+            }
+            //color = scheme.throughput;
             break;
         case "histogram-owdelay":
+            // owdelay is always UDP
             color = scheme["histogram-owdelay"];
             break;
         case "histogram-rtt":
             color = scheme["histogram-rtt"];
             break;
         case "packet-loss-rate":
-            color = scheme[options.mainEventType];
+            if ( options.mainEventType == "throughput" ) {
+                color = scheme["packet-loss-rateThroughput"];
+            } else {
+                color = scheme["packet-loss-rateLatency"];
+            }
+
+            //color = scheme[options.mainEventType];
+
             break;
 
     }
@@ -227,7 +248,8 @@ export default React.createClass({
             maxLatency: 1,
             maxThroughput: 1,
             maxLoss: 0.0000000001,
-            latencySeries: null
+            latencySeries: null,
+            showBrush: false
         };
     },
     contextTypes: {
@@ -235,16 +257,7 @@ export default React.createClass({
     },
 
     handleTrackerChanged(trackerVal, selection) {
-        //const seconds = Math.floor( trackerVal.getTime() / 1000 );
-
         this.setState({tracker: trackerVal});
-        /*
-        if ( failureMessages[ seconds ] ) {
-            console.log('failure message: ', failureMessages[ seconds ] );
-        }
-        */
-        //this.setState({selectionType, selection});
-        //return pos;
     },
 
     renderChart() {
@@ -357,18 +370,21 @@ export default React.createClass({
                                         max={stats.max}
                                         columns={[ "value" ]} />
                                     );
-                            // push the brush charts
-                            brushCharts[type][ipv].push(
-                                    <LineChart key={"brush" + [type] + Math.floor( Math.random() )}
-                                        axis={"brush_axis" + [type]} series={series}
-                                        style={getChartStyle( properties )} smooth={false} breakLine={true}
-                                        min={stats.min}
-                                        max={stats.max}
-                                        columns={[ "value" ]} />
-                                    );
+
+                            if ( this.state.showBrush === true ) {
+                                // push the brush charts
+                                brushCharts[type][ipv].push(
+                                        <LineChart key={"brush" + [type] + Math.floor( Math.random() )}
+                                            axis={"brush_axis" + [type]} series={series}
+                                            style={getChartStyle( properties )} smooth={false} breakLine={true}
+                                            min={stats.min}
+                                            max={stats.max}
+                                            columns={[ "value" ]} />
+                                        );
+                                brushCharts[type].stats = stats;
+                            }
                         }
                         charts[type].stats = stats;
-                        brushCharts[type].stats = stats;
 
 
                     }
@@ -418,34 +434,37 @@ export default React.createClass({
                             </ChartRow>
                             );
 
-                    // push the chartrows for the brush charts
-                    brushCharts[type].chartRows.push(
+                    if ( this.state.showBrush === true ) {
+                        // push the chartrows for the brush charts
+                        brushCharts[type].chartRows.push(
                             <ChartRow
-                            height={chartRow.brushHeight}
-                            debug={false}
-                            key={"brush" + type}
+                                    height={chartRow.brushHeight}
+                                    debug={false}
+                                    key={"brush" + type}
                             >
-                            <Brush
-                            timeRange={this.state.brushrange}
-                            onTimeRangeChanged={this.handleTimeRangeChange}
-                            allowSelectionClear={true}
-                            />
-                            <YAxis 
-                            key={"brush_axis" + type}
-                            id={"brush_axis" + type}
-                            label={label + " (" + ipv + ")"}
-                            style={axisLabelStyle}
-                            labelOffset={offsets.label}
-                            format=".2s"
-                            min={brushCharts[type].stats.min}
-                            max={brushCharts[type].stats.max}
-                            width={80} type="linear" align="left" />
-                                <Charts>
-                                {brushCharts[type][ipv]}
-                            </Charts>
-                                </ChartRow>
-                                );
-                            chartRowsShown[type + ipv] = true;
+                                <Brush
+                                    timeRange={this.state.brushrange}
+                                    onTimeRangeChanged={this.handleTimeRangeChange}
+                                    allowSelectionClear={true}
+                                />
+                                <YAxis 
+                                    key={"brush_axis" + type}
+                                    id={"brush_axis" + type}
+                                    label={label + " (" + ipv + ")"}
+                                    style={axisLabelStyle}
+                                    labelOffset={offsets.label}
+                                    format=".2s"
+                                    min={brushCharts[type].stats.min}
+                                    max={brushCharts[type].stats.max}
+                                    width={80} type="linear" align="left" />
+                                    <Charts>
+                                        {brushCharts[type][ipv]}
+                                    </Charts>
+                            </ChartRow>
+                        );
+
+                    }
+                    chartRowsShown[type + ipv] = true;
 
 
                 }
@@ -486,13 +505,7 @@ export default React.createClass({
                 </ChartContainer>
             </Resizable>
 
-                <div className="rowg">
-                    <div className="col-md-12" style={brushStyle} id="brushContainer">
-                        <Resizable>
                             {this.renderBrush( brushCharts )}
-                        </Resizable>
-                    </div>
-                </div>
             </div>
         );
     },
@@ -568,14 +581,15 @@ export default React.createClass({
 
 
     renderBrush( brushCharts ) {
-                    {/* TODO: remove (removed from ChartContainer)
-                    enablePanZoom={true}
-                    onTimeRangeChanged={this.handleTimeRangeChange}
-                    minTime={this.state.initialTimerange.begin()}
-                    maxTime={this.state.initialTimerange.end()}
-                    minDuration={10 * 60 * 1000}
-                    */}
+        if ( this.state.showBrush === false ) {
+            return( <div></div> );
+
+        }
         return (
+                <div className="rowg">
+                    <div className="col-md-12" style={brushStyle} id="brushContainer">
+                        <Resizable>
+
                 <ChartContainer
                     timeRange={this.state.initialTimerange}
                     trackerPosition={this.state.tracker}
@@ -585,6 +599,10 @@ export default React.createClass({
                     {brushCharts["packet-loss-rate"].chartRows}
                     {brushCharts["latency"].chartRows}
                 </ChartContainer>
+
+                        </Resizable>
+                    </div>
+                </div>
                );
     },
 
