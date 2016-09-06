@@ -32,6 +32,7 @@ module.exports = {
         chartData = [];
         this.eventTypes = ['throughput', 'histogram-owdelay', 'packet-loss-rate',
                     'packet-retransmits', 'histogram-rtt', 'failures'];
+        this.dataFilters = [];
 
     },
 
@@ -266,10 +267,11 @@ module.exports = {
 
         }
     },
-    getChartData: function( filters ) {
+    getChartData: function( filters, itemsToHide ) {
         let data = chartData;
         let min;
         let max;
+        console.log( "filters", filters, "chartData", data, "itemsToHide", itemsToHide);
         let results = $.grep( data, function( e, i ) {
             let found = true;
             for (var key in filters ) {
@@ -282,6 +284,27 @@ module.exports = {
             }
             return found;
         });
+        // Filter out items in the itemsToHide array
+        if ( typeof itemsToHide != "undefined" && itemsToHide.length > 0 ) {
+            results = $.grep( results, function( e, i ) {
+                let show = false;
+                for ( var j in itemsToHide ) {
+                    let item = itemsToHide[j];
+                    for( var key in item ) {
+                        let val = item[key];
+                        if ( ( key in e.properties ) && e.properties[key] == val ) {
+                            show  = false || show;
+                        } else {
+                            show = true || show;
+                        }
+                    }
+                }
+                return show;
+            });
+        }
+
+
+
         let self = this;
         $.each( results, function( i, val ) {
             let values = val.values;

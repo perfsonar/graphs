@@ -162,6 +162,14 @@ export default React.createClass({
         router: React.PropTypes.func
     },
 
+    toggleType: function( options, event ) {
+        console.log("toggleType options: ", options, "event", event);
+        GraphDataStore.toggleType( options );
+
+        //event.preventDefault();
+
+
+    },
 
     render() {
         return (
@@ -183,7 +191,7 @@ export default React.createClass({
                             <span className="graph-label">Data:</span>
                             <ul className=" graph-filter__list">
                                 <li className="graph-filter__item graph-filter__item tcp-active">
-                                    <a href="#">Throughput (TCP)</a>
+                                    <a href="#" onClick={this.toggleType.bind(this, {type: "throughput", protocol: "tcp"})}>Throughput (TCP)</a>
                                 </li>
                                 <li className="graph-filter__item graph-filter__item udp-active">
                                     <a href="#">Throughput (UDP)</a>

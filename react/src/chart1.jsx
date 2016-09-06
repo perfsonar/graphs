@@ -38,10 +38,6 @@ row.val = 500000000; //'Generic error message 3';
 failures.push(row);
 row = {};
 
-var failureMessages = [];
-failureMessages[1460152800] = 'Generic error message 1';
-failureMessages[1460175800] = 'Generic error message 3';
-
 var failureSeries = null;
 var failureValues = null;
 
@@ -123,7 +119,7 @@ function getChartStyle( options ) {
             break;
     }
 
-        console.log("style options", options);
+        //console.log("style options", options);
     switch ( options.eventType ) {
         case "throughput":
             if ( options.protocol == "tcp" ) {
@@ -230,6 +226,7 @@ export default React.createClass({
             markdown: text,
             active: {
                 throughput: true,
+                forward: true,
                 reverse: true,
                 "packet-loss-rate": true,
                 latency: true
@@ -350,9 +347,16 @@ export default React.createClass({
 
                     let filter = {
                         eventType: esmondName || type,
-                        ipversion: ipversion
+                        ipversion: ipversion,
+                        //protocol: "tcp"
                     };
-                    data = GraphDataStore.getChartData( filter );
+                    let itemsToHide = [
+                        {
+                            eventType: "throughput",
+                            protocol: "tcp"
+                        }
+                    ];
+                    data = GraphDataStore.getChartData( filter, itemsToHide );
                     if ( this.state.active[type] && ( data.results.length > 0 ) ) {
                         for(let j in data.results) {
                             let result = data.results[j];
@@ -471,7 +475,7 @@ export default React.createClass({
             }
         }
 
-        console.log("charts just created", charts);
+        //console.log("charts just created", charts);
 
         latencyCharts = []; lossCharts = []; // TODO: remove - debugging only
 
