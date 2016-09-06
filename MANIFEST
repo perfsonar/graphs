@@ -54,3 +54,9 @@ templates/serviceTest.tmpl
 templates/serviceTest_new.tmpl
 templates/serviceTest_error.tmpl
 templates/sidebar.html
+public/bundle.js.map
+public/bundle.js
+public/css
+public/css/font-awesome
+public/css/foundation.min.css
+public/index.html
