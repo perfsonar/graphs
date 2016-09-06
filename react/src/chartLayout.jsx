@@ -271,7 +271,7 @@ export default React.createClass({
         );
     },
 
-    
+
     componentDidMount: function() {        
         //HostInfoStore.retrieveTracerouteData( this.props.sources, this.props.dests, this.props.ma_url );
         if ( $.isArray( this.state.src ) ) {

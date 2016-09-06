@@ -294,7 +294,6 @@ export default React.createClass({
 
                 for( var i in ipversions ) {
                     let ipversion = ipversions[i];
-                    //$.each( ipversions, function( i, ipversion ) {
                     let ipv = "ipv" + ipversion;
 
                     // Get throughput data and build charts
@@ -371,62 +370,89 @@ export default React.createClass({
                         charts[type].stats = stats;
                         brushCharts[type].stats = stats;
 
-                        // push the chartrows for the main charts
-                        charts[type].chartRows.push(
-                                <ChartRow height={chartRow.height} debug={false}>
-                                    <YAxis
-                                        key={"axis" + type}
-                                        id={"axis" + type}
-                                        label={label + " (" + ipv + ")"}
-                                        style={axisLabelStyle}
-                                        labelOffset={offsets.label}
-                                        format=".2s"
-                                        min={charts[type].stats.min}
-                                        max={charts[type].stats.max}
-                                        width={80} type="linear" align="left" />
-                                    <Charts>
-                                        {charts[type][ipv]}
-                                        {/*
-                                            {charts}
-                                            <ScatterChart axis="axis2" series={failureSeries} style={{color: "steelblue", opacity: 0.5}} />
-                                            */}
-                                    </Charts>
-                                </ChartRow>
-                                );
-
-                        // push the chartrows for the brush charts
-                        brushCharts[type].chartRows.push(
-                                <ChartRow
-                                    height={chartRow.brushHeight}
-                                    debug={false}
-                                    key={"brush" + type}
-                                >
-                                    <Brush
-                                        timeRange={this.state.brushrange}
-                                        onTimeRangeChanged={this.handleTimeRangeChange}
-                                        allowSelectionClear={true}
-                                    />
-                                    <YAxis 
-                                        key={"brush_axis" + type}
-                                        id={"brush_axis" + type}
-                                        label={label + " (" + ipv + ")"}
-                                        style={axisLabelStyle}
-                                        labelOffset={offsets.label}
-                                        format=".2s"
-                                        min={brushCharts[type].stats.min}
-                                        max={brushCharts[type].stats.max}
-                                        width={80} type="linear" align="left" />
-                                    <Charts>
-                                        {brushCharts[type][ipv]}
-                                    </Charts>
-                                </ChartRow>
-                                );
 
                     }
                 }
-                //});
+            }
+
+            // Create chartRows/brushRows
+
+            // create a cache object, mostly so we can avoid displaying
+            // latency twice, since it's in typesToChart twice
+            let chartRowsShown = {};
+            for (let h in typesToChart) {
+                let eventType = typesToChart[h];
+                let type = eventType.name;
+                let label = eventType.label;
+                let esmondName = eventType.esmondName;
+                for( var i in ipversions ) {
+                    let ipversion = ipversions[i];
+                    let ipv = "ipv" + ipversion;
+
+                    if ( chartRowsShown[type + ipv] === true ) {
+                        continue;
+                    }
+
+                    let chartArr = charts[type][ipv];
+
+                    // push the chartrows for the main charts
+                    charts[type].chartRows.push(
+                            <ChartRow height={chartRow.height} debug={false}>
+                            <YAxis
+                                key={"axis" + type}
+                                id={"axis" + type}
+                                label={label + " (" + ipv + ")"}
+                                style={axisLabelStyle}
+                                labelOffset={offsets.label}
+                                format=".2s"
+                                min={charts[type].stats.min}
+                                max={charts[type].stats.max}
+                                width={80} type="linear" align="left" />
+                            <Charts>
+                            {charts[type][ipv]}
+                            {/*
+                                {charts}
+                                <ScatterChart axis="axis2" series={failureSeries} style={{color: "steelblue", opacity: 0.5}} />
+                                */}
+                            </Charts>
+                            </ChartRow>
+                            );
+
+                    // push the chartrows for the brush charts
+                    brushCharts[type].chartRows.push(
+                            <ChartRow
+                            height={chartRow.brushHeight}
+                            debug={false}
+                            key={"brush" + type}
+                            >
+                            <Brush
+                            timeRange={this.state.brushrange}
+                            onTimeRangeChanged={this.handleTimeRangeChange}
+                            allowSelectionClear={true}
+                            />
+                            <YAxis 
+                            key={"brush_axis" + type}
+                            id={"brush_axis" + type}
+                            label={label + " (" + ipv + ")"}
+                            style={axisLabelStyle}
+                            labelOffset={offsets.label}
+                            format=".2s"
+                            min={brushCharts[type].stats.min}
+                            max={brushCharts[type].stats.max}
+                            width={80} type="linear" align="left" />
+                                <Charts>
+                                {brushCharts[type][ipv]}
+                            </Charts>
+                                </ChartRow>
+                                );
+                            chartRowsShown[type + ipv] = true;
+
+
+                }
             }
         }
+
+        console.log("charts just created", charts);
 
         latencyCharts = []; lossCharts = []; // TODO: remove - debugging only
 
@@ -564,6 +590,7 @@ export default React.createClass({
 
     updateChartData: function() {
         let newChartSeries = GraphDataStore.getChartData();
+        console.log("updateChartData data", newChartSeries);
         this.setState({ chartSeries: newChartSeries } );
         this.forceUpdate();
     },
