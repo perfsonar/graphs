@@ -19,6 +19,9 @@ module.exports = {
      *  }
      */
     hostInfo: [],
+    tracerouteReqs: 0,
+    tracerouteReqsCompleted: 0,
+    tracerouteInfo: [],
     /*
     getInitialState() {
         return {
@@ -27,6 +30,34 @@ module.exports = {
     },
     */
 
+    retrieveTracerouteData: function ( sources, dests, ma_url ) {
+        let baseUrl = "graphData.cgi?action=has_traceroute_data";
+        baseUrl += "&url=" + ma_url;
+        if ( !$.isArray( sources ) ) {
+            sources = [ sources ];
+        }
+        if ( !$.isArray( dests ) ) {
+            dests = [ dests ];
+        }
+        for( let i in sources ) {
+            let src = sources[i];
+            let dst = dests[i];
+
+            let url = baseUrl + "&source=" + src;
+            url += "&dest=" + dst
+            console.log("tracerout url");
+
+            this.tracerouteReqs = sources.length;
+
+            this.serverRequest = $.get( url, function(data) {
+                    this.handleTracerouteResponse( data, i );
+                }.bind(this));
+
+        }
+
+
+
+    },
     retrieveHostInfo: function( source_input, dest_input ) {
         let url = "graphData.cgi?action=hosts";
         let sources;
@@ -60,6 +91,29 @@ module.exports = {
     handleHostInfoResponse: function( data ) {
         this.hostInfo = data;
         emitter.emit("get");
+    },
+    handleTracerouteResponse: function( data, i ) {
+        //this.tracerouteInfo = data;
+        console.log( "trace data", data, "i", i );
+        this.tracerouteReqsCompleted++;
+        this.tracerouteInfo.push( data );
+        if ( this.tracerouteReqsCompleted == this.tracerouteReqs ) {
+            this.mergeTracerouteData();
+
+        }
+    },
+    mergeTracerouteData: function() {
+        console.log("trace completed", this.tracerouteInfo);
+        emitter.emit("getTrace");
+    },
+    getTraceInfo: function() {
+        return this.tracerouteInfo;
+    },
+    subscribeTrace: function( callback ) {
+        emitter.on("getTrace", callback);
+    },
+    unsubscribeTrace: function( callback ) {
+        emitter.off("getTrace", callback);
     },
     subscribe: function( callback ) {
         emitter.on("get", callback);

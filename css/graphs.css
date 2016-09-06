@@ -25,6 +25,14 @@
     display: inline-block;
 }
 
+.blockTrace {
+    display:block; 
+}
+
+.hiddenTrace {
+    display:none;
+}
+
 /*
  * Clear fix
 */

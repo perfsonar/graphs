@@ -27,7 +27,8 @@ export default React.createClass({
             end: this.props.end,
             timerange: this.props.timerange,
             timePeriod: "1w",
-            interfaceInfo: null
+            interfaceInfo: null,
+            traceInfo: [],
         };
     },
     getTime() {
@@ -123,6 +124,18 @@ export default React.createClass({
         };
         this.handleTimerangeChange( options );
     },
+    getTraceURL: function(i) {
+        // URL from old graphs
+        //
+        let trace_data = this.state.traceInfo[i];
+        let trace_url = '/perfsonar-traceroute-viewer/index.cgi?';
+                    trace_url += 'mahost=' + trace_data.ma_url;
+                    trace_url += '&stime=yesterday';
+                    trace_url += '&etime=now';
+                    //trace_url += '&tzselect='; // Commented out (allow default to be used)
+                    trace_url += '&epselect=' + trace_data.traceroute_uri;
+        return trace_url;
+    },
     renderHostList: function( type, label ) {
         if ( this.state.showHostSelectors ) {
             return (
@@ -144,7 +157,7 @@ export default React.createClass({
                     hosts.push( 
                             <div className="hostname" key={"hostname"+label+i}>{row[ type + "_host"]}</div>,
                             <div className="address" key={"ip"+label+i}>{row[ type + "_ip"]}</div>,
-                            <div key={"detailedInfo"+label+i}>{this.showDetailedHostInfo( row[type + "_ip" ] )}</div>
+                            <div key={"detailedInfo"+label+i}>{this.showDetailedHostInfo( row[type + "_ip" ], i )}</div>
                             );
 
                 }
@@ -162,7 +175,16 @@ export default React.createClass({
                    );
         }
     },
-    showDetailedHostInfo: function( host ) {
+    showDetailedHostInfo: function( host, i ) {
+        let trace = this.state.traceInfo;
+        let display = "hiddenTrace";
+        let traceURL = this.getTraceURL( i );
+        if ( i in trace ) {
+            if ( trace[i].has_traceroute == 1 ) {
+                display = "blockTrace";
+            }
+
+        }
         let details = InterfaceInfoStore.getInterfaceDetails( host );
             {/* GRAPH: Detailed Host Info*/}
             return (
@@ -185,8 +207,8 @@ export default React.createClass({
                         <span className="sidebar-popover__param">MTU:</span>
                         <span className="sidebar-popover__value">{details.mtu}</span>
                     </li>
-                    <li className="sidebar-popover__item">
-                        <span className="sidebar-popover__param"><a href="#">View traceroute graph</a></span>
+                    <li className={"sidebar-popover__item " + display}>
+                        <span className="sidebar-popover__param"><a href={traceURL} target="_blank">View traceroute graph</a></span>
                     </li>
                 </ul>
             </div>
@@ -196,6 +218,8 @@ export default React.createClass({
     },
     componentDidMount: function() {
             HostInfoStore.subscribe(this.updateChartHeader);
+            HostInfoStore.subscribeTrace(this.updateTrace);
+            HostInfoStore.retrieveTracerouteData( this.props.sources, this.props.dests, this.props.ma_url );
             InterfaceInfoStore.subscribe( this.handleInterfaceData );
             InterfaceInfoStore.retrieveInterfaceInfo( this.props.sources, this.props.dests );
 
@@ -210,7 +234,12 @@ export default React.createClass({
     componentWillUnmount: function() {
         //this.serverRequest.abort();
         HostInfoStore.unsubscribe( this.updateChartHeader );
+        HostInfoStore.unsubscribeTrace( this.updateTrace );
         InterfaceInfoStore.unsubscribe( this.updateChartHeader );
+    },
+    updateTrace: function() {
+        let traceInfo = HostInfoStore.getTraceInfo();
+        this.setState({traceInfo: traceInfo});
     },
     updateChartHeader: function() {
         let hostInfo = HostInfoStore.getHostInfoData();

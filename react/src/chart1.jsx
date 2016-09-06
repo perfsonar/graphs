@@ -574,9 +574,8 @@ export default React.createClass({
         let dst = this.props.dst;
         let start = this.state.start;
         let end = this.state.end;
-        let ma_url = this.props.ma_url || "http://perfsonar-dev.grnoc.iu.edu/esmond/perfsonar/archive/";
+        let ma_url = this.props.ma_url || location.origin + "/esmond/perfsonar/archive/";
         this.getDataFromMA(src, dst, start, end, ma_url);
-
 
         var values = this.esmondToTimeSeries( failures, 'failures' );
         failureValues = values.values;

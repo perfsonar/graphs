@@ -158,7 +158,8 @@ export default React.createClass({
                     start={this.state.start}
                     end={this.state.end}
                     timerange={this.state.timerange}
-                    updateTimerange={this.handleTimerangeChange} 
+                    updateTimerange={this.handleTimerangeChange}
+                    ma_url={this.state.ma_url}
                 />
 
                     {/* GRAPH: Select Data*/}
@@ -272,6 +273,7 @@ export default React.createClass({
 
     
     componentDidMount: function() {        
+        //HostInfoStore.retrieveTracerouteData( this.props.sources, this.props.dests, this.props.ma_url );
         if ( $.isArray( this.state.src ) ) {
             document.title = "pS results between " + this.state.src.join(", ") + " and " + this.state.dst.join(", ");
         } else {
@@ -308,7 +310,7 @@ export default React.createClass({
         if ( typeof qs.end != "undefined" ) {
             let end = qs.end || defaults.end;
         }
-        
+
         let ma_url = qs.url || location.origin + "/";
         let localhostRe = /localhost/i;
         let found = ma_url.match( localhostRe );
