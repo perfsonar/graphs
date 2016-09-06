@@ -128,6 +128,9 @@ export default React.createClass({
         // URL from old graphs
         //
         let trace_data = this.state.traceInfo[i];
+        if ( typeof trace_data == "undefined" ) {
+            return;
+        }
         let trace_url = '/perfsonar-traceroute-viewer/index.cgi?';
                     trace_url += 'mahost=' + trace_data.ma_url;
                     trace_url += '&stime=yesterday';
@@ -179,7 +182,7 @@ export default React.createClass({
         let trace = this.state.traceInfo;
         let display = "hiddenTrace";
         let traceURL = this.getTraceURL( i );
-        if ( i in trace ) {
+        if ( i in trace && traceURL != "" ) {
             if ( trace[i].has_traceroute == 1 ) {
                 display = "blockTrace";
             }
