@@ -157,14 +157,24 @@ export default React.createClass({
             end: newState.end,
             timerange: newState.timerange,
             ma_url: newState.ma_url,
-            itemsToHide: {}
+            itemsToHide: {},
+            active: {
+                "eventType_throughput_protocol_tcp_": true,
+                "eventType_throughput_protocol_udp_": true,
+                "eventType_packet-loss-rate_mainTestType_latency_": true,
+                "eventType_packet-loss-rate_mainTestType_throughput_": true,
+                "eventType_histogram-owdelay_": true,
+                "eventType_histogram-rtt_": true,
+                "direction_forward_": true,
+                "direction_reverse_": true
+            }
         };
     },
     contextTypes: {
         router: React.PropTypes.func
     },
     toggleType: function( options, event ) {
-        //console.log("toggleType options: ", options, "event", event);
+        console.log("toggleType options: ", options); //, "event", event);
         let newItems = this.state.itemsToHide;
         //newItems.push( options );
         let sorted = Object.keys( options ).sort();
@@ -174,12 +184,17 @@ export default React.createClass({
             let val = options[key];
             id += key + "_" + val + "_";
         }
+        console.log("id", id);
         if ( id in newItems ) {
             delete newItems[id];
         } else {
             //let newItems = {};
             newItems[id] = options;
         }
+        let active = this.state.active;
+        active[id] = !active[id];
+        this.setState({ active: active } );
+
         this.setState({ itemsToHide: newItems } );
         //this.forceUpdate();
 
@@ -191,7 +206,17 @@ export default React.createClass({
     },
 
 
+    getActiveClass: function ( value ) {
+        console.log( "getActiveClass value", value );
+        if ( value === true ) {
+            return "active";
+        } else {
+            return "";
+        }
+
+    },
     render() {
+        console.log("active", this.state.active);
         return (
 
                 <div className="graph">
@@ -210,27 +235,27 @@ export default React.createClass({
                         <div className="graph-filter left">
                             <span className="graph-label">Data:</span>
                             <ul className=" graph-filter__list">
-                                <li className="graph-filter__item graph-filter__item tcp-active">
+                                <li className={"graph-filter__item graph-filter__item throughput-tcp " + this.getActiveClass( this.state.active["eventType_throughput_protocol_tcp_"] )}>
                                     <a href="#" onClick={this.toggleType.bind(this, {eventType: "throughput", protocol: "tcp"})}>Throughput (TCP)</a>
                                 </li>
-                                <li className="graph-filter__item graph-filter__item udp-active">
-                                    <a href="#" onClick={this.toggleType.bind(this, {eventType: "throughput", protocol: "udp"})}>Throughput (UDP)</a>
+                                <li className={"graph-filter__item graph-filter__item udp " + this.getActiveClass( this.state.active["eventType_throughput_protocol_udp_"] )}  >
+                                    <a href="#" onClick={this.toggleType.bind(this, {eventType: "throughput", protocol: "udp"}) }>Throughput (UDP)</a>
                                 </li>
                                 {/*
                                 <li className="graph-filter__item udp-active">
                                     <a href="#">UDP</a>
                                 </li>
                                 */}
-                                <li className="graph-filter__item graph-filter__item loss-throughput-active">
+                                <li className={"graph-filter__item graph-filter__item loss-throughput " + this.getActiveClass( this.state.active["eventType_packet-loss-rate_mainTestType_throughput_"] ) }>
                                     <a href="#" onClick={this.toggleType.bind(this, {eventType: "packet-loss-rate", mainTestType: "throughput"})}>Loss (Throughput)</a>
                                 </li>
-                                <li className="graph-filter__item graph-filter__item loss-latency-active">
+                                <li className={"graph-filter__item graph-filter__item loss-latency " + this.getActiveClass( this.state.active["eventType_packet-loss-rate_mainTestType_latency_"] )}>
                                     <a href="#" onClick={this.toggleType.bind(this, {eventType: "packet-loss-rate", mainTestType: "latency"})}>Loss (Latency)</a>
                                 </li>
-                                <li className="graph-filter__item ipv6-active">
+                                <li className={"graph-filter__item ipv6 " + this.getActiveClass( this.state.active["eventType_histogram-owdelay_"] )}>
                                     <a href="#" onClick={this.toggleType.bind(this, {eventType: "histogram-owdelay"})}>One-way latency</a>
                                 </li>
-                                <li className="graph-filter__item ipv4-active">
+                                <li className={"graph-filter__item ipv4 " + this.getActiveClass( this.state.active["eventType_histogram-rtt_"])} >
                                     <a href="#" onClick={this.toggleType.bind(this, {eventType: "histogram-rtt"})}>Ping</a>
                                 </li>
                             </ul>
@@ -276,14 +301,14 @@ export default React.createClass({
 
                         <div className="graph-filter right">
                             <ul className=" graph-filter__list">
-                                <li className="graph-filter__item graph-filter__item--blue-active">
+                                <li className={"graph-filter__item graph-filter__item--forward " + this.getActiveClass( this.state.active["direction_forward_"] ) }>
                                     <a href="#" onClick={this.toggleType.bind(this, {direction: "forward"})}>Forward
                                     <svg width="30" height="4" className="direction-label">
                                           <line x1="0" y1="2" x2="30" y2="2" stroke="#f0e54b" strokeWidth="3" />
                                     </svg>
                                     </a>
                                 </li>
-                                <li className="graph-filter__item graph-filter__item--blue-active">
+                                <li className={"graph-filter__item graph-filter__item--reverse " + this.getActiveClass( this.state.active["direction_reverse_"] )}>
                                     <a href="#" onClick={this.toggleType.bind(this, {direction: "reverse"})}>Reverse
                                     <svg width="30" height="4" className="direction-label">
                                           <line x1="0" y1="2" x2="30" y2="2" stroke="#f0e54b" strokeWidth="3" strokeDasharray="4,2" />
