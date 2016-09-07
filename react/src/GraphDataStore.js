@@ -269,36 +269,10 @@ module.exports = {
         }
     },
 
-
     toggleType: function( options ) {
         options = this.pruneItemsToHide( options );
-
-        console.log("itemsToHide options in GraphDataStore.toggleType", options );
         this.itemsToHide = options;
-        /*
-
-
-
-        let results = $.grep( items, function( row, i ) {
-            for(let key in options ) {
-                let val = options[key];
-                if ( ( key in row ) && row[key] == val ) {
-                    found = true;
-                } else {
-                    return false;
-                }
-            }
-        });
-        if ( results.length == 0 ) {
-            //this.itemsToHide.push( options );
-            this.itemsToHide = options;
-        }
-        */
-        console.log("itemsToHide after toggle", this.itemsToHide);
-            emitter.emit("get");
-
-
-
+        emitter.emit("get");
     },
 
     pruneItemsToHide: function ( options ) {
@@ -306,19 +280,16 @@ module.exports = {
         options = [];
         for(let id in oldOptions ) {
             options.push( oldOptions[id] );
-
         }
-
         return options;
-
     },
+
     getChartData: function( filters, itemsToHide ) {
         //itemsToHide = this.itemsToHide;
         itemsToHide = this.pruneItemsToHide( itemsToHide );
         let data = chartData;
         let min;
         let max;
-        console.log( "filters", filters, "chartData", data, "itemsToHide", itemsToHide);
         let results = $.grep( data, function( e, i ) {
             let found = true;
             for (var key in filters ) {
@@ -348,7 +319,6 @@ module.exports = {
                         }
                     }
                     show = ( found < Object.keys( item ).length );
-                console.log("found", found, "e", e, "show", show);
                     if ( found >= Object.keys( item ) .length ) {
                         return false;
 

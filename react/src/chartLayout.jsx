@@ -164,7 +164,7 @@ export default React.createClass({
         router: React.PropTypes.func
     },
     toggleType: function( options, event ) {
-        console.log("toggleType options: ", options, "event", event);
+        //console.log("toggleType options: ", options, "event", event);
         let newItems = this.state.itemsToHide;
         //newItems.push( options );
         let sorted = Object.keys( options ).sort();

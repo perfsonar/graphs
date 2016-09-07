@@ -615,7 +615,6 @@ export default React.createClass({
 
     updateChartData: function() {
         let newChartSeries = GraphDataStore.getChartData();
-        console.log("updateChartData data", newChartSeries);
         this.setState({ chartSeries: newChartSeries } );
         this.forceUpdate();
     },
@@ -655,15 +654,16 @@ export default React.createClass({
            this.setState({ startTime: nextProps.startTime });
            }
            */
-        console.log("nextProps", nextProps);
+        //console.log("nextProps", nextProps);
         let timerange = new TimeRange([nextProps.start * 1000, nextProps.end * 1000 ]);
-        this.setState({start: nextProps.start, end: nextProps.end, chartSeries: null, timerange: timerange, brushrange: null, initialTimerange: timerange, itemsToHide: nextProps.itemsToHide});
+        this.setState({itemsToHide: nextProps.itemsToHide});
         if ( nextProps.start != this.state.start
                 || nextProps.end != this.state.end ) {
+            this.setState({start: nextProps.start, end: nextProps.end, chartSeries: null, timerange: timerange, brushrange: null, initialTimerange: timerange}); 
             this.getDataFromMA(nextProps.src, nextProps.dst, nextProps.start, nextProps.end, nextProps.ma_url);
         } else {
-        GraphDataStore.toggleType( nextProps.itemsToHide) ;
-        GraphDataStore.subscribe(this.updateChartData);
+            GraphDataStore.toggleType( nextProps.itemsToHide) ;
+            //GraphDataStore.subscribe(this.updateChartData);
 
         }
         //this.forceUpdate();
@@ -682,12 +682,10 @@ export default React.createClass({
 
     },
     toggleType: function( options, event ) {
-        console.log("toggleType options: ", options); //, "event", event);
+        //console.log("toggleType options: ", options); //, "event", event);
         GraphDataStore.toggleType( options );
 
-
         //event.preventDefault();
-
 
     },
 
