@@ -89,6 +89,11 @@
 }
 
 
+.graph-filter__item svg.direction-label {
+    margin-left: 1em;
+    vertical-align: middle;
+}
+
 .graph-filter__item:last-child {
     border-right: none;
 }

@@ -277,10 +277,18 @@ export default React.createClass({
                         <div className="graph-filter right">
                             <ul className=" graph-filter__list">
                                 <li className="graph-filter__item graph-filter__item--blue-active">
-                                    <a href="#">Forward</a>
+                                    <a href="#" onClick={this.toggleType.bind(this, {direction: "forward"})}>Forward
+                                    <svg width="30" height="4" className="direction-label">
+                                          <line x1="0" y1="2" x2="30" y2="2" stroke="#f0e54b" strokeWidth="3" />
+                                    </svg>
+                                    </a>
                                 </li>
                                 <li className="graph-filter__item graph-filter__item--blue-active">
-                                    <a href="#">Reverse</a>
+                                    <a href="#" onClick={this.toggleType.bind(this, {direction: "reverse"})}>Reverse
+                                    <svg width="30" height="4" className="direction-label">
+                                          <line x1="0" y1="2" x2="30" y2="2" stroke="#f0e54b" strokeWidth="3" strokeDasharray="4,2" />
+                                    </svg>
+                                    </a>
                                 </li>
                                 <li className="graph-filter__item graph-filter__item--blue-active">
                                     <a href="#">Errors</a>
