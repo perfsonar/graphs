@@ -4,6 +4,7 @@ import _ from "underscore";
 import Chart1 from "./chart1.jsx";
 import ChartHeader from "./ChartHeader";
 import HostInfoStore from "./HostInfoStore";
+//import GraphDataStore from "./GraphDataStore";
 
 import "../../css/graphs.css";
 //import "../../toolkit/web-ng/root/css/app.css"
@@ -155,21 +156,40 @@ export default React.createClass({
             start: newState.start,
             end: newState.end,
             timerange: newState.timerange,
-            ma_url: newState.ma_url
+            ma_url: newState.ma_url,
+            itemsToHide: {}
         };
     },
     contextTypes: {
         router: React.PropTypes.func
     },
-
     toggleType: function( options, event ) {
         console.log("toggleType options: ", options, "event", event);
-        GraphDataStore.toggleType( options );
+        let newItems = this.state.itemsToHide;
+        //newItems.push( options );
+        let sorted = Object.keys( options ).sort();
+        let id = "";
+        for(let i in sorted) {
+            let key = sorted[i]
+            let val = options[key];
+            id += key + "_" + val + "_";
+        }
+        if ( id in newItems ) {
+            delete newItems[id];
+        } else {
+            //let newItems = {};
+            newItems[id] = options;
+        }
+        this.setState({ itemsToHide: newItems } );
+        //this.forceUpdate();
+
+
 
         //event.preventDefault();
 
 
     },
+
 
     render() {
         return (
@@ -191,10 +211,10 @@ export default React.createClass({
                             <span className="graph-label">Data:</span>
                             <ul className=" graph-filter__list">
                                 <li className="graph-filter__item graph-filter__item tcp-active">
-                                    <a href="#" onClick={this.toggleType.bind(this, {type: "throughput", protocol: "tcp"})}>Throughput (TCP)</a>
+                                    <a href="#" onClick={this.toggleType.bind(this, {eventType: "throughput", protocol: "tcp"})}>Throughput (TCP)</a>
                                 </li>
                                 <li className="graph-filter__item graph-filter__item udp-active">
-                                    <a href="#">Throughput (UDP)</a>
+                                    <a href="#" onClick={this.toggleType.bind(this, {eventType: "throughput", protocol: "udp"})}>Throughput (UDP)</a>
                                 </li>
                                 {/*
                                 <li className="graph-filter__item udp-active">
@@ -202,16 +222,16 @@ export default React.createClass({
                                 </li>
                                 */}
                                 <li className="graph-filter__item graph-filter__item loss-throughput-active">
-                                    <a href="#">Loss (Throughput)</a>
+                                    <a href="#" onClick={this.toggleType.bind(this, {eventType: "packet-loss-rate", mainTestType: "throughput"})}>Loss (Throughput)</a>
                                 </li>
                                 <li className="graph-filter__item graph-filter__item loss-latency-active">
-                                    <a href="#">Loss (Latency)</a>
+                                    <a href="#" onClick={this.toggleType.bind(this, {eventType: "packet-loss-rate", mainTestType: "latency"})}>Loss (Latency)</a>
                                 </li>
                                 <li className="graph-filter__item ipv6-active">
-                                    <a href="#">One-way latency</a>
+                                    <a href="#" onClick={this.toggleType.bind(this, {eventType: "histogram-owdelay"})}>One-way latency</a>
                                 </li>
                                 <li className="graph-filter__item ipv4-active">
-                                    <a href="#">Ping</a>
+                                    <a href="#" onClick={this.toggleType.bind(this, {eventType: "histogram-rtt"})}>Ping</a>
                                 </li>
                             </ul>
                         </div>
@@ -293,6 +313,9 @@ export default React.createClass({
                                         start={this.state.start}
                                         end={this.state.end}
                                         ma_url={this.state.ma_url}
+                                        updateHiddenItems={this.handleHiddenItemsChange}
+                                        itemsToHide={this.state.itemsToHide}
+                                        ref="chart1"
                                     />
                                 </div>
                     </div>

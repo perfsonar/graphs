@@ -33,6 +33,7 @@ module.exports = {
         this.eventTypes = ['throughput', 'histogram-owdelay', 'packet-loss-rate',
                     'packet-retransmits', 'histogram-rtt', 'failures'];
         this.dataFilters = [];
+        this.itemsToHide = [];
 
     },
 
@@ -267,7 +268,53 @@ module.exports = {
 
         }
     },
+
+
+    toggleType: function( options ) {
+        options = this.pruneItemsToHide( options );
+
+        console.log("itemsToHide options in GraphDataStore.toggleType", options );
+        this.itemsToHide = options;
+        /*
+
+
+
+        let results = $.grep( items, function( row, i ) {
+            for(let key in options ) {
+                let val = options[key];
+                if ( ( key in row ) && row[key] == val ) {
+                    found = true;
+                } else {
+                    return false;
+                }
+            }
+        });
+        if ( results.length == 0 ) {
+            //this.itemsToHide.push( options );
+            this.itemsToHide = options;
+        }
+        */
+        console.log("itemsToHide after toggle", this.itemsToHide);
+            emitter.emit("get");
+
+
+
+    },
+
+    pruneItemsToHide: function ( options ) {
+        let oldOptions = options;
+        options = [];
+        for(let id in oldOptions ) {
+            options.push( oldOptions[id] );
+
+        }
+
+        return options;
+
+    },
     getChartData: function( filters, itemsToHide ) {
+        //itemsToHide = this.itemsToHide;
+        itemsToHide = this.pruneItemsToHide( itemsToHide );
         let data = chartData;
         let min;
         let max;
@@ -289,14 +336,22 @@ module.exports = {
             results = $.grep( results, function( e, i ) {
                 let show = false;
                 for ( var j in itemsToHide ) {
+                    let found = 0;
                     let item = itemsToHide[j];
                     for( var key in item ) {
                         let val = item[key];
                         if ( ( key in e.properties ) && e.properties[key] == val ) {
                             show  = false || show;
+                            found++;
                         } else {
                             show = true || show;
                         }
+                    }
+                    show = ( found < Object.keys( item ).length );
+                console.log("found", found, "e", e, "show", show);
+                    if ( found >= Object.keys( item ) .length ) {
+                        return false;
+
                     }
                 }
                 return show;
@@ -446,9 +501,28 @@ module.exports = {
                 }
             }
             let row = {};
+            let testType;
+            if (eventType == "histogram-owdelay" || eventType == "histogram-rtt" ){
+                testType = "latency";
+            } else if ( eventType == "throughput") {
+                testType = "throughput";
+            } else if ( eventType = "packet-loss-rate" ) {
+                testType = "loss";
+            }
+            let mainTestType;
+            if (mainEventType == "histogram-owdelay" || mainEventType == "histogram-rtt" ){
+                mainTestType = "latency";
+            } else if ( mainEventType == "throughput") {
+                mainTestType = "throughput";
+            } else if ( mainEventType = "packet-loss-rate" ) {
+                mainTestType = "loss";
+            }
+
             row.properties = pruneDatum( datum );
             row.properties.eventType = eventType;
             row.properties.mainEventType = mainEventType;
+            row.properties.testType = testType;
+            row.properties.mainTestType = mainTestType;
             row.values = series;
             output.push(row);
 

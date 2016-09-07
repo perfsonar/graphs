@@ -246,6 +246,7 @@ export default React.createClass({
             maxThroughput: 1,
             maxLoss: 0.0000000001,
             latencySeries: null,
+            itemsToHide: [],
             showBrush: false
         };
     },
@@ -350,13 +351,15 @@ export default React.createClass({
                         ipversion: ipversion,
                         //protocol: "tcp"
                     };
+                    /*
                     let itemsToHide = [
                         {
                             eventType: "throughput",
                             protocol: "tcp"
                         }
                     ];
-                    data = GraphDataStore.getChartData( filter, itemsToHide );
+                    */
+                    data = GraphDataStore.getChartData( filter, this.state.itemsToHide );
                     if ( this.state.active[type] && ( data.results.length > 0 ) ) {
                         for(let j in data.results) {
                             let result = data.results[j];
@@ -652,15 +655,40 @@ export default React.createClass({
            this.setState({ startTime: nextProps.startTime });
            }
            */
+        console.log("nextProps", nextProps);
         let timerange = new TimeRange([nextProps.start * 1000, nextProps.end * 1000 ]);
-        this.setState({start: nextProps.start, end: nextProps.end, chartSeries: null, timerange: timerange, brushrange: null, initialTimerange: timerange});
-        this.getDataFromMA(nextProps.src, nextProps.dst, nextProps.start, nextProps.end, nextProps.ma_url);
+        this.setState({start: nextProps.start, end: nextProps.end, chartSeries: null, timerange: timerange, brushrange: null, initialTimerange: timerange, itemsToHide: nextProps.itemsToHide});
+        if ( nextProps.start != this.state.start
+                || nextProps.end != this.state.end ) {
+            this.getDataFromMA(nextProps.src, nextProps.dst, nextProps.start, nextProps.end, nextProps.ma_url);
+        } else {
+        GraphDataStore.toggleType( nextProps.itemsToHide) ;
+        GraphDataStore.subscribe(this.updateChartData);
+
+        }
         //this.forceUpdate();
     },
 
     componentWillUnmount: function() {
         this.serverRequest.abort();
         GraphDataStore.unsubscribe( this.updateChartData );
+    },
+    handleHiddenItemsChange: function( options ) {
+        //this.setState( options );
+        //this.forceUpdate();
+        //this.props.updateHiddenItems( options );
+        this.toggleType( options );
+        //emitter.emit("timerangeChange");
+
+    },
+    toggleType: function( options, event ) {
+        console.log("toggleType options: ", options); //, "event", event);
+        GraphDataStore.toggleType( options );
+
+
+        //event.preventDefault();
+
+
     },
 
     _checkSortOrder : function( ary, valName='ts' ) {
