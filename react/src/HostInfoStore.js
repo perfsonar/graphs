@@ -31,7 +31,7 @@ module.exports = {
     */
 
     retrieveTracerouteData: function ( sources, dests, ma_url ) {
-        let baseUrl = "graphData.cgi?action=has_traceroute_data";
+        let baseUrl = "cgi-bin/graphData.cgi?action=has_traceroute_data";
         baseUrl += "&url=" + ma_url;
         if ( !$.isArray( sources ) ) {
             sources = [ sources ];
@@ -59,7 +59,7 @@ module.exports = {
 
     },
     retrieveHostInfo: function( source_input, dest_input ) {
-        let url = "graphData.cgi?action=hosts";
+        let url = "cgi-bin/graphData.cgi?action=hosts";
         let sources;
         let dests;
         if ( Array.isArray( source_input ) ) {

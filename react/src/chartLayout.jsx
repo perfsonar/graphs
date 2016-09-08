@@ -6,7 +6,7 @@ import ChartHeader from "./ChartHeader";
 import HostInfoStore from "./HostInfoStore";
 //import GraphDataStore from "./GraphDataStore";
 
-import "../../css/graphs.css";
+import "../css/graphs.css";
 //import "../../toolkit/web-ng/root/css/app.css"
 import "../../toolkit/web-ng/root/js/app.js"
 

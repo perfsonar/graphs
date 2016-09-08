@@ -2,8 +2,8 @@ let EventEmitter = require('events').EventEmitter;
 
 let emitter = new EventEmitter();
 
-const lsListURL = "graphData.cgi?action=ls_hosts";
-const lsQueryURL = "graphData.cgi?action=interfaces";
+const lsListURL = "cgi-bin/graphData.cgi?action=ls_hosts";
+const lsQueryURL = "cgi-bin/graphData.cgi?action=interfaces";
 
 
 module.exports = {
@@ -68,7 +68,7 @@ module.exports = {
     retrieveInterfaceInfo: function( source_input, dest_input ) {
 
 
-        let url = "graphData.cgi?action=hosts";
+        let url = "cgi-bin/graphData.cgi?action=hosts";
         let sources;
         let dests;
         if ( Array.isArray( source_input ) ) {

@@ -15,7 +15,7 @@ require(["dijit/Dialog", "dijit/form/Button", "dojo/domReady!", "dojox/widget/Di
     var createDialog = function(source, dest) {
         clear_iframe();
         var iframe = dojo.byId('chart_iframe');
-        iframe.src = "/perfsonar-graphs/graphWidget.cgi?source="  + source + "&dest="
+        iframe.src = "graphWidget.cgi?source="  + source + "&dest="
             + dest + "&url=" + ma_url;
 
         dlg.show();
@@ -41,7 +41,7 @@ require(["dijit/Dialog", "dijit/form/Button", "dojo/domReady!", "dojox/widget/Di
     } 
     //ma_url = encodeURI(ma_url);
     
-    var url = '/perfsonar-graphs/graphData.cgi?action=test_list&url=' + ma_url;
+    var url = 'graphData.cgi?action=test_list&url=' + ma_url;
     d3.json(url, function(list_error, list_data) {
         var detailed = true;
         if (list_error) { display_error('Error retrieving test data: ' + list_error.statusText); };
@@ -49,7 +49,7 @@ require(["dijit/Dialog", "dijit/form/Button", "dojo/domReady!", "dojox/widget/Di
             detailed = false;
             render_test_table(list_error, list_data, detailed);
         } else {
-            var url = '/perfsonar-graphs/graphData.cgi?action=tests&url=' + ma_url;
+            var url = 'graphData.cgi?action=tests&url=' + ma_url;
             d3.json(url, function(error, ps_data) {
                 render_test_table(error, ps_data, detailed);
             });

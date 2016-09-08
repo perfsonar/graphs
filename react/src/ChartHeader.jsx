@@ -6,7 +6,7 @@ import InterfaceInfoStore from "./InterfaceInfoStore";
 
 import SIValue from "./SIValue";
 
-import "../../css/graphs.css";
+import "../css/graphs.css";
 
 let EventEmitter = require('events').EventEmitter;
 

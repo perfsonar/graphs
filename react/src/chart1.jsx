@@ -14,7 +14,7 @@ import { TimeSeries, TimeRange } from "pondjs";
 //import "../../toolkit/web-ng/root/css/font-awesome/css/font-awesome.min.css";
 import "./chart1.css";
 import ChartLayout from "./chartLayout.jsx";
-import "../../css/graphs.css";
+import "../css/graphs.css";
 import "../../toolkit/web-ng/root/css/app.css";
 
 var throughputValues = [];
