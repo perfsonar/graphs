@@ -8,7 +8,6 @@ JS/dojo
 node_modules
 npm-debug.log
 examples-bundle.js
-react/public/bundle.*
 .*.swo
 .*.swn
 .*.swp
