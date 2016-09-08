@@ -26,7 +26,6 @@ etc/config2.yml
 etc/config3.yml
 etc/config_bwctl.yml
 etc/config_owamp.yml
-html/help.html
 images/downarrow.png
 images/header.gif
 images/logo.png
@@ -40,12 +39,6 @@ JS/dojo-release-ps-toolkit.tar.gz
 JS/graphWidget.js
 JS/ps-dc.js
 JS/psGraph.js
-templates/bw_error.tmpl
-templates/bw_graphing.tmpl
-templates/bw_pageDisplay.tmpl
-templates/delay_error.tmpl
-templates/delay_graphing.tmpl
-templates/delay_pageDisplay.tmpl
 templates/footer.tmpl
 templates/graphPage.tmpl
 templates/graphWidget.tmpl
