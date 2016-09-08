@@ -377,6 +377,17 @@ export default React.createClass({
                                         max={stats.max}
                                         columns={[ "value" ]} />
                                     );
+                            /*
+                            charts[type][ipv].push(
+                                    <ScatterChart 
+                                        key={[type] + "failures + Math.Floor( Math.random() )"}
+
+
+                                    axis={"axis" + [type]}  series={series} style={{color: "steelblue", opacity: 0.5}} 
+                                    columns={ [ "failures"] }
+                                    />
+                                    );
+                                    */
 
                             if ( this.state.showBrush === true ) {
                                 // push the brush charts

@@ -207,7 +207,6 @@ export default React.createClass({
 
 
     getActiveClass: function ( value ) {
-        console.log( "getActiveClass value", value );
         if ( value === true ) {
             return "active";
         } else {
@@ -216,7 +215,6 @@ export default React.createClass({
 
     },
     render() {
-        console.log("active", this.state.active);
         return (
 
                 <div className="graph">

@@ -225,6 +225,11 @@ module.exports = {
 
                 dataReqCount++; // TODO: double check the ordre of this and the request
 
+                if ( eventType == "failures" ) {
+                    console.log("FAILURES row", row);
+
+
+                }
                 this.serverRequest = $.get( url, function(data) {
                     this.handleDataResponse(data, eventType, row);
                 }.bind(this));
@@ -238,6 +243,9 @@ module.exports = {
         let direction = datum.direction;
         let protocol = datum.protocol;
         let row = datum;
+        if ( eventType == "failures") {
+        console.log("failures data", data, "datum", datum);
+        }
         row.eventType = eventType;
         //row.direction = direction;
         row.data = data;
@@ -285,6 +293,7 @@ module.exports = {
     },
 
     getChartData: function( filters, itemsToHide ) {
+        //console.log("filters", filters);
         //itemsToHide = this.itemsToHide;
         itemsToHide = this.pruneItemsToHide( itemsToHide );
         let data = chartData;
@@ -423,13 +432,33 @@ module.exports = {
             let mainEventType = self.getMainEventType( datum["event-types"] );
             //datum.mainEventType = mainEventType;
 
-            var values = [];
-            var series = {};
+            let values = [];
+            let failureValues = [];
+            let series = {};
+
+            let testType;
+            let mainTestType;
+
+            if (eventType == "histogram-owdelay" || eventType == "histogram-rtt" ){
+                testType = "latency";
+            } else if ( eventType == "throughput") {
+                testType = "throughput";
+            } else if ( eventType = "packet-loss-rate" ) {
+                testType = "loss";
+            }
+            if (mainEventType == "histogram-owdelay" || mainEventType == "histogram-rtt" ){
+                mainTestType = "latency";
+            } else if ( mainEventType == "throughput") {
+                mainTestType = "throughput";
+            } else if ( mainEventType = "packet-loss-rate" ) {
+                mainTestType = "loss";
+            }
 
             $.each(datum.data, function( valIndex, val ) {
                 const ts = val["ts"];
                 const timestamp = new moment(new Date(ts * 1000)); // 'Date' expects milliseconds
-                var value = val["val"];
+                let failureValue = null;
+                let value = val["val"];
                 if ( eventType == 'histogram-owdelay') {
                     //eventType = 'owdelay';
                     //datum.eventType = 'owdelay';
@@ -443,10 +472,20 @@ module.exports = {
                     console.log("VALUE IS ZERO OR LESS", Date());
                     value = 0.000000001;
                 }
-                if ( isNaN(value) ) {
+                if ( eventType == "failures" ) {
+                    // TODO: handle failures, which are supposed to be NaN 
+                    failureValue = value;
+
+                } else if ( isNaN(value) ) {
                     console.log("VALUE IS NaN", eventType);
                 }
-                values.push([timestamp.toDate().getTime(), value]);
+                if ( failureValue != null ) {
+                    //values.push([timestamp.toDate().getTime(), value]);
+                    failureValues.push([timestamp.toDate().getTime(), value]);
+                } else {
+                    values.push([timestamp.toDate().getTime(), value]);
+
+                }
 
             });
 
@@ -471,22 +510,6 @@ module.exports = {
                 }
             }
             let row = {};
-            let testType;
-            if (eventType == "histogram-owdelay" || eventType == "histogram-rtt" ){
-                testType = "latency";
-            } else if ( eventType == "throughput") {
-                testType = "throughput";
-            } else if ( eventType = "packet-loss-rate" ) {
-                testType = "loss";
-            }
-            let mainTestType;
-            if (mainEventType == "histogram-owdelay" || mainEventType == "histogram-rtt" ){
-                mainTestType = "latency";
-            } else if ( mainEventType == "throughput") {
-                mainTestType = "throughput";
-            } else if ( mainEventType = "packet-loss-rate" ) {
-                mainTestType = "loss";
-            }
 
             row.properties = pruneDatum( datum );
             row.properties.eventType = eventType;

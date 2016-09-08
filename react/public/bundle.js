@@ -47740,7 +47740,7 @@
 	    },
 	
 	    getChartData: function getChartData(filters, itemsToHide) {
-	        console.log("filters", filters);
+	        //console.log("filters", filters);
 	        //itemsToHide = this.itemsToHide;
 	        itemsToHide = this.pruneItemsToHide(itemsToHide);
 	        var data = chartData;
@@ -47874,7 +47874,6 @@
 	
 	            var values = [];
 	            var failureValues = [];
-	            var failureValue = null;
 	            var series = {};
 	
 	            var testType = void 0;
@@ -47898,6 +47897,7 @@
 	            $.each(datum.data, function (valIndex, val) {
 	                var ts = val["ts"];
 	                var timestamp = new _moment2.default(new Date(ts * 1000)); // 'Date' expects milliseconds
+	                var failureValue = null;
 	                var value = val["val"];
 	                if (eventType == 'histogram-owdelay') {
 	                    //eventType = 'owdelay';
@@ -47919,7 +47919,8 @@
 	                    console.log("VALUE IS NaN", eventType);
 	                }
 	                if (failureValue != null) {
-	                    values.push([timestamp.toDate().getTime(), value, failureValue]);
+	                    //values.push([timestamp.toDate().getTime(), value]);
+	                    failureValues.push([timestamp.toDate().getTime(), value]);
 	                } else {
 	                    values.push([timestamp.toDate().getTime(), value]);
 	                }
@@ -47927,7 +47928,7 @@
 	
 	            series = new _pondjs.TimeSeries({
 	                name: eventType + "." + direction,
-	                columns: ["time", "value", "failures"],
+	                columns: ["time", "value"],
 	                points: values
 	            });
 	
