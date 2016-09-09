@@ -21,7 +21,7 @@ install:
 	mkdir -p ${ROOTPATH}
 	tar ch --exclude=etc/* --exclude=*spec --exclude=dependencies --exclude=MANIFEST --exclude=Makefile -T MANIFEST | tar x -C ${ROOTPATH}
 	for i in `cat MANIFEST | grep ^etc/ | sed "s/^etc\///"`; do  mkdir -p `dirname $(CONFIGPATH)/$${i}`; if [ -e $(CONFIGPATH)/$${i} ]; then install -m 640 -c etc/$${i} $(CONFIGPATH)/$${i}.new; else install -m 640 -c etc/$${i} $(CONFIGPATH)/$${i}; fi; done
-	tar xzf ${ROOTPATH}/JS/dojo-release-ps-toolkit.tar.gz -C ${ROOTPATH}/JS
+	tar xzf ${ROOTPATH}/html/js/dojo-release-ps-toolkit.tar.gz -C ${ROOTPATH}/html/js
 	sed -i 's:.RealBin/\.\./lib:${LIBPATH}:g' ${ROOTPATH}/cgi-bin/*
-	rm -f ${ROOTPATH}/JS/dojo-release-ps-toolkit.tar.gz
+	rm -f ${ROOTPATH}/html/js/dojo-release-ps-toolkit.tar.gz
 
