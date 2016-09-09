@@ -308,7 +308,7 @@ export default React.createClass({
         let hintValues = [];
         if (highlight) {
             const highlightText = highlight.event.get("errorText");
-            console.log("highlightText", highlightText);
+            //console.log("highlightText", highlightText);
             //const speedText = `${formatter(highlight.event.get(highlight.column))} mph`;
             /*
              * text = `
@@ -471,7 +471,8 @@ export default React.createClass({
                     if ( this.state.active["failures"] && ( failureData.results.length > 0 ) ) {
                         for(let j in failureData.results) {
                             let result = failureData.results[j];
-                            var failureSeries = result.failureValues;
+                            //var failureSeries = result.failureValues;
+                            var failureSeries = result.values;
                             let properties = result.properties;
                             //stats.min = GraphDataStore.getMin( failureData.stats.min, stats.min );
                             //stats.max = GraphDataStore.getMax( failureData.stats.max, stats.max );
@@ -496,8 +497,6 @@ export default React.createClass({
                                     style={failureStyle}
                                     radius={4.0}
                                     columns={ [ "value" ] }
-                                    min={0}
-                                    max={stats.max}
                                     hintValues={hintValues}
                                     hintHeight={50}
                                     hintWidth={200}

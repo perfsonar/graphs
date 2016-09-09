@@ -422,8 +422,6 @@ module.exports = {
     },
     esmondToTimeSeries: function( inputData ) {
         let outputData = {};
-        let max;
-        let min;
         let output = [];
         let self = this;
         console.log("esmondToTimeSeries inputData", inputData);
@@ -431,9 +429,25 @@ module.exports = {
         // TODO: loop through non-failures first, find maxes
         // then do failures and scale values
         $.each( inputData, function( index, datum ) {
+            let max;
+            let min;
             let eventType = datum.eventType;
             let direction = datum.direction;
             let protocol = datum.protocol;
+            if ( eventType == "failures" ) {
+                return true;
+            }
+            if ( !( eventType in outputData ) ) {
+                outputData[eventType] = {};
+                //outputData[eventType][ipversion] = {};
+            } else {
+                if (typeof outputData[eventType].min != "undefined") {
+                    min = outputData[eventType].min;
+                }
+                if (typeof outputData[eventType].max != "undefined") {
+                    max = outputData[eventType].max;
+                }
+            }
             let mainEventType = self.getMainEventType( datum["event-types"] );
             //datum.mainEventType = mainEventType;
 
@@ -445,20 +459,9 @@ module.exports = {
             let testType;
             let mainTestType;
 
-            if (eventType == "histogram-owdelay" || eventType == "histogram-rtt" ){
-                testType = "latency";
-            } else if ( eventType == "throughput") {
-                testType = "throughput";
-            } else if ( eventType == "packet-loss-rate" ) {
-                testType = "loss";
-            }
-            if (mainEventType == "histogram-owdelay" || mainEventType == "histogram-rtt" ){
-                mainTestType = "latency";
-            } else if ( mainEventType == "throughput") {
-                mainTestType = "throughput";
-            } else if ( mainEventType == "packet-loss-rate" ) {
-                mainTestType = "loss";
-            }
+
+            testType = self.eventTypeToTestType( eventType );
+            mainTestType = self.eventTypeToTestType( mainEventType );
 
             $.each(datum.data, function( valIndex, val ) {
                 const ts = val["ts"];
@@ -495,8 +498,19 @@ module.exports = {
                     failureValues.push( errorEvent );
                 } else {
                     values.push([timestamp.toDate().getTime(), value]);
-
                 }
+                if ( typeof min == "undefined" ) {
+                    min = value;
+                } else if ( value < min ) {
+                    min = value;
+                }
+                if ( typeof max == "undefined" ) {
+                    max = value;
+                } else if ( value > max ) {
+                    max = value;
+                }
+
+
 
             });
             //console.log("failureValues", failureValues);
@@ -507,25 +521,12 @@ module.exports = {
                 points: values
             });
 
-            failureSeries = new TimeSeries( {
-                name: eventType + "." + direction + ".failures",
-                events: failureValues,
-            });
 
             let ipversion = datum.ipversion;
             // TODO: add ipversion to the date selector here (maybe not?)
 
-            if ( !( eventType in outputData ) ) {
-                outputData[eventType] = {};
-                outputData[eventType][ipversion] = {};
-            } else {
-                if (typeof outputData[eventType].min != "undefined") {
-                    max = outputData[eventType].min;
-                }
-                if (typeof outputData[eventType].max != "undefined") {
-                    max = outputData[eventType].max;
-                }
-            }
+            outputData[ eventType ].max = max;
+            outputData[ eventType ].min = min;
             let row = {};
 
             row.properties = pruneDatum( datum );
@@ -534,11 +535,83 @@ module.exports = {
             row.properties.testType = testType;
             row.properties.mainTestType = mainTestType;
             row.values = series;
-            row.failureValues = failureSeries;
             output.push(row);
 
         });
+
+        $.each( inputData, function( index, datum ) {
+            let eventType = datum.eventType;
+            let direction = datum.direction;
+            let protocol = datum.protocol;
+            if ( eventType != "failures" ) {
+                return true;
+            }
+            let mainEventType = self.getMainEventType( datum["event-types"] );
+
+            let min = 0;
+            let max;
+            if ( typeof mainEventType != "undefined" 
+                    && mainEventType in outputData
+                    && "max" in outputData[ mainEventType ] ) {
+                max = outputData[ mainEventType ].max;
+            }
+            //datum.mainEventType = mainEventType;
+
+            let failureValues = [];
+            let failureSeries = {};
+
+            let testType;
+            let mainTestType;
+
+            testType = self.eventTypeToTestType( eventType );
+            mainTestType = self.eventTypeToTestType( mainEventType );
+            $.each(datum.data, function( valIndex, val ) {
+                const ts = val["ts"];
+                const timestamp = new moment(new Date(ts * 1000)); // 'Date' expects milliseconds
+                let failureValue = null;
+                let value = val["val"];
+                if ( eventType == "failures" ) {
+                    failureValue = value;
+                } 
+                if ( failureValue != null ) {
+                    let failureObj = {
+                        errorText: failureValue.error,
+                        value: 0.85 * max,
+                        type: "error"
+                    };
+                    let errorEvent = new Event( timestamp, failureObj );
+                    failureValues.push( errorEvent );
+                }
+
+            });
+            failureSeries = new TimeSeries( {
+                name: eventType + "." + direction + ".failures",
+                events: failureValues,
+            });
+            let row = {};
+
+            row.properties = pruneDatum( datum );
+            row.properties.eventType = eventType;
+            row.properties.mainEventType = mainEventType;
+            row.properties.testType = testType;
+            row.properties.mainTestType = mainTestType;
+            //row.failureValues = failureSeries;
+            row.values = failureSeries;
+            output.push(row);
+        });
         return output;
+    },
+    eventTypeToTestType: function( eventType ) {
+        let testType;
+        if (eventType == "histogram-owdelay" || eventType == "histogram-rtt" ){
+            testType = "latency";
+        } else if ( eventType == "throughput") {
+            testType = "throughput";
+        } else if ( eventType == "packet-loss-rate" ) {
+            testType = "loss";
+        }
+        return testType;
+
     },
     subscribe: function( callback ) {
         emitter.on("get", callback);
