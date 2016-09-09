@@ -1,6 +1,7 @@
 MANIFEST
 Makefile
 etc/apache-perfsonar-graphs.conf
+html/index.html
 html/js/bwctl-datadiv.js
 html/js/displayElements.js
 html/js/dygraph-combined.js
