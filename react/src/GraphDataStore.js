@@ -1,12 +1,14 @@
 import moment from "moment";
 
-import { TimeSeries, TimeRange } from "pondjs";
+import { TimeSeries, TimeRange, Event } from "pondjs";
 
 let ipaddr = require('ipaddr.js');
 
 let EventEmitter = require('events').EventEmitter;
 
 let emitter = new EventEmitter();
+
+let Immutable = require('immutable');
 
 let reqCount = 0;
 let dataReqCount = 0;
@@ -244,7 +246,7 @@ module.exports = {
         let protocol = datum.protocol;
         let row = datum;
         if ( eventType == "failures") {
-        console.log("failures data", data, "datum", datum);
+            //console.log("failures data", data, "datum", datum);
         }
         row.eventType = eventType;
         //row.direction = direction;
@@ -425,6 +427,9 @@ module.exports = {
         let output = [];
         let self = this;
         console.log("esmondToTimeSeries inputData", inputData);
+
+        // TODO: loop through non-failures first, find maxes
+        // then do failures and scale values
         $.each( inputData, function( index, datum ) {
             let eventType = datum.eventType;
             let direction = datum.direction;
@@ -435,6 +440,7 @@ module.exports = {
             let values = [];
             let failureValues = [];
             let series = {};
+            let failureSeries = {};
 
             let testType;
             let mainTestType;
@@ -443,14 +449,14 @@ module.exports = {
                 testType = "latency";
             } else if ( eventType == "throughput") {
                 testType = "throughput";
-            } else if ( eventType = "packet-loss-rate" ) {
+            } else if ( eventType == "packet-loss-rate" ) {
                 testType = "loss";
             }
             if (mainEventType == "histogram-owdelay" || mainEventType == "histogram-rtt" ){
                 mainTestType = "latency";
             } else if ( mainEventType == "throughput") {
                 mainTestType = "throughput";
-            } else if ( mainEventType = "packet-loss-rate" ) {
+            } else if ( mainEventType == "packet-loss-rate" ) {
                 mainTestType = "loss";
             }
 
@@ -473,26 +479,37 @@ module.exports = {
                     value = 0.000000001;
                 }
                 if ( eventType == "failures" ) {
-                    // TODO: handle failures, which are supposed to be NaN 
+                    // TODO: handle failures, which are supposed to be NaN
                     failureValue = value;
 
                 } else if ( isNaN(value) ) {
                     console.log("VALUE IS NaN", eventType);
                 }
                 if ( failureValue != null ) {
-                    //values.push([timestamp.toDate().getTime(), value]);
-                    failureValues.push([timestamp.toDate().getTime(), value]);
+                    let failureObj = {
+                        errorText: failureValue.error,
+                        value: 85,
+                        type: "error"
+                    };
+                    let errorEvent = new Event( timestamp, failureObj );
+                    failureValues.push( errorEvent );
                 } else {
                     values.push([timestamp.toDate().getTime(), value]);
 
                 }
 
             });
+            //console.log("failureValues", failureValues);
 
             series = new TimeSeries({
                 name: eventType + "." + direction,
                 columns: ["time", "value"],
                 points: values
+            });
+
+            failureSeries = new TimeSeries( {
+                name: eventType + "." + direction + ".failures",
+                events: failureValues,
             });
 
             let ipversion = datum.ipversion;
@@ -517,6 +534,7 @@ module.exports = {
             row.properties.testType = testType;
             row.properties.mainTestType = mainTestType;
             row.values = series;
+            row.failureValues = failureSeries;
             output.push(row);
 
         });

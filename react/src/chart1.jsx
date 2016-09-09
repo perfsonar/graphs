@@ -75,6 +75,26 @@ const scheme = {
     throughputUDP: "#d6641e" // vermillion
 };
 
+const failureStyle = {
+    value: {
+        normal: {
+            fill: "red",
+            opacity: 0.8,
+        },
+        highlighted: {
+            fill: "#a7c4dd",
+            opacity: 1.0,
+        },
+        selected: {
+            fill: "orange",
+            opacity: 1.0,
+        },
+        muted: {
+            fill: "grey",
+            opacity: 0.5
+        }
+    }
+}; 
 
 const connectionsStyle = {
     color: scheme.tcp,
@@ -202,6 +222,12 @@ const axisLabelStyle = {
     labelWeight: 200
 }
 
+const failureLabelStyle = {
+    display: "none",
+    visibility: "hidden",
+    opacity: 0
+}
+
 const offsets = {
     label: 60
 }
@@ -229,7 +255,8 @@ export default React.createClass({
                 forward: true,
                 reverse: true,
                 "packet-loss-rate": true,
-                latency: true
+                latency: true,
+                failures: true
             },
             //src: null,
             //dst: null,
@@ -247,9 +274,25 @@ export default React.createClass({
             maxLoss: 0.0000000001,
             latencySeries: null,
             itemsToHide: [],
-            showBrush: false
+            showBrush: false,
+            // Highlighting
+            hover: null,
+            highlight: null,
+            selection: null,
         };
     },
+    handleSelectionChanged(point) {
+        this.setState({
+            selection: point
+        });
+    },
+
+    handleMouseNear(point) {
+        this.setState({
+            highlight: point
+        });
+    },
+ 
     contextTypes: {
         router: React.PropTypes.func
     },
@@ -259,6 +302,22 @@ export default React.createClass({
     },
 
     renderChart() {
+        const highlight = this.state.highlight;
+        //const formatter = format(".2f");
+        let text = `Speed: - mph, time: -:--`;
+        let hintValues = [];
+        if (highlight) {
+            const highlightText = highlight.event.get("errorText");
+            console.log("highlightText", highlightText);
+            //const speedText = `${formatter(highlight.event.get(highlight.column))} mph`;
+            /*
+             * text = `
+                Speed: ${speedText},
+                time: ${this.state.highlight.event.timestamp().toLocaleTimeString()}
+            `;
+            */
+            hintValues = [{label: "Error", value: highlightText}];
+        }
 
         let typesToChart = [
             {
@@ -281,7 +340,14 @@ export default React.createClass({
             }
             // TODO: improve handling of multiple event types in one row
         ];
-        //charts.throughput.charts = [];
+
+        let subtypesToChart = [
+            {
+                name: "failures",
+                label: "Failures"
+            }
+        ];
+    
 
         let latencyCharts = [];
         let lossCharts = [];
@@ -299,7 +365,7 @@ export default React.createClass({
                 let eventType = typesToChart[h];
                 let type = eventType.name;
                 let label = eventType.label;
-                let esmondName = eventType.esmondName;
+                let esmondName = eventType.esmondName || type;
                 let stats = {};
                 let brushStats = {};
 
@@ -347,12 +413,17 @@ export default React.createClass({
                     }
 
                     let filter = {
-                        eventType: esmondName || type,
-                        ipversion: ipversion,
-                        //protocol: "tcp"
+                        eventType: esmondName,
+                        ipversion: ipversion
+                    };
+                    let failuresFilter = {
+                        eventType: "failures",
+                        mainEventType: esmondName,
+                        ipversion: ipversion
+
                     };
                     /*
-                    let itemsToHide = [
+                    itemsToHide = [
                         {
                             eventType: "throughput",
                             protocol: "tcp"
@@ -370,25 +441,13 @@ export default React.createClass({
 
                             // push the charts for the main charts
                             charts[type][ipv].push(
-                                    <LineChart key={[type] + Math.floor( Math.random() )}
-                                        axis={"axis" + [type]} series={series}
+                                    <LineChart key={type + Math.floor( Math.random() )}
+                                        axis={"axis" + type} series={series}
                                         style={getChartStyle( properties )} smooth={false} breakLine={true}
                                         min={stats.min}
                                         max={stats.max}
                                         columns={[ "value" ]} />
                                     );
-                            /*
-                            charts[type][ipv].push(
-                                    <ScatterChart 
-                                        key={[type] + "failures + Math.Floor( Math.random() )"}
-
-
-                                    axis={"axis" + [type]}  series={series} style={{color: "steelblue", opacity: 0.5}} 
-                                    columns={ [ "failures"] }
-                                    />
-                                    );
-                                    */
-
                             if ( this.state.showBrush === true ) {
                                 // push the brush charts
                                 brushCharts[type][ipv].push(
@@ -404,6 +463,51 @@ export default React.createClass({
                         }
                         charts[type].stats = stats;
 
+
+                    }
+
+                    let failureData = GraphDataStore.getChartData( failuresFilter, this.state.itemsToHide );
+
+                    if ( this.state.active["failures"] && ( failureData.results.length > 0 ) ) {
+                        for(let j in failureData.results) {
+                            let result = failureData.results[j];
+                            var failureSeries = result.failureValues;
+                            let properties = result.properties;
+                            //stats.min = GraphDataStore.getMin( failureData.stats.min, stats.min );
+                            //stats.max = GraphDataStore.getMax( failureData.stats.max, stats.max );
+
+                            // push the charts for the main charts
+                            /*
+                            charts[type][ipv].push(
+                                    <LineChart key={[type] + Math.floor( Math.random() )}
+                                        axis={"axis" + [type]} series={series}
+                                        style={getChartStyle( properties )} smooth={false} breakLine={true}
+                                        min={stats.min}
+                                        max={stats.max}
+                                        columns={[ "value" ]} />
+                                    );
+                            */
+                             // TODO: Change this so it iterates over all failure types separately and separately pushes them to the 'charts' object 
+                            charts[type][ipv].push(
+                                <ScatterChart 
+                                    key={type + "failures + Math.Floor( Math.random() )"}
+                                    axis={"axis" + type}  
+                                    series={failureSeries} 
+                                    style={failureStyle}
+                                    radius={4.0}
+                                    columns={ [ "value" ] }
+                                    min={0}
+                                    max={stats.max}
+                                    hintValues={hintValues}
+                                    hintHeight={50}
+                                    hintWidth={200}
+                                    selection={this.state.selection}
+                                    onSelectionChange={this.handleSelectionChanged}
+                                    onMouseNear={this.handleMouseNear}
+                                    highlight={this.state.highlight}
+                                />
+                            );
+                        }
 
                     }
                 }
@@ -442,6 +546,18 @@ export default React.createClass({
                                 min={charts[type].stats.min}
                                 max={charts[type].stats.max}
                                 width={80} type="linear" align="left" />
+                            {/*
+                            <YAxis
+                                key={"axis" + type + "failures"}
+                                id={"axis" + type + "failures"}
+                                label={"Failures (" + ipv + ")"}
+                                style={failureLabelStyle}
+                                labelOffset={offsets.label}
+                                format=".2s"
+                                min={0}
+                                max={100}
+                                width={0} type="linear" align="right" />
+                                */}
                             <Charts>
                             {charts[type][ipv]}
                             {/*
@@ -491,6 +607,7 @@ export default React.createClass({
 
         //console.log("charts just created", charts);
 
+
         latencyCharts = []; lossCharts = []; // TODO: remove - debugging only
 
         var timerange;
@@ -535,6 +652,7 @@ export default React.createClass({
     },
 
     render() {
+
         const legend = [
             {
                 key: "throughput",
@@ -579,6 +697,7 @@ export default React.createClass({
             </div>
         );
     },
+                    
 
     handleTimeRangeChange(timerange) {
         //console.log("timerange changed", timerange.begin(), "end", timerange.end());
@@ -642,8 +761,8 @@ export default React.createClass({
         var values = this.esmondToTimeSeries( failures, 'failures' );
         failureValues = values.values;
         failureSeries = values.series;
-        console.log('failure values', failureValues);
-        console.log('failure series', failureSeries);
+        //console.log('failure values', failureValues);
+        //console.log('failure series', failureSeries);
     },
 
     getDataFromMA: function(src, dst, start, end, ma_url ) {

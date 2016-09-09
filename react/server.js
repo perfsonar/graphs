@@ -10,7 +10,7 @@ var httpProxy = require('http-proxy');
 var apiProxy = httpProxy.createProxyServer();
 var cgiServer = 'http://perfsonar-dev.grnoc.iu.edu';
 
-app.get("/graphData.cgi", function(req, res) {
+app.get("/cgi-bin/graphData.cgi", function(req, res) {
     console.log('redirecting to port 80');
     apiProxy.web(req, res, {target: cgiServer + "/perfsonar-graphs"});
 });
