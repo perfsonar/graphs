@@ -25271,8 +25271,8 @@
 	                        eventType: "failures",
 	                        mainEventType: esmondName,
 	                        ipversion: ipversion
-	
 	                    };
+	
 	                    /*
 	                    itemsToHide = [
 	                        {
@@ -25289,6 +25289,9 @@
 	                            var properties = result.properties;
 	                            stats.min = _GraphDataStore2.default.getMin(data.stats.min, stats.min);
 	                            stats.max = _GraphDataStore2.default.getMax(data.stats.max, stats.max);
+	                            // TODO: Try changing stats
+	                            //stats.min = data.stats.min;
+	                            //stats.max = data.stats.max;
 	
 	                            // push the charts for the main charts
 	                            charts[type][ipv].push(_react2.default.createElement(_reactTimeseriesCharts.LineChart, { key: type + Math.floor(Math.random()),
@@ -25313,6 +25316,8 @@
 	
 	                    var failureData = _GraphDataStore2.default.getChartData(failuresFilter, this.state.itemsToHide);
 	
+	                    console.log('failureData', failureData);
+	
 	                    if (this.state.active["failures"] && failureData.results.length > 0) {
 	                        for (var _j in failureData.results) {
 	                            var _result = failureData.results[_j];
@@ -25321,19 +25326,10 @@
 	                            var _properties = _result.properties;
 	                            //stats.min = GraphDataStore.getMin( failureData.stats.min, stats.min );
 	                            //stats.max = GraphDataStore.getMax( failureData.stats.max, stats.max );
+	                            //stats.min = failureData.stats.min;
+	                            //stats.max = failureData.stats.max, stats.max;
 	
 	                            // push the charts for the main charts
-	                            /*
-	                            charts[type][ipv].push(
-	                                    <LineChart key={[type] + Math.floor( Math.random() )}
-	                                        axis={"axis" + [type]} series={series}
-	                                        style={getChartStyle( properties )} smooth={false} breakLine={true}
-	                                        min={stats.min}
-	                                        max={stats.max}
-	                                        columns={[ "value" ]} />
-	                                    );
-	                            */
-	                            // TODO: Change this so it iterates over all failure types separately and separately pushes them to the 'charts' object 
 	                            charts[type][ipv].push(_react2.default.createElement(_reactTimeseriesCharts.ScatterChart, {
 	                                key: type + "failures + Math.Floor( Math.random() )",
 	                                axis: "axis" + type,
@@ -25344,6 +25340,8 @@
 	                                hintValues: hintValues,
 	                                hintHeight: 50,
 	                                hintWidth: 200,
+	                                min: failureData.stats.min,
+	                                max: failureData.stats.max,
 	                                selection: this.state.selection,
 	                                onSelectionChange: this.handleSelectionChanged,
 	                                onMouseNear: this.handleMouseNear,
@@ -47795,7 +47793,7 @@
 	        var protocol = datum.protocol;
 	        var row = datum;
 	        if (eventType == "failures") {
-	            //console.log("failures data", data, "datum", datum);
+	            //console.log("failures data ( length )",  data.length, "datum", datum);
 	        }
 	        row.eventType = eventType;
 	        //row.direction = direction;
@@ -48062,6 +48060,7 @@
 	
 	            outputData[eventType].max = max;
 	            outputData[eventType].min = min;
+	
 	            var row = {};
 	
 	            row.properties = pruneDatum(datum);
@@ -48072,6 +48071,10 @@
 	            row.values = series;
 	            output.push(row);
 	        });
+	
+	        console.log("outputData", outputData);
+	
+	        // Create failure series
 	
 	        $.each(inputData, function (index, datum) {
 	            var eventType = datum.eventType;
@@ -48122,6 +48125,8 @@
 	            var row = {};
 	
 	            row.properties = pruneDatum(datum);
+	            row.properties.min = min;
+	            row.properties.max = max;
 	            row.properties.eventType = eventType;
 	            row.properties.mainEventType = mainEventType;
 	            row.properties.testType = testType;

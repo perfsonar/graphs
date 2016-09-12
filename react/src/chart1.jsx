@@ -347,7 +347,6 @@ export default React.createClass({
                 label: "Failures"
             }
         ];
-    
 
         let latencyCharts = [];
         let lossCharts = [];
@@ -420,8 +419,8 @@ export default React.createClass({
                         eventType: "failures",
                         mainEventType: esmondName,
                         ipversion: ipversion
-
                     };
+
                     /*
                     itemsToHide = [
                         {
@@ -438,6 +437,9 @@ export default React.createClass({
                             let properties = result.properties;
                             stats.min = GraphDataStore.getMin( data.stats.min, stats.min );
                             stats.max = GraphDataStore.getMax( data.stats.max, stats.max );
+                            // TODO: Try changing stats
+                            //stats.min = data.stats.min;
+                            //stats.max = data.stats.max;
 
                             // push the charts for the main charts
                             charts[type][ipv].push(
@@ -468,6 +470,8 @@ export default React.createClass({
 
                     let failureData = GraphDataStore.getChartData( failuresFilter, this.state.itemsToHide );
 
+                    console.log('failureData', failureData);
+
                     if ( this.state.active["failures"] && ( failureData.results.length > 0 ) ) {
                         for(let j in failureData.results) {
                             let result = failureData.results[j];
@@ -476,30 +480,23 @@ export default React.createClass({
                             let properties = result.properties;
                             //stats.min = GraphDataStore.getMin( failureData.stats.min, stats.min );
                             //stats.max = GraphDataStore.getMax( failureData.stats.max, stats.max );
+                            //stats.min = failureData.stats.min;
+                            //stats.max = failureData.stats.max, stats.max;
 
                             // push the charts for the main charts
-                            /*
                             charts[type][ipv].push(
-                                    <LineChart key={[type] + Math.floor( Math.random() )}
-                                        axis={"axis" + [type]} series={series}
-                                        style={getChartStyle( properties )} smooth={false} breakLine={true}
-                                        min={stats.min}
-                                        max={stats.max}
-                                        columns={[ "value" ]} />
-                                    );
-                            */
-                             // TODO: Change this so it iterates over all failure types separately and separately pushes them to the 'charts' object 
-                            charts[type][ipv].push(
-                                <ScatterChart 
+                                <ScatterChart
                                     key={type + "failures + Math.Floor( Math.random() )"}
-                                    axis={"axis" + type}  
-                                    series={failureSeries} 
+                                    axis={"axis" + type}
+                                    series={failureSeries}
                                     style={failureStyle}
                                     radius={4.0}
                                     columns={ [ "value" ] }
                                     hintValues={hintValues}
                                     hintHeight={50}
                                     hintWidth={200}
+                                    min={failureData.stats.min}
+                                    max={failureData.stats.max}
                                     selection={this.state.selection}
                                     onSelectionChange={this.handleSelectionChanged}
                                     onMouseNear={this.handleMouseNear}

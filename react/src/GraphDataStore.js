@@ -246,7 +246,7 @@ module.exports = {
         let protocol = datum.protocol;
         let row = datum;
         if ( eventType == "failures") {
-            //console.log("failures data", data, "datum", datum);
+            //console.log("failures data ( length )",  data.length, "datum", datum);
         }
         row.eventType = eventType;
         //row.direction = direction;
@@ -527,6 +527,7 @@ module.exports = {
 
             outputData[ eventType ].max = max;
             outputData[ eventType ].min = min;
+
             let row = {};
 
             row.properties = pruneDatum( datum );
@@ -538,6 +539,10 @@ module.exports = {
             output.push(row);
 
         });
+
+        console.log("outputData", outputData);
+
+        // Create failure series
 
         $.each( inputData, function( index, datum ) {
             let eventType = datum.eventType;
@@ -591,6 +596,8 @@ module.exports = {
             let row = {};
 
             row.properties = pruneDatum( datum );
+            row.properties.min = min;
+            row.properties.max = max;
             row.properties.eventType = eventType;
             row.properties.mainEventType = mainEventType;
             row.properties.testType = testType;
