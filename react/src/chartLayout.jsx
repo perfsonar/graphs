@@ -259,7 +259,7 @@ export default React.createClass({
                             </ul>
                         </div>
 
-                        <div className="graph-filter right">
+                        <div className="graph-filter right hidden">
                               <a href="#" className="graph-settings sidebar-popover-toggle js-sidebar-popover-toggle"><i className="fa fa-gear"></i></a>
                             <div className="sidebar-popover options-popover">
                                 <a className="sidebar-popover__close js-sidebar-popover-close">Close &nbsp;<i className="fa fa-close"></i></a>

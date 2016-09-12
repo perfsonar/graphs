@@ -89775,7 +89775,7 @@
 	                ),
 	                _react2.default.createElement(
 	                    "div",
-	                    { className: "graph-filter right" },
+	                    { className: "graph-filter right hidden" },
 	                    _react2.default.createElement(
 	                        "a",
 	                        { href: "#", className: "graph-settings sidebar-popover-toggle js-sidebar-popover-toggle" },
