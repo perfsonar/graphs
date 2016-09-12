@@ -2,8 +2,8 @@ PACKAGE=perfsonar-graphs
 ROOTPATH=/usr/lib/perfsonar/graphs
 CONFIGPATH=${ROOTPATH}/etc
 LIBPATH=/usr/lib/perfsonar/lib
-VERSION=3.5.1.3
-RELEASE=1
+VERSION=4.0
+RELEASE=0.1.rc1
 
 default:
 	@echo No need to build the package. Just run \"make install\"
