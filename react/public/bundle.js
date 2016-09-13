@@ -24875,14 +24875,15 @@
 	
 	/*
 	var charts = [];
-	var latencyCharts = [];
-	var lossCharts = [];
 	*/
 	
 	//import "../../toolkit/web-ng/root/css/foundation.min.css";
 	//import "../../toolkit/web-ng/root/css/font-awesome/css/font-awesome.min.css";
 	
 	//import Highlighter from "./highlighter";
+	
+	var charts = void 0;
+	var chartData = void 0;
 	
 	var text = 'perfSONAR chart';
 	
@@ -25125,27 +25126,193 @@
 	        router: _react2.default.PropTypes.func
 	    },
 	
+	    renderToolTip: function renderToolTip() {
+	        var tracker = this.state.tracker;
+	        console.log("in renderToolTip");
+	
+	        var display = "block";
+	
+	        if (true) {
+	            var data = this.getTrackerData();
+	            if (data.length == 0) {
+	                return null;
+	            } else {
+	                display = "block";
+	            }
+	            console.log("rendering tracker ...");
+	            return _react2.default.createElement(
+	                "div",
+	                { className: "small-2 columns" },
+	                _react2.default.createElement(
+	                    "div",
+	                    { className: "sidebar-popover graph-values-popover", display: display },
+	                    _react2.default.createElement(
+	                        "span",
+	                        { className: "graph-values-popover__heading" },
+	                        "11/18/15 - 14:10:32"
+	                    ),
+	                    _react2.default.createElement(
+	                        "ul",
+	                        { className: "graph-values-popover__list" },
+	                        _react2.default.createElement(
+	                            "li",
+	                            { className: "graph-values-popover__item" },
+	                            _react2.default.createElement(
+	                                "ul",
+	                                null,
+	                                _react2.default.createElement(
+	                                    "li",
+	                                    null,
+	                                    "Throughput"
+	                                ),
+	                                _react2.default.createElement(
+	                                    "li",
+	                                    null,
+	                                    "-> TCP = 34.235"
+	                                ),
+	                                _react2.default.createElement(
+	                                    "li",
+	                                    null,
+	                                    "-> UDP = 24.321"
+	                                ),
+	                                _react2.default.createElement(
+	                                    "li",
+	                                    null,
+	                                    "<- TCP = 14.169"
+	                                ),
+	                                _react2.default.createElement(
+	                                    "li",
+	                                    null,
+	                                    "<- UDP = 4.293 "
+	                                ),
+	                                _react2.default.createElement(
+	                                    "li",
+	                                    null,
+	                                    "Test = owamp test 1"
+	                                )
+	                            )
+	                        ),
+	                        _react2.default.createElement(
+	                            "li",
+	                            { className: "graph-values-popover__item" },
+	                            _react2.default.createElement(
+	                                "ul",
+	                                null,
+	                                _react2.default.createElement(
+	                                    "li",
+	                                    null,
+	                                    "Loss"
+	                                ),
+	                                _react2.default.createElement(
+	                                    "li",
+	                                    null,
+	                                    "-> TCP = 34.235"
+	                                ),
+	                                _react2.default.createElement(
+	                                    "li",
+	                                    null,
+	                                    "-> UDP = 24.321"
+	                                ),
+	                                _react2.default.createElement(
+	                                    "li",
+	                                    null,
+	                                    "<- TCP = 14.169"
+	                                ),
+	                                _react2.default.createElement(
+	                                    "li",
+	                                    null,
+	                                    "<- UDP = 4.293 "
+	                                ),
+	                                _react2.default.createElement(
+	                                    "li",
+	                                    null,
+	                                    "Test = bwctl tsp"
+	                                )
+	                            )
+	                        ),
+	                        _react2.default.createElement(
+	                            "li",
+	                            { className: "graph-values-popover__item" },
+	                            _react2.default.createElement(
+	                                "ul",
+	                                null,
+	                                _react2.default.createElement(
+	                                    "li",
+	                                    null,
+	                                    "Latency"
+	                                ),
+	                                _react2.default.createElement(
+	                                    "li",
+	                                    null,
+	                                    "-> TCP = 34.235"
+	                                ),
+	                                _react2.default.createElement(
+	                                    "li",
+	                                    null,
+	                                    "-> UDP = 24.321"
+	                                ),
+	                                _react2.default.createElement(
+	                                    "li",
+	                                    null,
+	                                    "<- TCP = 14.169"
+	                                ),
+	                                _react2.default.createElement(
+	                                    "li",
+	                                    null,
+	                                    "<- UDP = 4.293 "
+	                                ),
+	                                _react2.default.createElement(
+	                                    "li",
+	                                    null,
+	                                    "Test = owamp tsp"
+	                                )
+	                            )
+	                        )
+	                    )
+	                )
+	            );
+	        } else {
+	            return null;
+	        }
+	    },
 	    handleTrackerChanged: function handleTrackerChanged(trackerVal, selection) {
 	        this.setState({ tracker: trackerVal });
-	        //console.log("handleTrackerChanged", trackerVal, selection);
-	        this.getTrackerData();
+	        console.log("handleTrackerChanged", trackerVal, selection);
+	        //this.getTrackerData();
 	    },
-	    getTrackerData: function getTrackerData() {},
+	    getTrackerData: function getTrackerData() {
+	        var tracker = this.state.tracker;
+	        var trackerData = [];
+	
+	        if (tracker != null && typeof charts != "undefined") {
+	            console.log("tracker charts", charts);
+	
+	            for (var type in charts) {
+	                var data = charts[type].data;
+	                if (data.length == 0) {
+	                    continue;
+	                }
+	
+	                for (var i in data) {
+	                    var row = data[i];
+	                    var out = {
+	                        properties: row.properties,
+	                        value: row.values.atTime(tracker).value()
+	                    };
+	                    trackerData.push(out);
+	                    console.log("out", out);
+	                }
+	            }
+	        }
+	        return trackerData;
+	    },
 	    renderChart: function renderChart() {
 	        var highlight = this.state.highlight;
-	        //const formatter = format(".2f");
+	
 	        var text = "Speed: - mph, time: -:--";
 	        var hintValues = [];
 	        if (highlight) {
 	            var highlightText = highlight.event.get("errorText");
-	            //console.log("highlightText", highlightText);
-	            //const speedText = `${formatter(highlight.event.get(highlight.column))} mph`;
-	            /*
-	             * text = `
-	                Speed: ${speedText},
-	                time: ${this.state.highlight.event.timestamp().toLocaleTimeString()}
-	            `;
-	            */
 	            hintValues = [{ label: "Error", value: highlightText }];
 	        }
 	
@@ -25163,26 +25330,25 @@
 	            name: "latency",
 	            esmondName: "histogram-rtt",
 	            label: "Latency"
-	        }
-	        // TODO: improve handling of multiple event types in one row
-	        ];
+	        }];
 	
 	        var subtypesToChart = [{
 	            name: "failures",
 	            label: "Failures"
 	        }];
 	
-	        var latencyCharts = [];
-	        var lossCharts = [];
 	        var chartSeries = this.state.chartSeries;
-	        var charts = {};
+	        charts = {};
 	        var brushCharts = {};
+	        chartData = {};
+	
+	        var data = void 0;
+	        var failureData = void 0;
 	
 	        // start for loop involving unique ipversion values here?
 	        var unique = _GraphDataStore2.default.getUniqueValues({ "ipversion": 1 });
 	        var ipversions = unique.ipversion;
 	        //let self = this;
-	        var data = void 0;
 	        if (typeof ipversions != "undefined") {
 	            for (var h in typesToChart) {
 	                var eventType = typesToChart[h];
@@ -25215,6 +25381,7 @@
 	                    brushStats = stats;
 	
 	                    charts[type].chartRows = [];
+	                    charts[type].data = [];
 	                    brushCharts[type].chartRows = [];
 	
 	                    // Initialize ipv and axes for main charts
@@ -25270,8 +25437,12 @@
 	                                min: stats.min,
 	                                max: stats.max,
 	                                columns: ["value"] }));
+	                            //for(let result in data.results ) {
+	                            charts[type].data.push(result);
+	                            //}
+	
+	                            // push the brush charts, if enabled
 	                            if (this.state.showBrush === true) {
-	                                // push the brush charts
 	                                brushCharts[type][ipv].push(_react2.default.createElement(_reactTimeseriesCharts.LineChart, { key: "brush" + [type] + Math.floor(Math.random()),
 	                                    axis: "brush_axis" + [type], series: series,
 	                                    style: getChartStyle(properties), smooth: false, breakLine: true,
@@ -25284,7 +25455,7 @@
 	                        charts[type].stats = stats;
 	                    }
 	
-	                    var failureData = _GraphDataStore2.default.getChartData(failuresFilter, this.state.itemsToHide);
+	                    failureData = _GraphDataStore2.default.getChartData(failuresFilter, this.state.itemsToHide);
 	
 	                    //console.log('failureData', failureData);
 	
@@ -25401,8 +25572,6 @@
 	
 	        //console.log("charts just created", charts);
 	
-	        latencyCharts = [];lossCharts = []; // TODO: remove - debugging only
-	
 	        var timerange;
 	
 	        if (chartSeries) {
@@ -25472,6 +25641,7 @@
 	            _react2.default.createElement(
 	                "div",
 	                null,
+	                this.renderToolTip(),
 	                this.renderChart(),
 	                _react2.default.createElement("hr", null)
 	            )
@@ -90911,7 +91081,7 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	exports = module.exports = __webpack_require__(/*! ./~/css-loader/cssToString.js */ 502)();
-	exports.push([module.id, "/*----------------------------------------------------------\n\n    Graphs\n\n----------------------------------------------------------*/\n\n.graph-filter {\n    padding: 0.25em 0;\n}\n\n.graph-label {\n    display: block;\n    float: left;\n    padding-top: .7em;\n    margin-right: .5em;\n}\n\n.graph-filter__list {\n    display: block;\n    list-style: none;\n    padding: 0;\n    margin: 0;\n    border: 1px solid #ccc;\n    border-radius: 4px;\n    display: inline-block;\n}\n\n.blockTrace {\n    display:block; \n}\n\n.hiddenTrace {\n    display:none;\n}\n\n/*\n * Clear fix\n*/\n.graph:after,\n.graph-filters:after,\n.graph-filter:after,\n.graph-filter__list:after {\n    content: \"\";\n    clear: both;\n    display: block;\n}\n\n.graph-filter__item {\n    float: left;\n    border-right: 1px solid #ccc;\n    margin: 0;\n}\n\n/*\n * Filter active states\n*/\n\n.graph-filter__item.graph-filter__item a {\n    color: #fff;\n    background-color: #ccc;\n}\n\n.graph-filter__item.graph-filter__item--blue-active a {\n    background-color: #0076b4;\n}\n\n.graph-filter__item.graph-filter__item--forward.active a, .graph-filter__item.graph-filter__item--reverse.active a\n{\n    background-color: #0076b4;\n}\n\n\n.graph-filter__item.graph-filter__item.throughput-tcp.active a {\n    background-color: #0076b4;\n}\n\n.graph-filter__item.graph-filter__item.udp.active a {\n    background-color: #d6641e;\n    /*background-color: #cc7dbe;*/ /*pink */\n}\n\n.graph-filter__item.graph-filter__item.ipv4.active a {\n    background-color: #e5a11c;\n}\n\n.graph-filter__item.graph-filter__item.ipv6.active a {\n    background-color: #633;\n}\n\n.graph-filter__item.graph-filter__item.loss-throughput.active a {\n    background-color: #cc7dbe;\n}\n\n.graph-filter__item.graph-filter__item.loss-latency.active a {\n    background-color: #2b9f78;\n}\n\n\n.graph-filter__item svg.direction-label {\n    margin-left: 1em;\n    vertical-align: middle;\n}\n\n.graph-filter__item:last-child {\n    border-right: none;\n}\n\n.graph-filter__item a {\n    color: #383f44;\n    display: inline-block;\n    padding: .75em 1em;\n}\n\n.graph-filter__item a:hover {\n    background-color: #ccc;\n    color: #383f44;\n}\n\n.graph-settings {\n    border: 1px solid #383f44;\n    border-radius: 4px;\n    color: #383f44;\n    display: inline-block;\n    margin-left: 1em;\n    /*\n     * This is a magic number to make this thing look right.\n    */\n    padding: .71em;\n}\n\n.graph-settings i {\n    font-size: 1.5em;\n}\n\n.graph-wrapper {\n\n}\n\n.graph-header {\n    border-bottom: 1px solid #ccc;\n    margin-top: 1em;\n    padding-bottom: .5em;\n}\n\n.graph-module,\n.graph-holder {\n    min-height: 400px;\n}\n\n.graph-module {\n    display: flex;\n    flex-direction: column;\n    justify-content: space-around;\n}\n\n.graph-module--small,\n.graph-holder--small {\n    min-height: 150px;\n}\n\n.graph-holder {\n    background-color: #ddd;\n}\n\n.graph-module__cell {\n    /*\n     * This is sort of brittle because it relies on a\n     * specific amount of padding to veritcally center\n     * the label\n    */\n    padding-top: 4em;\n    text-align: center;\n    border-bottom: 1px solid #ccc;\n    flex-grow: 1;\n    align-content: center;\n}\n\n.graph-module__cell--small {\n    padding-top: 1em;\n}\n\n.graph-module__cell--left {\n    padding-top: 1em;\n    padding-left: 1em;\n    text-align: left;\n}\n\n.graph-module__stat {\n    display: block;\n    line-height: 1.8;\n}\n\n.graph-module__stat i {\n    margin-right: 1em;\n}\n\n.graph-module__controls {\n    color: #383f44;\n}\n\n.graph-small {\n    margin-top: 1em;\n}\n\n.graph .hostLabel {\n    font-weight:700;\n}\n\n.sidebar-popover__close span {\n    float:left;\n}\n", ""]);
+	exports.push([module.id, "/*----------------------------------------------------------\n\n    Graphs\n\n----------------------------------------------------------*/\n\n.graph-filter {\n    padding: 0.25em 0;\n}\n\n.graph-label {\n    display: block;\n    float: left;\n    padding-top: .7em;\n    margin-right: .5em;\n}\n\n.graph-filter__list {\n    display: block;\n    list-style: none;\n    padding: 0;\n    margin: 0;\n    border: 1px solid #ccc;\n    border-radius: 4px;\n    display: inline-block;\n}\n\n.blockTrace {\n    display:block; \n}\n\n.hiddenTrace {\n    display:none;\n}\n\n/*\n * Clear fix\n*/\n.graph:after,\n.graph-filters:after,\n.graph-filter:after,\n.graph-filter__list:after {\n    content: \"\";\n    clear: both;\n    display: block;\n}\n\n.graph-filter__item {\n    float: left;\n    border-right: 1px solid #ccc;\n    margin: 0;\n}\n\n/*\n * Filter active states\n*/\n\n.graph-filter__item.graph-filter__item a {\n    color: #fff;\n    background-color: #ccc;\n}\n\n.graph-filter__item.graph-filter__item--blue-active a {\n    background-color: #0076b4;\n}\n\n.graph-filter__item.graph-filter__item--forward.active a, .graph-filter__item.graph-filter__item--reverse.active a\n{\n    background-color: #0076b4;\n}\n\n\n.graph-filter__item.graph-filter__item.throughput-tcp.active a {\n    background-color: #0076b4;\n}\n\n.graph-filter__item.graph-filter__item.udp.active a {\n    background-color: #d6641e;\n    /*background-color: #cc7dbe;*/ /*pink */\n}\n\n.graph-filter__item.graph-filter__item.ipv4.active a {\n    background-color: #e5a11c;\n}\n\n.graph-filter__item.graph-filter__item.ipv6.active a {\n    background-color: #633;\n}\n\n.graph-filter__item.graph-filter__item.loss-throughput.active a {\n    background-color: #cc7dbe;\n}\n\n.graph-filter__item.graph-filter__item.loss-latency.active a {\n    background-color: #2b9f78;\n}\n\n\n.graph-filter__item svg.direction-label {\n    margin-left: 1em;\n    vertical-align: middle;\n}\n\n.graph-filter__item:last-child {\n    border-right: none;\n}\n\n.graph-filter__item a {\n    color: #383f44;\n    display: inline-block;\n    padding: .75em 1em;\n}\n\n.graph-filter__item a:hover {\n    background-color: #ccc;\n    color: #383f44;\n}\n\n.graph-settings {\n    border: 1px solid #383f44;\n    border-radius: 4px;\n    color: #383f44;\n    display: inline-block;\n    margin-left: 1em;\n    /*\n     * This is a magic number to make this thing look right.\n    */\n    padding: .71em;\n}\n\n.graph-settings i {\n    font-size: 1.5em;\n}\n\n.graph-wrapper {\n\n}\n\n.graph-header {\n    border-bottom: 1px solid #ccc;\n    margin-top: 1em;\n    padding-bottom: .5em;\n}\n\n.graph-module,\n.graph-holder {\n    min-height: 400px;\n}\n\n.graph-module {\n    display: flex;\n    flex-direction: column;\n    justify-content: space-around;\n}\n\n.graph-module--small,\n.graph-holder--small {\n    min-height: 150px;\n}\n\n.graph-holder {\n    background-color: #ddd;\n}\n\n.graph-module__cell {\n    /*\n     * This is sort of brittle because it relies on a\n     * specific amount of padding to veritcally center\n     * the label\n    */\n    padding-top: 4em;\n    text-align: center;\n    border-bottom: 1px solid #ccc;\n    flex-grow: 1;\n    align-content: center;\n}\n\n.graph-module__cell--small {\n    padding-top: 1em;\n}\n\n.graph-module__cell--left {\n    padding-top: 1em;\n    padding-left: 1em;\n    text-align: left;\n}\n\n.graph-module__stat {\n    display: block;\n    line-height: 1.8;\n}\n\n.graph-module__stat i {\n    margin-right: 1em;\n}\n\n.graph-module__controls {\n    color: #383f44;\n}\n\n.graph-small {\n    margin-top: 1em;\n}\n\n.graph .hostLabel {\n    font-weight:700;\n}\n\n.sidebar-popover__close span {\n    float:left;\n}\n\n/* Graph-Values popover */\n\n.sidebar-popover.graph-values-popover {\n  position: absolute;\n  top: -33px;\n  right: 0;\n  font-size: 80%;\n  padding: 1em 1em 0 1em;\n  display:block;\n}\n\n.graph-values-popover .graph-type {\n  margin: 0;\n  padding: 0;\n  font-weight: 700;\n}\n\n.graph-values-popover__heading {\n  border-bottom: 1px solid rgba(255, 255, 255, .5);\n  font-size: 1.1em;\n  color: #fff;\n  padding: .5em 0;\n}\n\n.graph-values-popover__list {\n  list-style: none;\n  padding: 0;\n  margin: 2px 0 0 0;\n}\n\n.graph-values-popover__item {\n  height: 133.3px;\n  padding: 1em 0;\n  border-top: 1px dashed rgba(255, 255, 255, .5);\n}\n\n.graph-values-popover__item:first-child {\n  border-top: none;\n  padding-top: 1.5em;\n}\n\n.graph-values-popover__item ul {\n  list-style: none;\n  margin: 0;\n}\n\n.graph-values-popover__item li:first-child {\n  font-size: 1.1em;\n  font-weight: 700;\n}\n\ndiv.graphholder div.small-2.columns {\n    float:right;\n    display:block;\n}\n", ""]);
 
 /***/ },
 /* 585 */

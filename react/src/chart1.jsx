@@ -19,9 +19,10 @@ import "../../toolkit/web-ng/root/css/app.css";
 
 /*
 var charts = [];
-var latencyCharts = [];
-var lossCharts = [];
 */
+
+let charts;
+let chartData;
 
 const text = 'perfSONAR chart';
 
@@ -264,32 +265,110 @@ export default React.createClass({
         router: React.PropTypes.func
     },
 
+    renderToolTip() {
+        let tracker = this.state.tracker;
+        console.log("in renderToolTip");
+
+        let display = "block";
+
+        if (true || tracker != null && typeof charts != "undefined" ) {
+            let data = this.getTrackerData();
+            if ( data.length == 0 ) {
+                return null;
+            } else {
+                display = "block";
+            }
+            console.log("rendering tracker ...");
+            return (
+            <div className="small-2 columns">
+                <div className="sidebar-popover graph-values-popover" display={display}>
+                                    <span className="graph-values-popover__heading">11/18/15 - 14:10:32</span>
+                                    <ul className="graph-values-popover__list">
+                                        <li className="graph-values-popover__item">
+                                            <ul>
+                                            <li>Throughput</li>
+                                            <li>-&gt; TCP = 34.235</li>
+                                            <li>-&gt; UDP = 24.321</li>
+                                            <li>&lt;- TCP = 14.169</li>
+                                            <li>&lt;- UDP = 4.293 </li>
+                                            <li>Test = owamp test 1</li>
+                                            </ul>
+                                        </li>
+                                        <li className="graph-values-popover__item">
+                                            <ul>
+                                            <li>Loss</li>
+                                            <li>-&gt; TCP = 34.235</li>
+                                            <li>-&gt; UDP = 24.321</li>
+                                            <li>&lt;- TCP = 14.169</li>
+                                            <li>&lt;- UDP = 4.293 </li>
+                                            <li>Test = bwctl tsp</li>
+                                            </ul>
+                                        </li>
+                                        <li className="graph-values-popover__item">
+                                            <ul>
+                                            <li>Latency</li>
+                                            <li>-&gt; TCP = 34.235</li>
+                                            <li>-&gt; UDP = 24.321</li>
+                                            <li>&lt;- TCP = 14.169</li>
+                                            <li>&lt;- UDP = 4.293 </li>
+                                            <li>Test = owamp tsp</li>
+                                            </ul>
+                                        </li>
+                                    </ul>
+                                </div>
+                </div>
+                   );
+
+        } else {
+            return null;
+        }
+
+    },
+
     handleTrackerChanged(trackerVal, selection) {
         this.setState({tracker: trackerVal});
-        //console.log("handleTrackerChanged", trackerVal, selection);
-        this.getTrackerData();
+        console.log("handleTrackerChanged", trackerVal, selection);
+        //this.getTrackerData();
     },
 
     getTrackerData() {
+        let tracker = this.state.tracker;
+        let trackerData = [];
 
+        if ( tracker != null && typeof charts != "undefined"  ) {
+            console.log("tracker charts", charts);
+
+            for ( let type in charts) {
+                let data = charts[type].data;
+                if ( data.length == 0 ) {
+                    continue;
+                }
+
+                for(let i in data) {
+                    let row = data[i];
+                    let out = {
+                        properties: row.properties,
+                        value: row.values.atTime( tracker ).value()
+                    };
+                    trackerData.push( out );
+                    console.log("out", out );
+                }
+
+
+            }
+
+        }
+        return trackerData;
 
     },
 
     renderChart() {
         const highlight = this.state.highlight;
-        //const formatter = format(".2f");
+
         let text = `Speed: - mph, time: -:--`;
         let hintValues = [];
         if (highlight) {
             const highlightText = highlight.event.get("errorText");
-            //console.log("highlightText", highlightText);
-            //const speedText = `${formatter(highlight.event.get(highlight.column))} mph`;
-            /*
-             * text = `
-                Speed: ${speedText},
-                time: ${this.state.highlight.event.timestamp().toLocaleTimeString()}
-            `;
-            */
             hintValues = [{label: "Error", value: highlightText}];
         }
 
@@ -312,7 +391,6 @@ export default React.createClass({
                 esmondName: "histogram-rtt",
                 label: "Latency"
             }
-            // TODO: improve handling of multiple event types in one row
         ];
 
         let subtypesToChart = [
@@ -322,17 +400,18 @@ export default React.createClass({
             }
         ];
 
-        let latencyCharts = [];
-        let lossCharts = [];
         let chartSeries = this.state.chartSeries;
-        let charts = {};
+        charts = {};
         let brushCharts = {};
+        chartData = {};
+
+        let data;
+        let failureData;
 
         // start for loop involving unique ipversion values here?
         let unique = GraphDataStore.getUniqueValues( {"ipversion": 1} );
         let ipversions = unique.ipversion;
         //let self = this;
-        let data;
         if ( ( typeof ipversions ) != "undefined" ) {
             for (let h in typesToChart) {
                 let eventType = typesToChart[h];
@@ -367,6 +446,7 @@ export default React.createClass({
                     brushStats = stats;
 
                     charts[type].chartRows = [];
+                    charts[type].data = [];
                     brushCharts[type].chartRows = [];
 
                     // Initialize ipv and axes for main charts
@@ -424,8 +504,12 @@ export default React.createClass({
                                         max={stats.max}
                                         columns={[ "value" ]} />
                                     );
+                            //for(let result in data.results ) {
+                                charts[type].data.push( result );
+                            //}
+
+                            // push the brush charts, if enabled
                             if ( this.state.showBrush === true ) {
-                                // push the brush charts
                                 brushCharts[type][ipv].push(
                                         <LineChart key={"brush" + [type] + Math.floor( Math.random() )}
                                             axis={"brush_axis" + [type]} series={series}
@@ -436,13 +520,14 @@ export default React.createClass({
                                         );
                                 brushCharts[type].stats = stats;
                             }
+
                         }
                         charts[type].stats = stats;
 
 
                     }
 
-                    let failureData = GraphDataStore.getChartData( failuresFilter, this.state.itemsToHide );
+                    failureData = GraphDataStore.getChartData( failuresFilter, this.state.itemsToHide );
 
                     //console.log('failureData', failureData);
 
@@ -577,9 +662,6 @@ export default React.createClass({
 
         //console.log("charts just created", charts);
 
-
-        latencyCharts = []; lossCharts = []; // TODO: remove - debugging only
-
         var timerange;
 
         if (chartSeries) {
@@ -657,6 +739,7 @@ export default React.createClass({
 
                     <hr/>
                     */}
+                    {this.renderToolTip()}
 
                     {this.renderChart()}
 
