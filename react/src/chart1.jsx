@@ -17,39 +17,6 @@ import ChartLayout from "./chartLayout.jsx";
 import "../css/graphs.css";
 import "../../toolkit/web-ng/root/css/app.css";
 
-var throughputValues = [];
-var reverseThroughputValues = [];
-
-var latencyValues = [];
-var reverseLatencyValues = [];
-
-var lossValues = [];
-var reverseLossValues = [];
-
-var failures = [];
-var row = {};
-row.ts = 1460152800; //000;
-row.val = 500000000; //'Generic error message 1';
-failures.push(row);
-
-row = {};
-row.ts = 1460175800; //000;
-row.val = 500000000; //'Generic error message 3';
-failures.push(row);
-row = {};
-
-var failureSeries = null;
-var failureValues = null;
-
-var throughputSeries = null;
-var reverseThroughputSeries = null;
-
-var latencySeries = null;
-var reverseLatencySeries = null;
-
-var lossSeries = null;
-var reverseLossSeries = null;
-
 /*
 var charts = [];
 var latencyCharts = [];
@@ -299,6 +266,13 @@ export default React.createClass({
 
     handleTrackerChanged(trackerVal, selection) {
         this.setState({tracker: trackerVal});
+        console.log("handleTrackerChanged", trackerVal, selection);
+        this.getTrackerData();
+    },
+
+    getTrackerData() {
+
+
     },
 
     renderChart() {
@@ -470,7 +444,7 @@ export default React.createClass({
 
                     let failureData = GraphDataStore.getChartData( failuresFilter, this.state.itemsToHide );
 
-                    console.log('failureData', failureData);
+                    //console.log('failureData', failureData);
 
                     if ( this.state.active["failures"] && ( failureData.results.length > 0 ) ) {
                         for(let j in failureData.results) {
@@ -693,7 +667,6 @@ export default React.createClass({
             </div>
         );
     },
-                    
 
     handleTimeRangeChange(timerange) {
         //console.log("timerange changed", timerange.begin(), "end", timerange.end());
@@ -831,60 +804,6 @@ export default React.createClass({
         });
     },
 
-    esmondToTimeSeries: function( inputData, seriesName ) {
-        var values = [];
-        var series = {};
-
-        //this._checkSortOrder(inputData); // TODO: review: do we need this?
-
-        var maxThroughput = this.state.maxThroughput;
-        var maxLatency = this.state.maxLatency;
-        var maxLoss = this.state.maxLoss;
-
-        _.each(inputData, val => {
-            const ts = val["ts"];
-            const timestamp = new moment(new Date(ts * 1000)); // 'Date' expects milliseconds
-            var value = val["val"];
-            if ( seriesName == 'latency' || seriesName == 'reverseLatency' ) {
-                value = val["val"].minimum;
-                maxLatency =  value > maxLatency ? value : maxLatency ;
-                //console.log('maxLatency', maxLatency);
-                /*(
-        const active = this.state.active;
-        active[key] = !disabled;
-        this.setState({active});
-*/
-
-            }
-            // TODO: change this section to use else if
-            if ( seriesName == 'loss' || seriesName == 'reverseLoss' ) {
-                maxLoss =  value > maxLoss ? value : maxLoss ;
-            }
-            if ( seriesName == 'throughput' || seriesName == 'reverseThroughput' ) {
-                maxThroughput =  value > maxThroughput ? value : maxThroughput ;
-            }
-            if (value <= 0 ) {
-                console.log("VALUE IS ZERO OR LESS", Date());
-                value = 0.000000001;
-            }
-            if ( isNaN(value) ) {
-                console.log("VALUE IS NaN");
-            }
-            values.push([timestamp.toDate().getTime(), value]);
-
-        });
-        this.setState({maxThroughput: maxThroughput});
-        this.setState({maxLatency: maxLatency});
-        this.setState({maxLoss: maxLoss});
-        console.log('creating series ...', Date());
-
-        series = new TimeSeries({
-            name: seriesName,
-            columns: ["time", "value"],
-            points: values
-        });
-        return ( { values: values, series: series } );
-    }, 
     checkEventType: function ( eventType, direction ) {
         return this.state.chartSeries 
             && this.state.chartSeries[ eventType ]

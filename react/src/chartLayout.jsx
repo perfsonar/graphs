@@ -174,7 +174,7 @@ export default React.createClass({
         router: React.PropTypes.func
     },
     toggleType: function( options, event ) {
-        console.log("toggleType options: ", options); //, "event", event);
+        //console.log("toggleType options: ", options); //, "event", event);
         let newItems = this.state.itemsToHide;
         //newItems.push( options );
         let sorted = Object.keys( options ).sort();
@@ -184,7 +184,7 @@ export default React.createClass({
             let val = options[key];
             id += key + "_" + val + "_";
         }
-        console.log("id", id);
+        //console.log("id", id);
         if ( id in newItems ) {
             delete newItems[id];
         } else {
