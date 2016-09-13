@@ -25127,7 +25127,7 @@
 	
 	    handleTrackerChanged: function handleTrackerChanged(trackerVal, selection) {
 	        this.setState({ tracker: trackerVal });
-	        console.log("handleTrackerChanged", trackerVal, selection);
+	        //console.log("handleTrackerChanged", trackerVal, selection);
 	        this.getTrackerData();
 	    },
 	    getTrackerData: function getTrackerData() {},
