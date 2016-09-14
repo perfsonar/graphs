@@ -294,13 +294,7 @@ module.exports = {
         return options;
     },
 
-    getChartData: function( filters, itemsToHide ) {
-        //console.log("filters", filters);
-        //itemsToHide = this.itemsToHide;
-        itemsToHide = this.pruneItemsToHide( itemsToHide );
-        let data = chartData;
-        let min;
-        let max;
+    filterData: function( data, filters, itemsToHide ) {
         let results = $.grep( data, function( e, i ) {
             let found = true;
             for (var key in filters ) {
@@ -339,7 +333,18 @@ module.exports = {
             });
         }
 
+        return results;
 
+    },
+
+    getChartData: function( filters, itemsToHide ) {
+        //console.log("filters", filters);
+        //itemsToHide = this.itemsToHide;
+        itemsToHide = this.pruneItemsToHide( itemsToHide );
+        let data = chartData;
+        let results = this.filterData( data, filters, itemsToHide );
+        let min;
+        let max;
 
         let self = this;
         $.each( results, function( i, val ) {

@@ -212,6 +212,10 @@
 
 /* Graph-Values popover */
 
+.sidebar-popover span:after {
+    display:inline;
+}
+
 .sidebar-popover.graph-values-popover {
   position: absolute;
   top: -33px;
