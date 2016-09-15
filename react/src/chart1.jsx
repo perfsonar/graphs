@@ -10,20 +10,45 @@ import { AreaChart, Brush, Charts, ChartContainer, ChartRow, YAxis, LineChart, S
 
 import { TimeSeries, TimeRange } from "pondjs";
 
-//import "../../toolkit/web-ng/root/css/foundation.min.css";
-//import "../../toolkit/web-ng/root/css/font-awesome/css/font-awesome.min.css";
+import SIValue from "./SIValue";
 import "./chart1.css";
 import ChartLayout from "./chartLayout.jsx";
 import "../css/graphs.css";
 import "../../toolkit/web-ng/root/css/app.css";
 
-/*
-var charts = [];
-var latencyCharts = [];
-var lossCharts = [];
-*/
+let charts;
+let chartData;
 
 const text = 'perfSONAR chart';
+
+const typesToChart = [
+    {
+        name: "throughput",
+        label: "Throughput",
+    },
+    {
+        name: "loss",
+        esmondName: "packet-loss-rate",
+        label: "Packet Loss",
+    },
+    {
+        name: "latency",
+        esmondName: "histogram-owdelay",
+        label: "Latency"
+    },
+    {
+        name: "latency",
+        esmondName: "histogram-rtt",
+        label: "Latency"
+    }
+];
+
+const subtypesToChart = [
+    {
+        name: "failures",
+        label: "Failures"
+    }
+];
 
 
 const scheme = {
@@ -61,7 +86,7 @@ const failureStyle = {
             opacity: 0.5
         }
     }
-}; 
+};
 
 const connectionsStyle = {
     color: scheme.tcp,
@@ -221,7 +246,7 @@ export default React.createClass({
                 throughput: true,
                 forward: true,
                 reverse: true,
-                "packet-loss-rate": true,
+                "loss": true,
                 latency: true,
                 failures: true
             },
@@ -264,75 +289,222 @@ export default React.createClass({
         router: React.PropTypes.func
     },
 
+    renderToolTip() {
+        let tracker = this.state.tracker;
+        let dateFormat = "MM/DD/YYYY HH:mm:ss ZZ";
+        let date =  moment( tracker ).format(dateFormat);
+
+        let display = "block";
+
+        if ( tracker != null && typeof charts != "undefined" ) {
+            let data = this.getTrackerData();
+            if ( data.length == 0 ) {
+                return null;
+            } else {
+                display = "block";
+            }
+
+            let unique = GraphDataStore.getUniqueValues( {"ipversion": 1} );
+            let ipversions = unique.ipversion;
+            let filters = {};
+            for( let i in ipversions ) {
+                for (let h in typesToChart) {
+                    let eventType = typesToChart[h];
+                    let type = eventType.name;
+                    let label = eventType.label;
+                    let esmondName = eventType.esmondName || type;
+                    let ipversion = ipversions[i];
+                    let ipv = "ipv" + ipversion;
+                    let filter = { testType: type, ipversion: ipversion };
+
+                    filters[type] = {};
+                    filters[type][ipversion] = filter;
+                }
+
+
+            }
+
+            let throughputItems = [];
+            let throughputData = GraphDataStore.filterData( data, filters.throughput[4], this.state.itemsToHide );
+            throughputData.sort(this.compareToolTipData);
+            for(let i in throughputData) {
+                let row = throughputData[i];
+                let dir = "-\u003e"; // Unicode >
+                if ( row.properties.direction == "reverse" ) {
+                    dir = "\u003c-"; // Unicode <
+                }
+                throughputItems.push(
+                        <li>{dir} <SIValue value={row.value} digits={3} />bits/s ({row.properties.protocol.toUpperCase()})</li>
+
+                    );
+
+            }
+
+
+            let lossItems = [];
+            let lossData = GraphDataStore.filterData( data, filters["loss"][4], this.state.itemsToHide );
+            lossData.sort(this.compareToolTipData);
+            for(let i in lossData) {
+                let row = lossData[i];
+                let dir = "-\u003e"; // Unicode >
+                if ( row.properties.direction == "reverse" ) {
+                    dir = "\u003c-"; // Unicode <
+
+                }
+                let label = "one-way";
+                if ( row.properties.mainEventType == "histogram-rtt" ) {
+                    label = "ping";
+                } else if ( row.properties.mainEventType == "throughput" ) {
+                    label = "throughput"
+
+                }
+                lossItems.push(
+                        <li>{dir} {row.value.toPrecision(4)}  {"(" + label + ")"} </li>
+
+                    );
+
+            }
+
+            let latencyItems = [];
+            let latencyData = GraphDataStore.filterData( data, filters["latency"][4], this.state.itemsToHide );
+            latencyData.sort(this.compareToolTipData);
+            for(let i in latencyData) {
+                let row = latencyData[i];
+                if ( typeof row.value == "undefined" ) {
+                    continue;
+                }
+                let dir = "-\u003e"; // Unicode >
+                if ( row.properties.direction == "reverse" ) {
+                    dir = "\u003c-"; // Unicode <
+
+                }
+                let label = "one-way";
+                if ( row.properties.mainEventType == "histogram-rtt" ) {
+                    label = "ping";
+                }
+                latencyItems.push(
+                        <li>{dir} {row.value.toPrecision(4)} ms  {"(" + label + ")"} </li>
+
+                    );
+
+            }
+
+
+            return (
+            <div className="small-2 columns">
+                <div className="sidebar-popover graph-values-popover" display={display}>
+                                    <span className="graph-values-popover__heading">{date}</span>
+                                    <ul className="graph-values-popover__list">
+                                        <li className="graph-values-popover__item">
+                                            <ul>
+                                            <li>Throughput</li>
+                                            {throughputItems}
+                                            </ul>
+                                        </li>
+                                        <li className="graph-values-popover__item">
+                                            <ul>
+                                            <li>Loss</li>
+                                            {lossItems}
+                                            </ul>
+                                        </li>
+                                        <li className="graph-values-popover__item">
+                                            <ul>
+                                            <li>Latency</li>
+                                            {latencyItems}
+                                            </ul>
+                                        </li>
+                                    </ul>
+                                </div>
+                </div>
+                   );
+
+        } else {
+            return null;
+        }
+
+    },
+
+    compareToolTipData( a, b ) {
+        if (a.sortKey < b.sortKey)
+            return -1;
+        if (a.sortKey > b.sortKey)
+            return 1;
+        return 0;
+    },
+
     handleTrackerChanged(trackerVal, selection) {
         this.setState({tracker: trackerVal});
-        //console.log("handleTrackerChanged", trackerVal, selection);
-        this.getTrackerData();
     },
 
     getTrackerData() {
+        let tracker = this.state.tracker;
+        let trackerData = [];
 
+        if ( tracker != null && typeof charts != "undefined"  ) {
+
+            for ( let type in charts) {
+                let data = charts[type].data;
+                if ( data.length == 0 ) {
+                    continue;
+                }
+
+                for(let i in data) {
+                    let row = data[i];
+                    let valAtTime = row.values.atTime( tracker );
+                    let value;
+                    if ( typeof valAtTime != "undefined" ) {
+                        value = valAtTime.value();
+                    } else {
+                        continue;
+                    }
+
+                    let eventType = row.properties.eventType;
+                    let direction = row.properties.direction;
+                    let protocol = row.properties.protocol;
+
+                    let sortKey = eventType + protocol + direction;
+
+                    let out = {
+                        properties: row.properties,
+                        value: value,
+                        sortKey: sortKey
+                    };
+                    trackerData.push( out );
+
+                }
+
+
+            }
+
+        }
+        return trackerData;
 
     },
 
+
     renderChart() {
         const highlight = this.state.highlight;
-        //const formatter = format(".2f");
+
         let text = `Speed: - mph, time: -:--`;
         let hintValues = [];
         if (highlight) {
             const highlightText = highlight.event.get("errorText");
-            //console.log("highlightText", highlightText);
-            //const speedText = `${formatter(highlight.event.get(highlight.column))} mph`;
-            /*
-             * text = `
-                Speed: ${speedText},
-                time: ${this.state.highlight.event.timestamp().toLocaleTimeString()}
-            `;
-            */
             hintValues = [{label: "Error", value: highlightText}];
         }
 
-        let typesToChart = [
-            {
-                name: "throughput",
-                label: "Throughput",
-            },
-            {
-                name: "packet-loss-rate",
-                label: "Packet Loss",
-            },
-            {
-                name: "latency",
-                esmondName: "histogram-owdelay",
-                label: "Latency"
-            },
-            {
-                name: "latency",
-                esmondName: "histogram-rtt",
-                label: "Latency"
-            }
-            // TODO: improve handling of multiple event types in one row
-        ];
 
-        let subtypesToChart = [
-            {
-                name: "failures",
-                label: "Failures"
-            }
-        ];
-
-        let latencyCharts = [];
-        let lossCharts = [];
         let chartSeries = this.state.chartSeries;
-        let charts = {};
+        charts = {};
         let brushCharts = {};
+        chartData = {};
+
+        let data;
+        let failureData;
 
         // start for loop involving unique ipversion values here?
         let unique = GraphDataStore.getUniqueValues( {"ipversion": 1} );
         let ipversions = unique.ipversion;
         //let self = this;
-        let data;
         if ( ( typeof ipversions ) != "undefined" ) {
             for (let h in typesToChart) {
                 let eventType = typesToChart[h];
@@ -367,6 +539,9 @@ export default React.createClass({
                     brushStats = stats;
 
                     charts[type].chartRows = [];
+                    if ( typeof charts[type].data == "undefined" ) {
+                        charts[type].data = [];
+                    }
                     brushCharts[type].chartRows = [];
 
                     // Initialize ipv and axes for main charts
@@ -387,6 +562,7 @@ export default React.createClass({
 
                     let filter = {
                         eventType: esmondName,
+                        //testType: type,
                         ipversion: ipversion
                     };
                     let failuresFilter = {
@@ -424,8 +600,12 @@ export default React.createClass({
                                         max={stats.max}
                                         columns={[ "value" ]} />
                                     );
+                            //for(let result in data.results ) {
+                                charts[type].data.push( result );
+                            //}
+
+                            // push the brush charts, if enabled
                             if ( this.state.showBrush === true ) {
-                                // push the brush charts
                                 brushCharts[type][ipv].push(
                                         <LineChart key={"brush" + [type] + Math.floor( Math.random() )}
                                             axis={"brush_axis" + [type]} series={series}
@@ -436,15 +616,15 @@ export default React.createClass({
                                         );
                                 brushCharts[type].stats = stats;
                             }
+
                         }
                         charts[type].stats = stats;
 
 
                     }
 
-                    let failureData = GraphDataStore.getChartData( failuresFilter, this.state.itemsToHide );
+                    failureData = GraphDataStore.getChartData( failuresFilter, this.state.itemsToHide );
 
-                    //console.log('failureData', failureData);
 
                     if ( this.state.active["failures"] && ( failureData.results.length > 0 ) ) {
                         for(let j in failureData.results) {
@@ -577,9 +757,6 @@ export default React.createClass({
 
         //console.log("charts just created", charts);
 
-
-        latencyCharts = []; lossCharts = []; // TODO: remove - debugging only
-
         var timerange;
 
         if (chartSeries) {
@@ -605,7 +782,7 @@ export default React.createClass({
                         id="mainChartContainer"
                     >
                     {charts.throughput.chartRows}
-                    {charts["packet-loss-rate"].chartRows}
+                    {charts["loss"].chartRows}
                     {charts["latency"].chartRows}
                 </ChartContainer>
             </Resizable>
@@ -648,15 +825,7 @@ export default React.createClass({
         return (
             <div>
                 <div>
-                {/*
-                    <div className="row">
-                        <div className="col-md-12">
-                            <Legend type="line" categories={legend} onChange={this.handleActiveChange}/>
-                        </div>
-                    </div>                    
-
-                    <hr/>
-                    */}
+                    {this.renderToolTip()}
 
                     {this.renderChart()}
 
@@ -669,20 +838,11 @@ export default React.createClass({
     },
 
     handleTimeRangeChange(timerange) {
-        //console.log("timerange changed", timerange.begin(), "end", timerange.end());
-        //if ( timerange.begin().toString() == timerange.end().toString() ) {
-        //    timerange = null;
-        //}
-
-
         if (timerange) {
             this.setState({timerange, brushrange: timerange});
         } else {
             this.setState({timerange: this.state.initialTimerange, brushrange: null});
         }
-
-
-       // this.setState({timerange});
     },
 
 
@@ -727,11 +887,6 @@ export default React.createClass({
         let ma_url = this.props.ma_url || location.origin + "/esmond/perfsonar/archive/";
         this.getDataFromMA(src, dst, start, end, ma_url);
 
-        var values = this.esmondToTimeSeries( failures, 'failures' );
-        failureValues = values.values;
-        failureSeries = values.series;
-        //console.log('failure values', failureValues);
-        //console.log('failure series', failureSeries);
     },
 
     getDataFromMA: function(src, dst, start, end, ma_url ) {
@@ -762,10 +917,8 @@ export default React.createClass({
             this.getDataFromMA(nextProps.src, nextProps.dst, nextProps.start, nextProps.end, nextProps.ma_url);
         } else {
             GraphDataStore.toggleType( nextProps.itemsToHide) ;
-            //GraphDataStore.subscribe(this.updateChartData);
 
         }
-        //this.forceUpdate();
     },
 
     componentWillUnmount: function() {
@@ -773,15 +926,10 @@ export default React.createClass({
         GraphDataStore.unsubscribe( this.updateChartData );
     },
     handleHiddenItemsChange: function( options ) {
-        //this.setState( options );
-        //this.forceUpdate();
-        //this.props.updateHiddenItems( options );
         this.toggleType( options );
-        //emitter.emit("timerangeChange");
 
     },
     toggleType: function( options, event ) {
-        //console.log("toggleType options: ", options); //, "event", event);
         GraphDataStore.toggleType( options );
 
         //event.preventDefault();

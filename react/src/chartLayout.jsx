@@ -166,7 +166,8 @@ export default React.createClass({
                 "eventType_histogram-owdelay_": true,
                 "eventType_histogram-rtt_": true,
                 "direction_forward_": true,
-                "direction_reverse_": true
+                "direction_reverse_": true,
+                "eventType_failures_": true
             }
         };
     },
@@ -231,7 +232,6 @@ export default React.createClass({
                     {/* GRAPH: Select Data*/}
                     <div className="graph-filters">
                         <div className="graph-filter left">
-                            <span className="graph-label">Data:</span>
                             <ul className=" graph-filter__list">
                                 <li className={"graph-filter__item graph-filter__item throughput-tcp " + this.getActiveClass( this.state.active["eventType_throughput_protocol_tcp_"] )}>
                                     <a href="#" onClick={this.toggleType.bind(this, {eventType: "throughput", protocol: "tcp"})}>Throughput (TCP)</a>
@@ -301,20 +301,24 @@ export default React.createClass({
                             <ul className=" graph-filter__list">
                                 <li className={"graph-filter__item graph-filter__item--forward " + this.getActiveClass( this.state.active["direction_forward_"] ) }>
                                     <a href="#" onClick={this.toggleType.bind(this, {direction: "forward"})}>Forward
-                                    <svg width="30" height="4" className="direction-label">
-                                          <line x1="0" y1="2" x2="30" y2="2" stroke="#f0e54b" strokeWidth="3" />
+                                    <svg width="18" height="4" className="direction-label">
+                                          <line x1="0" y1="2" x2="18" y2="2" stroke="white" strokeWidth="3" />
                                     </svg>
                                     </a>
                                 </li>
                                 <li className={"graph-filter__item graph-filter__item--reverse " + this.getActiveClass( this.state.active["direction_reverse_"] )}>
                                     <a href="#" onClick={this.toggleType.bind(this, {direction: "reverse"})}>Reverse
-                                    <svg width="30" height="4" className="direction-label">
-                                          <line x1="0" y1="2" x2="30" y2="2" stroke="#f0e54b" strokeWidth="3" strokeDasharray="4,2" />
+                                    <svg width="18" height="4" className="direction-label">
+                                          <line x1="0" y1="2" x2="18" y2="2" stroke="white" strokeWidth="3" strokeDasharray="4,2" />
                                     </svg>
                                     </a>
                                 </li>
-                                <li className="graph-filter__item graph-filter__item--blue-active">
-                                    <a href="#">Errors</a>
+                                <li className={"graph-filter__item graph-filter__item--failures " + this.getActiveClass( this.state.active["eventType_failures_"] ) }>
+                                    <a href="#" onClick={this.toggleType.bind(this, {"eventType": "failures"})}>Errors
+                                    <svg width="10" height="10" className="direction-label">
+                                          <circle cx="5" cy="5" r="4" fill="red" />
+                                    </svg>
+                                    </a>
                                 </li>
                             </ul>
                         </div>
@@ -323,19 +327,6 @@ export default React.createClass({
 
                     {/* GRAPH: Graph Wrapper */}
                     <div className="graph-wrapper">
-                        <header className="graph-header">
-                            <div className="row collapse">
-                                <div className="small-2 columns">
-                                    <span className="sub-heading">Test</span>
-                                </div>
-                                <div className="small-8 columns">
-                                    <span className="sub-heading">Data</span>
-                                </div>
-                                <div className="small-2 columns">
-                                    <span className="sub-heading">Median</span>
-                                </div>
-                            </div>
-                        </header>
 
                                 <div className="graphholder">
                                     <Chart1
