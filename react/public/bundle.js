@@ -25131,8 +25131,32 @@
 	    },
 	    handleSelectionChanged: function handleSelectionChanged(point) {
 	        this.setState({
-	            selection: point
+	            selection: point,
+	            highlight: point
+	
 	        });
+	    },
+	    handleMouseMove: function handleMouseMove(event, point) {
+	        var _refs$graphDiv = this.refs.graphDiv;
+	        var clientHeight = _refs$graphDiv.clientHeight;
+	        var clientWidth = _refs$graphDiv.clientWidth;
+	
+	        var posX = clientWidth - event.pageX;
+	        if (typeof this.refs.tooltip == "undefined") {
+	            return;
+	        }
+	        var _refs$tooltip = this.refs.tooltip;
+	        var toolTipWidth = _refs$tooltip.toolTipWidth;
+	        var toolTipHeight = _refs$tooltip.toolTipHeight;
+	        //let offsetX = toolTipWidth;
+	
+	        var offsetX = Math.floor(clientWidth * 0.18);
+	        if (posX < 0.25 * clientWidth) {
+	            posX += offsetX / 4;
+	        } else {
+	            posX -= offsetX;
+	        }
+	        this.setState({ posX: posX });
 	    },
 	    handleMouseNear: function handleMouseNear(point) {
 	        this.setState({
@@ -25155,7 +25179,8 @@
 	        if (tracker != null && typeof charts != "undefined") {
 	            var data = this.getTrackerData();
 	            if (data.length == 0) {
-	                return null;
+	                //return null;
+	                display = "none";
 	            } else {
 	                display = "block";
 	            }
@@ -25253,13 +25278,18 @@
 	                    " "
 	                ));
 	            }
+	            var posX = this.state.posX;
+	            var toolTipStyle = {
+	                right: posX + "px"
+	
+	            };
 	
 	            return _react2.default.createElement(
 	                "div",
 	                { className: "small-2 columns" },
 	                _react2.default.createElement(
 	                    "div",
-	                    { className: "sidebar-popover graph-values-popover", display: display },
+	                    { className: "sidebar-popover graph-values-popover", display: display, style: toolTipStyle, ref: "tooltip" },
 	                    _react2.default.createElement(
 	                        "span",
 	                        { className: "graph-values-popover__heading" },
@@ -25522,8 +25552,9 @@
 	                                min: failureData.stats.min,
 	                                max: failureData.stats.max,
 	                                selection: this.state.selection,
-	                                onSelectionChange: this.handleSelectionChanged,
-	                                onMouseNear: this.handleMouseNear,
+	                                onSelectionChange: this.handleSelectionChanged
+	                                //onMouseNear={this.handleMouseNear}
+	                                , onClick: this.handleMouseNear,
 	                                highlight: this.state.highlight
 	                            }));
 	                        }
@@ -25622,7 +25653,10 @@
 	
 	        return _react2.default.createElement(
 	            "div",
-	            null,
+	            {
+	                onMouseMove: this.handleMouseMove,
+	                ref: "graphDiv"
+	            },
 	            _react2.default.createElement(
 	                _reactTimeseriesCharts.Resizable,
 	                null,
@@ -25676,13 +25710,9 @@
 	        return _react2.default.createElement(
 	            "div",
 	            null,
-	            _react2.default.createElement(
-	                "div",
-	                null,
-	                this.renderToolTip(),
-	                this.renderChart(),
-	                _react2.default.createElement("hr", null)
-	            )
+	            this.renderToolTip(),
+	            this.renderChart(),
+	            _react2.default.createElement("hr", null)
 	        );
 	    },
 	    handleTimeRangeChange: function handleTimeRangeChange(timerange) {
@@ -25800,6 +25830,15 @@
 	        return this.state.chartSeries && this.state.chartSeries[eventType] && (direction === null || this.state.chartSeries[eventType][direction]);
 	    }
 	});
+	
+	
+	function getElementOffset(element) {
+	    var de = document.documentElement;
+	    var box = element.getBoundingClientRect();
+	    var top = box.top + window.pageYOffset - de.clientTop;
+	    var left = box.left + window.pageXOffset - de.clientLeft;
+	    return { top: top, left: left };
+	}
 
 /***/ },
 /* 209 */

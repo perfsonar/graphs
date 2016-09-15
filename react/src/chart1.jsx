@@ -275,8 +275,28 @@ export default React.createClass({
     },
     handleSelectionChanged(point) {
         this.setState({
-            selection: point
+            selection: point,
+            highlight: point
+
         });
+    },
+
+    handleMouseMove(event, point) {
+        let { clientHeight, clientWidth } = this.refs.graphDiv;
+        let posX = clientWidth - event.pageX;
+        if ( typeof this.refs.tooltip == "undefined" ) {
+            return;
+        }
+        let { toolTipWidth, toolTipHeight } = this.refs.tooltip;
+        //let offsetX = toolTipWidth;
+        let offsetX = Math.floor( clientWidth * 0.18 );
+        if ( posX < 0.25 * clientWidth ) {
+            posX += offsetX / 4;
+        } else {
+            posX -= offsetX;
+        }
+        this.setState({posX: posX});
+
     },
 
     handleMouseNear(point) {
@@ -299,7 +319,8 @@ export default React.createClass({
         if ( tracker != null && typeof charts != "undefined" ) {
             let data = this.getTrackerData();
             if ( data.length == 0 ) {
-                return null;
+                //return null;
+                display = "none";
             } else {
                 display = "block";
             }
@@ -388,11 +409,15 @@ export default React.createClass({
                     );
 
             }
+            let posX = this.state.posX;
+            let toolTipStyle = {
+                right: posX + "px"
 
+            };
 
             return (
             <div className="small-2 columns">
-                <div className="sidebar-popover graph-values-popover" display={display}>
+                <div className="sidebar-popover graph-values-popover" display={display} style={toolTipStyle} ref="tooltip">
                                     <span className="graph-values-popover__heading">{date}</span>
                                     <ul className="graph-values-popover__list">
                                         <li className="graph-values-popover__item">
@@ -653,7 +678,8 @@ export default React.createClass({
                                     max={failureData.stats.max}
                                     selection={this.state.selection}
                                     onSelectionChange={this.handleSelectionChanged}
-                                    onMouseNear={this.handleMouseNear}
+                                    //onMouseNear={this.handleMouseNear}
+                                    onClick={this.handleMouseNear}
                                     highlight={this.state.highlight}
                                 />
                             );
@@ -768,7 +794,10 @@ export default React.createClass({
         }
 
         return (
-            <div>
+            <div
+                onMouseMove={this.handleMouseMove}
+                ref="graphDiv"
+            >
                 <Resizable>
                     <ChartContainer
                         timeRange={this.state.timerange}
@@ -824,14 +853,12 @@ export default React.createClass({
 
         return (
             <div>
-                <div>
                     {this.renderToolTip()}
 
                     {this.renderChart()}
 
                     <hr/>
 
-                </div>
 
             </div>
         );
@@ -958,3 +985,13 @@ export default React.createClass({
             && ( direction === null || this.state.chartSeries[ eventType ][ direction ] );
     }
 });
+
+function getElementOffset(element)
+{
+    var de = document.documentElement;
+    var box = element.getBoundingClientRect();
+    var top = box.top + window.pageYOffset - de.clientTop;
+    var left = box.left + window.pageXOffset - de.clientLeft;
+    return { top: top, left: left };
+}
+
