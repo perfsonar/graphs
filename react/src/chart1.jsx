@@ -346,68 +346,73 @@ export default React.createClass({
             }
 
             let throughputItems = [];
-            let throughputData = GraphDataStore.filterData( data, filters.throughput[4], this.state.itemsToHide );
-            throughputData.sort(this.compareToolTipData);
-            for(let i in throughputData) {
-                let row = throughputData[i];
-                let dir = "-\u003e"; // Unicode >
-                if ( row.properties.direction == "reverse" ) {
-                    dir = "\u003c-"; // Unicode <
-                }
-                throughputItems.push(
-                        <li>{dir} <SIValue value={row.value} digits={3} />bits/s ({row.properties.protocol.toUpperCase()})</li>
-
-                    );
-
-            }
-
-
             let lossItems = [];
-            let lossData = GraphDataStore.filterData( data, filters["loss"][4], this.state.itemsToHide );
-            lossData.sort(this.compareToolTipData);
-            for(let i in lossData) {
-                let row = lossData[i];
-                let dir = "-\u003e"; // Unicode >
-                if ( row.properties.direction == "reverse" ) {
-                    dir = "\u003c-"; // Unicode <
-
-                }
-                let label = "one-way";
-                if ( row.properties.mainEventType == "histogram-rtt" ) {
-                    label = "ping";
-                } else if ( row.properties.mainEventType == "throughput" ) {
-                    label = "throughput"
-
-                }
-                lossItems.push(
-                        <li>{dir} {row.value.toPrecision(4)}  {"(" + label + ")"} </li>
-
-                    );
-
-            }
-
             let latencyItems = [];
-            let latencyData = GraphDataStore.filterData( data, filters["latency"][4], this.state.itemsToHide );
-            latencyData.sort(this.compareToolTipData);
-            for(let i in latencyData) {
-                let row = latencyData[i];
-                if ( typeof row.value == "undefined" ) {
-                    continue;
-                }
-                let dir = "-\u003e"; // Unicode >
-                if ( row.properties.direction == "reverse" ) {
-                    dir = "\u003c-"; // Unicode <
+            for( let i in ipversions ) {
+                let ipversion = ipversions[i];
+                let throughputData = GraphDataStore.filterData( data, filters.throughput[ipversion], this.state.itemsToHide );
+                throughputData.sort(this.compareToolTipData);
+
+                for(let i in throughputData) {
+                    let row = throughputData[i];
+                    let dir = "-\u003e"; // Unicode >
+                    if ( row.properties.direction == "reverse" ) {
+                        dir = "\u003c-"; // Unicode <
+                    }
+                    throughputItems.push(
+                            <li>{dir} <SIValue value={row.value} digits={3} />bits/s ({row.properties.protocol.toUpperCase()})</li>
+
+                            );
 
                 }
-                let label = "one-way";
-                if ( row.properties.mainEventType == "histogram-rtt" ) {
-                    label = "ping";
+
+
+
+                let lossData = GraphDataStore.filterData( data, filters["loss"][ipversion], this.state.itemsToHide );
+                lossData.sort(this.compareToolTipData);
+                for(let i in lossData) {
+                    let row = lossData[i];
+                    let dir = "-\u003e"; // Unicode >
+                    if ( row.properties.direction == "reverse" ) {
+                        dir = "\u003c-"; // Unicode <
+
+                    }
+                    let label = "one-way";
+                    if ( row.properties.mainEventType == "histogram-rtt" ) {
+                        label = "ping";
+                    } else if ( row.properties.mainEventType == "throughput" ) {
+                        label = "throughput"
+
+                    }
+                    lossItems.push(
+                            <li>{dir} {row.value.toPrecision(4)}  {"(" + label + ")"} </li>
+
+                            );
+
                 }
-                latencyItems.push(
-                        <li>{dir} {row.value.toPrecision(4)} ms  {"(" + label + ")"} </li>
 
-                    );
+                let latencyData = GraphDataStore.filterData( data, filters["latency"][ipversion], this.state.itemsToHide );
+                latencyData.sort(this.compareToolTipData);
+                for(let i in latencyData) {
+                    let row = latencyData[i];
+                    if ( typeof row.value == "undefined" ) {
+                        continue;
+                    }
+                    let dir = "-\u003e"; // Unicode >
+                    if ( row.properties.direction == "reverse" ) {
+                        dir = "\u003c-"; // Unicode <
 
+                    }
+                    let label = "one-way";
+                    if ( row.properties.mainEventType == "histogram-rtt" ) {
+                        label = "ping";
+                    }
+                    latencyItems.push(
+                            <li>{dir} {row.value.toPrecision(4)} ms  {"(" + label + ")"} </li>
+
+                            );
+
+                }
             }
             let posX = this.state.posX;
             let toolTipStyle = {
@@ -679,7 +684,7 @@ export default React.createClass({
                                     selection={this.state.selection}
                                     onSelectionChange={this.handleSelectionChanged}
                                     //onMouseNear={this.handleMouseNear}
-                                    onClick={this.handleMouseNear}
+                                    //onClick={this.handleMouseNear}
                                     highlight={this.state.highlight}
                                 />
                             );

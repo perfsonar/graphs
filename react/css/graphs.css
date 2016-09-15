@@ -223,6 +223,7 @@
   font-size: 80%;
   padding: 1em 1em 0 1em;
   display:block;
+  opacity:0.9;
 }
 
 .graph-values-popover .graph-type {
@@ -245,7 +246,6 @@
 }
 
 .graph-values-popover__item {
-  height: 133.3px;
   padding: 1em 0;
   border-top: 1px dashed rgba(255, 255, 255, .5);
 }
