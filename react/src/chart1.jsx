@@ -10,17 +10,11 @@ import { AreaChart, Brush, Charts, ChartContainer, ChartRow, YAxis, LineChart, S
 
 import { TimeSeries, TimeRange } from "pondjs";
 
-//import "../../toolkit/web-ng/root/css/foundation.min.css";
-//import "../../toolkit/web-ng/root/css/font-awesome/css/font-awesome.min.css";
 import SIValue from "./SIValue";
 import "./chart1.css";
 import ChartLayout from "./chartLayout.jsx";
 import "../css/graphs.css";
 import "../../toolkit/web-ng/root/css/app.css";
-
-/*
-var charts = [];
-*/
 
 let charts;
 let chartData;
@@ -297,7 +291,6 @@ export default React.createClass({
 
     renderToolTip() {
         let tracker = this.state.tracker;
-        //let dateFormat = "ddd MM/DD/YYYY HH:mm:ss ZZ";
         let dateFormat = "MM/DD/YYYY HH:mm:ss ZZ";
         let date =  moment( tracker ).format(dateFormat);
 
@@ -323,7 +316,6 @@ export default React.createClass({
                     let ipversion = ipversions[i];
                     let ipv = "ipv" + ipversion;
                     let filter = { testType: type, ipversion: ipversion };
-                    //let filter = { eventType: esmondName, ipversion: ipversion };
 
                     filters[type] = {};
                     filters[type][ipversion] = filter;
@@ -331,7 +323,6 @@ export default React.createClass({
 
 
             }
-            console.log("Tooltip Filters", filters);
 
             let throughputItems = [];
             let throughputData = GraphDataStore.filterData( data, filters.throughput[4], this.state.itemsToHide );
@@ -443,8 +434,6 @@ export default React.createClass({
 
     handleTrackerChanged(trackerVal, selection) {
         this.setState({tracker: trackerVal});
-        console.log("handleTrackerChanged", trackerVal, selection);
-        //this.getTrackerData();
     },
 
     getTrackerData() {
@@ -452,7 +441,6 @@ export default React.createClass({
         let trackerData = [];
 
         if ( tracker != null && typeof charts != "undefined"  ) {
-            console.log("tracker charts", charts);
 
             for ( let type in charts) {
                 let data = charts[type].data;
@@ -483,12 +471,10 @@ export default React.createClass({
                     };
                     trackerData.push( out );
 
-                    //console.log("out", out );
                 }
 
 
             }
-            console.log("trackerData", trackerData );
 
         }
         return trackerData;
@@ -639,7 +625,6 @@ export default React.createClass({
 
                     failureData = GraphDataStore.getChartData( failuresFilter, this.state.itemsToHide );
 
-                    //console.log('failureData', failureData);
 
                     if ( this.state.active["failures"] && ( failureData.results.length > 0 ) ) {
                         for(let j in failureData.results) {
@@ -840,15 +825,6 @@ export default React.createClass({
         return (
             <div>
                 <div>
-                {/*
-                    <div className="row">
-                        <div className="col-md-12">
-                            <Legend type="line" categories={legend} onChange={this.handleActiveChange}/>
-                        </div>
-                    </div>                    
-
-                    <hr/>
-                    */}
                     {this.renderToolTip()}
 
                     {this.renderChart()}
@@ -862,20 +838,11 @@ export default React.createClass({
     },
 
     handleTimeRangeChange(timerange) {
-        //console.log("timerange changed", timerange.begin(), "end", timerange.end());
-        //if ( timerange.begin().toString() == timerange.end().toString() ) {
-        //    timerange = null;
-        //}
-
-
         if (timerange) {
             this.setState({timerange, brushrange: timerange});
         } else {
             this.setState({timerange: this.state.initialTimerange, brushrange: null});
         }
-
-
-       // this.setState({timerange});
     },
 
 
@@ -950,10 +917,8 @@ export default React.createClass({
             this.getDataFromMA(nextProps.src, nextProps.dst, nextProps.start, nextProps.end, nextProps.ma_url);
         } else {
             GraphDataStore.toggleType( nextProps.itemsToHide) ;
-            //GraphDataStore.subscribe(this.updateChartData);
 
         }
-        //this.forceUpdate();
     },
 
     componentWillUnmount: function() {
@@ -961,15 +926,10 @@ export default React.createClass({
         GraphDataStore.unsubscribe( this.updateChartData );
     },
     handleHiddenItemsChange: function( options ) {
-        //this.setState( options );
-        //this.forceUpdate();
-        //this.props.updateHiddenItems( options );
         this.toggleType( options );
-        //emitter.emit("timerangeChange");
 
     },
     toggleType: function( options, event ) {
-        //console.log("toggleType options: ", options); //, "event", event);
         GraphDataStore.toggleType( options );
 
         //event.preventDefault();

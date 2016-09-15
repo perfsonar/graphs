@@ -158,7 +158,6 @@ module.exports = {
         for(let i in metaData) {
             let datum = metaData[i];
             let direction = datum.direction;
-            console.log("getData datum", datum);
             for( let j in datum["event-types"] ) {
                 let eventTypeObj = datum["event-types"][j];
                 let eventType = eventTypeObj["event-type"];
@@ -211,13 +210,10 @@ module.exports = {
 
                 }
 
-                // TODO: change failures so they are per event type
-
                 if ( uri === null ) {
                     console.log("uri not found, setting ... ");
                     uri = eventTypeObj["base-uri"];
                 }
-                // TODO: add timerange to URL
                 uri += "?time-start=" + start + "&time-end=" + end;
                 let url = baseURL + uri;
                 console.log("data url", url);
@@ -225,7 +221,7 @@ module.exports = {
                 row.protocol = datum["ip-transport-protocol"];
                 row.ipversion = ipversion;
 
-                dataReqCount++; // TODO: double check the ordre of this and the request
+                dataReqCount++;
 
                 if ( eventType == "failures" ) {
                     console.log("FAILURES row", row);
@@ -245,17 +241,11 @@ module.exports = {
         let direction = datum.direction;
         let protocol = datum.protocol;
         let row = datum;
-        if ( eventType == "failures") {
-            //console.log("failures data ( length )",  data.length, "datum", datum);
-        }
         row.eventType = eventType;
-        //row.direction = direction;
         row.data = data;
-        //row.protocol = protocol;
         if (data.length > 0) {
             chartData.push( row );
         }
-        //$.merge( chartData, data );
         completedDataReqs++;
         if ( completedDataReqs == dataReqCount ) {
             let endTime = Date.now();
@@ -338,8 +328,6 @@ module.exports = {
     },
 
     getChartData: function( filters, itemsToHide ) {
-        //console.log("filters", filters);
-        //itemsToHide = this.itemsToHide;
         itemsToHide = this.pruneItemsToHide( itemsToHide );
         let data = chartData;
         let results = this.filterData( data, filters, itemsToHide );
@@ -431,7 +419,7 @@ module.exports = {
         let self = this;
         console.log("esmondToTimeSeries inputData", inputData);
 
-        // TODO: loop through non-failures first, find maxes
+        // loop through non-failures first, find maxes
         // then do failures and scale values
         $.each( inputData, function( index, datum ) {
             let max;
@@ -444,7 +432,6 @@ module.exports = {
             }
             if ( !( eventType in outputData ) ) {
                 outputData[eventType] = {};
-                //outputData[eventType][ipversion] = {};
             } else {
                 if (typeof outputData[eventType].min != "undefined") {
                     min = outputData[eventType].min;
@@ -454,7 +441,6 @@ module.exports = {
                 }
             }
             let mainEventType = self.getMainEventType( datum["event-types"] );
-            //datum.mainEventType = mainEventType;
 
             let values = [];
             let failureValues = [];
@@ -474,20 +460,16 @@ module.exports = {
                 let failureValue = null;
                 let value = val["val"];
                 if ( eventType == 'histogram-owdelay') {
-                    //eventType = 'owdelay';
-                    //datum.eventType = 'owdelay';
                     value = val["val"].minimum;
                 } else if ( eventType == 'histogram-rtt' ) {
-                    //eventType = 'rtt';
                     value = val["val"].minimum;
                 }
-                // TODO: fix failures
                 if (value <= 0 ) {
                     console.log("VALUE IS ZERO OR LESS", Date());
                     value = 0.000000001;
                 }
                 if ( eventType == "failures" ) {
-                    // TODO: handle failures, which are supposed to be NaN
+                    // handle failures, which are supposed to be NaN
                     failureValue = value;
 
                 } else if ( isNaN(value) ) {
@@ -518,7 +500,6 @@ module.exports = {
 
 
             });
-            //console.log("failureValues", failureValues);
 
             series = new TimeSeries({
                 name: eventType + "." + direction,
@@ -528,7 +509,6 @@ module.exports = {
 
 
             let ipversion = datum.ipversion;
-            // TODO: add ipversion to the date selector here (maybe not?)
 
             outputData[ eventType ].max = max;
             outputData[ eventType ].min = min;
@@ -607,7 +587,6 @@ module.exports = {
             row.properties.mainEventType = mainEventType;
             row.properties.testType = testType;
             row.properties.mainTestType = mainTestType;
-            //row.failureValues = failureSeries;
             row.values = failureSeries;
             output.push(row);
         });

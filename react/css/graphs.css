@@ -64,7 +64,7 @@
     background-color: #0076b4;
 }
 
-.graph-filter__item.graph-filter__item--forward.active a, .graph-filter__item.graph-filter__item--reverse.active a
+.graph-filter__item.graph-filter__item--forward.active a, .graph-filter__item.graph-filter__item--reverse.active a, .graph-filter__item.graph-filter__item--failures.active a
 {
     background-color: #0076b4;
 }

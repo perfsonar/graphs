@@ -24877,15 +24877,7 @@
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
-	/*
-	var charts = [];
-	*/
-	
 	var charts = void 0;
-	
-	//import "../../toolkit/web-ng/root/css/foundation.min.css";
-	//import "../../toolkit/web-ng/root/css/font-awesome/css/font-awesome.min.css";
-	
 	//import Highlighter from "./highlighter";
 	
 	var chartData = void 0;
@@ -25155,7 +25147,6 @@
 	
 	    renderToolTip: function renderToolTip() {
 	        var tracker = this.state.tracker;
-	        //let dateFormat = "ddd MM/DD/YYYY HH:mm:ss ZZ";
 	        var dateFormat = "MM/DD/YYYY HH:mm:ss ZZ";
 	        var date = (0, _moment2.default)(tracker).format(dateFormat);
 	
@@ -25181,13 +25172,11 @@
 	                    var ipversion = ipversions[i];
 	                    var ipv = "ipv" + ipversion;
 	                    var filter = { testType: type, ipversion: ipversion };
-	                    //let filter = { eventType: esmondName, ipversion: ipversion };
 	
 	                    filters[type] = {};
 	                    filters[type][ipversion] = filter;
 	                }
 	            }
-	            console.log("Tooltip Filters", filters);
 	
 	            var throughputItems = [];
 	            var throughputData = _GraphDataStore2.default.filterData(data, filters.throughput[4], this.state.itemsToHide);
@@ -25335,15 +25324,12 @@
 	    },
 	    handleTrackerChanged: function handleTrackerChanged(trackerVal, selection) {
 	        this.setState({ tracker: trackerVal });
-	        console.log("handleTrackerChanged", trackerVal, selection);
-	        //this.getTrackerData();
 	    },
 	    getTrackerData: function getTrackerData() {
 	        var tracker = this.state.tracker;
 	        var trackerData = [];
 	
 	        if (tracker != null && typeof charts != "undefined") {
-	            console.log("tracker charts", charts);
 	
 	            for (var type in charts) {
 	                var data = charts[type].data;
@@ -25373,11 +25359,8 @@
 	                        sortKey: sortKey
 	                    };
 	                    trackerData.push(out);
-	
-	                    //console.log("out", out );
 	                }
 	            }
-	            console.log("trackerData", trackerData);
 	        }
 	        return trackerData;
 	    },
@@ -25513,8 +25496,6 @@
 	                    }
 	
 	                    failureData = _GraphDataStore2.default.getChartData(failuresFilter, this.state.itemsToHide);
-	
-	                    //console.log('failureData', failureData);
 	
 	                    if (this.state.active["failures"] && failureData.results.length > 0) {
 	                        for (var _j in failureData.results) {
@@ -25705,18 +25686,11 @@
 	        );
 	    },
 	    handleTimeRangeChange: function handleTimeRangeChange(timerange) {
-	        //console.log("timerange changed", timerange.begin(), "end", timerange.end());
-	        //if ( timerange.begin().toString() == timerange.end().toString() ) {
-	        //    timerange = null;
-	        //}
-	
 	        if (timerange) {
 	            this.setState({ timerange: timerange, brushrange: timerange });
 	        } else {
 	            this.setState({ timerange: this.state.initialTimerange, brushrange: null });
 	        }
-	
-	        // this.setState({timerange});
 	    },
 	    renderBrush: function renderBrush(brushCharts) {
 	        if (this.state.showBrush === false) {
@@ -25790,9 +25764,7 @@
 	            this.getDataFromMA(nextProps.src, nextProps.dst, nextProps.start, nextProps.end, nextProps.ma_url);
 	        } else {
 	            _GraphDataStore2.default.toggleType(nextProps.itemsToHide);
-	            //GraphDataStore.subscribe(this.updateChartData);
 	        }
-	        //this.forceUpdate();
 	    },
 	
 	
@@ -25801,14 +25773,9 @@
 	        _GraphDataStore2.default.unsubscribe(this.updateChartData);
 	    },
 	    handleHiddenItemsChange: function handleHiddenItemsChange(options) {
-	        //this.setState( options );
-	        //this.forceUpdate();
-	        //this.props.updateHiddenItems( options );
 	        this.toggleType(options);
-	        //emitter.emit("timerangeChange");
 	    },
 	    toggleType: function toggleType(options, event) {
-	        //console.log("toggleType options: ", options); //, "event", event);
 	        _GraphDataStore2.default.toggleType(options);
 	
 	        //event.preventDefault();
@@ -47849,7 +47816,6 @@
 	        for (var i in metaData) {
 	            var datum = metaData[i];
 	            var _direction = datum.direction;
-	            console.log("getData datum", datum);
 	
 	            var _loop3 = function _loop3(j) {
 	                var eventTypeObj = datum["event-types"][j];
@@ -47898,13 +47864,10 @@
 	                    }
 	                }
 	
-	                // TODO: change failures so they are per event type
-	
 	                if (uri === null) {
 	                    console.log("uri not found, setting ... ");
 	                    uri = eventTypeObj["base-uri"];
 	                }
-	                // TODO: add timerange to URL
 	                uri += "?time-start=" + start + "&time-end=" + end;
 	                var url = baseURL + uri;
 	                console.log("data url", url);
@@ -47912,7 +47875,7 @@
 	                row.protocol = datum["ip-transport-protocol"];
 	                row.ipversion = ipversion;
 	
-	                dataReqCount++; // TODO: double check the ordre of this and the request
+	                dataReqCount++;
 	
 	                if (eventType == "failures") {
 	                    console.log("FAILURES row", row);
@@ -47931,17 +47894,11 @@
 	        var direction = datum.direction;
 	        var protocol = datum.protocol;
 	        var row = datum;
-	        if (eventType == "failures") {
-	            //console.log("failures data ( length )",  data.length, "datum", datum);
-	        }
 	        row.eventType = eventType;
-	        //row.direction = direction;
 	        row.data = data;
-	        //row.protocol = protocol;
 	        if (data.length > 0) {
 	            chartData.push(row);
 	        }
-	        //$.merge( chartData, data );
 	        completedDataReqs++;
 	        if (completedDataReqs == dataReqCount) {
 	            var endTime = Date.now();
@@ -48021,8 +47978,6 @@
 	    },
 	
 	    getChartData: function getChartData(filters, itemsToHide) {
-	        //console.log("filters", filters);
-	        //itemsToHide = this.itemsToHide;
 	        itemsToHide = this.pruneItemsToHide(itemsToHide);
 	        var data = chartData;
 	        var results = this.filterData(data, filters, itemsToHide);
@@ -48110,7 +48065,7 @@
 	        var self = this;
 	        console.log("esmondToTimeSeries inputData", inputData);
 	
-	        // TODO: loop through non-failures first, find maxes
+	        // loop through non-failures first, find maxes
 	        // then do failures and scale values
 	        $.each(inputData, function (index, datum) {
 	            var max = void 0;
@@ -48123,7 +48078,6 @@
 	            }
 	            if (!(eventType in outputData)) {
 	                outputData[eventType] = {};
-	                //outputData[eventType][ipversion] = {};
 	            } else {
 	                if (typeof outputData[eventType].min != "undefined") {
 	                    min = outputData[eventType].min;
@@ -48133,7 +48087,6 @@
 	                }
 	            }
 	            var mainEventType = self.getMainEventType(datum["event-types"]);
-	            //datum.mainEventType = mainEventType;
 	
 	            var values = [];
 	            var failureValues = [];
@@ -48152,20 +48105,16 @@
 	                var failureValue = null;
 	                var value = val["val"];
 	                if (eventType == 'histogram-owdelay') {
-	                    //eventType = 'owdelay';
-	                    //datum.eventType = 'owdelay';
 	                    value = val["val"].minimum;
 	                } else if (eventType == 'histogram-rtt') {
-	                    //eventType = 'rtt';
 	                    value = val["val"].minimum;
 	                }
-	                // TODO: fix failures
 	                if (value <= 0) {
 	                    console.log("VALUE IS ZERO OR LESS", Date());
 	                    value = 0.000000001;
 	                }
 	                if (eventType == "failures") {
-	                    // TODO: handle failures, which are supposed to be NaN
+	                    // handle failures, which are supposed to be NaN
 	                    failureValue = value;
 	                } else if (isNaN(value)) {
 	                    console.log("VALUE IS NaN", eventType);
@@ -48192,7 +48141,6 @@
 	                    max = value;
 	                }
 	            });
-	            //console.log("failureValues", failureValues);
 	
 	            series = new _pondjs.TimeSeries({
 	                name: eventType + "." + direction,
@@ -48201,7 +48149,6 @@
 	            });
 	
 	            var ipversion = datum.ipversion;
-	            // TODO: add ipversion to the date selector here (maybe not?)
 	
 	            outputData[eventType].max = max;
 	            outputData[eventType].min = min;
@@ -48276,7 +48223,6 @@
 	            row.properties.mainEventType = mainEventType;
 	            row.properties.testType = testType;
 	            row.properties.mainTestType = mainTestType;
-	            //row.failureValues = failureSeries;
 	            row.values = failureSeries;
 	            output.push(row);
 	        });
@@ -89792,7 +89738,8 @@
 	                "eventType_histogram-owdelay_": true,
 	                "eventType_histogram-rtt_": true,
 	                "direction_forward_": true,
-	                "direction_reverse_": true
+	                "direction_reverse_": true,
+	                "eventType_failures_": true
 	            }
 	        };
 	    },
@@ -89854,11 +89801,6 @@
 	                _react2.default.createElement(
 	                    "div",
 	                    { className: "graph-filter left" },
-	                    _react2.default.createElement(
-	                        "span",
-	                        { className: "graph-label" },
-	                        "Data:"
-	                    ),
 	                    _react2.default.createElement(
 	                        "ul",
 	                        { className: " graph-filter__list" },
@@ -90081,8 +90023,8 @@
 	                                "Forward",
 	                                _react2.default.createElement(
 	                                    "svg",
-	                                    { width: "30", height: "4", className: "direction-label" },
-	                                    _react2.default.createElement("line", { x1: "0", y1: "2", x2: "30", y2: "2", stroke: "#f0e54b", strokeWidth: "3" })
+	                                    { width: "18", height: "4", className: "direction-label" },
+	                                    _react2.default.createElement("line", { x1: "0", y1: "2", x2: "18", y2: "2", stroke: "white", strokeWidth: "3" })
 	                                )
 	                            )
 	                        ),
@@ -90095,18 +90037,23 @@
 	                                "Reverse",
 	                                _react2.default.createElement(
 	                                    "svg",
-	                                    { width: "30", height: "4", className: "direction-label" },
-	                                    _react2.default.createElement("line", { x1: "0", y1: "2", x2: "30", y2: "2", stroke: "#f0e54b", strokeWidth: "3", strokeDasharray: "4,2" })
+	                                    { width: "18", height: "4", className: "direction-label" },
+	                                    _react2.default.createElement("line", { x1: "0", y1: "2", x2: "18", y2: "2", stroke: "white", strokeWidth: "3", strokeDasharray: "4,2" })
 	                                )
 	                            )
 	                        ),
 	                        _react2.default.createElement(
 	                            "li",
-	                            { className: "graph-filter__item graph-filter__item--blue-active" },
+	                            { className: "graph-filter__item graph-filter__item--failures " + this.getActiveClass(this.state.active["eventType_failures_"]) },
 	                            _react2.default.createElement(
 	                                "a",
-	                                { href: "#" },
-	                                "Errors"
+	                                { href: "#", onClick: this.toggleType.bind(this, { "eventType": "failures" }) },
+	                                "Errors",
+	                                _react2.default.createElement(
+	                                    "svg",
+	                                    { width: "10", height: "10", className: "direction-label" },
+	                                    _react2.default.createElement("circle", { cx: "5", cy: "5", r: "4", fill: "red" })
+	                                )
 	                            )
 	                        )
 	                    )
@@ -90115,41 +90062,6 @@
 	            _react2.default.createElement(
 	                "div",
 	                { className: "graph-wrapper" },
-	                _react2.default.createElement(
-	                    "header",
-	                    { className: "graph-header" },
-	                    _react2.default.createElement(
-	                        "div",
-	                        { className: "row collapse" },
-	                        _react2.default.createElement(
-	                            "div",
-	                            { className: "small-2 columns" },
-	                            _react2.default.createElement(
-	                                "span",
-	                                { className: "sub-heading" },
-	                                "Test"
-	                            )
-	                        ),
-	                        _react2.default.createElement(
-	                            "div",
-	                            { className: "small-8 columns" },
-	                            _react2.default.createElement(
-	                                "span",
-	                                { className: "sub-heading" },
-	                                "Data"
-	                            )
-	                        ),
-	                        _react2.default.createElement(
-	                            "div",
-	                            { className: "small-2 columns" },
-	                            _react2.default.createElement(
-	                                "span",
-	                                { className: "sub-heading" },
-	                                "Median"
-	                            )
-	                        )
-	                    )
-	                ),
 	                _react2.default.createElement(
 	                    "div",
 	                    { className: "graphholder" },
@@ -91139,7 +91051,7 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	exports = module.exports = __webpack_require__(/*! ./~/css-loader/cssToString.js */ 502)();
-	exports.push([module.id, "/*----------------------------------------------------------\n\n    Graphs\n\n----------------------------------------------------------*/\n\n.graph-filter {\n    padding: 0.25em 0;\n}\n\n.graph-label {\n    display: block;\n    float: left;\n    padding-top: .7em;\n    margin-right: .5em;\n}\n\n.graph-filter__list {\n    display: block;\n    list-style: none;\n    padding: 0;\n    margin: 0;\n    border: 1px solid #ccc;\n    border-radius: 4px;\n    display: inline-block;\n}\n\n.blockTrace {\n    display:block; \n}\n\n.hiddenTrace {\n    display:none;\n}\n\n/*\n * Clear fix\n*/\n.graph:after,\n.graph-filters:after,\n.graph-filter:after,\n.graph-filter__list:after {\n    content: \"\";\n    clear: both;\n    display: block;\n}\n\n.graph-filter__item {\n    float: left;\n    border-right: 1px solid #ccc;\n    margin: 0;\n}\n\n/*\n * Filter active states\n*/\n\n.graph-filter__item.graph-filter__item a {\n    color: #fff;\n    background-color: #ccc;\n}\n\n.graph-filter__item.graph-filter__item--blue-active a {\n    background-color: #0076b4;\n}\n\n.graph-filter__item.graph-filter__item--forward.active a, .graph-filter__item.graph-filter__item--reverse.active a\n{\n    background-color: #0076b4;\n}\n\n\n.graph-filter__item.graph-filter__item.throughput-tcp.active a {\n    background-color: #0076b4;\n}\n\n.graph-filter__item.graph-filter__item.udp.active a {\n    background-color: #d6641e;\n    /*background-color: #cc7dbe;*/ /*pink */\n}\n\n.graph-filter__item.graph-filter__item.ipv4.active a {\n    background-color: #e5a11c;\n}\n\n.graph-filter__item.graph-filter__item.ipv6.active a {\n    background-color: #633;\n}\n\n.graph-filter__item.graph-filter__item.loss-throughput.active a {\n    background-color: #cc7dbe;\n}\n\n.graph-filter__item.graph-filter__item.loss-latency.active a {\n    background-color: #2b9f78;\n}\n\n\n.graph-filter__item svg.direction-label {\n    margin-left: 1em;\n    vertical-align: middle;\n}\n\n.graph-filter__item:last-child {\n    border-right: none;\n}\n\n.graph-filter__item a {\n    color: #383f44;\n    display: inline-block;\n    padding: .75em 1em;\n}\n\n.graph-filter__item a:hover {\n    background-color: #ccc;\n    color: #383f44;\n}\n\n.graph-settings {\n    border: 1px solid #383f44;\n    border-radius: 4px;\n    color: #383f44;\n    display: inline-block;\n    margin-left: 1em;\n    /*\n     * This is a magic number to make this thing look right.\n    */\n    padding: .71em;\n}\n\n.graph-settings i {\n    font-size: 1.5em;\n}\n\n.graph-wrapper {\n\n}\n\n.graph-header {\n    border-bottom: 1px solid #ccc;\n    margin-top: 1em;\n    padding-bottom: .5em;\n}\n\n.graph-module,\n.graph-holder {\n    min-height: 400px;\n}\n\n.graph-module {\n    display: flex;\n    flex-direction: column;\n    justify-content: space-around;\n}\n\n.graph-module--small,\n.graph-holder--small {\n    min-height: 150px;\n}\n\n.graph-holder {\n    background-color: #ddd;\n}\n\n.graph-module__cell {\n    /*\n     * This is sort of brittle because it relies on a\n     * specific amount of padding to veritcally center\n     * the label\n    */\n    padding-top: 4em;\n    text-align: center;\n    border-bottom: 1px solid #ccc;\n    flex-grow: 1;\n    align-content: center;\n}\n\n.graph-module__cell--small {\n    padding-top: 1em;\n}\n\n.graph-module__cell--left {\n    padding-top: 1em;\n    padding-left: 1em;\n    text-align: left;\n}\n\n.graph-module__stat {\n    display: block;\n    line-height: 1.8;\n}\n\n.graph-module__stat i {\n    margin-right: 1em;\n}\n\n.graph-module__controls {\n    color: #383f44;\n}\n\n.graph-small {\n    margin-top: 1em;\n}\n\n.graph .hostLabel {\n    font-weight:700;\n}\n\n.sidebar-popover__close span {\n    float:left;\n}\n\n/* Graph-Values popover */\n\n.sidebar-popover span:after {\n    display:inline;\n}\n\n.sidebar-popover.graph-values-popover {\n  position: absolute;\n  top: -33px;\n  right: 0;\n  font-size: 80%;\n  padding: 1em 1em 0 1em;\n  display:block;\n}\n\n.graph-values-popover .graph-type {\n  margin: 0;\n  padding: 0;\n  font-weight: 700;\n}\n\n.graph-values-popover__heading {\n  border-bottom: 1px solid rgba(255, 255, 255, .5);\n  font-size: 1.1em;\n  color: #fff;\n  padding: .5em 0;\n}\n\n.graph-values-popover__list {\n  list-style: none;\n  padding: 0;\n  margin: 2px 0 0 0;\n}\n\n.graph-values-popover__item {\n  height: 133.3px;\n  padding: 1em 0;\n  border-top: 1px dashed rgba(255, 255, 255, .5);\n}\n\n.graph-values-popover__item:first-child {\n  border-top: none;\n  padding-top: 1.5em;\n}\n\n.graph-values-popover__item ul {\n  list-style: none;\n  margin: 0;\n}\n\n.graph-values-popover__item li:first-child {\n  font-size: 1.1em;\n  font-weight: 700;\n}\n\ndiv.graphholder div.small-2.columns {\n    float:right;\n    display:block;\n}\n", ""]);
+	exports.push([module.id, "/*----------------------------------------------------------\n\n    Graphs\n\n----------------------------------------------------------*/\n\n.graph-filter {\n    padding: 0.25em 0;\n}\n\n.graph-label {\n    display: block;\n    float: left;\n    padding-top: .7em;\n    margin-right: .5em;\n}\n\n.graph-filter__list {\n    display: block;\n    list-style: none;\n    padding: 0;\n    margin: 0;\n    border: 1px solid #ccc;\n    border-radius: 4px;\n    display: inline-block;\n}\n\n.blockTrace {\n    display:block; \n}\n\n.hiddenTrace {\n    display:none;\n}\n\n/*\n * Clear fix\n*/\n.graph:after,\n.graph-filters:after,\n.graph-filter:after,\n.graph-filter__list:after {\n    content: \"\";\n    clear: both;\n    display: block;\n}\n\n.graph-filter__item {\n    float: left;\n    border-right: 1px solid #ccc;\n    margin: 0;\n}\n\n/*\n * Filter active states\n*/\n\n.graph-filter__item.graph-filter__item a {\n    color: #fff;\n    background-color: #ccc;\n}\n\n.graph-filter__item.graph-filter__item--blue-active a {\n    background-color: #0076b4;\n}\n\n.graph-filter__item.graph-filter__item--forward.active a, .graph-filter__item.graph-filter__item--reverse.active a, .graph-filter__item.graph-filter__item--failures.active a\n{\n    background-color: #0076b4;\n}\n\n\n.graph-filter__item.graph-filter__item.throughput-tcp.active a {\n    background-color: #0076b4;\n}\n\n.graph-filter__item.graph-filter__item.udp.active a {\n    background-color: #d6641e;\n    /*background-color: #cc7dbe;*/ /*pink */\n}\n\n.graph-filter__item.graph-filter__item.ipv4.active a {\n    background-color: #e5a11c;\n}\n\n.graph-filter__item.graph-filter__item.ipv6.active a {\n    background-color: #633;\n}\n\n.graph-filter__item.graph-filter__item.loss-throughput.active a {\n    background-color: #cc7dbe;\n}\n\n.graph-filter__item.graph-filter__item.loss-latency.active a {\n    background-color: #2b9f78;\n}\n\n\n.graph-filter__item svg.direction-label {\n    margin-left: 1em;\n    vertical-align: middle;\n}\n\n.graph-filter__item:last-child {\n    border-right: none;\n}\n\n.graph-filter__item a {\n    color: #383f44;\n    display: inline-block;\n    padding: .75em 1em;\n}\n\n.graph-filter__item a:hover {\n    background-color: #ccc;\n    color: #383f44;\n}\n\n.graph-settings {\n    border: 1px solid #383f44;\n    border-radius: 4px;\n    color: #383f44;\n    display: inline-block;\n    margin-left: 1em;\n    /*\n     * This is a magic number to make this thing look right.\n    */\n    padding: .71em;\n}\n\n.graph-settings i {\n    font-size: 1.5em;\n}\n\n.graph-wrapper {\n\n}\n\n.graph-header {\n    border-bottom: 1px solid #ccc;\n    margin-top: 1em;\n    padding-bottom: .5em;\n}\n\n.graph-module,\n.graph-holder {\n    min-height: 400px;\n}\n\n.graph-module {\n    display: flex;\n    flex-direction: column;\n    justify-content: space-around;\n}\n\n.graph-module--small,\n.graph-holder--small {\n    min-height: 150px;\n}\n\n.graph-holder {\n    background-color: #ddd;\n}\n\n.graph-module__cell {\n    /*\n     * This is sort of brittle because it relies on a\n     * specific amount of padding to veritcally center\n     * the label\n    */\n    padding-top: 4em;\n    text-align: center;\n    border-bottom: 1px solid #ccc;\n    flex-grow: 1;\n    align-content: center;\n}\n\n.graph-module__cell--small {\n    padding-top: 1em;\n}\n\n.graph-module__cell--left {\n    padding-top: 1em;\n    padding-left: 1em;\n    text-align: left;\n}\n\n.graph-module__stat {\n    display: block;\n    line-height: 1.8;\n}\n\n.graph-module__stat i {\n    margin-right: 1em;\n}\n\n.graph-module__controls {\n    color: #383f44;\n}\n\n.graph-small {\n    margin-top: 1em;\n}\n\n.graph .hostLabel {\n    font-weight:700;\n}\n\n.sidebar-popover__close span {\n    float:left;\n}\n\n/* Graph-Values popover */\n\n.sidebar-popover span:after {\n    display:inline;\n}\n\n.sidebar-popover.graph-values-popover {\n  position: absolute;\n  top: -33px;\n  right: 0;\n  font-size: 80%;\n  padding: 1em 1em 0 1em;\n  display:block;\n}\n\n.graph-values-popover .graph-type {\n  margin: 0;\n  padding: 0;\n  font-weight: 700;\n}\n\n.graph-values-popover__heading {\n  border-bottom: 1px solid rgba(255, 255, 255, .5);\n  font-size: 1.1em;\n  color: #fff;\n  padding: .5em 0;\n}\n\n.graph-values-popover__list {\n  list-style: none;\n  padding: 0;\n  margin: 2px 0 0 0;\n}\n\n.graph-values-popover__item {\n  height: 133.3px;\n  padding: 1em 0;\n  border-top: 1px dashed rgba(255, 255, 255, .5);\n}\n\n.graph-values-popover__item:first-child {\n  border-top: none;\n  padding-top: 1.5em;\n}\n\n.graph-values-popover__item ul {\n  list-style: none;\n  margin: 0;\n}\n\n.graph-values-popover__item li:first-child {\n  font-size: 1.1em;\n  font-weight: 700;\n}\n\ndiv.graphholder div.small-2.columns {\n    float:right;\n    display:block;\n}\n", ""]);
 
 /***/ },
 /* 585 */
