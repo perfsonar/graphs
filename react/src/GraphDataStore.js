@@ -8,8 +8,6 @@ let EventEmitter = require('events').EventEmitter;
 
 let emitter = new EventEmitter();
 
-let Immutable = require('immutable');
-
 let reqCount = 0;
 let dataReqCount = 0;
 let completedReqs = 0;
