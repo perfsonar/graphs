@@ -36,6 +36,7 @@ module.exports = {
                     'packet-retransmits', 'histogram-rtt', 'failures'];
         this.dataFilters = [];
         this.itemsToHide = [];
+        this.errorData = undefined;
 
     },
 
@@ -81,13 +82,23 @@ module.exports = {
                 if ( params !== null && typeof params != "undefined" ) {
                     for(let name in params) {
                         let val = params[name];
-                        if ( !$.isArray( val ) && typeof val != "undefined" ) {
+                        if ( typeof val == "undefined" ) {
+                            continue;
+                        }
+                        if ( !$.isArray( val ) ) {
                             val = [ val ];
                         }
                         if ( name == "tool" ) {
                             for(let j in val ) {
-                                url += "&tool-name=" + val[j];
+                                url += "&tool-name=" + val[i];
                             }
+                        } else if ( name == "ipversion" ) {
+                            if ( val[i] == 4 ) {
+                                url += "&dns-match-rule=only-v4";
+                            } else if ( val[i] == 6 ) {
+                                url += "&dns-match-rule=only-v6";
+                            }
+
                         }
 
                     }
@@ -100,12 +111,25 @@ module.exports = {
 
                 this.serverRequest = $.get( url, function(data) {
                     this.handleMetadataResponse(data, direction[j]);
-                }.bind(this)); // TODO: double check this logic. are we using correct reqCount?
+                }.bind(this))
+                .fail(function( data ) {
+                    this.handleMetadataError( data );
+                }.bind(this)
+                );
 
                 reqCount++;
             }
         }
 },
+    handleMetadataError: function( data ) {
+        this.errorData = data;
+        emitter.emit("error");
+
+    },
+    getErrorData: function() {
+        return this.errorData;
+
+    },
     handleMetadataResponse: function( data, direction ) {
         //data.label = label;
         for(let i in data) {
@@ -122,6 +146,10 @@ module.exports = {
             data = this.filterEventTypes( chartMetadata );
             data = this.getData( chartMetadata );
             console.log("chartMetadata", chartMetadata);
+            if ( chartMetadata.length == 0 ) {
+                emitter.emit("get");
+
+            }
 
         } else {
             console.log("completed " + reqCount + " requests");
@@ -632,6 +660,12 @@ module.exports = {
     },
     unsubscribe: function( callback ) {
         emitter.off("get", callback);
+    },
+     subscribeError: function( callback ) {
+        emitter.on("error", callback);
+    },
+    unsubscribeError: function( callback ) {
+        emitter.off("error", callback);
     },
     render: function() {
     },

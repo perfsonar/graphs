@@ -25133,7 +25133,8 @@
 	            hover: null,
 	            highlight: null,
 	            selection: null,
-	            loading: true
+	            loading: true,
+	            params: undefined
 	        };
 	    },
 	    handleSelectionChanged: function handleSelectionChanged(point) {
@@ -25661,7 +25662,15 @@
 	        }
 	
 	        if (!timerange) {
-	            return _react2.default.createElement("div", null);
+	            return null; // ( <div>Error: No timerange specified.</div> );
+	        }
+	
+	        if (Object.keys(charts) == 0) {
+	            return _react2.default.createElement(
+	                "div",
+	                null,
+	                "No data found for this timerange."
+	            );
 	        }
 	
 	        return _react2.default.createElement(
@@ -25699,7 +25708,32 @@
 	        active[key] = !disabled;
 	        this.setState({ active: active });
 	    },
+	    renderError: function renderError() {
+	        var data = this.state.dataError;
+	        return _react2.default.createElement(
+	            "div",
+	            null,
+	            _react2.default.createElement(
+	                "span",
+	                { className: "alert-small-failure" },
+	                _react2.default.createElement("i", { className: "fa fa-exclamation-triangle" }),
+	                _react2.default.createElement(
+	                    "b",
+	                    null,
+	                    "Error retrieving data"
+	                ),
+	                _react2.default.createElement(
+	                    "p",
+	                    null,
+	                    data.responseJSON.detail
+	                )
+	            )
+	        );
+	    },
 	    render: function render() {
+	        if (this.state.dataError) {
+	            return this.renderError();
+	        }
 	
 	        var legend = [{
 	            key: "throughput",
@@ -25730,7 +25764,6 @@
 	    },
 	    renderLoading: function renderLoading() {
 	        var display = "none";
-	        console.log("rendering Loading ... state", this.state.loading);
 	        if (this.state.loading) {
 	            display = "block";
 	            return _react2.default.createElement(
@@ -25808,19 +25841,28 @@
 	        var start = this.state.start;
 	        var end = this.state.end;
 	        var tool = this.props.tool;
+	        var ipversion = this.props.ipversion;
 	        var params = {
-	            tool: tool
+	            tool: tool,
+	            ipversion: ipversion
 	        };
+	        this.setState({ params: params });
 	        var ma_url = this.props.ma_url || location.origin + "/esmond/perfsonar/archive/";
 	        this.getDataFromMA(src, dst, start, end, ma_url, params);
 	    },
 	
 	    getDataFromMA: function getDataFromMA(src, dst, start, end, ma_url, params) {
+	        this.setState({ loading: true });
 	
 	        _GraphDataStore2.default.subscribe(this.updateChartData);
 	
-	        console.log("tool", this.props.tool);
+	        _GraphDataStore2.default.subscribeError(this.dataError);
+	
 	        _GraphDataStore2.default.getHostPairMetadata(src, dst, start, end, ma_url, params);
+	    },
+	    dataError: function dataError() {
+	        var data = _GraphDataStore2.default.getErrorData();
+	        this.setState({ dataError: data, loading: false });
 	    },
 	    /*
 	    componentDidUpdate: function() {
@@ -25839,7 +25881,7 @@
 	        this.setState({ itemsToHide: nextProps.itemsToHide });
 	        if (nextProps.start != this.state.start || nextProps.end != this.state.end) {
 	            this.setState({ start: nextProps.start, end: nextProps.end, chartSeries: null, timerange: timerange, brushrange: null, initialTimerange: timerange });
-	            this.getDataFromMA(nextProps.src, nextProps.dst, nextProps.start, nextProps.end, nextProps.ma_url);
+	            this.getDataFromMA(nextProps.src, nextProps.dst, nextProps.start, nextProps.end, nextProps.ma_url, this.state.params);
 	        } else {
 	            _GraphDataStore2.default.toggleType(nextProps.itemsToHide);
 	        }
@@ -25849,6 +25891,7 @@
 	    componentWillUnmount: function componentWillUnmount() {
 	        this.serverRequest.abort();
 	        _GraphDataStore2.default.unsubscribe(this.updateChartData);
+	        _GraphDataStore2.default.unsubscribeError(this.dataError);
 	    },
 	    handleHiddenItemsChange: function handleHiddenItemsChange(options) {
 	        this.toggleType(options);
@@ -47784,6 +47827,7 @@
 	        this.eventTypes = ['throughput', 'histogram-owdelay', 'packet-loss-rate', 'packet-retransmits', 'histogram-rtt', 'failures'];
 	        this.dataFilters = [];
 	        this.itemsToHide = [];
+	        this.errorData = undefined;
 	    },
 	
 	    getHostPairMetadata: function getHostPairMetadata(sources, dests, startInput, endInput, ma_url, params) {
@@ -47827,12 +47871,21 @@
 	                if (params !== null && typeof params != "undefined") {
 	                    for (var name in params) {
 	                        var val = params[name];
-	                        if (!$.isArray(val) && typeof val != "undefined") {
+	                        if (typeof val == "undefined") {
+	                            continue;
+	                        }
+	                        if (!$.isArray(val)) {
 	                            val = [val];
 	                        }
 	                        if (name == "tool") {
 	                            for (var _j in val) {
-	                                url += "&tool-name=" + val[_j];
+	                                url += "&tool-name=" + val[i];
+	                            }
+	                        } else if (name == "ipversion") {
+	                            if (val[i] == 4) {
+	                                url += "&dns-match-rule=only-v4";
+	                            } else if (val[i] == 6) {
+	                                url += "&dns-match-rule=only-v6";
 	                            }
 	                        }
 	                    }
@@ -47843,7 +47896,9 @@
 	
 	                _this.serverRequest = $.get(url, function (data) {
 	                    this.handleMetadataResponse(data, direction[j]);
-	                }.bind(_this)); // TODO: double check this logic. are we using correct reqCount?
+	                }.bind(_this)).fail(function (data) {
+	                    this.handleMetadataError(data);
+	                }.bind(_this));
 	
 	                reqCount++;
 	            };
@@ -47856,6 +47911,13 @@
 	        for (var i in sources) {
 	            _loop(i);
 	        }
+	    },
+	    handleMetadataError: function handleMetadataError(data) {
+	        this.errorData = data;
+	        emitter.emit("error");
+	    },
+	    getErrorData: function getErrorData() {
+	        return this.errorData;
 	    },
 	    handleMetadataResponse: function handleMetadataResponse(data, direction) {
 	        //data.label = label;
@@ -47873,6 +47935,9 @@
 	            data = this.filterEventTypes(chartMetadata);
 	            data = this.getData(chartMetadata);
 	            console.log("chartMetadata", chartMetadata);
+	            if (chartMetadata.length == 0) {
+	                emitter.emit("get");
+	            }
 	        } else {
 	            console.log("completed " + reqCount + " requests");
 	        }
@@ -48350,6 +48415,12 @@
 	    },
 	    unsubscribe: function unsubscribe(callback) {
 	        emitter.off("get", callback);
+	    },
+	    subscribeError: function subscribeError(callback) {
+	        emitter.on("error", callback);
+	    },
+	    unsubscribeError: function unsubscribeError(callback) {
+	        emitter.off("error", callback);
 	    },
 	    render: function render() {}
 	
@@ -89837,6 +89908,7 @@
 	            ma_url: newState.ma_url,
 	            itemsToHide: {},
 	            tool: newState.tool,
+	            ipversion: newState.ipversion,
 	            active: {
 	                "eventType_throughput_protocol_tcp_": true,
 	                "eventType_throughput_protocol_udp_": true,
@@ -90179,6 +90251,7 @@
 	                        end: this.state.end,
 	                        ma_url: this.state.ma_url,
 	                        tool: this.state.tool,
+	                        ipversion: this.state.ipversion,
 	                        updateHiddenItems: this.handleHiddenItemsChange,
 	                        itemsToHide: this.state.itemsToHide,
 	                        ref: "chart1"
@@ -90217,12 +90290,16 @@
 	        var end = defaults.end;
 	        var timerange = defaults.timerange;
 	        var tool = qs.tool;
+	        var ipversion = void 0;
 	        //let timeRange = this.getTimeVars( defaults.timerange );
 	        if (typeof qs.start != "undefined") {
 	            start = qs.start || defaults.start;
 	        }
 	        if (typeof qs.end != "undefined") {
 	            var _end = qs.end || defaults.end;
+	        }
+	        if (typeof qs.ipversion != "undefined") {
+	            ipversion = qs.ipversion;
 	        }
 	
 	        var ma_urls = qs.url || location.origin + "/esmond/perfsonar/archive/";
@@ -90251,6 +90328,7 @@
 	            end: end,
 	            ma_url: ma_urls,
 	            tool: tool,
+	            ipversion: ipversion,
 	            timerange: timerange
 	        };
 	
@@ -90661,7 +90739,6 @@
 	        this.forceUpdate();
 	    },
 	    handlePageChange: function handlePageChange(direction) {
-	        console.log("handleTimerangeChange direction: ", direction);
 	        var timeVars = this.getTimeVars(this.state.timerange);
 	        var diff = timeVars.timeDiff;
 	        var newStart = void 0;
@@ -90678,8 +90755,6 @@
 	            newEnd = now;
 	            newStart = this.state.start - diff;
 	        }
-	        console.log("start", this.state.start, "end", this.state.end);
-	        console.log("newStart", newStart, "newEnd", newEnd);
 	        this.handleTimerangeChange({ "start": newStart, "end": newEnd });
 	    },
 	    handleTimerangeChange: function handleTimerangeChange(options) {

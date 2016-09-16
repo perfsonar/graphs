@@ -159,6 +159,7 @@ export default React.createClass({
             ma_url: newState.ma_url,
             itemsToHide: {},
             tool: newState.tool,
+            ipversion: newState.ipversion,
             active: {
                 "eventType_throughput_protocol_tcp_": true,
                 "eventType_throughput_protocol_udp_": true,
@@ -337,6 +338,7 @@ export default React.createClass({
                                         end={this.state.end}
                                         ma_url={this.state.ma_url}
                                         tool={this.state.tool}
+                                        ipversion={this.state.ipversion}
                                         updateHiddenItems={this.handleHiddenItemsChange}
                                         itemsToHide={this.state.itemsToHide}
                                         ref="chart1"
@@ -382,12 +384,16 @@ export default React.createClass({
         let end = defaults.end;
         let timerange = defaults.timerange;
         let tool = qs.tool;
+        let ipversion;
         //let timeRange = this.getTimeVars( defaults.timerange );
         if ( typeof qs.start != "undefined" ) {
             start = qs.start || defaults.start;
         }
         if ( typeof qs.end != "undefined" ) {
             let end = qs.end || defaults.end;
+        }
+        if ( typeof qs.ipversion != "undefined" ) {
+            ipversion = qs.ipversion;
         }
 
         let ma_urls = qs.url || location.origin + "/esmond/perfsonar/archive/";
@@ -415,7 +421,8 @@ export default React.createClass({
             start:  start,
             end:    end,
             ma_url: ma_urls,
-            tool:   tool,
+            tool: tool,
+            ipversion: ipversion,
             timerange: timerange
         };
 

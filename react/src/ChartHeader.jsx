@@ -251,7 +251,6 @@ export default React.createClass({
 
     },
     handlePageChange: function( direction ) {
-        console.log("handleTimerangeChange direction: ", direction);
         let timeVars = this.getTimeVars( this.state.timerange );
         let diff = timeVars.timeDiff;
         let newStart;
@@ -268,8 +267,6 @@ export default React.createClass({
             newEnd = now;
             newStart = this.state.start - diff;
         }
-        console.log("start", this.state.start, "end", this.state.end);
-        console.log("newStart", newStart, "newEnd", newEnd);
         this.handleTimerangeChange({"start": newStart, "end": newEnd});
 
     },

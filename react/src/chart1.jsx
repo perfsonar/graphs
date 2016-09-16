@@ -277,6 +277,7 @@ export default React.createClass({
             highlight: null,
             selection: null,
             loading: true,
+            params: undefined
         };
     },
     handleSelectionChanged(point) {
@@ -805,7 +806,11 @@ export default React.createClass({
         }
 
         if ( ! timerange ) {
-            return ( <div></div> );
+            return null; // ( <div>Error: No timerange specified.</div> );
+        }
+
+        if ( Object.keys( charts ) == 0 ) {
+            return ( <div>No data found for this timerange.</div> );
         }
 
         return (
@@ -842,7 +847,24 @@ export default React.createClass({
         this.setState({active});
     },
 
+    renderError() {
+        const data = this.state.dataError;
+        return (
+                <div>
+                    <span className="alert-small-failure">
+                        <i className="fa fa-exclamation-triangle"></i>
+                         <b>Error retrieving data</b>
+                         <p>{data.responseJSON.detail}</p>
+                    </span>
+                </div>
+               );
+
+    },
+
     render() {
+        if ( this.state.dataError ) {
+            return this.renderError();
+        }
 
         const legend = [
             {
@@ -877,7 +899,6 @@ export default React.createClass({
 
     renderLoading() {
         let display = "none";
-        console.log("rendering Loading ... state", this.state.loading);
         if ( this.state.loading ) {
             display = "block";
             return (
@@ -958,20 +979,30 @@ export default React.createClass({
         let start = this.state.start;
         let end = this.state.end;
         let tool = this.props.tool;
+        let ipversion = this.props.ipversion;
         let params = {
             tool: tool,
+            ipversion: ipversion,
         };
+        this.setState({params: params});
         let ma_url = this.props.ma_url || location.origin + "/esmond/perfsonar/archive/";
         this.getDataFromMA(src, dst, start, end, ma_url, params);
 
     },
 
     getDataFromMA: function(src, dst, start, end, ma_url, params ) {
+        this.setState({loading: true});
 
         GraphDataStore.subscribe(this.updateChartData);
 
-        console.log("tool", this.props.tool);
+        GraphDataStore.subscribeError(this.dataError);
+
         GraphDataStore.getHostPairMetadata( src, dst, start, end, ma_url, params );
+    },
+    dataError: function() {
+        let data = GraphDataStore.getErrorData();
+        this.setState({dataError: data, loading: false});
+
     },
     /*
     componentDidUpdate: function() {
@@ -991,8 +1022,8 @@ export default React.createClass({
         this.setState({itemsToHide: nextProps.itemsToHide});
         if ( nextProps.start != this.state.start
                 || nextProps.end != this.state.end ) {
-            this.setState({start: nextProps.start, end: nextProps.end, chartSeries: null, timerange: timerange, brushrange: null, initialTimerange: timerange}); 
-            this.getDataFromMA(nextProps.src, nextProps.dst, nextProps.start, nextProps.end, nextProps.ma_url);
+            this.setState({start: nextProps.start, end: nextProps.end, chartSeries: null, timerange: timerange, brushrange: null, initialTimerange: timerange }); 
+            this.getDataFromMA(nextProps.src, nextProps.dst, nextProps.start, nextProps.end, nextProps.ma_url, this.state.params);
         } else {
             GraphDataStore.toggleType( nextProps.itemsToHide) ;
 
@@ -1002,6 +1033,7 @@ export default React.createClass({
     componentWillUnmount: function() {
         this.serverRequest.abort();
         GraphDataStore.unsubscribe( this.updateChartData );
+        GraphDataStore.unsubscribeError(this.dataError);
     },
     handleHiddenItemsChange: function( options ) {
         this.toggleType( options );
