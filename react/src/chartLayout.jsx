@@ -167,8 +167,8 @@ export default React.createClass({
                 "eventType_histogram-rtt_": true,
                 "direction_forward_": true,
                 "direction_reverse_": true,
-                "eventType_failures_": true
-            }
+                "eventType_failures_": true,
+            },
         };
     },
     contextTypes: {
@@ -358,7 +358,6 @@ export default React.createClass({
 
         }
 
-
     },
 /*
     componentWillUnmount: function() {
@@ -388,23 +387,31 @@ export default React.createClass({
             let end = qs.end || defaults.end;
         }
 
-        let ma_url = qs.url || location.origin + "/esmond/perfsonar/archive/";
+        let ma_urls = qs.url || location.origin + "/esmond/perfsonar/archive/";
         let localhostRe = /localhost/i;
-        let found = ma_url.match( localhostRe );
-        let host = location.host;
-        if ( found !== null ) {
-            console.log("ma_url", ma_url);
-            let new_url = ma_url.replace( localhostRe,  host );
 
-            console.log('localhost URL found, rewriting to host', host, "new ma url", new_url);
-            ma_url = new_url;
+        if ( !$.isArray( ma_urls ) ) {
+            ma_urls = [ ma_urls ];
+        }
+
+        for(let i in ma_urls ) {
+            let ma_url = ma_urls[i];
+            let found = ma_url.match( localhostRe );
+            let host = location.host;
+            if ( found !== null ) {
+                console.log("ma_url", ma_url);
+                let new_url = ma_url.replace( localhostRe,  host );
+
+                console.log('localhost URL found, rewriting to host', host, "new ma url", new_url);
+                ma_urls[i] = new_url;
+            }
         }
         const newState = {
             src:    src,
             dst:    dst,
             start:  start,
             end:    end,
-            ma_url: ma_url,
+            ma_url: ma_urls,
             timerange: timerange
         };
 

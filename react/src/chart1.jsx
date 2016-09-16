@@ -15,6 +15,7 @@ import "./chart1.css";
 import ChartLayout from "./chartLayout.jsx";
 import "../css/graphs.css";
 import "../../toolkit/web-ng/root/css/app.css";
+import "../css/spinner.css";
 
 let charts;
 let chartData;
@@ -25,21 +26,25 @@ const typesToChart = [
     {
         name: "throughput",
         label: "Throughput",
+        unit: "bps",
     },
     {
         name: "loss",
         esmondName: "packet-loss-rate",
         label: "Packet Loss",
+        unit: "fractional",
     },
     {
         name: "latency",
         esmondName: "histogram-owdelay",
-        label: "Latency"
+        label: "Latency",
+        unit: "ms",
     },
     {
         name: "latency",
         esmondName: "histogram-rtt",
-        label: "Latency"
+        label: "Latency",
+        unit: "ms",
     }
 ];
 
@@ -271,6 +276,7 @@ export default React.createClass({
             hover: null,
             highlight: null,
             selection: null,
+            loading: true,
         };
     },
     handleSelectionChanged(point) {
@@ -518,7 +524,7 @@ export default React.createClass({
         let text = `Speed: - mph, time: -:--`;
         let hintValues = [];
         if (highlight) {
-            const highlightText = highlight.event.get("errorText");
+            let highlightText = highlight.event.get("errorText");
             hintValues = [{label: "Error", value: highlightText}];
         }
 
@@ -677,7 +683,7 @@ export default React.createClass({
                                     radius={4.0}
                                     columns={ [ "value" ] }
                                     hintValues={hintValues}
-                                    hintHeight={50}
+                                    hintHeight={100}
                                     hintWidth={200}
                                     min={failureData.stats.min}
                                     max={failureData.stats.max}
@@ -703,6 +709,7 @@ export default React.createClass({
                 let eventType = typesToChart[h];
                 let type = eventType.name;
                 let label = eventType.label;
+                let unit = eventType.unit;
                 let esmondName = eventType.esmondName;
                 for( var i in ipversions ) {
                     let ipversion = ipversions[i];
@@ -765,7 +772,7 @@ export default React.createClass({
                                 <YAxis 
                                     key={"brush_axis" + type}
                                     id={"brush_axis" + type}
-                                    label={label + " (" + ipv + ")"}
+                                    label={label + " " + unit + " (" + ipv + ")"}
                                     style={axisLabelStyle}
                                     labelOffset={offsets.label}
                                     format=".2s"
@@ -858,15 +865,46 @@ export default React.createClass({
 
         return (
             <div>
-                    {this.renderToolTip()}
-
-                    {this.renderChart()}
-
-                    <hr/>
-
-
+                {this.renderLoading()}
+                {this.renderToolTip()}
+                {this.renderChart()}
             </div>
         );
+    },
+
+    renderLoading() {
+        let display = "none";
+        console.log("rendering Loading ... state", this.state.loading);
+        if ( this.state.loading ) {
+            display = "block";
+            return (
+                <div id="loading" display={display}>
+                    <div id="circularG">
+                        <div id="circularG_1" className="circularG">
+                        </div>
+                        <div id="circularG_2" className="circularG">
+                        </div>
+                        <div id="circularG_3" className="circularG">
+                        </div>
+                        <div id="circularG_4" className="circularG">
+                        </div>
+                        <div id="circularG_5" className="circularG">
+                        </div>
+                        <div id="circularG_6" className="circularG">
+                        </div>
+                        <div id="circularG_7" className="circularG">
+                        </div>
+                        <div id="circularG_8" className="circularG">
+                        </div>
+                    </div> 
+                    <h4>Loading ...</h4>
+                </div>
+
+                );
+        } else {
+            return null;
+        }
+
     },
 
     handleTimeRangeChange(timerange) {
@@ -906,7 +944,7 @@ export default React.createClass({
 
     updateChartData: function() {
         let newChartSeries = GraphDataStore.getChartData();
-        this.setState({ chartSeries: newChartSeries } );
+        this.setState({ chartSeries: newChartSeries, loading: false } );
         this.forceUpdate();
     },
 

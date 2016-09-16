@@ -269,3 +269,7 @@ div.graphholder div.small-2.columns {
     float:right;
     display:block;
 }
+
+div.graphholder #loading {
+    margin-top:4em;
+}

@@ -53,6 +53,11 @@ module.exports = {
             dests = [ dests ];
         }
 
+        if ( !$.isArray( ma_url ) ) {
+            ma_url = [ ma_url ];
+        }
+
+
         if ( ! end ) {
             //end = Math.ceil( Date.now() / 1000 ); 
         }
@@ -71,7 +76,7 @@ module.exports = {
                 let dst = directions[j][1];
 
 
-                let url = ma_url + "?source=" + src + "&destination=" + dst;
+                let url = ma_url[i] + "?source=" + src + "&destination=" + dst;
                 // url += "&time-start=" + start + "&time-end=" + end; TODO: add this back?
                 console.log("metadata url: ", url);
 
