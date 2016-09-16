@@ -158,6 +158,7 @@ export default React.createClass({
             timerange: newState.timerange,
             ma_url: newState.ma_url,
             itemsToHide: {},
+            tool: newState.tool,
             active: {
                 "eventType_throughput_protocol_tcp_": true,
                 "eventType_throughput_protocol_udp_": true,
@@ -335,6 +336,7 @@ export default React.createClass({
                                         start={this.state.start}
                                         end={this.state.end}
                                         ma_url={this.state.ma_url}
+                                        tool={this.state.tool}
                                         updateHiddenItems={this.handleHiddenItemsChange}
                                         itemsToHide={this.state.itemsToHide}
                                         ref="chart1"
@@ -379,6 +381,7 @@ export default React.createClass({
         let start = defaults.start;
         let end = defaults.end;
         let timerange = defaults.timerange;
+        let tool = qs.tool;
         //let timeRange = this.getTimeVars( defaults.timerange );
         if ( typeof qs.start != "undefined" ) {
             start = qs.start || defaults.start;
@@ -412,6 +415,7 @@ export default React.createClass({
             start:  start,
             end:    end,
             ma_url: ma_urls,
+            tool:   tool,
             timerange: timerange
         };
 

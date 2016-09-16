@@ -615,6 +615,9 @@ export default React.createClass({
                         }
                     ];
                     */
+                    if ( this.props.tool ) {
+
+                    }
                     data = GraphDataStore.getChartData( filter, this.state.itemsToHide );
                     if ( this.state.active[type] && ( data.results.length > 0 ) ) {
                         for(let j in data.results) {
@@ -954,16 +957,21 @@ export default React.createClass({
         let dst = this.props.dst;
         let start = this.state.start;
         let end = this.state.end;
+        let tool = this.props.tool;
+        let params = {
+            tool: tool,
+        };
         let ma_url = this.props.ma_url || location.origin + "/esmond/perfsonar/archive/";
-        this.getDataFromMA(src, dst, start, end, ma_url);
+        this.getDataFromMA(src, dst, start, end, ma_url, params);
 
     },
 
-    getDataFromMA: function(src, dst, start, end, ma_url ) {
+    getDataFromMA: function(src, dst, start, end, ma_url, params ) {
 
         GraphDataStore.subscribe(this.updateChartData);
 
-        GraphDataStore.getHostPairMetadata( src, dst, start, end, ma_url );
+        console.log("tool", this.props.tool);
+        GraphDataStore.getHostPairMetadata( src, dst, start, end, ma_url, params );
     },
     /*
     componentDidUpdate: function() {

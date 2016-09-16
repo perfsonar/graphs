@@ -25499,6 +25499,7 @@
 	                        }
 	                    ];
 	                    */
+	                    if (this.props.tool) {}
 	                    data = _GraphDataStore2.default.getChartData(filter, this.state.itemsToHide);
 	                    if (this.state.active[type] && data.results.length > 0) {
 	                        for (var j in data.results) {
@@ -25806,15 +25807,20 @@
 	        var dst = this.props.dst;
 	        var start = this.state.start;
 	        var end = this.state.end;
+	        var tool = this.props.tool;
+	        var params = {
+	            tool: tool
+	        };
 	        var ma_url = this.props.ma_url || location.origin + "/esmond/perfsonar/archive/";
-	        this.getDataFromMA(src, dst, start, end, ma_url);
+	        this.getDataFromMA(src, dst, start, end, ma_url, params);
 	    },
 	
-	    getDataFromMA: function getDataFromMA(src, dst, start, end, ma_url) {
+	    getDataFromMA: function getDataFromMA(src, dst, start, end, ma_url, params) {
 	
 	        _GraphDataStore2.default.subscribe(this.updateChartData);
 	
-	        _GraphDataStore2.default.getHostPairMetadata(src, dst, start, end, ma_url);
+	        console.log("tool", this.props.tool);
+	        _GraphDataStore2.default.getHostPairMetadata(src, dst, start, end, ma_url, params);
 	    },
 	    /*
 	    componentDidUpdate: function() {
@@ -47780,7 +47786,7 @@
 	        this.itemsToHide = [];
 	    },
 	
-	    getHostPairMetadata: function getHostPairMetadata(sources, dests, startInput, endInput, ma_url) {
+	    getHostPairMetadata: function getHostPairMetadata(sources, dests, startInput, endInput, ma_url, params) {
 	        var _this = this;
 	
 	        start = startInput;
@@ -47817,6 +47823,21 @@
 	                var dst = directions[j][1];
 	
 	                var url = ma_url[i] + "?source=" + src + "&destination=" + dst;
+	
+	                if (params !== null && typeof params != "undefined") {
+	                    for (var name in params) {
+	                        var val = params[name];
+	                        if (!$.isArray(val) && typeof val != "undefined") {
+	                            val = [val];
+	                        }
+	                        if (name == "tool") {
+	                            for (var _j in val) {
+	                                url += "&tool-name=" + val[_j];
+	                            }
+	                        }
+	                    }
+	                }
+	
 	                // url += "&time-start=" + start + "&time-end=" + end; TODO: add this back?
 	                console.log("metadata url: ", url);
 	
@@ -89815,6 +89836,7 @@
 	            timerange: newState.timerange,
 	            ma_url: newState.ma_url,
 	            itemsToHide: {},
+	            tool: newState.tool,
 	            active: {
 	                "eventType_throughput_protocol_tcp_": true,
 	                "eventType_throughput_protocol_udp_": true,
@@ -90156,6 +90178,7 @@
 	                        start: this.state.start,
 	                        end: this.state.end,
 	                        ma_url: this.state.ma_url,
+	                        tool: this.state.tool,
 	                        updateHiddenItems: this.handleHiddenItemsChange,
 	                        itemsToHide: this.state.itemsToHide,
 	                        ref: "chart1"
@@ -90193,6 +90216,7 @@
 	        var start = defaults.start;
 	        var end = defaults.end;
 	        var timerange = defaults.timerange;
+	        var tool = qs.tool;
 	        //let timeRange = this.getTimeVars( defaults.timerange );
 	        if (typeof qs.start != "undefined") {
 	            start = qs.start || defaults.start;
@@ -90226,6 +90250,7 @@
 	            start: start,
 	            end: end,
 	            ma_url: ma_urls,
+	            tool: tool,
 	            timerange: timerange
 	        };
 	

@@ -39,7 +39,7 @@ module.exports = {
 
     },
 
-    getHostPairMetadata: function ( sources, dests, startInput, endInput, ma_url ) {
+    getHostPairMetadata: function ( sources, dests, startInput, endInput, ma_url, params ) {
         start = startInput;
         end = endInput;
 
@@ -56,6 +56,7 @@ module.exports = {
         if ( !$.isArray( ma_url ) ) {
             ma_url = [ ma_url ];
         }
+
 
 
         if ( ! end ) {
@@ -75,8 +76,25 @@ module.exports = {
                 let src = directions[j][0];
                 let dst = directions[j][1];
 
-
                 let url = ma_url[i] + "?source=" + src + "&destination=" + dst;
+
+                if ( params !== null && typeof params != "undefined" ) {
+                    for(let name in params) {
+                        let val = params[name];
+                        if ( !$.isArray( val ) && typeof val != "undefined" ) {
+                            val = [ val ];
+                        }
+                        if ( name == "tool" ) {
+                            for(let j in val ) {
+                                url += "&tool-name=" + val[j];
+                            }
+                        }
+
+                    }
+                }
+
+
+
                 // url += "&time-start=" + start + "&time-end=" + end; TODO: add this back?
                 console.log("metadata url: ", url);
 
