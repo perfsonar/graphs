@@ -15,9 +15,9 @@ const text = 'perfSONAR chart';
 const now = Math.floor( new Date().getTime() / 1000 );
 
 const defaults = {
-    start: now - 86400*7,
-    end: now,
-    timerange: "1w"
+    //start: now - 86400*7,
+    //end: now,
+    //timeframe: "1w",
 };
 
 const scheme = {
@@ -155,11 +155,12 @@ export default React.createClass({
             dst: newState.dst,
             start: newState.start,
             end: newState.end,
-            timerange: newState.timerange,
+            timeframe: newState.timeframe,
             ma_url: newState.ma_url,
             itemsToHide: {},
             tool: newState.tool,
             ipversion: newState.ipversion,
+            hashValues: {},
             active: {
                 "eventType_throughput_protocol_tcp_": true,
                 "eventType_throughput_protocol_udp_": true,
@@ -226,7 +227,7 @@ export default React.createClass({
                     dests={this.state.dst}
                     start={this.state.start}
                     end={this.state.end}
-                    timerange={this.state.timerange}
+                    timeframe={this.state.timeframe}
                     updateTimerange={this.handleTimerangeChange}
                     ma_url={this.state.ma_url}
                 />
@@ -365,32 +366,86 @@ export default React.createClass({
     },
 /*
     componentWillUnmount: function() {
-        ChartHeader.unsubscribe("timerangeChange", this.handleTimerangeChange);
+        ChartHeader.unsubscribe("timeframeChange", this.handleTimerangeChange);
     },
     */
 
-    handleTimerangeChange: function( newTime ) {
+    handleTimerangeChange: function( newTime, noupdateURL ) {
         this.setState( newTime );
-        this.forceUpdate();
+        if ( !noupdateURL ) {
+            this.setHashVals( newTime );
+        }
+        //this.forceUpdate();
+
+    },
+
+    setHashVals: function( options ) {
+        let hashVals = this.state.hashValues;
+        for(let key in options) {
+            hashVals[key] = options[key];
+        }
+        this.setState({hashValues: hashVals});
+        this.updateURLHash();
+
+    },
+    updateURLHash: function() {
+        let hash = "#";
+        let hashVals = this.state.hashValues;
+        let arr = [];
+        for(let key in hashVals ) {
+            let val = encodeURIComponent( hashVals[key] );
+            arr.push( key + "=" + val );
+        }
+        hash += arr.join("&");
+        window.location.hash = hash;
+
 
     },
 
     getQueryString: function() {
         var qs = this.props.location.query;
-        console.log( "qs", qs );
+
+        // get hash values
+        let hash = this.props.location.hash;
+        console.log( "qs", qs, "hash", hash );
+        let hashRe = /^#/;
+        hash = hash.replace( hashRe, "");
+
+        let hashPairs = hash.split("&");
+        let hashObj = {};
+        for(let i in hashPairs ) {
+            // parse key=val 
+            let row = hashPairs[i].split("=");
+            let key = row[0];
+            let val = row[1];
+            hashObj[key] = val;
+        }
+
+
         let src = qs.source;
         let dst = qs.dest;
         let start = defaults.start;
         let end = defaults.end;
-        let timerange = defaults.timerange;
+        let timeframe = defaults.timeframe;
         let tool = qs.tool;
         let ipversion;
-        //let timeRange = this.getTimeVars( defaults.timerange );
-        if ( typeof qs.start != "undefined" ) {
-            start = qs.start || defaults.start;
+        //let timeRange = this.getTimeVars( defaults.timeframe );
+        //
+        if ( "timeframe" in hashObj && hashObj.timeframe != "" ) {
+            timeframe = hashObj.timeframe;
+
         }
-        if ( typeof qs.end != "undefined" ) {
-            let end = qs.end || defaults.end;
+        if ( typeof hashObj.start != "undefined" ) {
+            start = hashObj.start || defaults.start;
+        } else if ( typeof hashObj.start_ts != "undefined" ) {
+            start = hashObj.start_ts || defaults.start;
+
+        }
+
+        if ( typeof hashObj.end != "undefined" ) {
+            end = hashObj.end || defaults.end;
+        } else if ( typeof hashObj.end_ts != "undefined" ) {
+            end = hashObj.end_ts || defaults.end;
         }
         if ( typeof qs.ipversion != "undefined" ) {
             ipversion = qs.ipversion;
@@ -423,7 +478,8 @@ export default React.createClass({
             ma_url: ma_urls,
             tool: tool,
             ipversion: ipversion,
-            timerange: timerange
+            timeframe: timeframe,
+            hashValues: hashObj,
         };
 
         // TODO: allow multiple src/dest pairs ( I think this work, but needs testing)

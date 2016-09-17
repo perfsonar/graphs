@@ -245,6 +245,13 @@ export default React.createClass({
     mixins: [Highlighter],
 
     getInitialState() {
+
+        let startDate = new Date( this.props.start * 1000 );
+        let endDate = new Date( this.props.end * 1000 );
+        let startMoment = moment( startDate );
+        let endMoment = moment( endDate );
+        let timerange = new TimeRange(startMoment, endMoment);
+
         return {
             markdown: text,
             active: {
@@ -261,8 +268,8 @@ export default React.createClass({
             end: this.props.end,
             tracker: null,
             chartSeries: null,
-            timerange: TimeRange.lastSevenDays(),
-            initialTimerange: TimeRange.lastSevenDays(),
+            timerange: timerange,
+            initialTimerange: timerange,
             //brushrange: TimeRange.lastDay(),
             //brushrange: TimeRange.lastSevenDays(),
             brushrange: null,
@@ -277,7 +284,8 @@ export default React.createClass({
             highlight: null,
             selection: null,
             loading: true,
-            params: undefined
+            params: undefined,
+            dataloaded: false,
         };
     },
     handleSelectionChanged(point) {
@@ -415,7 +423,7 @@ export default React.createClass({
                         label = "ping";
                     }
                     latencyItems.push(
-                            <li>{dir} {row.value.toPrecision(4)} ms  {"(" + label + ")"} </li>
+                            <li>{dir} {row.value.toFixed(1)} ms  {"(" + label + ")"} </li>
 
                             );
 
@@ -810,7 +818,12 @@ export default React.createClass({
         }
 
         if ( Object.keys( charts ) == 0 ) {
-            return ( <div>No data found for this timerange.</div> );
+            if ( this.state.dataloaded  ) {
+                return ( <div>No data found for this timerange.</div> );
+
+            } else { 
+                return ( <div></div> );
+            }
         }
 
         return (
@@ -836,7 +849,7 @@ export default React.createClass({
                 </ChartContainer>
             </Resizable>
 
-                            {this.renderBrush( brushCharts )}
+            {this.renderBrush( brushCharts )}
             </div>
         );
     },
@@ -968,8 +981,8 @@ export default React.createClass({
 
     updateChartData: function() {
         let newChartSeries = GraphDataStore.getChartData();
-        this.setState({ chartSeries: newChartSeries, loading: false } );
-        this.forceUpdate();
+        this.setState({ chartSeries: newChartSeries, loading: false, dataloaded: true } );
+        //this.forceUpdate();
     },
 
     componentDidMount: function() {
@@ -991,7 +1004,7 @@ export default React.createClass({
     },
 
     getDataFromMA: function(src, dst, start, end, ma_url, params ) {
-        this.setState({loading: true});
+        this.setState({loading: true, dataloaded: false});
 
         GraphDataStore.subscribe(this.updateChartData);
 
@@ -1004,25 +1017,13 @@ export default React.createClass({
         this.setState({dataError: data, loading: false});
 
     },
-    /*
-    componentDidUpdate: function() {
-        this.getDataFromMA();
-
-    },
-    */
     componentWillReceiveProps( nextProps ) {
-        // You don't have to do this check first, but it can help prevent an unneeded render
-        /*
-           if (nextProps.startTime !== this.state.startTime) {
-           this.setState({ startTime: nextProps.startTime });
-           }
-           */
         //console.log("nextProps", nextProps);
         let timerange = new TimeRange([nextProps.start * 1000, nextProps.end * 1000 ]);
         this.setState({itemsToHide: nextProps.itemsToHide});
         if ( nextProps.start != this.state.start
                 || nextProps.end != this.state.end ) {
-            this.setState({start: nextProps.start, end: nextProps.end, chartSeries: null, timerange: timerange, brushrange: null, initialTimerange: timerange }); 
+            this.setState({start: nextProps.start, end: nextProps.end, chartSeries: null, timerange: timerange, brushrange: null, initialTimerange: timerange });
             this.getDataFromMA(nextProps.src, nextProps.dst, nextProps.start, nextProps.end, nextProps.ma_url, this.state.params);
         } else {
             GraphDataStore.toggleType( nextProps.itemsToHide) ;

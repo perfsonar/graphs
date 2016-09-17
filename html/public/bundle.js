@@ -25102,6 +25102,13 @@
 	    mixins: [_reactTimeseriesCharts.Highlighter],
 	
 	    getInitialState: function getInitialState() {
+	
+	        var startDate = new Date(this.props.start * 1000);
+	        var endDate = new Date(this.props.end * 1000);
+	        var startMoment = (0, _moment2.default)(startDate);
+	        var endMoment = (0, _moment2.default)(endDate);
+	        var timerange = new _pondjs.TimeRange(startMoment, endMoment);
+	
 	        return {
 	            markdown: text,
 	            active: {
@@ -25118,8 +25125,8 @@
 	            end: this.props.end,
 	            tracker: null,
 	            chartSeries: null,
-	            timerange: _pondjs.TimeRange.lastSevenDays(),
-	            initialTimerange: _pondjs.TimeRange.lastSevenDays(),
+	            timerange: timerange,
+	            initialTimerange: timerange,
 	            //brushrange: TimeRange.lastDay(),
 	            //brushrange: TimeRange.lastSevenDays(),
 	            brushrange: null,
@@ -25134,7 +25141,8 @@
 	            highlight: null,
 	            selection: null,
 	            loading: true,
-	            params: undefined
+	            params: undefined,
+	            dataloaded: false
 	        };
 	    },
 	    handleSelectionChanged: function handleSelectionChanged(point) {
@@ -25283,7 +25291,7 @@
 	                        null,
 	                        _dir2,
 	                        " ",
-	                        _row2.value.toPrecision(4),
+	                        _row2.value.toFixed(1),
 	                        " ms  ",
 	                        "(" + _label2 + ")",
 	                        " "
@@ -25666,11 +25674,15 @@
 	        }
 	
 	        if (Object.keys(charts) == 0) {
-	            return _react2.default.createElement(
-	                "div",
-	                null,
-	                "No data found for this timerange."
-	            );
+	            if (this.state.dataloaded) {
+	                return _react2.default.createElement(
+	                    "div",
+	                    null,
+	                    "No data found for this timerange."
+	                );
+	            } else {
+	                return _react2.default.createElement("div", null);
+	            }
 	        }
 	
 	        return _react2.default.createElement(
@@ -25830,8 +25842,8 @@
 	
 	    updateChartData: function updateChartData() {
 	        var newChartSeries = _GraphDataStore2.default.getChartData();
-	        this.setState({ chartSeries: newChartSeries, loading: false });
-	        this.forceUpdate();
+	        this.setState({ chartSeries: newChartSeries, loading: false, dataloaded: true });
+	        //this.forceUpdate();
 	    },
 	
 	    componentDidMount: function componentDidMount() {
@@ -25852,7 +25864,7 @@
 	    },
 	
 	    getDataFromMA: function getDataFromMA(src, dst, start, end, ma_url, params) {
-	        this.setState({ loading: true });
+	        this.setState({ loading: true, dataloaded: false });
 	
 	        _GraphDataStore2.default.subscribe(this.updateChartData);
 	
@@ -25864,18 +25876,7 @@
 	        var data = _GraphDataStore2.default.getErrorData();
 	        this.setState({ dataError: data, loading: false });
 	    },
-	    /*
-	    componentDidUpdate: function() {
-	        this.getDataFromMA();
-	     },
-	    */
 	    componentWillReceiveProps: function componentWillReceiveProps(nextProps) {
-	        // You don't have to do this check first, but it can help prevent an unneeded render
-	        /*
-	           if (nextProps.startTime !== this.state.startTime) {
-	           this.setState({ startTime: nextProps.startTime });
-	           }
-	           */
 	        //console.log("nextProps", nextProps);
 	        var timerange = new _pondjs.TimeRange([nextProps.start * 1000, nextProps.end * 1000]);
 	        this.setState({ itemsToHide: nextProps.itemsToHide });
@@ -48350,6 +48351,9 @@
 	            var max = void 0;
 	            if (typeof mainEventType != "undefined" && mainEventType in outputData && "max" in outputData[mainEventType]) {
 	                max = outputData[mainEventType].max;
+	            }
+	            if (isNaN(max)) {
+	                max = 1;
 	            }
 	            //datum.mainEventType = mainEventType;
 	
@@ -84826,9 +84830,9 @@
 	var now = Math.floor(new Date().getTime() / 1000);
 	
 	var defaults = {
-	    start: now - 86400 * 7,
-	    end: now,
-	    timerange: "1w"
+	    //start: now - 86400*7,
+	    //end: now,
+	    //timeframe: "1w",
 	};
 	
 	var scheme = {
@@ -84966,11 +84970,12 @@
 	            dst: newState.dst,
 	            start: newState.start,
 	            end: newState.end,
-	            timerange: newState.timerange,
+	            timeframe: newState.timeframe,
 	            ma_url: newState.ma_url,
 	            itemsToHide: {},
 	            tool: newState.tool,
 	            ipversion: newState.ipversion,
+	            hashValues: {},
 	            active: {
 	                "eventType_throughput_protocol_tcp_": true,
 	                "eventType_throughput_protocol_udp_": true,
@@ -85032,7 +85037,7 @@
 	                dests: this.state.dst,
 	                start: this.state.start,
 	                end: this.state.end,
-	                timerange: this.state.timerange,
+	                timeframe: this.state.timeframe,
 	                updateTimerange: this.handleTimerangeChange,
 	                ma_url: this.state.ma_url
 	            }),
@@ -85334,31 +85339,79 @@
 	    },
 	    /*
 	        componentWillUnmount: function() {
-	            ChartHeader.unsubscribe("timerangeChange", this.handleTimerangeChange);
+	            ChartHeader.unsubscribe("timeframeChange", this.handleTimerangeChange);
 	        },
 	        */
 	
-	    handleTimerangeChange: function handleTimerangeChange(newTime) {
+	    handleTimerangeChange: function handleTimerangeChange(newTime, noupdateURL) {
 	        this.setState(newTime);
-	        this.forceUpdate();
+	        if (!noupdateURL) {
+	            this.setHashVals(newTime);
+	        }
+	        //this.forceUpdate();
+	    },
+	
+	    setHashVals: function setHashVals(options) {
+	        var hashVals = this.state.hashValues;
+	        for (var key in options) {
+	            hashVals[key] = options[key];
+	        }
+	        this.setState({ hashValues: hashVals });
+	        this.updateURLHash();
+	    },
+	    updateURLHash: function updateURLHash() {
+	        var hash = "#";
+	        var hashVals = this.state.hashValues;
+	        var arr = [];
+	        for (var key in hashVals) {
+	            var val = encodeURIComponent(hashVals[key]);
+	            arr.push(key + "=" + val);
+	        }
+	        hash += arr.join("&");
+	        window.location.hash = hash;
 	    },
 	
 	    getQueryString: function getQueryString() {
 	        var qs = this.props.location.query;
-	        console.log("qs", qs);
+	
+	        // get hash values
+	        var hash = this.props.location.hash;
+	        console.log("qs", qs, "hash", hash);
+	        var hashRe = /^#/;
+	        hash = hash.replace(hashRe, "");
+	
+	        var hashPairs = hash.split("&");
+	        var hashObj = {};
+	        for (var i in hashPairs) {
+	            // parse key=val 
+	            var row = hashPairs[i].split("=");
+	            var key = row[0];
+	            var val = row[1];
+	            hashObj[key] = val;
+	        }
+	
 	        var src = qs.source;
 	        var dst = qs.dest;
 	        var start = defaults.start;
 	        var end = defaults.end;
-	        var timerange = defaults.timerange;
+	        var timeframe = defaults.timeframe;
 	        var tool = qs.tool;
 	        var ipversion = void 0;
-	        //let timeRange = this.getTimeVars( defaults.timerange );
-	        if (typeof qs.start != "undefined") {
-	            start = qs.start || defaults.start;
+	        //let timeRange = this.getTimeVars( defaults.timeframe );
+	        //
+	        if ("timeframe" in hashObj && hashObj.timeframe != "") {
+	            timeframe = hashObj.timeframe;
 	        }
-	        if (typeof qs.end != "undefined") {
-	            var _end = qs.end || defaults.end;
+	        if (typeof hashObj.start != "undefined") {
+	            start = hashObj.start || defaults.start;
+	        } else if (typeof hashObj.start_ts != "undefined") {
+	            start = hashObj.start_ts || defaults.start;
+	        }
+	
+	        if (typeof hashObj.end != "undefined") {
+	            end = hashObj.end || defaults.end;
+	        } else if (typeof hashObj.end_ts != "undefined") {
+	            end = hashObj.end_ts || defaults.end;
 	        }
 	        if (typeof qs.ipversion != "undefined") {
 	            ipversion = qs.ipversion;
@@ -85371,8 +85424,8 @@
 	            ma_urls = [ma_urls];
 	        }
 	
-	        for (var i in ma_urls) {
-	            var ma_url = ma_urls[i];
+	        for (var _i in ma_urls) {
+	            var ma_url = ma_urls[_i];
 	            var found = ma_url.match(localhostRe);
 	            var host = location.host;
 	            if (found !== null) {
@@ -85380,7 +85433,7 @@
 	                var new_url = ma_url.replace(localhostRe, host);
 	
 	                console.log('localhost URL found, rewriting to host', host, "new ma url", new_url);
-	                ma_urls[i] = new_url;
+	                ma_urls[_i] = new_url;
 	            }
 	        }
 	        var newState = {
@@ -85391,7 +85444,8 @@
 	            ma_url: ma_urls,
 	            tool: tool,
 	            ipversion: ipversion,
-	            timerange: timerange
+	            timeframe: timeframe,
+	            hashValues: hashObj
 	        };
 	
 	        // TODO: allow multiple src/dest pairs ( I think this work, but needs testing)
@@ -85443,8 +85497,6 @@
 	
 	var moment = __webpack_require__(/*! moment */ 210);
 	
-	// TODO: add traceroute calls/links
-	
 	exports.default = _react2.default.createClass({
 	    displayName: "ChartHeader",
 	
@@ -85452,12 +85504,9 @@
 	    getInitialState: function getInitialState() {
 	        return {
 	            showHostSelectors: false,
-	            //sources: [],
-	            //dests: [],
 	            start: this.props.start,
 	            end: this.props.end,
-	            timerange: this.props.timerange,
-	            timePeriod: "1w",
+	            timeframe: this.props.timeframe,
 	            interfaceInfo: null,
 	            traceInfo: []
 	        };
@@ -85466,7 +85515,7 @@
 	        var obj = {
 	            "start": this.state.start,
 	            "end": this.state.end,
-	            "timerange": this.state.timerange
+	            "timeframe": this.state.timeframe
 	        };
 	        return obj;
 	    },
@@ -85516,7 +85565,7 @@
 	                        ),
 	                        _react2.default.createElement(
 	                            "select",
-	                            { className: "no-margin", name: "timeperiod", id: "timeperiod", onChange: this.changeTimePeriod, value: this.state.timePeriod },
+	                            { className: "no-margin", name: "timeperiod", id: "timeperiod", onChange: this.changeTimePeriod, value: this.state.timeframe },
 	                            _react2.default.createElement(
 	                                "option",
 	                                { value: "1d" },
@@ -85587,7 +85636,7 @@
 	        var newStart = newEnd - timeDiff;
 	
 	        var options = {
-	            timePeriod: period,
+	            timeframe: period,
 	            start: newStart,
 	            end: newEnd
 	        };
@@ -85773,6 +85822,7 @@
 	        );
 	    },
 	    componentDidMount: function componentDidMount() {
+	        this.setInitialTime();
 	        _HostInfoStore2.default.subscribe(this.updateChartHeader);
 	        _HostInfoStore2.default.subscribeTrace(this.updateTrace);
 	        _HostInfoStore2.default.retrieveTracerouteData(this.props.sources, this.props.dests, this.props.ma_url);
@@ -85801,28 +85851,32 @@
 	        this.forceUpdate();
 	    },
 	    handlePageChange: function handlePageChange(direction) {
-	        var timeVars = this.getTimeVars(this.state.timerange);
+	        var timeVars = this.getTimeVars(this.state.timeframe);
 	        var diff = timeVars.timeDiff;
 	        var newStart = void 0;
 	        var newEnd = void 0;
 	        var now = Math.floor(new Date().getTime() / 1000);
 	        if (direction == "next") {
-	            newStart = this.state.start + diff;
 	            newEnd = this.state.end + diff;
+	            newStart = newEnd - diff;
 	        } else if (direction == "previous") {
-	            newStart = this.state.start - diff;
 	            newEnd = this.state.end - diff;
+	            newStart = newEnd - diff;
 	        }
 	        if (newStart >= now || newEnd >= now) {
 	            newEnd = now;
-	            newStart = this.state.start - diff;
+	            newStart = now - diff;
 	        }
-	        this.handleTimerangeChange({ "start": newStart, "end": newEnd });
+	        var timeframe = this.state.timeframe;
+	        this.handleTimerangeChange({ "start": newStart, "end": newEnd, timeframe: timeframe });
 	    },
-	    handleTimerangeChange: function handleTimerangeChange(options) {
+	    handleTimerangeChange: function handleTimerangeChange(options, noupdateURL) {
 	        this.setState(options);
-	        this.forceUpdate();
-	        this.props.updateTimerange(options);
+	        //this.forceUpdate();
+	        if (!"timeframe" in options) {
+	            options.timeframe = this.state.timeframe;
+	        }
+	        this.props.updateTimerange(options, noupdateURL);
 	        emitter.emit("timerangeChange");
 	    },
 	    subscribe: function subscribe(callback) {
@@ -85830,6 +85884,33 @@
 	    },
 	    unsubscribe: function unsubscribe(callback) {
 	        emitter.off("timerangeChange", callback);
+	    },
+	
+	    setInitialTime: function setInitialTime() {
+	        var options = {};
+	
+	        var timeframe = this.state.timeframe || "1w";
+	        var timeVars = this.getTimeVars(timeframe);
+	        var diff = timeVars.timeDiff;
+	
+	        var now = Math.floor(new Date().getTime() / 1000);
+	        var newEnd = now;
+	        var newStart = newEnd - diff;
+	
+	        if (typeof this.props.start != "undefined") {
+	            newStart = this.props.start;
+	        }
+	        if (typeof this.props.end != "undefined") {
+	            newEnd = this.props.end;
+	        }
+	
+	        //console.log("setting initial time; state: ", this.state);
+	
+	        options.start = newStart;
+	        options.end = newEnd;
+	        options.timeframe = timeframe;
+	
+	        this.handleTimerangeChange(options, true);
 	    },
 	
 	    getTimeVars: function getTimeVars(period) {
@@ -85857,7 +85938,7 @@
 	        var timeRange = {
 	            timeDiff: timeDiff,
 	            summaryWindow: summaryWindow,
-	            timePeriod: period
+	            timeframe: period
 	
 	        };
 	        return timeRange;

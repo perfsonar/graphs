@@ -14,19 +14,14 @@ let emitter = new EventEmitter();
 
 let moment = require('moment');
 
-// TODO: add traceroute calls/links
-
 export default React.createClass({
     hostInfo: [],
     getInitialState() {
         return {
             showHostSelectors: false,
-            //sources: [],
-            //dests: [],
             start: this.props.start,
             end: this.props.end,
-            timerange: this.props.timerange,
-            timePeriod: "1w",
+            timeframe: this.props.timeframe,
             interfaceInfo: null,
             traceInfo: [],
         };
@@ -35,7 +30,7 @@ export default React.createClass({
         let obj = {
             "start": this.state.start,
             "end": this.state.end,
-            "timerange": this.state.timerange
+            "timeframe": this.state.timeframe
         };
         return obj;
 
@@ -75,7 +70,7 @@ export default React.createClass({
                                 <button id="headerTimePrevious" className="button-quiet button-timechange" onClick={this.handlePageChange.bind(this, "previous")}>
                                 <i className="fa fa-arrow-left" aria-hidden="true"></i>
                                 </button>
-                               <select className="no-margin" name="timeperiod" id="timeperiod" onChange={this.changeTimePeriod} value={this.state.timePeriod}>
+                               <select className="no-margin" name="timeperiod" id="timeperiod" onChange={this.changeTimePeriod} value={this.state.timeframe}>
                                     <option value="1d">1 day</option>
                                     <option value="3d">3 days</option>
                                     <option value="1w">1 week</option>
@@ -118,7 +113,7 @@ export default React.createClass({
         let newStart = newEnd - timeDiff;
 
         let options = {
-            timePeriod: period,
+            timeframe: period,
             start: newStart,
             end: newEnd
         };
@@ -220,11 +215,12 @@ export default React.createClass({
 
     },
     componentDidMount: function() {
-            HostInfoStore.subscribe(this.updateChartHeader);
-            HostInfoStore.subscribeTrace(this.updateTrace);
-            HostInfoStore.retrieveTracerouteData( this.props.sources, this.props.dests, this.props.ma_url );
-            InterfaceInfoStore.subscribe( this.handleInterfaceData );
-            InterfaceInfoStore.retrieveInterfaceInfo( this.props.sources, this.props.dests );
+        this.setInitialTime();
+        HostInfoStore.subscribe(this.updateChartHeader);
+        HostInfoStore.subscribeTrace(this.updateTrace);
+        HostInfoStore.retrieveTracerouteData( this.props.sources, this.props.dests, this.props.ma_url );
+        InterfaceInfoStore.subscribe( this.handleInterfaceData );
+        InterfaceInfoStore.retrieveInterfaceInfo( this.props.sources, this.props.dests );
 
     },
     handleInterfaceData: function() {
@@ -251,29 +247,33 @@ export default React.createClass({
 
     },
     handlePageChange: function( direction ) {
-        let timeVars = this.getTimeVars( this.state.timerange );
+        let timeVars = this.getTimeVars( this.state.timeframe );
         let diff = timeVars.timeDiff;
         let newStart;
         let newEnd;
         let now = Math.floor( new Date().getTime() / 1000 );
         if ( direction == "next" ) {
-            newStart = this.state.start + diff;
             newEnd = this.state.end + diff;
+            newStart = newEnd - diff;
         } else if ( direction == "previous" ) {
-            newStart = this.state.start - diff;
             newEnd = this.state.end - diff;
+            newStart = newEnd - diff;
         }
         if ( newStart >= now || newEnd >= now ) {
             newEnd = now;
-            newStart = this.state.start - diff;
+            newStart = now - diff;
         }
-        this.handleTimerangeChange({"start": newStart, "end": newEnd});
+        let timeframe = this.state.timeframe;
+        this.handleTimerangeChange({"start": newStart, "end": newEnd, timeframe: timeframe});
 
     },
-    handleTimerangeChange: function( options ) {
+    handleTimerangeChange: function( options, noupdateURL ) {
         this.setState( options );
-        this.forceUpdate();
-        this.props.updateTimerange( options );
+        //this.forceUpdate();
+        if ( ! "timeframe" in options ) {
+            options.timeframe = this.state.timeframe;
+        }
+        this.props.updateTimerange( options, noupdateURL );
         emitter.emit("timerangeChange");
 
     },
@@ -282,6 +282,34 @@ export default React.createClass({
     },
     unsubscribe: function( callback ) {
         emitter.off("timerangeChange", callback);
+    },
+
+    setInitialTime: function() {
+        let options = {};
+
+        let timeframe = this.state.timeframe || "1w";
+        let timeVars = this.getTimeVars( timeframe );
+        let diff = timeVars.timeDiff;
+
+        let now = Math.floor( new Date().getTime() / 1000 );
+        let newEnd = now;
+        let newStart =  newEnd - diff;
+
+        if ( typeof this.props.start != "undefined" ) {
+            newStart = this.props.start;
+        }
+        if ( typeof this.props.end != "undefined" ) {
+            newEnd = this.props.end;
+        }
+
+        //console.log("setting initial time; state: ", this.state);
+
+        options.start = newStart;
+        options.end = newEnd;
+        options.timeframe = timeframe;
+
+        this.handleTimerangeChange( options, true );
+
     },
 
     getTimeVars: function (period) {
@@ -309,7 +337,7 @@ export default React.createClass({
         let timeRange = {
             timeDiff: timeDiff,
             summaryWindow: summaryWindow,
-            timePeriod: period
+            timeframe: period
 
         };
         return timeRange;

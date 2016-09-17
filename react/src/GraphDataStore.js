@@ -594,6 +594,10 @@ module.exports = {
                     && "max" in outputData[ mainEventType ] ) {
                 max = outputData[ mainEventType ].max;
             }
+            if ( isNaN(max) ) {
+                max = 1;
+
+            }
             //datum.mainEventType = mainEventType;
 
             let failureValues = [];
