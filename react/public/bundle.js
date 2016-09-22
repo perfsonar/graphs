@@ -75642,6 +75642,19 @@
 	            }
 	        }
 	        var details = _InterfaceInfoStore2.default.getInterfaceDetails(host);
+	        var addresses = [];
+	        if ($.isArray(details.addresses)) {
+	            for (var i in details.addresses) {
+	                var address = details.addresses[i];
+	                addresses.push(_react2.default.createElement(
+	                    "div",
+	                    null,
+	                    address
+	                ));
+	            }
+	        } else {
+	            addresses.push(details.addresses);
+	        }
 	        {/* GRAPH: Detailed Host Info*/}
 	        return _react2.default.createElement(
 	            "div",
@@ -75680,7 +75693,7 @@
 	                        _react2.default.createElement(
 	                            "span",
 	                            { className: "sidebar-popover__value" },
-	                            details.addresses
+	                            addresses
 	                        )
 	                    ),
 	                    _react2.default.createElement(
