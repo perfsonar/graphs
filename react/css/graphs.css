@@ -5,7 +5,7 @@
 ----------------------------------------------------------*/
 
 .graph-filter {
-    padding: 1em 0;
+    padding: 0.25em 0;
 }
 
 .graph-label {
@@ -23,6 +23,14 @@
     border: 1px solid #ccc;
     border-radius: 4px;
     display: inline-block;
+}
+
+.blockTrace {
+    display:block; 
+}
+
+.hiddenTrace {
+    display:none;
 }
 
 /*
@@ -49,28 +57,49 @@
 
 .graph-filter__item.graph-filter__item a {
     color: #fff;
+    background-color: #ccc;
 }
 
 .graph-filter__item.graph-filter__item--blue-active a {
     background-color: #0076b4;
 }
 
-.graph-filter__item.graph-filter__item.tcp-active a {
+.graph-filter__item.graph-filter__item--forward.active a, .graph-filter__item.graph-filter__item--reverse.active a, .graph-filter__item.graph-filter__item--failures.active a
+{
     background-color: #0076b4;
 }
 
-.graph-filter__item.graph-filter__item.udp-active a {
-    background-color: #cc7dbe;
+
+.graph-filter__item.graph-filter__item.throughput-tcp.active a {
+    background-color: #0076b4;
 }
 
-.graph-filter__item.graph-filter__item.ipv4-active a {
+.graph-filter__item.graph-filter__item.udp.active a {
+    background-color: #d6641e;
+    /*background-color: #cc7dbe;*/ /*pink */
+}
+
+.graph-filter__item.graph-filter__item.ipv4.active a {
     background-color: #e5a11c;
 }
 
-.graph-filter__item.graph-filter__item.ipv6-active a {
+.graph-filter__item.graph-filter__item.ipv6.active a {
     background-color: #633;
 }
 
+.graph-filter__item.graph-filter__item.loss-throughput.active a {
+    background-color: #cc7dbe;
+}
+
+.graph-filter__item.graph-filter__item.loss-latency.active a {
+    background-color: #2b9f78;
+}
+
+
+.graph-filter__item svg.direction-label {
+    margin-left: 1em;
+    vertical-align: middle;
+}
 
 .graph-filter__item:last-child {
     border-right: none;
@@ -179,4 +208,68 @@
 
 .sidebar-popover__close span {
     float:left;
+}
+
+/* Graph-Values popover */
+
+.sidebar-popover span:after {
+    display:inline;
+}
+
+.sidebar-popover.graph-values-popover {
+  position: absolute;
+  top: -33px;
+  right: 0;
+  font-size: 80%;
+  padding: 1em 1em 0 1em;
+  display:block;
+  opacity:0.9;
+}
+
+.graph-values-popover .graph-type {
+  margin: 0;
+  padding: 0;
+  font-weight: 700;
+}
+
+.graph-values-popover__heading {
+  border-bottom: 1px solid rgba(255, 255, 255, .5);
+  font-size: 1.1em;
+  color: #fff;
+  padding: .5em 0;
+}
+
+.graph-values-popover__list {
+  list-style: none;
+  padding: 0;
+  margin: 2px 0 0 0;
+}
+
+.graph-values-popover__item {
+  padding: 1em 0;
+  border-top: 1px dashed rgba(255, 255, 255, .5);
+}
+
+.graph-values-popover__item:first-child {
+  border-top: none;
+  padding-top: 1.5em;
+}
+
+.graph-values-popover__item ul {
+  list-style: none;
+  margin: 0;
+}
+
+.graph-values-popover__item li:first-child {
+  font-size: 1.1em;
+  font-weight: 700;
+}
+
+div.graphholder div.small-2.columns {
+    float:right;
+    display:block;
+}
+
+div.graphholder #loading {
+    margin-top:4em;
 }

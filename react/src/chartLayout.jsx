@@ -4,18 +4,41 @@ import _ from "underscore";
 import Chart1 from "./chart1.jsx";
 import ChartHeader from "./ChartHeader";
 import HostInfoStore from "./HostInfoStore";
+//import GraphDataStore from "./GraphDataStore";
 
-import "../../css/graphs.css";
+import "../css/graphs.css";
 //import "../../toolkit/web-ng/root/css/app.css"
 import "../../toolkit/web-ng/root/js/app.js"
 
 const text = 'perfSONAR chart';
 
+const now = Math.floor( new Date().getTime() / 1000 );
+
+const defaults = {
+    //start: now - 86400*7,
+    //end: now,
+    //timeframe: "1w",
+};
 
 const scheme = {
     requests: "#2ca02c",
     connections: "#990000"
 };
+
+/* copied frmo chart1.jsx
+const scheme = {
+    tcp: "#0076b4", // blue
+    udp: "#cc7dbe", // purple
+    ipv4: "#e5a11c", // yellow
+    ipv6: "#633", // brown
+    throughput: "#0076b4", // blue
+    throughputTCP: "#0076b4", // blue
+    throughputUDP: "#2b9f78", // green
+    "histogram-rtt": "#e5a11c", // yellow
+    "histogram-owdelay": "#633", // brown
+    "packet-loss-rate": "#cc7dbe" // purple
+};
+*/
 
 const connectionsStyle = {
     color: scheme.requests,
@@ -131,58 +154,174 @@ export default React.createClass({
             src: newState.src,
             dst: newState.dst,
             start: newState.start,
-            end: newState.end
+            end: newState.end,
+            timeframe: newState.timeframe,
+            ma_url: newState.ma_url,
+            itemsToHide: {},
+            tool: newState.tool,
+            ipversion: newState.ipversion,
+            hashValues: {},
+            active: {
+                "eventType_throughput_protocol_tcp_": true,
+                "eventType_throughput_protocol_udp_": true,
+                "eventType_packet-loss-rate_mainTestType_latency_": true,
+                "eventType_packet-loss-rate_mainTestType_throughput_": true,
+                "eventType_histogram-owdelay_": true,
+                "eventType_histogram-rtt_": true,
+                "direction_forward_": true,
+                "direction_reverse_": true,
+                "eventType_failures_": true,
+            },
         };
     },
     contextTypes: {
         router: React.PropTypes.func
     },
+    toggleType: function( options, event ) {
+        //console.log("toggleType options: ", options); //, "event", event);
+        let newItems = this.state.itemsToHide;
+        //newItems.push( options );
+        let sorted = Object.keys( options ).sort();
+        let id = "";
+        for(let i in sorted) {
+            let key = sorted[i]
+            let val = options[key];
+            id += key + "_" + val + "_";
+        }
+        //console.log("id", id);
+        if ( id in newItems ) {
+            delete newItems[id];
+        } else {
+            //let newItems = {};
+            newItems[id] = options;
+        }
+        let active = this.state.active;
+        active[id] = !active[id];
+        this.setState({ active: active } );
+
+        this.setState({ itemsToHide: newItems } );
+        //this.forceUpdate();
 
 
+
+        //event.preventDefault();
+
+
+    },
+
+
+    getActiveClass: function ( value ) {
+        if ( value === true ) {
+            return "active";
+        } else {
+            return "";
+        }
+
+    },
     render() {
-
         return (
 
                 <div className="graph">
                 <ChartHeader 
                     sources={this.state.src}
                     dests={this.state.dst}
+                    start={this.state.start}
+                    end={this.state.end}
+                    timeframe={this.state.timeframe}
+                    updateTimerange={this.handleTimerangeChange}
+                    ma_url={this.state.ma_url}
                 />
 
                     {/* GRAPH: Select Data*/}
                     <div className="graph-filters">
                         <div className="graph-filter left">
-                            <span className="graph-label">Data:</span>
                             <ul className=" graph-filter__list">
-                                <li className="graph-filter__item graph-filter__item tcp-active">
-                                    <a href="#">TCP</a>
+                                <li className={"graph-filter__item graph-filter__item throughput-tcp " + this.getActiveClass( this.state.active["eventType_throughput_protocol_tcp_"] )}>
+                                    <a href="#" onClick={this.toggleType.bind(this, {eventType: "throughput", protocol: "tcp"})}>Throughput (TCP)</a>
                                 </li>
+                                <li className={"graph-filter__item graph-filter__item udp " + this.getActiveClass( this.state.active["eventType_throughput_protocol_udp_"] )}  >
+                                    <a href="#" onClick={this.toggleType.bind(this, {eventType: "throughput", protocol: "udp"}) }>Throughput (UDP)</a>
+                                </li>
+                                {/*
                                 <li className="graph-filter__item udp-active">
                                     <a href="#">UDP</a>
                                 </li>
-                                <li className="graph-filter__item ipv4-active">
-                                    <a href="#">IPv4</a>
+                                */}
+                                <li className={"graph-filter__item graph-filter__item loss-throughput " + this.getActiveClass( this.state.active["eventType_packet-loss-rate_mainTestType_throughput_"] ) }>
+                                    <a href="#" onClick={this.toggleType.bind(this, {eventType: "packet-loss-rate", mainTestType: "throughput"})}>Loss (Throughput)</a>
                                 </li>
-                                <li className="graph-filter__item ipv6-active">
-                                    <a href="#">IPv6</a>
+                                <li className={"graph-filter__item graph-filter__item loss-latency " + this.getActiveClass( this.state.active["eventType_packet-loss-rate_mainTestType_latency_"] )}>
+                                    <a href="#" onClick={this.toggleType.bind(this, {eventType: "packet-loss-rate", mainTestType: "latency"})}>Loss (Latency)</a>
+                                </li>
+                                <li className={"graph-filter__item ipv6 " + this.getActiveClass( this.state.active["eventType_histogram-owdelay_"] )}>
+                                    <a href="#" onClick={this.toggleType.bind(this, {eventType: "histogram-owdelay"})}>One-way latency</a>
+                                </li>
+                                <li className={"graph-filter__item ipv4 " + this.getActiveClass( this.state.active["eventType_histogram-rtt_"])} >
+                                    <a href="#" onClick={this.toggleType.bind(this, {eventType: "histogram-rtt"})}>Ping</a>
                                 </li>
                             </ul>
                         </div>
 
-                        <div className="graph-filter right">
-                            <a href="#" className="graph-settings"><i className="fa fa-gear"></i></a>
+                        <div className="graph-filter right hidden">
+                              <a href="#" className="graph-settings sidebar-popover-toggle js-sidebar-popover-toggle"><i className="fa fa-gear"></i></a>
+                            <div className="sidebar-popover options-popover">
+                                <a className="sidebar-popover__close js-sidebar-popover-close">Close &nbsp;<i className="fa fa-close"></i></a>
+                                <h4 className="options-popover__heading">Advanced Graph Options</h4>
+                                <ul className="options-popover__list">
+                                    <li><strong>Scale/Smoothing</strong></li>
+                                    <li>
+                                        <ul className="options-popover__row">
+                                            <li>Latency</li>
+                                            <li> <input type="checkbox" name="latency-log" id="latency-log" />
+                                                 <label htmlFor="latency-log">apply logarithmic scale</label> </li>
+                                            <li> <input type="checkbox" name="latency-interp" id="latency-interp" />
+                                                 <label htmlFor="latency-interp">interpolate between intervals</label> </li>
+                                        </ul>
+                                    </li>
+                                    <li>
+                                        <ul className="options-popover__row">
+                                            <li>Loss </li>
+                                            <li> <input type="checkbox" name="loss-log" id="loss-log" />
+                                                 <label htmlFor="loss-log">apply logarithmic scale</label> </li>
+                                            <li> <input type="checkbox" name="loss-interp" id="loss-interp" />
+                                                 <label htmlFor="loss-interp">interpolate between intervals</label> </li>
+                                        </ul>
+                                    </li>
+                                    <li>
+                                        <ul className="options-popover__row">
+                                            <li>Throughput</li>
+                                            <li> <input type="checkbox" name="thruput-log" id="thruput-log" />
+                                                 <label htmlFor="thruput-log">apply logarithmic scale</label> </li>
+                                            <li> <input type="checkbox" name="thruput-interp" id="thruput-interp" />
+                                                 <label htmlFor="thruput-interp">interpolate between intervals</label> </li>
+                                        </ul>
+                                    </li>
+                                </ul>
+                            </div> 
                         </div>
 
                         <div className="graph-filter right">
                             <ul className=" graph-filter__list">
-                                <li className="graph-filter__item graph-filter__item--blue-active">
-                                    <a href="#">Forward</a>
+                                <li className={"graph-filter__item graph-filter__item--forward " + this.getActiveClass( this.state.active["direction_forward_"] ) }>
+                                    <a href="#" onClick={this.toggleType.bind(this, {direction: "forward"})}>Forward
+                                    <svg width="18" height="4" className="direction-label">
+                                          <line x1="0" y1="2" x2="18" y2="2" stroke="white" strokeWidth="3" />
+                                    </svg>
+                                    </a>
                                 </li>
-                                <li className="graph-filter__item graph-filter__item--blue-active">
-                                    <a href="#">Reverse</a>
+                                <li className={"graph-filter__item graph-filter__item--reverse " + this.getActiveClass( this.state.active["direction_reverse_"] )}>
+                                    <a href="#" onClick={this.toggleType.bind(this, {direction: "reverse"})}>Reverse
+                                    <svg width="18" height="4" className="direction-label">
+                                          <line x1="0" y1="2" x2="18" y2="2" stroke="white" strokeWidth="3" strokeDasharray="4,2" />
+                                    </svg>
+                                    </a>
                                 </li>
-                                <li className="graph-filter__item graph-filter__item--blue-active">
-                                    <a href="#">Errors</a>
+                                <li className={"graph-filter__item graph-filter__item--failures " + this.getActiveClass( this.state.active["eventType_failures_"] ) }>
+                                    <a href="#" onClick={this.toggleType.bind(this, {"eventType": "failures"})}>Errors
+                                    <svg width="10" height="10" className="direction-label">
+                                          <circle cx="5" cy="5" r="4" fill="red" />
+                                    </svg>
+                                    </a>
                                 </li>
                             </ul>
                         </div>
@@ -191,19 +330,6 @@ export default React.createClass({
 
                     {/* GRAPH: Graph Wrapper */}
                     <div className="graph-wrapper">
-                        <header className="graph-header">
-                            <div className="row collapse">
-                                <div className="small-2 columns">
-                                    <span className="sub-heading">Test</span>
-                                </div>
-                                <div className="small-8 columns">
-                                    <span className="sub-heading">Data</span>
-                                </div>
-                                <div className="small-2 columns">
-                                    <span className="sub-heading">Median</span>
-                                </div>
-                            </div>
-                        </header>
 
                                 <div className="graphholder">
                                     <Chart1
@@ -212,6 +338,11 @@ export default React.createClass({
                                         start={this.state.start}
                                         end={this.state.end}
                                         ma_url={this.state.ma_url}
+                                        tool={this.state.tool}
+                                        ipversion={this.state.ipversion}
+                                        updateHiddenItems={this.handleHiddenItemsChange}
+                                        itemsToHide={this.state.itemsToHide}
+                                        ref="chart1"
                                     />
                                 </div>
                     </div>
@@ -222,24 +353,136 @@ export default React.createClass({
         );
     },
 
+
+    componentDidMount: function() {
+        //HostInfoStore.retrieveTracerouteData( this.props.sources, this.props.dests, this.props.ma_url );
+        if ( $.isArray( this.state.src ) ) {
+            document.title = "pS results between " + this.state.src.join(", ") + " and " + this.state.dst.join(", ");
+        } else {
+            document.title = "pS results between " + this.state.src + " and " + this.state.dst;
+
+        }
+
+    },
+/*
+    componentWillUnmount: function() {
+        ChartHeader.unsubscribe("timeframeChange", this.handleTimerangeChange);
+    },
+    */
+
+    handleTimerangeChange: function( newTime, noupdateURL ) {
+        this.setState( newTime );
+        if ( !noupdateURL ) {
+            this.setHashVals( newTime );
+        }
+        //this.forceUpdate();
+
+    },
+
+    setHashVals: function( options ) {
+        let hashVals = this.state.hashValues;
+        for(let key in options) {
+            hashVals[key] = options[key];
+        }
+        this.setState({hashValues: hashVals});
+        this.updateURLHash();
+
+    },
+    updateURLHash: function() {
+        let hash = "#";
+        let hashVals = this.state.hashValues;
+        let arr = [];
+        for(let key in hashVals ) {
+            let val = encodeURIComponent( hashVals[key] );
+            arr.push( key + "=" + val );
+        }
+        hash += arr.join("&");
+        window.location.hash = hash;
+
+
+    },
+
     getQueryString: function() {
         var qs = this.props.location.query;
-        console.log( "qs", qs );
-        let src = qs.src;
-        let dst = qs.dst;
-        let start = qs.start;
-        let end = qs.end;
-        let ma_url = qs.ma_url || "http://perfsonar-dev.grnoc.iu.edu/esmond/perfsonar/archive/";
+
+        // get hash values
+        let hash = this.props.location.hash;
+        console.log( "qs", qs, "hash", hash );
+        let hashRe = /^#/;
+        hash = hash.replace( hashRe, "");
+
+        let hashPairs = hash.split("&");
+        let hashObj = {};
+        for(let i in hashPairs ) {
+            // parse key=val 
+            let row = hashPairs[i].split("=");
+            let key = row[0];
+            let val = row[1];
+            hashObj[key] = val;
+        }
+
+
+        let src = qs.source;
+        let dst = qs.dest;
+        let start = defaults.start;
+        let end = defaults.end;
+        let timeframe = defaults.timeframe;
+        let tool = qs.tool;
+        let ipversion;
+        //let timeRange = this.getTimeVars( defaults.timeframe );
+        //
+        if ( "timeframe" in hashObj && hashObj.timeframe != "" ) {
+            timeframe = hashObj.timeframe;
+
+        }
+        if ( typeof hashObj.start != "undefined" ) {
+            start = hashObj.start || defaults.start;
+        } else if ( typeof hashObj.start_ts != "undefined" ) {
+            start = hashObj.start_ts || defaults.start;
+
+        }
+
+        if ( typeof hashObj.end != "undefined" ) {
+            end = hashObj.end || defaults.end;
+        } else if ( typeof hashObj.end_ts != "undefined" ) {
+            end = hashObj.end_ts || defaults.end;
+        }
+        if ( typeof qs.ipversion != "undefined" ) {
+            ipversion = qs.ipversion;
+        }
+
+        let ma_urls = qs.url || location.origin + "/esmond/perfsonar/archive/";
+        let localhostRe = /localhost/i;
+
+        if ( !$.isArray( ma_urls ) ) {
+            ma_urls = [ ma_urls ];
+        }
+
+        for(let i in ma_urls ) {
+            let ma_url = ma_urls[i];
+            let found = ma_url.match( localhostRe );
+            let host = location.host;
+            if ( found !== null ) {
+                console.log("ma_url", ma_url);
+                let new_url = ma_url.replace( localhostRe,  host );
+
+                console.log('localhost URL found, rewriting to host', host, "new ma url", new_url);
+                ma_urls[i] = new_url;
+            }
+        }
         const newState = {
             src:    src,
             dst:    dst,
             start:  start,
             end:    end,
-            ma_url: ma_url
+            ma_url: ma_urls,
+            tool: tool,
+            ipversion: ipversion,
+            timeframe: timeframe,
+            hashValues: hashObj,
         };
-        console.log("newState", newState);
 
-        // TODO: allow multiple src/dest pairs
+        // TODO: allow multiple src/dest pairs ( I think this work, but needs testing)
         HostInfoStore.retrieveHostInfo( src, dst );
 
         //this.setState(newState);

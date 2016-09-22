@@ -4,10 +4,10 @@
 # cron/apache entries are located in the 'etc' directory
 %define apacheconf apache-perfsonar-graphs.conf 
 
-%define relnum  1
+%define relnum  0.3.rc1
 
 Name:			perfsonar-graphs
-Version:		3.5.1.3
+Version:		4.0
 Release:		%{relnum}%{?dist}
 Summary:		perfSONAR Graphs
 License:		Distributable, see LICENSE
@@ -90,13 +90,6 @@ service httpd restart &> /dev/null || :
 %defattr(-,perfsonar,perfsonar,-)
 %config %{install_base}/etc/*
 %{install_base}/cgi-bin/*
-%{install_base}/JS/*
-%{install_base}/templates/bw_error.tmpl
-%{install_base}/templates/bw_graphing.tmpl
-%{install_base}/templates/bw_pageDisplay.tmpl
-%{install_base}/templates/delay_error.tmpl
-%{install_base}/templates/delay_graphing.tmpl
-%{install_base}/templates/delay_pageDisplay.tmpl
 %{install_base}/templates/graphPage.tmpl
 %{install_base}/templates/graphWidget.tmpl
 %{install_base}/templates/serviceTest_error.tmpl
@@ -105,12 +98,13 @@ service httpd restart &> /dev/null || :
 %config %{install_base}/templates/header.tmpl
 %config %{install_base}/templates/footer.tmpl
 %config %{install_base}/templates/sidebar.html
-%{install_base}/images/*
-%{install_base}/css/*
 %{install_base}/html/*
 /etc/httpd/conf.d/*
 
 %changelog
+* Thu Sep 8 2016 mj82@globalnoc.iu.edu 4.0-rc1
+- Update file layout prior to 4.0 RC1
+
 * Thu Jun 19 2014 andy@es.net 3.4-1
 - Added support for new MA
 

@@ -3,12 +3,11 @@
 # Ignore quilt cache directory
 .pc/
 # dojo
-JS/dojo
+html/js/dojo
 # ignore npm build areas etc.
 node_modules
 npm-debug.log
 examples-bundle.js
-react/public/bundle.*
 .*.swo
 .*.swn
 .*.swp

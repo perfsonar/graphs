@@ -6,20 +6,48 @@ import InterfaceInfoStore from "./InterfaceInfoStore";
 
 import SIValue from "./SIValue";
 
-import "../../css/graphs.css";
+import "../css/graphs.css";
 
-// TODO: add traceroute calls/links
+let EventEmitter = require('events').EventEmitter;
+
+let emitter = new EventEmitter();
+
+let moment = require('moment');
 
 export default React.createClass({
     hostInfo: [],
     getInitialState() {
         return {
             showHostSelectors: false,
-            sources: [],
-            dests: []
+            start: this.props.start,
+            end: this.props.end,
+            timeframe: this.props.timeframe,
+            interfaceInfo: null,
+            traceInfo: [],
         };
     },
+    getTime() {
+        let obj = {
+            "start": this.state.start,
+            "end": this.state.end,
+            "timeframe": this.state.timeframe
+        };
+        return obj;
+
+
+    },
     render() {
+        let startDate = new Date( this.state.start * 1000 );
+        let endDate = new Date( this.state.end * 1000 );
+
+        let date = "ddd MM/DD/YYYY";
+        let time = "HH:mm:ss ZZ";
+
+        let startMoment = moment( startDate );
+        let endMoment = moment( endDate );
+        //let startOut = startMoment.format( format );
+        let endOut = endMoment.format( date );
+
         return (
 
         <div className="chartHeader">
@@ -39,7 +67,36 @@ export default React.createClass({
                             {/* GRAPH: Reporting range */}
                             <div className="medium-4 columns">
                                 <label className="hostLabel">Report range</label>
-                                <button className="button-quiet button--full-width">Wed May 4, 2016 - Mon May 16, 2016 <i className="fa fa-calendar"></i></button>
+                                <button id="headerTimePrevious" className="button-quiet button-timechange" onClick={this.handlePageChange.bind(this, "previous")}>
+                                <i className="fa fa-arrow-left" aria-hidden="true"></i>
+                                </button>
+                               <select className="no-margin" name="timeperiod" id="timeperiod" onChange={this.changeTimePeriod} value={this.state.timeframe}>
+                                    <option value="1d">1 day</option>
+                                    <option value="3d">3 days</option>
+                                    <option value="1w">1 week</option>
+                                    <option value="1m">1 month</option>
+                                    <option value="1y">1 year</option>
+
+                                </select>
+                                <button className="button-quiet button-timechange" onClick={this.handlePageChange.bind(this, "next")}>
+                                <i className="fa fa-arrow-right" aria-hidden="true"></i>
+                                </button>
+                                <div>
+                                <span className="timerange_holder">
+                                    { startMoment.format( date )}
+                                    <br />
+                                    { startMoment.format( time )}
+                                 </span>
+                                 <span className="timerange_holder">
+                                         to
+                                </span>
+                                <span className="timerange_holder">
+                                    { endMoment.format( date )}
+                                    <br />
+                                    { endMoment.format( time )}
+                                </span> 
+                                </div>
+
                             </div>
                         </div> {/* End row */}
                     </div> {/* End overview */}
@@ -47,6 +104,35 @@ export default React.createClass({
         {/* End chartHeader */}
         </div>
         ); // End render()
+    },
+    changeTimePeriod: function( event ) {
+        let period = event.target.value;
+        let vars = this.getTimeVars(period);
+        let timeDiff = vars.timeDiff;
+        let newEnd = Math.floor( new Date().getTime() / 1000 );
+        let newStart = newEnd - timeDiff;
+
+        let options = {
+            timeframe: period,
+            start: newStart,
+            end: newEnd
+        };
+        this.handleTimerangeChange( options );
+    },
+    getTraceURL: function(i) {
+        // URL from old graphs
+        //
+        let trace_data = this.state.traceInfo[i];
+        if ( typeof trace_data == "undefined" ) {
+            return;
+        }
+        let trace_url = '/perfsonar-traceroute-viewer/index.cgi?';
+                    trace_url += 'mahost=' + trace_data.ma_url;
+                    trace_url += '&stime=yesterday';
+                    trace_url += '&etime=now';
+                    //trace_url += '&tzselect='; // Commented out (allow default to be used)
+                    trace_url += '&epselect=' + trace_data.traceroute_uri;
+        return trace_url;
     },
     renderHostList: function( type, label ) {
         if ( this.state.showHostSelectors ) {
@@ -69,7 +155,7 @@ export default React.createClass({
                     hosts.push( 
                             <div className="hostname" key={"hostname"+label+i}>{row[ type + "_host"]}</div>,
                             <div className="address" key={"ip"+label+i}>{row[ type + "_ip"]}</div>,
-                            <div key={"detailedInfo"+label+i}>{this.showDetailedHostInfo( row[type + "_ip" ] )}</div>
+                            <div key={"detailedInfo"+label+i}>{this.showDetailedHostInfo( row[type + "_ip" ], i )}</div>
                             );
 
                 }
@@ -87,7 +173,16 @@ export default React.createClass({
                    );
         }
     },
-    showDetailedHostInfo: function( host ) {
+    showDetailedHostInfo: function( host, i ) {
+        let trace = this.state.traceInfo;
+        let display = "hiddenTrace";
+        let traceURL = this.getTraceURL( i );
+        if ( i in trace && traceURL != "" ) {
+            if ( trace[i].has_traceroute == 1 ) {
+                display = "blockTrace";
+            }
+
+        }
         let details = InterfaceInfoStore.getInterfaceDetails( host );
             {/* GRAPH: Detailed Host Info*/}
             return (
@@ -110,8 +205,8 @@ export default React.createClass({
                         <span className="sidebar-popover__param">MTU:</span>
                         <span className="sidebar-popover__value">{details.mtu}</span>
                     </li>
-                    <li className="sidebar-popover__item">
-                        <span className="sidebar-popover__param"><a href="#">View traceroute graph</a></span>
+                    <li className={"sidebar-popover__item " + display}>
+                        <span className="sidebar-popover__param"><a href={traceURL} target="_blank">View traceroute graph</a></span>
                     </li>
                 </ul>
             </div>
@@ -120,22 +215,134 @@ export default React.createClass({
 
     },
     componentDidMount: function() {
-            HostInfoStore.subscribe(this.updateChartHeader);
-            InterfaceInfoStore.subscribe(this.updateChartHeader);
-            InterfaceInfoStore.retrieveInterfaceInfo( this.props.sources, this.props.dests );
+        this.setInitialTime();
+        HostInfoStore.subscribe(this.updateChartHeader);
+        HostInfoStore.subscribeTrace(this.updateTrace);
+        HostInfoStore.retrieveTracerouteData( this.props.sources, this.props.dests, this.props.ma_url );
+        InterfaceInfoStore.subscribe( this.handleInterfaceData );
+        InterfaceInfoStore.retrieveInterfaceInfo( this.props.sources, this.props.dests );
+
+    },
+    handleInterfaceData: function() {
+        let interfaceInfo = InterfaceInfoStore.getInterfaceInfo();
+        this.setState({ interfaceInfo: interfaceInfo });
+
+        this.updateChartHeader();
 
     },
     componentWillUnmount: function() {
         //this.serverRequest.abort();
         HostInfoStore.unsubscribe( this.updateChartHeader );
+        HostInfoStore.unsubscribeTrace( this.updateTrace );
         InterfaceInfoStore.unsubscribe( this.updateChartHeader );
+    },
+    updateTrace: function() {
+        let traceInfo = HostInfoStore.getTraceInfo();
+        this.setState({traceInfo: traceInfo});
     },
     updateChartHeader: function() {
         let hostInfo = HostInfoStore.getHostInfoData();
         this.hostInfo = hostInfo;
         this.forceUpdate();
 
-    }
+    },
+    handlePageChange: function( direction ) {
+        let timeVars = this.getTimeVars( this.state.timeframe );
+        let diff = timeVars.timeDiff;
+        let newStart;
+        let newEnd;
+        let now = Math.floor( new Date().getTime() / 1000 );
+        if ( direction == "next" ) {
+            newEnd = this.state.end + diff;
+            newStart = newEnd - diff;
+        } else if ( direction == "previous" ) {
+            newEnd = this.state.end - diff;
+            newStart = newEnd - diff;
+        }
+        if ( newStart >= now || newEnd >= now ) {
+            newEnd = now;
+            newStart = now - diff;
+        }
+        let timeframe = this.state.timeframe;
+        this.handleTimerangeChange({"start": newStart, "end": newEnd, timeframe: timeframe});
+
+    },
+    handleTimerangeChange: function( options, noupdateURL ) {
+        this.setState( options );
+        //this.forceUpdate();
+        if ( ! "timeframe" in options ) {
+            options.timeframe = this.state.timeframe;
+        }
+        this.props.updateTimerange( options, noupdateURL );
+        emitter.emit("timerangeChange");
+
+    },
+    subscribe: function( callback ) {
+        emitter.on("timerangeChange", callback);
+    },
+    unsubscribe: function( callback ) {
+        emitter.off("timerangeChange", callback);
+    },
+
+    setInitialTime: function() {
+        let options = {};
+
+        let timeframe = this.state.timeframe || "1w";
+        let timeVars = this.getTimeVars( timeframe );
+        let diff = timeVars.timeDiff;
+
+        let now = Math.floor( new Date().getTime() / 1000 );
+        let newEnd = now;
+        let newStart =  newEnd - diff;
+
+        if ( typeof this.props.start != "undefined" ) {
+            newStart = this.props.start;
+        }
+        if ( typeof this.props.end != "undefined" ) {
+            newEnd = this.props.end;
+        }
+
+        //console.log("setting initial time; state: ", this.state);
+
+        options.start = newStart;
+        options.end = newEnd;
+        options.timeframe = timeframe;
+
+        this.handleTimerangeChange( options, true );
+
+    },
+
+    getTimeVars: function (period) {
+        let timeDiff;
+        let summaryWindow;
+        if (period == '4h') {
+            timeDiff = 60*60 * 4;
+            summaryWindow = 0;
+        } else if (period == '1d') {
+            timeDiff = 86400;
+            summaryWindow = 0;
+        } else if (period == '3d') {
+            timeDiff = 86400 * 3;
+            summaryWindow = 300;
+        } else if (period == '1w') {
+            timeDiff = 86400*7;
+            summaryWindow = 3600;
+        } else if (period == '1m') {
+            timeDiff = 86400*31;
+            summaryWindow = 86400;
+        } else if (period == '1y') {
+            timeDiff = 86400*365;
+            summaryWindow = 86400;
+        }
+        let timeRange = {
+            timeDiff: timeDiff,
+            summaryWindow: summaryWindow,
+            timeframe: period
+
+        };
+        return timeRange;
+
+    },
 
 
 });
