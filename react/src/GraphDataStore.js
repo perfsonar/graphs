@@ -1,6 +1,6 @@
 import moment from "moment";
 
-import { TimeSeries, TimeRange } from "pondjs";
+import { TimeSeries, TimeRange, Event } from "pondjs";
 
 let ipaddr = require('ipaddr.js');
 
@@ -14,8 +14,11 @@ let completedReqs = 0;
 let completedDataReqs = 0;
 
 let startTime = Date.now();
-let start = Math.floor( Date.now() - 7 * 86400 / 1000 );
-let end = Math.ceil( Date.now() / 1000 );
+let start;// = Math.floor( Date.now() - 7 * 86400 / 1000 );
+let end; // = Math.ceil( Date.now() / 1000 );
+
+let chartMetadata = [];
+let chartData = [];
 
 module.exports = {
 
@@ -23,12 +26,23 @@ module.exports = {
                     'packet-retransmits', 'histogram-rtt', 'failures'],
             //|| ['histogram-rtt'];
     maURL: null,
-    chartMetadata: [],
-    chartData: [],
 
-    getHostPairMetadata: function ( sources, dests, startInput, endInput, ma_url ) {
+    initVars: function() {
+        chartMetadata = [];
+        chartData = [];
+        this.eventTypes = ['throughput', 'histogram-owdelay', 'packet-loss-rate',
+                    'packet-retransmits', 'histogram-rtt', 'failures'];
+        this.dataFilters = [];
+        this.itemsToHide = [];
+        this.errorData = undefined;
+
+    },
+
+    getHostPairMetadata: function ( sources, dests, startInput, endInput, ma_url, params ) {
         start = startInput;
         end = endInput;
+
+        this.initVars();
 
         this.maURL = new URL(ma_url);
         if ( !$.isArray( sources ) ) {
@@ -38,58 +52,105 @@ module.exports = {
             dests = [ dests ];
         }
 
+        if ( !$.isArray( ma_url ) ) {
+            ma_url = [ ma_url ];
+        }
+
+
+
         if ( ! end ) {
-            end = Math.ceil( Date.now() / 1000 ); 
+            //end = Math.ceil( Date.now() / 1000 ); 
         }
 
         if ( ! start ) {
-            start = Math.floor( end - 86400 * 7 ); // TODO: 7 days a good default?
+            //start = Math.floor( end - 86400 * 7 ); // TODO: 7 days a good default?
         }
-        console.log("start", start);
-        console.log("end", end);
 
-        let urls = [];
+
         for( let i in sources ) {
             let directions = [ [ sources[i], dests[i] ], 
                 [ dests[i], sources[i] ] ];
             let direction = [ "forward", "reverse" ];
-            console.log("directions", directions);
             for( let j in directions ) {
-                console.log("directions[j]", directions[j]);
                 let src = directions[j][0];
                 let dst = directions[j][1];
-                console.log("got here!", src, dst, start, end);
+
+                let url = ma_url[i] + "?source=" + src + "&destination=" + dst;
+
+                if ( params !== null && typeof params != "undefined" ) {
+                    for(let name in params) {
+                        let val = params[name];
+                        if ( typeof val == "undefined" ) {
+                            continue;
+                        }
+                        if ( !$.isArray( val ) ) {
+                            val = [ val ];
+                        }
+                        if ( name == "tool" ) {
+                            for(let j in val ) {
+                                url += "&tool-name=" + val[i];
+                            }
+                        } else if ( name == "ipversion" ) {
+                            if ( val[i] == 4 ) {
+                                url += "&dns-match-rule=only-v4";
+                            } else if ( val[i] == 6 ) {
+                                url += "&dns-match-rule=only-v6";
+                            }
+
+                        }
+
+                    }
+                }
 
 
-                let url = ma_url + "?source=" + src + "&destination=" + dst;
-                url += "&time-start=" + start + "&time-end=" + end;
-                console.log("url: ", url);
-                urls.push(url); // TODO: review -- do we need this?
+
+                // url += "&time-start=" + start + "&time-end=" + end; TODO: add this back?
+                console.log("metadata url: ", url);
 
                 this.serverRequest = $.get( url, function(data) {
                     this.handleMetadataResponse(data, direction[j]);
-                }.bind(this)); // TODO: double check this logic. are we using correct reqCount?
+                }.bind(this))
+                .fail(function( data ) {
+                    this.handleMetadataError( data );
+                }.bind(this)
+                );
 
                 reqCount++;
             }
         }
 },
+    handleMetadataError: function( data ) {
+        this.errorData = data;
+        emitter.emit("error");
+
+    },
+    getErrorData: function() {
+        return this.errorData;
+
+    },
     handleMetadataResponse: function( data, direction ) {
         //data.label = label;
         for(let i in data) {
             data[i].direction = direction;
         }
-        console.log("data", data);
-        $.merge( this.chartMetadata, data );
+        $.merge( chartMetadata, data );
         completedReqs++;
         if ( completedReqs == reqCount ) {
             let endTime = Date.now();
             let duration = ( endTime - startTime ) / 1000;
             console.log("COMPLETED ALL", reqCount, " REQUESTS in", duration);
             completedReqs = 0;
-            data = this.filterEventTypes( this.chartMetadata );
-            data = this.getData( this.chartMetadata );
-            console.log("chartMetadata", this.chartMetadata);
+            reqCount = 0;
+            data = this.filterEventTypes( chartMetadata );
+            data = this.getData( chartMetadata );
+            console.log("chartMetadata", chartMetadata);
+            if ( chartMetadata.length == 0 ) {
+                emitter.emit("get");
+
+            }
+
+        } else {
+            console.log("completed " + reqCount + " requests");
 
         }
 
@@ -98,10 +159,8 @@ module.exports = {
     filterEventTypes: function( data, eventTypesParam ) {
         //let eventTypes = this.getEventTypes( eventTypesParam );
         let eventTypes = this.getEventTypes();
-        console.log("eventTypes", eventTypes);
 
         let tests = $.map( data, function( test, i ) {
-            console.log("test", test);
             let matchingEventTypes = $.map( test['event-types'], function( eventType, j ) {
                 let ret = $.inArray( eventType['event-type'], eventTypes );
                 if ( ret >= 0 ) {
@@ -124,7 +183,6 @@ module.exports = {
 
 
         });
-        console.log("tests after mapping: ", tests);
 
 
         return tests;
@@ -136,7 +194,6 @@ module.exports = {
 
 
         }
-        console.log("eventTypes", eventTypes);
         return eventTypes;
 
     },
@@ -146,12 +203,10 @@ module.exports = {
         let defaultSummaryType = "aggregation"; // TODO: allow other aggregate types
         let multipleTypes = [ "histogram-rtt", "histogram-owdelay" ];
         let baseURL = this.maURL.origin;
-        let urls = [];
         dataReqCount = 0;
         for(let i in metaData) {
             let datum = metaData[i];
             let direction = datum.direction;
-            console.log("getData datum", datum);
             for( let j in datum["event-types"] ) {
                 let eventTypeObj = datum["event-types"][j];
                 let eventType = eventTypeObj["event-type"];
@@ -165,7 +220,6 @@ module.exports = {
                 let ipversion;
                 if ( ipaddr.isValid( source ) ) {
                     ipversion = addr.kind( source ).substring(3);
-                    console.log("source", source, ipversion);
 
                 } else {
                     console.log("invalid IP address");
@@ -205,33 +259,24 @@ module.exports = {
 
                 }
 
-                // TODO: change failures so they are per event type
-
                 if ( uri === null ) {
                     console.log("uri not found, setting ... ");
                     uri = eventTypeObj["base-uri"];
                 }
-                //console.log("uri", uri);
-                // TODO: add timerange to URL
                 uri += "?time-start=" + start + "&time-end=" + end;
                 let url = baseURL + uri;
-                console.log("url", url);
+                console.log("data url", url);
                 let row = pruneDatum( datum );
                 row.protocol = datum["ip-transport-protocol"];
                 row.ipversion = ipversion;
-                console.log("row", row);
-                /*
-                let row = {
-                    eventType: eventType,
-                    url: url,
-                    direction: direction,
-                    protocol: datum["ip-transport-protocol"],
-                    ipversion: ipversion
-                };
-                */
 
-                dataReqCount++; // TODO: double check the ordre of this and the request
+                dataReqCount++;
 
+                if ( eventType == "failures" ) {
+                    console.log("FAILURES row", row);
+
+
+                }
                 this.serverRequest = $.get( url, function(data) {
                     this.handleDataResponse(data, eventType, row);
                 }.bind(this));
@@ -246,48 +291,53 @@ module.exports = {
         let protocol = datum.protocol;
         let row = datum;
         row.eventType = eventType;
-        //row.direction = direction;
         row.data = data;
-        //row.protocol = protocol;
         if (data.length > 0) {
-            this.chartData.push( row );
+            chartData.push( row );
         }
-        //$.merge( this.chartData, data );
         completedDataReqs++;
         if ( completedDataReqs == dataReqCount ) {
-            //console.log("done getting data");
             let endTime = Date.now();
             let duration = ( endTime - startTime ) / 1000;
             console.log("COMPLETED ALL DATA ", dataReqCount, " REQUESTS in", duration);
-            //console.log("chartData: ", this.chartData);
             completedDataReqs = 0;
             dataReqCount = 0;
 
             // TODO: change this so it creates the esmond time series upon completion of each request, rather than after all requests has completed
 
-            let newChartData = this.esmondToTimeSeries( this.chartData );
+            let newChartData = this.esmondToTimeSeries( chartData );
 
-            this.chartData = newChartData;
+            chartData = newChartData;
 
             endTime = Date.now();
             duration = ( endTime - startTime ) / 1000;
             console.log("COMPLETED CREATING TIMESERIES in " , duration);
-            console.log("chartData: ", this.chartData);
+            console.log("chartData: ", chartData);
             emitter.emit("get");
 
         }
     },
-    getChartData: function( filters ) {
-        let data = this.chartData;
-        console.log("getting chart data ... filters", filters); // TODO: figure out why filters sometimes undefined
-        let min;
-        let max;
+
+    toggleType: function( options ) {
+        options = this.pruneItemsToHide( options );
+        this.itemsToHide = options;
+        emitter.emit("get");
+    },
+
+    pruneItemsToHide: function ( options ) {
+        let oldOptions = options;
+        options = [];
+        for(let id in oldOptions ) {
+            options.push( oldOptions[id] );
+        }
+        return options;
+    },
+
+    filterData: function( data, filters, itemsToHide ) {
         let results = $.grep( data, function( e, i ) {
-            //console.log("grepping e", e, "i", i, "filters", filters);
             let found = true;
             for (var key in filters ) {
                 let val = filters[key];
-                //console.log("key", key, "val", val);
                 if ( ( key in e.properties ) && e.properties[key] == val ) {
                     found = true;
                 } else {
@@ -296,6 +346,43 @@ module.exports = {
             }
             return found;
         });
+        // Filter out items in the itemsToHide array
+        if ( typeof itemsToHide != "undefined" && itemsToHide.length > 0 ) {
+            results = $.grep( results, function( e, i ) {
+                let show = false;
+                for ( var j in itemsToHide ) {
+                    let found = 0;
+                    let item = itemsToHide[j];
+                    for( var key in item ) {
+                        let val = item[key];
+                        if ( ( key in e.properties ) && e.properties[key] == val ) {
+                            show  = false || show;
+                            found++;
+                        } else {
+                            show = true || show;
+                        }
+                    }
+                    show = ( found < Object.keys( item ).length );
+                    if ( found >= Object.keys( item ) .length ) {
+                        return false;
+
+                    }
+                }
+                return show;
+            });
+        }
+
+        return results;
+
+    },
+
+    getChartData: function( filters, itemsToHide ) {
+        itemsToHide = this.pruneItemsToHide( itemsToHide );
+        let data = chartData;
+        let results = this.filterData( data, filters, itemsToHide );
+        let min;
+        let max;
+
         let self = this;
         $.each( results, function( i, val ) {
             let values = val.values;
@@ -342,12 +429,11 @@ module.exports = {
             return max;
     },
     getUniqueValues: function( fields ) {
-        let data = this.chartData;
+        let data = chartData;
         let unique = {};
         $.each( data, function( index, datum ) {
             $.each( fields, function( field ) {
                 let val = datum.properties[field];
-                console.log("field", field, "val", val, "unique", unique);
                 if ( ! ( field in unique) ) {
                     unique[field] = {};
                     unique[field][val] = 1;
@@ -359,7 +445,6 @@ module.exports = {
             unique[key] = Object.keys( val );
 
         });
-        console.log("unique", unique);
         return unique;
 
     },
@@ -379,110 +464,210 @@ module.exports = {
     },
     esmondToTimeSeries: function( inputData ) {
         let outputData = {};
-        let max;
-        let min;
         let output = [];
         let self = this;
         console.log("esmondToTimeSeries inputData", inputData);
+
+        // loop through non-failures first, find maxes
+        // then do failures and scale values
         $.each( inputData, function( index, datum ) {
+            let max;
+            let min;
             let eventType = datum.eventType;
             let direction = datum.direction;
             let protocol = datum.protocol;
+            if ( eventType == "failures" ) {
+                return true;
+            }
+            if ( !( eventType in outputData ) ) {
+                outputData[eventType] = {};
+            } else {
+                if (typeof outputData[eventType].min != "undefined") {
+                    min = outputData[eventType].min;
+                }
+                if (typeof outputData[eventType].max != "undefined") {
+                    max = outputData[eventType].max;
+                }
+            }
             let mainEventType = self.getMainEventType( datum["event-types"] );
-            //datum.mainEventType = mainEventType;
 
-            var values = [];
-            var series = {};
+            let values = [];
+            let failureValues = [];
+            let series = {};
+            let failureSeries = {};
+
+            let testType;
+            let mainTestType;
+
+
+            testType = self.eventTypeToTestType( eventType );
+            mainTestType = self.eventTypeToTestType( mainEventType );
 
             $.each(datum.data, function( valIndex, val ) {
                 const ts = val["ts"];
                 const timestamp = new moment(new Date(ts * 1000)); // 'Date' expects milliseconds
-                var value = val["val"];
+                let failureValue = null;
+                let value = val["val"];
                 if ( eventType == 'histogram-owdelay') {
-                    //eventType = 'owdelay';
-                    //datum.eventType = 'owdelay';
                     value = val["val"].minimum;
                 } else if ( eventType == 'histogram-rtt' ) {
-                    //eventType = 'rtt';
                     value = val["val"].minimum;
                 }
-                // TODO: fix failures
                 if (value <= 0 ) {
                     console.log("VALUE IS ZERO OR LESS", Date());
                     value = 0.000000001;
                 }
-                if ( isNaN(value) ) {
+                if ( eventType == "failures" ) {
+                    // handle failures, which are supposed to be NaN
+                    failureValue = value;
+
+                } else if ( isNaN(value) ) {
                     console.log("VALUE IS NaN", eventType);
                 }
-                values.push([timestamp.toDate().getTime(), value]);
+                if ( failureValue != null ) {
+                    let failureObj = {
+                        errorText: failureValue.error,
+                        value: 85,
+                        type: "error"
+                    };
+                    let errorEvent = new Event( timestamp, failureObj );
+                    failureValues.push( errorEvent );
+                } else {
+                    values.push([timestamp.toDate().getTime(), value]);
+                }
+                if ( typeof min == "undefined" ) {
+                    min = value;
+                } else if ( value < min ) {
+                    min = value;
+                }
+                if ( typeof max == "undefined" ) {
+                    max = value;
+                } else if ( value > max ) {
+                    max = value;
+                }
+
+
 
             });
-            //console.log('creating series ...', Date());
 
             series = new TimeSeries({
                 name: eventType + "." + direction,
                 columns: ["time", "value"],
                 points: values
             });
-            //console.log('created series ...', series, "values", values);
+
 
             let ipversion = datum.ipversion;
-            // TODO: add ipversion to the date selector here (maybe not?)
 
-            if ( !( eventType in outputData ) ) {
-                outputData[eventType] = {};
-                outputData[eventType][ipversion] = {};
-            } else {
-                if (typeof outputData[eventType].min != "undefined") {
-                    max = outputData[eventType].min;
-                }
-                if (typeof outputData[eventType].max != "undefined") {
-                    max = outputData[eventType].max;
-                }
-            }
-            //let row = pruneDatum( datum );
+            outputData[ eventType ].max = max;
+            outputData[ eventType ].min = min;
+
             let row = {};
+
             row.properties = pruneDatum( datum );
-            //row.properties = {};
-            //row.properties.direction = direction;
-            //row.properties.protocol = protocol;
             row.properties.eventType = eventType;
             row.properties.mainEventType = mainEventType;
+            row.properties.testType = testType;
+            row.properties.mainTestType = mainTestType;
             row.values = series;
             output.push(row);
-            console.log("output", output);
 
-            /*
-
-            // Update the min for the event type
-            if ( !isNaN( Math.min( series.min(), min ) ) ) {
-                outputData[eventType].min = Math.min( series.min(), min );
-            } else if ( !isNaN( series.min() ) ) {
-                outputData[eventType].min = series.min();
-            }
-
-            // Update the max for the event type
-            if ( !isNaN( Math.max( series.max(), max ) ) ) {
-                outputData[eventType].max = Math.max( series.max(), max );
-            } else if ( !isNaN( series.max() ) ) {
-                outputData[eventType].max = series.max();
-            }
-
-            if ( ! ( "results" in outputData[eventType][ipversion] ) ) {
-                outputData[eventType][ipversion].results = [];
-            }
-            outputData[eventType][ipversion].results.push( row );
-            */
-            //row.ipversion = ipversion;
         });
+
         console.log("outputData", outputData);
+
+        // Create failure series
+
+        $.each( inputData, function( index, datum ) {
+            let eventType = datum.eventType;
+            let direction = datum.direction;
+            let protocol = datum.protocol;
+            if ( eventType != "failures" ) {
+                return true;
+            }
+            let mainEventType = self.getMainEventType( datum["event-types"] );
+
+            let min = 0;
+            let max;
+            if ( typeof mainEventType != "undefined" 
+                    && mainEventType in outputData
+                    && "max" in outputData[ mainEventType ] ) {
+                max = outputData[ mainEventType ].max;
+            }
+            if ( isNaN(max) ) {
+                max = 1;
+
+            }
+            //datum.mainEventType = mainEventType;
+
+            let failureValues = [];
+            let failureSeries = {};
+
+            let testType;
+            let mainTestType;
+
+            testType = self.eventTypeToTestType( eventType );
+            mainTestType = self.eventTypeToTestType( mainEventType );
+            $.each(datum.data, function( valIndex, val ) {
+                const ts = val["ts"];
+                const timestamp = new moment(new Date(ts * 1000)); // 'Date' expects milliseconds
+                let failureValue = null;
+                let value = val["val"];
+                if ( eventType == "failures" ) {
+                    failureValue = value;
+                } 
+                if ( failureValue != null ) {
+                    let failureObj = {
+                        errorText: failureValue.error,
+                        value: 0.85 * max,
+                        type: "error"
+                    };
+                    let errorEvent = new Event( timestamp, failureObj );
+                    failureValues.push( errorEvent );
+                }
+
+            });
+            failureSeries = new TimeSeries( {
+                name: eventType + "." + direction + ".failures",
+                events: failureValues,
+            });
+            let row = {};
+
+            row.properties = pruneDatum( datum );
+            row.properties.min = min;
+            row.properties.max = max;
+            row.properties.eventType = eventType;
+            row.properties.mainEventType = mainEventType;
+            row.properties.testType = testType;
+            row.properties.mainTestType = mainTestType;
+            row.values = failureSeries;
+            output.push(row);
+        });
         return output;
+    },
+    eventTypeToTestType: function( eventType ) {
+        let testType;
+        if (eventType == "histogram-owdelay" || eventType == "histogram-rtt" ){
+            testType = "latency";
+        } else if ( eventType == "throughput") {
+            testType = "throughput";
+        } else if ( eventType == "packet-loss-rate" ) {
+            testType = "loss";
+        }
+        return testType;
+
     },
     subscribe: function( callback ) {
         emitter.on("get", callback);
     },
     unsubscribe: function( callback ) {
         emitter.off("get", callback);
+    },
+     subscribeError: function( callback ) {
+        emitter.on("error", callback);
+    },
+    unsubscribeError: function( callback ) {
+        emitter.off("error", callback);
     },
     render: function() {
     },

@@ -8,6 +8,7 @@ export default React.createClass({
     },
     formatValue() {
         let value = this.props.value;
+        let digits = this.props.digits || 1;
         if ( isNaN(value ) ) {
             return value;
         }
@@ -26,6 +27,6 @@ export default React.createClass({
             value /= thresh;
             ++u;
         } while(Math.abs(value) >= thresh && u < units.length - 1);
-        return value.toFixed(1)+' '+units[u] + suffix;
+        return value.toFixed( digits )+' '+units[u] + suffix;
     }
 });
