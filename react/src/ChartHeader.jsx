@@ -184,6 +184,18 @@ export default React.createClass({
 
         }
         let details = InterfaceInfoStore.getInterfaceDetails( host );
+        let addresses = [];
+        if ( $.isArray( details.addresses ) ) {
+            for(var i in details.addresses) {
+                let address = details.addresses[i];
+                addresses.push(<div>{address}</div>);
+
+            }
+
+        } else {
+            addresses.push( details.addresses );
+
+        }
             {/* GRAPH: Detailed Host Info*/}
             return (
         <div>
@@ -195,7 +207,7 @@ export default React.createClass({
                 <ul className="sidebar-popover__list">
                     <li className="sidebar-popover__item">
                         <span className="sidebar-popover__param">Addresses:</span>
-                        <span className="sidebar-popover__value">{details.addresses}</span>
+                        <span className="sidebar-popover__value">{addresses}</span>
                     </li>
                     <li className="sidebar-popover__item">
                         <span className="sidebar-popover__param">Capacity:</span>
