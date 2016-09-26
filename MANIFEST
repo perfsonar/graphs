@@ -52,7 +52,7 @@ html/public
 html/public/bundle.js.map
 html/public/bundle.js
 html/public/css
-html/public/css/font-awesome
+html/public/css/font-awesome/css/font-awesome.min.css
 html/public/css/foundation.min.css
 html/public/index.html
 
