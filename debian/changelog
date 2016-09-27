@@ -1,11 +1,11 @@
-perfsonar-toolkit-graphs (4.0~3.1.rc1-1) UNRELEASED; urgency=low
+perfsonar-toolkit-graphs (4.0~3.1.rc1-1) perfsonar-jessie-staging; urgency=low
 
   * New upstream version.
   * Removed apache configuration patch that is merged upstream.
   * Activating apache mod_rewrite.
   * Adding perfsonar-toolkit dependency.
 
- -- Antoine Delvaux <antoine.delvaux@man.poznan.pl>  Mon, 26 Sep 2016 15:00:31 +0000
+ -- Antoine Delvaux <antoine.delvaux@man.poznan.pl>  Tue, 27 Sep 2016 19:53:05 +0000
 
 perfsonar-toolkit-graphs (3.5.1.3~beta-1) perfsonar-jessie-release; urgency=low
 
