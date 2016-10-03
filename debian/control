@@ -10,7 +10,7 @@ Vcs-Browser: https://github.com/perfsonar/graphs
 
 Package: perfsonar-toolkit-graphs
 Architecture: all
-Depends: libperfsonar-perl, apache2-mpm-worker | httpd,
+Depends: libperfsonar-perl, apache2,
  perl, perfsonar-traceroute-viewer, ${misc:Depends},
  perfsonar-toolkit
 Description: pS-Performance Toolkit graphs
