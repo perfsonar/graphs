@@ -6,7 +6,7 @@ import GraphDataStore from "./GraphDataStore";
 //import Highlighter from "./highlighter";
 
 
-import { AreaChart, Brush, Charts, ChartContainer, ChartRow, YAxis, LineChart, ScatterChart, Highlighter, Resizable, Legend } from "react-timeseries-charts";
+import { AreaChart, Brush, Charts, ChartContainer, ChartRow, YAxis, LineChart, ScatterChart, Highlighter, Resizable, Legend, styler } from "react-timeseries-charts";
 
 import { TimeSeries, TimeRange } from "pondjs";
 
@@ -115,9 +115,10 @@ const chartStyles = {
 
 };
 
-function getChartStyle( options ) {
-    let style = {};
-    style.value = {};
+function getChartStyle( options, column ) {
+    if ( typeof column == "undefined" ) {
+        column = "value";
+    }
     let color = scheme.tcp;
     let strokeStyle = "";
     let width = 3;
@@ -169,10 +170,20 @@ function getChartStyle( options ) {
         strokeStyle = "4,2";
         width = 3;
     }
-    style.value.stroke = color;
-    style.value.strokeWidth = width;
-    style.value.strokeDasharray = strokeStyle;
-    style.value.strokeOpacity = opacity;
+    let style = {};
+    style[column] = {
+        normal: { stroke: color, strokeWidth: width, opacity: opacity, strokeDasharray: strokeStyle },
+            highlighted: { stroke: color, strokeWidth: width, opacity: opacity, strokeDasharray: strokeStyle },
+            selected: { stroke: color, strokeWidth: width, opacity: opacity, strokeDasharray: strokeStyle },
+            muted: { stroke: color, strokeWidth: width, opacity: opacity, strokeDasharray: strokeStyle }
+    };
+    //console.log("style: " , style );
+    /*
+    style[column].stroke = color;
+    style[column].strokeWidth = width;
+    style[column].strokeDasharray = strokeStyle;
+    style[column].strokeOpacity = opacity;
+    */
     return style;
 
 }
@@ -289,6 +300,7 @@ export default React.createClass({
         };
     },
     handleSelectionChanged(point) {
+        console.log("selection changed", point);
         this.setState({
             selection: point,
             highlight: point
@@ -699,8 +711,8 @@ export default React.createClass({
                                     hintWidth={200}
                                     min={failureData.stats.min}
                                     max={failureData.stats.max}
-                                    selection={this.state.selection}
                                     onSelectionChange={this.handleSelectionChanged}
+                                    selection={this.state.selection}
                                     //onMouseNear={this.handleMouseNear}
                                     //onClick={this.handleMouseNear}
                                     highlight={this.state.highlight}
