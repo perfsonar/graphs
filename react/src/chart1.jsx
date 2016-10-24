@@ -81,6 +81,7 @@ const failureStyle = function(column, event) {
         highlighted: {
             fill: "#a7c4dd",
             opacity: 1.0,
+            cursor: "crosshair",
         },
         selected: {
             fill: "orange",
@@ -92,7 +93,12 @@ const failureStyle = function(column, event) {
         }
     };
 };
-console.log('failureStyle', failureStyle);
+
+const infoStyle = {
+    line: { stroke: "#999", cursor: "crosshair", pointerEvents: "none" },
+    box: { fill: "white", opacity: 0.90, stroke: "#999", pointerEvents: "none" }
+};
+
 const connectionsStyle = {
     color: scheme.tcp,
     strokeWidth: 1
@@ -221,6 +227,8 @@ const reverseStyles = {
         strokeWidth: 1.5
     }
 }
+
+const trans = 'translate("-50px", "-80px")';
 
 const axisLabelStyle = {
     labelColor: "black",
@@ -547,15 +555,14 @@ export default React.createClass({
         if ( typeof selection != "undefined" && selection !== null ) {
             selectionTime = selection.event.timestampAsUTCString();
         }
-        console.log("highlight", highlight, "selection", this.state.selection, selectionTime );
+        //console.log("highlight", highlight, "selection", this.state.selection, selectionTime );
 
         let text = `Speed: - mph, time: -:--`;
         let hintValues = [];
-        if (highlight) {
-            let highlightText = highlight.event.get("errorText");
+        if (selection) {
+            let highlightText = selection.event.get("errorText");
             hintValues = [{label: "Error", value: highlightText}];
         }
-
 
         let chartSeries = this.state.chartSeries;
         charts = {};
@@ -713,9 +720,10 @@ export default React.createClass({
                                     style={failureStyle}
                                     radius={4.0}
                                     columns={ [ "value" ] }
-                                    hintValues={hintValues}
-                                    hintHeight={100}
-                                    hintWidth={200}
+                                    info={hintValues}
+                                    infoHeight={100}
+                                    infoWidth={200}
+                                    //infoStyle={infoStyle}
                                     min={failureData.stats.min}
                                     max={failureData.stats.max}
                                     onSelectionChange={this.handleSelectionChanged}
@@ -752,6 +760,12 @@ export default React.createClass({
 
                     let chartArr = charts[type][ipv];
 
+                    let format = ".2s";
+
+                    if ( type == "latency" ) {
+                        //format = ".1f";
+                    }
+
                     // push the chartrows for the main charts
                     charts[type].chartRows.push(
                             <ChartRow height={chartRow.height} debug={false}>
@@ -761,28 +775,13 @@ export default React.createClass({
                                 label={label + " (" + ipv + ")"}
                                 style={axisLabelStyle}
                                 labelOffset={offsets.label}
-                                format=".2s"
+                                className="yaxis-label"
+                                format={format}
                                 min={charts[type].stats.min}
                                 max={charts[type].stats.max}
                                 width={80} type="linear" align="left" />
-                            {/*
-                            <YAxis
-                                key={"axis" + type + "failures"}
-                                id={"axis" + type + "failures"}
-                                label={"Failures (" + ipv + ")"}
-                                style={failureLabelStyle}
-                                labelOffset={offsets.label}
-                                format=".2s"
-                                min={0}
-                                max={100}
-                                width={0} type="linear" align="right" />
-                                */}
                             <Charts>
                             {charts[type][ipv]}
-                            {/*
-                                {charts}
-                                <ScatterChart axis="axis2" series={failureSeries} style={{color: "steelblue", opacity: 0.5}} />
-                                */}
                             </Charts>
                             </ChartRow>
                             );
