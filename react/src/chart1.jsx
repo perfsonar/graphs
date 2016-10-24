@@ -72,8 +72,8 @@ const scheme = {
     throughputUDP: "#d6641e" // vermillion
 };
 
-const failureStyle = {
-    value: {
+const failureStyle = function(column, event) {
+    return {
         normal: {
             fill: "red",
             opacity: 0.8,
@@ -90,9 +90,9 @@ const failureStyle = {
             fill: "grey",
             opacity: 0.5
         }
-    }
+    };
 };
-
+console.log('failureStyle', failureStyle);
 const connectionsStyle = {
     color: scheme.tcp,
     strokeWidth: 1
@@ -302,8 +302,8 @@ export default React.createClass({
     handleSelectionChanged(point) {
         console.log("selection changed", point);
         this.setState({
-            selection: point,
-            highlight: point
+            selection: point
+            //highlight: point
 
         });
     },
@@ -542,6 +542,13 @@ export default React.createClass({
     renderChart() {
         const highlight = this.state.highlight;
 
+        const selection = this.state.selection;
+        let selectionTime = "";
+        if ( typeof selection != "undefined" && selection !== null ) {
+            selectionTime = selection.event.timestampAsUTCString();
+        }
+        console.log("highlight", highlight, "selection", this.state.selection, selectionTime );
+
         let text = `Speed: - mph, time: -:--`;
         let hintValues = [];
         if (highlight) {
@@ -712,10 +719,10 @@ export default React.createClass({
                                     min={failureData.stats.min}
                                     max={failureData.stats.max}
                                     onSelectionChange={this.handleSelectionChanged}
-                                    selection={this.state.selection}
+                                    selected={this.state.selection}
                                     //onMouseNear={this.handleMouseNear}
                                     //onClick={this.handleMouseNear}
-                                    highlight={this.state.highlight}
+                                    highlighted={this.state.highlight}
                                 />
                             );
                         }
@@ -850,6 +857,7 @@ export default React.createClass({
                         onTrackerChanged={this.handleTrackerChanged}
                         enablePanZoom={true}
                         onTimeRangeChanged={this.handleTimeRangeChange}
+                        onBackgroundClick={this.clearSelection}
                         minTime={this.state.initialTimerange.begin()}
                         maxTime={this.state.initialTimerange.end()}
                         minDuration={10 * 60 * 1000}
@@ -870,6 +878,11 @@ export default React.createClass({
         const active = this.state.active;
         active[key] = !disabled;
         this.setState({active});
+    },
+
+    clearSelection() {
+        this.setState({selection: null});
+
     },
 
     renderError() {
