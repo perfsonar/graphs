@@ -25225,24 +25225,33 @@
 	            var unique = _GraphDataStore2.default.getUniqueValues({ "ipversion": 1 });
 	            var ipversions = unique.ipversion;
 	            var filters = {};
+	            var tooltipTypes = typesToChart.concat(subtypesToChart);
+	
 	            for (var i in ipversions) {
-	                for (var h in typesToChart) {
-	                    var eventType = typesToChart[h];
+	                for (var h in tooltipTypes) {
+	                    var eventType = tooltipTypes[h];
 	                    var type = eventType.name;
 	                    var label = eventType.label;
 	                    var esmondName = eventType.esmondName || type;
 	                    var ipversion = ipversions[i];
 	                    var ipv = "ipv" + ipversion;
-	                    var filter = { testType: type, ipversion: ipversion };
 	
+	                    var filter = { testType: type, ipversion: ipversion };
+	                    var ffilter = { eventType: type, ipversion: ipversion };
 	                    filters[type] = {};
-	                    filters[type][ipversion] = filter;
+	                    if (type != "failures") {
+	                        filters[type][ipversion] = filter;
+	                    } else {
+	                        filters[type][ipversion] = ffilter;
+	                    }
 	                }
 	            }
 	
 	            var throughputItems = [];
 	            var lossItems = [];
 	            var latencyItems = [];
+	            var failureItems = [];
+	
 	            for (var _i in ipversions) {
 	                var _ipversion = ipversions[_i];
 	                var throughputData = _GraphDataStore2.default.filterData(data, filters.throughput[_ipversion], this.state.itemsToHide);
@@ -25318,6 +25327,28 @@
 	                        " "
 	                    ));
 	                }
+	
+	                var failuresData = _GraphDataStore2.default.filterData(data, filters["failures"][_ipversion], this.state.itemsToHide);
+	                //let failuresData = GraphDataStore.getChartData( filters["failures"][ipversion], this.state.itemsToHide );
+	                //failureData.sort(this.compareToolTipData);
+	
+	                for (var _i5 in failuresData) {
+	                    var _row3 = failuresData[_i5];
+	                    var _dir3 = "->"; // Unicode >
+	                    if (_row3.properties.direction == "reverse") {
+	                        _dir3 = "<-"; // Unicode <
+	                    }
+	                    failureItems.push(_react2.default.createElement(
+	                        "li",
+	                        null,
+	                        _dir3,
+	                        " ",
+	                        _row3.value,
+	                        " (",
+	                        _row3.properties.protocol.toUpperCase(),
+	                        ")"
+	                    ));
+	                }
 	            }
 	            var posX = this.state.posX;
 	            var toolTipStyle = {
@@ -25379,6 +25410,20 @@
 	                                    "Latency"
 	                                ),
 	                                latencyItems
+	                            )
+	                        ),
+	                        _react2.default.createElement(
+	                            "li",
+	                            { className: "graph-values-popover__item" },
+	                            _react2.default.createElement(
+	                                "ul",
+	                                null,
+	                                _react2.default.createElement(
+	                                    "li",
+	                                    null,
+	                                    "Errors"
+	                                ),
+	                                failureItems
 	                            )
 	                        )
 	                    )
@@ -25522,6 +25567,7 @@
 	                        //testType: type,
 	                        ipversion: ipversion
 	                    };
+	
 	                    var failuresFilter = {
 	                        eventType: "failures",
 	                        mainEventType: esmondName,
@@ -25608,6 +25654,49 @@
 	                                , highlighted: this.state.highlight
 	                            }));
 	                        }
+	                    }
+	                }
+	            }
+	
+	            for (var g in subtypesToChart) {
+	
+	                var subEventType = subtypesToChart[g];
+	                var subType = subEventType.name;
+	                var subLabel = subEventType.label;
+	                var subEsmondName = subEventType.esmondName || subType;
+	
+	                for (var k in ipversions) {
+	                    var subipversion = ipversions[k];
+	                    var subipv = "ipv" + subipversion;
+	
+	                    // Get subtype data and DON'T build additional charts
+	                    if (!(subType in charts)) {
+	                        charts[subType] = {};
+	                    }
+	
+	                    if (typeof charts[subType].data == "undefined") {
+	                        charts[subType].data = [];
+	                    }
+	
+	                    // Initialize subipv and axes for main charts
+	                    if (!(subipv in charts[subType])) {
+	                        charts[subType][subipv] = [];
+	                    }
+	
+	                    var _filter = {
+	                        eventType: subEsmondName,
+	                        //testType: subType,
+	                        ipversion: subipversion
+	                    };
+	                    var failureFilter = {
+	                        //eventType: "failures",
+	                        eventType: subEsmondName,
+	                        ipversion: subipversion
+	                    };
+	
+	                    data = _GraphDataStore2.default.getChartData(failureFilter, this.state.itemsToHide);
+	                    if (this.state.active[subType] && data.results.length > 0) {
+	                        charts[subType].data = data.results;
 	                    }
 	                }
 	            }

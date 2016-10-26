@@ -363,18 +363,26 @@ export default React.createClass({
             let unique = GraphDataStore.getUniqueValues( {"ipversion": 1} );
             let ipversions = unique.ipversion;
             let filters = {};
+            const tooltipTypes = typesToChart.concat( subtypesToChart );
+
             for( let i in ipversions ) {
-                for (let h in typesToChart) {
-                    let eventType = typesToChart[h];
+                for (let h in tooltipTypes) {
+                    let eventType = tooltipTypes[h];
                     let type = eventType.name;
                     let label = eventType.label;
                     let esmondName = eventType.esmondName || type;
                     let ipversion = ipversions[i];
                     let ipv = "ipv" + ipversion;
+                    
                     let filter = { testType: type, ipversion: ipversion };
-
+                    let ffilter = { eventType: type, ipversion: ipversion };
                     filters[type] = {};
-                    filters[type][ipversion] = filter;
+                    if ( type != "failures" ) {
+                        filters[type][ipversion] = filter;
+                    } else {
+                        filters[type][ipversion] = ffilter;
+                    }
+
                 }
 
 
@@ -383,6 +391,8 @@ export default React.createClass({
             let throughputItems = [];
             let lossItems = [];
             let latencyItems = [];
+            let failureItems = [];
+
             for( let i in ipversions ) {
                 let ipversion = ipversions[i];
                 let throughputData = GraphDataStore.filterData( data, filters.throughput[ipversion], this.state.itemsToHide );
@@ -448,6 +458,23 @@ export default React.createClass({
                             );
 
                 }
+
+                let failuresData = GraphDataStore.filterData( data, filters["failures"][ipversion], this.state.itemsToHide );
+                //let failuresData = GraphDataStore.getChartData( filters["failures"][ipversion], this.state.itemsToHide );
+                //failureData.sort(this.compareToolTipData);
+
+                for(let i in failuresData) {
+                    let row = failuresData[i];
+                    let dir = "-\u003e"; // Unicode >
+                    if ( row.properties.direction == "reverse" ) {
+                        dir = "\u003c-"; // Unicode <
+                    }
+                    failureItems.push(
+                            <li>{dir} {row.value} ({row.properties.protocol.toUpperCase()})</li>
+
+                            );
+
+                }
             }
             let posX = this.state.posX;
             let toolTipStyle = {
@@ -476,6 +503,12 @@ export default React.createClass({
                                             <ul>
                                             <li>Latency</li>
                                             {latencyItems}
+                                            </ul>
+                                        </li>
+                                        <li className="graph-values-popover__item">
+                                            <ul>
+                                            <li>Errors</li>
+                                            {failureItems}
                                             </ul>
                                         </li>
                                     </ul>
@@ -636,11 +669,13 @@ export default React.createClass({
                         //testType: type,
                         ipversion: ipversion
                     };
+                    
                     let failuresFilter = {
                         eventType: "failures",
                         mainEventType: esmondName,
                         ipversion: ipversion
                     };
+                    
 
                     /*
                     itemsToHide = [
@@ -734,6 +769,51 @@ export default React.createClass({
                                 />
                             );
                         }
+
+                    }
+                }
+            }
+
+            for (let g in subtypesToChart) {
+
+                let subEventType = subtypesToChart[g];
+                let subType = subEventType.name;
+                let subLabel = subEventType.label;
+                let subEsmondName = subEventType.esmondName || subType;
+
+                for( var k in ipversions ) {
+                    let subipversion = ipversions[k];
+                    let subipv = "ipv" + subipversion;
+
+                    // Get subtype data and DON'T build additional charts
+                    if ( ! ( subType in charts ) ) {
+                        charts[subType] = {};
+                    } 
+
+                    if ( typeof charts[subType].data == "undefined" ) {
+                        charts[subType].data = [];
+                    }
+
+                    // Initialize subipv and axes for main charts
+                    if ( ! ( subipv in charts[subType] ) ) {
+                        charts[subType][subipv] = [];
+                    }
+
+
+                    let filter = {
+                        eventType: subEsmondName,
+                        //testType: subType,
+                        ipversion: subipversion
+                    };
+                    let failureFilter = {
+                        //eventType: "failures",
+                        eventType: subEsmondName,
+                        ipversion: subipversion
+                    };
+
+                    data = GraphDataStore.getChartData( failureFilter, this.state.itemsToHide );
+                    if ( this.state.active[subType] && ( data.results.length > 0 ) ) {
+                        charts[subType].data = data.results;
 
                     }
                 }
