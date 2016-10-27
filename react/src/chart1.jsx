@@ -6,7 +6,7 @@ import GraphDataStore from "./GraphDataStore";
 //import Highlighter from "./highlighter";
 
 
-import { AreaChart, Brush, Charts, ChartContainer, ChartRow, YAxis, LineChart, ScatterChart, Highlighter, Resizable, Legend } from "react-timeseries-charts";
+import { AreaChart, Brush, Charts, ChartContainer, ChartRow, YAxis, LineChart, ScatterChart, Highlighter, Resizable, Legend, styler } from "react-timeseries-charts";
 
 import { TimeSeries, TimeRange } from "pondjs";
 
@@ -72,8 +72,8 @@ const scheme = {
     throughputUDP: "#d6641e" // vermillion
 };
 
-const failureStyle = {
-    value: {
+const failureStyle = function(column, event) {
+    return {
         normal: {
             fill: "red",
             opacity: 0.8,
@@ -81,6 +81,7 @@ const failureStyle = {
         highlighted: {
             fill: "#a7c4dd",
             opacity: 1.0,
+            cursor: "crosshair",
         },
         selected: {
             fill: "orange",
@@ -90,7 +91,12 @@ const failureStyle = {
             fill: "grey",
             opacity: 0.5
         }
-    }
+    };
+};
+
+const infoStyle = {
+    line: { stroke: "#999", cursor: "crosshair", pointerEvents: "none" },
+    box: { fill: "white", opacity: 0.90, stroke: "#999", pointerEvents: "none" }
 };
 
 const connectionsStyle = {
@@ -115,9 +121,10 @@ const chartStyles = {
 
 };
 
-function getChartStyle( options ) {
-    let style = {};
-    style.value = {};
+function getChartStyle( options, column ) {
+    if ( typeof column == "undefined" ) {
+        column = "value";
+    }
     let color = scheme.tcp;
     let strokeStyle = "";
     let width = 3;
@@ -169,10 +176,20 @@ function getChartStyle( options ) {
         strokeStyle = "4,2";
         width = 3;
     }
-    style.value.stroke = color;
-    style.value.strokeWidth = width;
-    style.value.strokeDasharray = strokeStyle;
-    style.value.strokeOpacity = opacity;
+    let style = {};
+    style[column] = {
+        normal: { stroke: color, strokeWidth: width, opacity: opacity, strokeDasharray: strokeStyle },
+            highlighted: { stroke: color, strokeWidth: width, opacity: opacity, strokeDasharray: strokeStyle },
+            selected: { stroke: color, strokeWidth: width, opacity: opacity, strokeDasharray: strokeStyle },
+            muted: { stroke: color, strokeWidth: width, opacity: opacity, strokeDasharray: strokeStyle }
+    };
+    //console.log("style: " , style );
+    /*
+    style[column].stroke = color;
+    style[column].strokeWidth = width;
+    style[column].strokeDasharray = strokeStyle;
+    style[column].strokeOpacity = opacity;
+    */
     return style;
 
 }
@@ -210,6 +227,8 @@ const reverseStyles = {
         strokeWidth: 1.5
     }
 }
+
+const trans = 'translate("-50px", "-80px")';
 
 const axisLabelStyle = {
     labelColor: "black",
@@ -289,9 +308,10 @@ export default React.createClass({
         };
     },
     handleSelectionChanged(point) {
+        console.log("selection changed", point);
         this.setState({
-            selection: point,
-            highlight: point
+            selection: point
+            //highlight: point
 
         });
     },
@@ -343,18 +363,26 @@ export default React.createClass({
             let unique = GraphDataStore.getUniqueValues( {"ipversion": 1} );
             let ipversions = unique.ipversion;
             let filters = {};
+            const tooltipTypes = typesToChart.concat( subtypesToChart );
+
             for( let i in ipversions ) {
-                for (let h in typesToChart) {
-                    let eventType = typesToChart[h];
+                for (let h in tooltipTypes) {
+                    let eventType = tooltipTypes[h];
                     let type = eventType.name;
                     let label = eventType.label;
                     let esmondName = eventType.esmondName || type;
                     let ipversion = ipversions[i];
                     let ipv = "ipv" + ipversion;
-                    let filter = { testType: type, ipversion: ipversion };
 
+                    let filter = { testType: type, ipversion: ipversion };
+                    let failFilter = { eventType: type, ipversion: ipversion };
                     filters[type] = {};
-                    filters[type][ipversion] = filter;
+                    if ( type != "failures" ) {
+                        filters[type][ipversion] = filter;
+                    } else {
+                        filters[type][ipversion] = failFilter;
+                    }
+
                 }
 
 
@@ -363,6 +391,8 @@ export default React.createClass({
             let throughputItems = [];
             let lossItems = [];
             let latencyItems = [];
+            let failureItems = [];
+
             for( let i in ipversions ) {
                 let ipversion = ipversions[i];
                 let throughputData = GraphDataStore.filterData( data, filters.throughput[ipversion], this.state.itemsToHide );
@@ -428,6 +458,45 @@ export default React.createClass({
                             );
 
                 }
+
+                let failuresData = GraphDataStore.filterData( data, filters["failures"][ipversion], this.state.itemsToHide );
+                //failureData.sort(this.compareToolTipData);
+                if ( failuresData.length == 0 ) {
+                    //failureItems = [];
+                } else {
+                    for(let i in failuresData) {
+                        let row = failuresData[i];
+                        let ts = row.ts;
+                        let timeslip = 0.005;
+                        let duration = this.state.timerange.duration();
+                        let range = duration * timeslip;
+
+                        if ( !this.withinTime( ts.getTime(), tracker.getTime(), range ) ) {
+                            continue;
+                        }
+
+                        // TODO: we'll want to improve performance by filtering out
+                        // the mainEventType "undefined" values (which represent trace etc)
+                        // from the DATA, rather than display
+                        if ( typeof row.properties.mainEventType == "undefined" ) {
+                            continue;
+                        }
+                        let dir = "-\u003e"; // Unicode >
+                        if ( row.properties.direction == "reverse" ) {
+                            dir = "\u003c-"; // Unicode <
+                        }
+                        let prot = "";
+                        if ( typeof row.properties.protocol != "undefined" ) {
+                            prot = row.properties.protocol.toUpperCase();
+                            prot += " ";
+                        }
+                        let testType = row.properties.mainTestType;
+                        failureItems.push(
+                                <li>{dir} [{testType}] {prot}{row.error}</li>
+                                );
+
+                    }
+                }
             }
             let posX = this.state.posX;
             let toolTipStyle = {
@@ -435,29 +504,64 @@ export default React.createClass({
 
             };
 
+            let tooltipItems = [];
+            if ( throughputItems.length > 0 ) {
+                tooltipItems.push(
+                                    <li className="graph-values-popover__item">
+                                        <ul>
+                                            <li>Throughput</li>
+                                            {throughputItems}
+                                        </ul>
+                                    </li>
+
+                        );
+
+            }
+            if ( lossItems.length > 0 ) {
+                tooltipItems.push(
+                                    <li className="graph-values-popover__item">
+                                        <ul>
+                                            <li>Loss</li>
+                                            {lossItems}
+                                        </ul>
+                                    </li>
+
+                        );
+
+            }
+            if ( latencyItems.length > 0 ) {
+                tooltipItems.push(
+                                    <li className="graph-values-popover__item">
+                                        <ul>
+                                            <li>Latency</li>
+                                            {latencyItems}
+                                        </ul>
+                                    </li>
+
+                        );
+
+            }
+
+            if ( failureItems.length > 0 ) {
+                tooltipItems.push(
+                                    <li className="graph-values-popover__item">
+                                        <ul>
+                                            <li>Test Failures</li>
+                                            {failureItems}
+                                        </ul>
+                                    </li>
+
+                        );
+
+            }
+
+
             return (
             <div className="small-2 columns">
                 <div className="sidebar-popover graph-values-popover" display={display} style={toolTipStyle} ref="tooltip">
                                     <span className="graph-values-popover__heading">{date}</span>
                                     <ul className="graph-values-popover__list">
-                                        <li className="graph-values-popover__item">
-                                            <ul>
-                                            <li>Throughput</li>
-                                            {throughputItems}
-                                            </ul>
-                                        </li>
-                                        <li className="graph-values-popover__item">
-                                            <ul>
-                                            <li>Loss</li>
-                                            {lossItems}
-                                            </ul>
-                                        </li>
-                                        <li className="graph-values-popover__item">
-                                            <ul>
-                                            <li>Latency</li>
-                                            {latencyItems}
-                                            </ul>
-                                        </li>
+                                        {tooltipItems}
                                     </ul>
                                 </div>
                 </div>
@@ -481,6 +585,15 @@ export default React.createClass({
         this.setState({tracker: trackerVal});
     },
 
+    withinTime( ts1, ts2, range ) {
+        if ( Math.abs( ts1 - ts2 ) < range ) {
+            return true;
+        } else {
+            return false;
+        }
+
+    },
+
     getTrackerData() {
         let tracker = this.state.tracker;
         let trackerData = [];
@@ -500,8 +613,10 @@ export default React.createClass({
                     if ( typeof valAtTime != "undefined" ) {
                         value = valAtTime.value();
                     } else {
-                        continue;
+                        continue; // TODO: fix this so it actually removes the values?
                     }
+                    
+                    
 
                     let eventType = row.properties.eventType;
                     let direction = row.properties.direction;
@@ -514,6 +629,30 @@ export default React.createClass({
                         value: value,
                         sortKey: sortKey
                     };
+
+                    let error = undefined;
+                    if ( row.properties.eventType == "failures" ) {
+                        error = valAtTime.value( "errorText" );
+                        let errorObj;
+                        if ( typeof error != "undefined" ) {
+                            /* TODO: finish handling pscheduler's new error format
+                            try {
+                                errorObj = JSON.parse(error)
+                                error = errorObj.error;
+
+                            } catch (e) {
+                                // we don't actually need to anything here
+
+                            }
+                            */
+                            out.error = error;
+                            out.ts = valAtTime.timestamp();
+                        } else {
+                            // TODO: fix what happens when the error is undefined
+                            //delete out.error;
+                        }
+                   }
+
                     trackerData.push( out );
 
                 }
@@ -522,6 +661,7 @@ export default React.createClass({
             }
 
         }
+        //console.log("trackerData", trackerData);
         return trackerData;
 
     },
@@ -530,13 +670,19 @@ export default React.createClass({
     renderChart() {
         const highlight = this.state.highlight;
 
+        const selection = this.state.selection;
+        let selectionTime = "";
+        if ( typeof selection != "undefined" && selection !== null ) {
+            selectionTime = selection.event.timestampAsUTCString();
+        }
+        //console.log("highlight", highlight, "selection", this.state.selection, selectionTime );
+
         let text = `Speed: - mph, time: -:--`;
         let hintValues = [];
-        if (highlight) {
-            let highlightText = highlight.event.get("errorText");
+        if (selection) {
+            let highlightText = selection.event.get("errorText");
             hintValues = [{label: "Error", value: highlightText}];
         }
-
 
         let chartSeries = this.state.chartSeries;
         charts = {};
@@ -610,11 +756,13 @@ export default React.createClass({
                         //testType: type,
                         ipversion: ipversion
                     };
+
                     let failuresFilter = {
                         eventType: "failures",
                         mainEventType: esmondName,
                         ipversion: ipversion
                     };
+
 
                     /*
                     itemsToHide = [
@@ -694,19 +842,65 @@ export default React.createClass({
                                     style={failureStyle}
                                     radius={4.0}
                                     columns={ [ "value" ] }
-                                    hintValues={hintValues}
-                                    hintHeight={100}
-                                    hintWidth={200}
+                                    info={hintValues}
+                                    infoHeight={100}
+                                    infoWidth={200}
+                                    //infoStyle={infoStyle}
                                     min={failureData.stats.min}
                                     max={failureData.stats.max}
-                                    selection={this.state.selection}
-                                    onSelectionChange={this.handleSelectionChanged}
+                                    //onSelectionChange={this.handleSelectionChanged}
+                                    selected={this.state.selection}
                                     //onMouseNear={this.handleMouseNear}
                                     //onClick={this.handleMouseNear}
-                                    highlight={this.state.highlight}
+                                    highlighted={this.state.highlight}
                                 />
                             );
                         }
+
+                    }
+                }
+            }
+
+            for (let g in subtypesToChart) {
+
+                let subEventType = subtypesToChart[g];
+                let subType = subEventType.name;
+                let subLabel = subEventType.label;
+                let subEsmondName = subEventType.esmondName || subType;
+
+                for( var k in ipversions ) {
+                    let subipversion = ipversions[k];
+                    let subipv = "ipv" + subipversion;
+
+                    // Get subtype data and DON'T build additional charts
+                    if ( ! ( subType in charts ) ) {
+                        charts[subType] = {};
+                    } 
+
+                    if ( typeof charts[subType].data == "undefined" ) {
+                        charts[subType].data = [];
+                    }
+
+                    // Initialize subipv and axes for main charts
+                    if ( ! ( subipv in charts[subType] ) ) {
+                        charts[subType][subipv] = [];
+                    }
+
+
+                    let filter = {
+                        eventType: subEsmondName,
+                        //testType: subType,
+                        ipversion: subipversion
+                    };
+                    let failureFilter = {
+                        //eventType: "failures",
+                        eventType: subEsmondName,
+                        ipversion: subipversion
+                    };
+
+                    data = GraphDataStore.getChartData( failureFilter, this.state.itemsToHide );
+                    if ( this.state.active[subType] && ( data.results.length > 0 ) ) {
+                        charts[subType].data = data.results;
 
                     }
                 }
@@ -733,6 +927,12 @@ export default React.createClass({
 
                     let chartArr = charts[type][ipv];
 
+                    let format = ".2s";
+
+                    if ( type == "latency" ) {
+                        //format = ".1f";
+                    }
+
                     // push the chartrows for the main charts
                     charts[type].chartRows.push(
                             <ChartRow height={chartRow.height} debug={false}>
@@ -742,28 +942,13 @@ export default React.createClass({
                                 label={label + " (" + ipv + ")"}
                                 style={axisLabelStyle}
                                 labelOffset={offsets.label}
-                                format=".2s"
+                                className="yaxis-label"
+                                format={format}
                                 min={charts[type].stats.min}
                                 max={charts[type].stats.max}
                                 width={80} type="linear" align="left" />
-                            {/*
-                            <YAxis
-                                key={"axis" + type + "failures"}
-                                id={"axis" + type + "failures"}
-                                label={"Failures (" + ipv + ")"}
-                                style={failureLabelStyle}
-                                labelOffset={offsets.label}
-                                format=".2s"
-                                min={0}
-                                max={100}
-                                width={0} type="linear" align="right" />
-                                */}
                             <Charts>
                             {charts[type][ipv]}
-                            {/*
-                                {charts}
-                                <ScatterChart axis="axis2" series={failureSeries} style={{color: "steelblue", opacity: 0.5}} />
-                                */}
                             </Charts>
                             </ChartRow>
                             );
@@ -838,6 +1023,7 @@ export default React.createClass({
                         onTrackerChanged={this.handleTrackerChanged}
                         enablePanZoom={true}
                         onTimeRangeChanged={this.handleTimeRangeChange}
+                        onBackgroundClick={this.clearSelection}
                         minTime={this.state.initialTimerange.begin()}
                         maxTime={this.state.initialTimerange.end()}
                         minDuration={10 * 60 * 1000}
@@ -858,6 +1044,11 @@ export default React.createClass({
         const active = this.state.active;
         active[key] = !disabled;
         this.setState({active});
+    },
+
+    clearSelection() {
+        this.setState({selection: null});
+
     },
 
     renderError() {
