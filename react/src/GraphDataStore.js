@@ -275,7 +275,6 @@ module.exports = {
                 if ( eventType == "failures" ) {
                     console.log("FAILURES row", row);
 
-
                 }
                 this.serverRequest = $.get( url, function(data) {
                     this.handleDataResponse(data, eventType, row);

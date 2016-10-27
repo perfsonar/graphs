@@ -25237,12 +25237,12 @@
 	                    var ipv = "ipv" + ipversion;
 	
 	                    var filter = { testType: type, ipversion: ipversion };
-	                    var ffilter = { eventType: type, ipversion: ipversion };
+	                    var failFilter = { eventType: type, ipversion: ipversion };
 	                    filters[type] = {};
 	                    if (type != "failures") {
 	                        filters[type][ipversion] = filter;
 	                    } else {
-	                        filters[type][ipversion] = ffilter;
+	                        filters[type][ipversion] = failFilter;
 	                    }
 	                }
 	            }
@@ -25343,10 +25343,9 @@
 	                        null,
 	                        _dir3,
 	                        " ",
-	                        _row3.value,
-	                        " (",
 	                        _row3.properties.protocol.toUpperCase(),
-	                        ")"
+	                        " ",
+	                        _row3.error
 	                    ));
 	                }
 	            }
@@ -25460,7 +25459,7 @@
 	                    if (typeof valAtTime != "undefined") {
 	                        value = valAtTime.value();
 	                    } else {
-	                        continue;
+	                        continue; // TODO: fix this so it actually removes the values?
 	                    }
 	
 	                    var eventType = row.properties.eventType;
@@ -25474,10 +25473,22 @@
 	                        value: value,
 	                        sortKey: sortKey
 	                    };
+	
+	                    var error = undefined;
+	                    if (row.properties.eventType == "failures") {
+	                        error = valAtTime.value("errorText");
+	                        if (typeof error != "undefined") {
+	                            out.error = error;
+	                        } else {
+	                            delete out.error;
+	                        }
+	                    }
+	
 	                    trackerData.push(out);
 	                }
 	            }
 	        }
+	        console.log("trackerData", trackerData);
 	        return trackerData;
 	    },
 	    renderChart: function renderChart() {

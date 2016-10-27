@@ -375,12 +375,12 @@ export default React.createClass({
                     let ipv = "ipv" + ipversion;
                     
                     let filter = { testType: type, ipversion: ipversion };
-                    let ffilter = { eventType: type, ipversion: ipversion };
+                    let failFilter = { eventType: type, ipversion: ipversion };
                     filters[type] = {};
                     if ( type != "failures" ) {
                         filters[type][ipversion] = filter;
                     } else {
-                        filters[type][ipversion] = ffilter;
+                        filters[type][ipversion] = failFilter;
                     }
 
                 }
@@ -470,8 +470,7 @@ export default React.createClass({
                         dir = "\u003c-"; // Unicode <
                     }
                     failureItems.push(
-                            <li>{dir} {row.value} ({row.properties.protocol.toUpperCase()})</li>
-
+                            <li>{dir} {row.properties.protocol.toUpperCase()} {row.error}</li>
                             );
 
                 }
@@ -553,8 +552,10 @@ export default React.createClass({
                     if ( typeof valAtTime != "undefined" ) {
                         value = valAtTime.value();
                     } else {
-                        continue;
+                        continue; // TODO: fix this so it actually removes the values?
                     }
+                    
+                    
 
                     let eventType = row.properties.eventType;
                     let direction = row.properties.direction;
@@ -567,6 +568,17 @@ export default React.createClass({
                         value: value,
                         sortKey: sortKey
                     };
+
+                    let error = undefined;
+                    if ( row.properties.eventType == "failures" ) {
+                        error = valAtTime.value( "errorText" );
+                        if ( typeof error != "undefined" ) {
+                            out.error = error;
+                        } else {
+                            delete out.error;
+                        }
+                   }
+
                     trackerData.push( out );
 
                 }
@@ -575,6 +587,7 @@ export default React.createClass({
             }
 
         }
+        console.log("trackerData", trackerData);
         return trackerData;
 
     },
