@@ -373,7 +373,7 @@ export default React.createClass({
                     let esmondName = eventType.esmondName || type;
                     let ipversion = ipversions[i];
                     let ipv = "ipv" + ipversion;
-                    
+
                     let filter = { testType: type, ipversion: ipversion };
                     let failFilter = { eventType: type, ipversion: ipversion };
                     filters[type] = {};
@@ -460,19 +460,42 @@ export default React.createClass({
                 }
 
                 let failuresData = GraphDataStore.filterData( data, filters["failures"][ipversion], this.state.itemsToHide );
-                //let failuresData = GraphDataStore.getChartData( filters["failures"][ipversion], this.state.itemsToHide );
                 //failureData.sort(this.compareToolTipData);
+                if ( failuresData.length == 0 ) {
+                    //failureItems = [];
+                } else {
+                    for(let i in failuresData) {
+                        let row = failuresData[i];
+                        let ts = row.ts;
+                        let timeslip = 0.005;
+                        let duration = this.state.timerange.duration();
+                        let range = duration * timeslip;
 
-                for(let i in failuresData) {
-                    let row = failuresData[i];
-                    let dir = "-\u003e"; // Unicode >
-                    if ( row.properties.direction == "reverse" ) {
-                        dir = "\u003c-"; // Unicode <
+                        if ( !this.withinTime( ts.getTime(), tracker.getTime(), range ) ) {
+                            continue;
+                        }
+
+                        // TODO: we'll want to improve performance by filtering out
+                        // the mainEventType "undefined" values (which represent trace etc)
+                        // from the DATA, rather than display
+                        if ( typeof row.properties.mainEventType == "undefined" ) {
+                            continue;
+                        }
+                        let dir = "-\u003e"; // Unicode >
+                        if ( row.properties.direction == "reverse" ) {
+                            dir = "\u003c-"; // Unicode <
+                        }
+                        let prot = "";
+                        if ( typeof row.properties.protocol != "undefined" ) {
+                            prot = row.properties.protocol.toUpperCase();
+                            prot += " ";
+                        }
+                        let testType = row.properties.mainTestType;
+                        failureItems.push(
+                                <li>{dir} [{testType}] {prot}{row.error}</li>
+                                );
+
                     }
-                    failureItems.push(
-                            <li>{dir} {row.properties.protocol.toUpperCase()} {row.error}</li>
-                            );
-
                 }
             }
             let posX = this.state.posX;
@@ -481,35 +504,64 @@ export default React.createClass({
 
             };
 
+            let tooltipItems = [];
+            if ( throughputItems.length > 0 ) {
+                tooltipItems.push(
+                                    <li className="graph-values-popover__item">
+                                        <ul>
+                                            <li>Throughput</li>
+                                            {throughputItems}
+                                        </ul>
+                                    </li>
+
+                        );
+
+            }
+            if ( lossItems.length > 0 ) {
+                tooltipItems.push(
+                                    <li className="graph-values-popover__item">
+                                        <ul>
+                                            <li>Loss</li>
+                                            {lossItems}
+                                        </ul>
+                                    </li>
+
+                        );
+
+            }
+            if ( latencyItems.length > 0 ) {
+                tooltipItems.push(
+                                    <li className="graph-values-popover__item">
+                                        <ul>
+                                            <li>Latency</li>
+                                            {latencyItems}
+                                        </ul>
+                                    </li>
+
+                        );
+
+            }
+
+            if ( failureItems.length > 0 ) {
+                tooltipItems.push(
+                                    <li className="graph-values-popover__item">
+                                        <ul>
+                                            <li>Test Failures</li>
+                                            {failureItems}
+                                        </ul>
+                                    </li>
+
+                        );
+
+            }
+
+
             return (
             <div className="small-2 columns">
                 <div className="sidebar-popover graph-values-popover" display={display} style={toolTipStyle} ref="tooltip">
                                     <span className="graph-values-popover__heading">{date}</span>
                                     <ul className="graph-values-popover__list">
-                                        <li className="graph-values-popover__item">
-                                            <ul>
-                                            <li>Throughput</li>
-                                            {throughputItems}
-                                            </ul>
-                                        </li>
-                                        <li className="graph-values-popover__item">
-                                            <ul>
-                                            <li>Loss</li>
-                                            {lossItems}
-                                            </ul>
-                                        </li>
-                                        <li className="graph-values-popover__item">
-                                            <ul>
-                                            <li>Latency</li>
-                                            {latencyItems}
-                                            </ul>
-                                        </li>
-                                        <li className="graph-values-popover__item">
-                                            <ul>
-                                            <li>Errors</li>
-                                            {failureItems}
-                                            </ul>
-                                        </li>
+                                        {tooltipItems}
                                     </ul>
                                 </div>
                 </div>
@@ -531,6 +583,15 @@ export default React.createClass({
 
     handleTrackerChanged(trackerVal, selection) {
         this.setState({tracker: trackerVal});
+    },
+
+    withinTime( ts1, ts2, range ) {
+        if ( Math.abs( ts1 - ts2 ) < range ) {
+            return true;
+        } else {
+            return false;
+        }
+
     },
 
     getTrackerData() {
@@ -572,10 +633,23 @@ export default React.createClass({
                     let error = undefined;
                     if ( row.properties.eventType == "failures" ) {
                         error = valAtTime.value( "errorText" );
+                        let errorObj;
                         if ( typeof error != "undefined" ) {
+                            /* TODO: finish handling pscheduler's new error format
+                            try {
+                                errorObj = JSON.parse(error)
+                                error = errorObj.error;
+
+                            } catch (e) {
+                                // we don't actually need to anything here
+
+                            }
+                            */
                             out.error = error;
+                            out.ts = valAtTime.timestamp();
                         } else {
-                            delete out.error;
+                            // TODO: fix what happens when the error is undefined
+                            //delete out.error;
                         }
                    }
 
@@ -587,7 +661,7 @@ export default React.createClass({
             }
 
         }
-        console.log("trackerData", trackerData);
+        //console.log("trackerData", trackerData);
         return trackerData;
 
     },
@@ -682,13 +756,13 @@ export default React.createClass({
                         //testType: type,
                         ipversion: ipversion
                     };
-                    
+
                     let failuresFilter = {
                         eventType: "failures",
                         mainEventType: esmondName,
                         ipversion: ipversion
                     };
-                    
+
 
                     /*
                     itemsToHide = [
@@ -774,7 +848,7 @@ export default React.createClass({
                                     //infoStyle={infoStyle}
                                     min={failureData.stats.min}
                                     max={failureData.stats.max}
-                                    onSelectionChange={this.handleSelectionChanged}
+                                    //onSelectionChange={this.handleSelectionChanged}
                                     selected={this.state.selection}
                                     //onMouseNear={this.handleMouseNear}
                                     //onClick={this.handleMouseNear}

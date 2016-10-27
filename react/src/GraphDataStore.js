@@ -20,6 +20,9 @@ let end; // = Math.ceil( Date.now() / 1000 );
 let chartMetadata = [];
 let chartData = [];
 
+let metadataURLs = {};
+let dataURLs = {};
+
 module.exports = {
 
     eventTypes: ['throughput', 'histogram-owdelay', 'packet-loss-rate',
@@ -102,7 +105,13 @@ module.exports = {
                     }
                 }
 
+                if ( metadataURLs[url] ) {
+                    continue;
 
+                } else {
+                    metadataURLs[url] = 1;
+
+                }
 
                 // url += "&time-start=" + start + "&time-end=" + end; TODO: add this back?
                 console.log("metadata url: ", url);

@@ -25329,24 +25329,48 @@
 	                }
 	
 	                var failuresData = _GraphDataStore2.default.filterData(data, filters["failures"][_ipversion], this.state.itemsToHide);
-	                //let failuresData = GraphDataStore.getChartData( filters["failures"][ipversion], this.state.itemsToHide );
 	                //failureData.sort(this.compareToolTipData);
+	                if (failuresData.length == 0) {
+	                    //failureItems = [];
+	                } else {
+	                    for (var _i5 in failuresData) {
+	                        var _row3 = failuresData[_i5];
+	                        var ts = _row3.ts;
+	                        var timeslip = 0.005;
+	                        var duration = this.state.timerange.duration();
+	                        var range = duration * timeslip;
 	
-	                for (var _i5 in failuresData) {
-	                    var _row3 = failuresData[_i5];
-	                    var _dir3 = "->"; // Unicode >
-	                    if (_row3.properties.direction == "reverse") {
-	                        _dir3 = "<-"; // Unicode <
+	                        if (!this.withinTime(ts.getTime(), tracker.getTime(), range)) {
+	                            continue;
+	                        }
+	
+	                        // TODO: we'll want to improve performance by filtering out
+	                        // the mainEventType "undefined" values (which represent trace etc)
+	                        // from the DATA, rather than display
+	                        if (typeof _row3.properties.mainEventType == "undefined") {
+	                            continue;
+	                        }
+	                        var _dir3 = "->"; // Unicode >
+	                        if (_row3.properties.direction == "reverse") {
+	                            _dir3 = "<-"; // Unicode <
+	                        }
+	                        var prot = "";
+	                        if (typeof _row3.properties.protocol != "undefined") {
+	                            prot = _row3.properties.protocol.toUpperCase();
+	                            prot += " ";
+	                        }
+	                        var testType = _row3.properties.mainTestType;
+	                        failureItems.push(_react2.default.createElement(
+	                            "li",
+	                            null,
+	                            _dir3,
+	                            " [",
+	                            testType,
+	                            "] ",
+	                            prot,
+	                            _row3.error
+	                        ));
 	                    }
-	                    failureItems.push(_react2.default.createElement(
-	                        "li",
-	                        null,
-	                        _dir3,
-	                        " ",
-	                        _row3.properties.protocol.toUpperCase(),
-	                        " ",
-	                        _row3.error
-	                    ));
 	                }
 	            }
 	            var posX = this.state.posX;
@@ -25354,6 +25378,73 @@
 	                right: posX + "px"
 	
 	            };
+	
+	            var tooltipItems = [];
+	            if (throughputItems.length > 0) {
+	                tooltipItems.push(_react2.default.createElement(
+	                    "li",
+	                    { className: "graph-values-popover__item" },
+	                    _react2.default.createElement(
+	                        "ul",
+	                        null,
+	                        _react2.default.createElement(
+	                            "li",
+	                            null,
+	                            "Throughput"
+	                        ),
+	                        throughputItems
+	                    )
+	                ));
+	            }
+	            if (lossItems.length > 0) {
+	                tooltipItems.push(_react2.default.createElement(
+	                    "li",
+	                    { className: "graph-values-popover__item" },
+	                    _react2.default.createElement(
+	                        "ul",
+	                        null,
+	                        _react2.default.createElement(
+	                            "li",
+	                            null,
+	                            "Loss"
+	                        ),
+	                        lossItems
+	                    )
+	                ));
+	            }
+	            if (latencyItems.length > 0) {
+	                tooltipItems.push(_react2.default.createElement(
+	                    "li",
+	                    { className: "graph-values-popover__item" },
+	                    _react2.default.createElement(
+	                        "ul",
+	                        null,
+	                        _react2.default.createElement(
+	                            "li",
+	                            null,
+	                            "Latency"
+	                        ),
+	                        latencyItems
+	                    )
+	                ));
+	            }
+	
+	            if (failureItems.length > 0) {
+	                tooltipItems.push(_react2.default.createElement(
+	                    "li",
+	                    { className: "graph-values-popover__item" },
+	                    _react2.default.createElement(
+	                        "ul",
+	                        null,
+	                        _react2.default.createElement(
+	                            "li",
+	                            null,
+	                            "Test Failures"
+	                        ),
+	                        failureItems
+	                    )
+	                ));
+	            }
 	
 	            return _react2.default.createElement(
 	                "div",
@@ -25369,62 +25460,7 @@
 	                    _react2.default.createElement(
 	                        "ul",
 	                        { className: "graph-values-popover__list" },
-	                        _react2.default.createElement(
-	                            "li",
-	                            { className: "graph-values-popover__item" },
-	                            _react2.default.createElement(
-	                                "ul",
-	                                null,
-	                                _react2.default.createElement(
-	                                    "li",
-	                                    null,
-	                                    "Throughput"
-	                                ),
-	                                throughputItems
-	                            )
-	                        ),
-	                        _react2.default.createElement(
-	                            "li",
-	                            { className: "graph-values-popover__item" },
-	                            _react2.default.createElement(
-	                                "ul",
-	                                null,
-	                                _react2.default.createElement(
-	                                    "li",
-	                                    null,
-	                                    "Loss"
-	                                ),
-	                                lossItems
-	                            )
-	                        ),
-	                        _react2.default.createElement(
-	                            "li",
-	                            { className: "graph-values-popover__item" },
-	                            _react2.default.createElement(
-	                                "ul",
-	                                null,
-	                                _react2.default.createElement(
-	                                    "li",
-	                                    null,
-	                                    "Latency"
-	                                ),
-	                                latencyItems
-	                            )
-	                        ),
-	                        _react2.default.createElement(
-	                            "li",
-	                            { className: "graph-values-popover__item" },
-	                            _react2.default.createElement(
-	                                "ul",
-	                                null,
-	                                _react2.default.createElement(
-	                                    "li",
-	                                    null,
-	                                    "Errors"
-	                                ),
-	                                failureItems
-	                            )
-	                        )
+	                        tooltipItems
 	                    )
 	                )
 	            );
@@ -25439,6 +25475,13 @@
 	    },
 	    handleTrackerChanged: function handleTrackerChanged(trackerVal, selection) {
 	        this.setState({ tracker: trackerVal });
+	    },
+	    withinTime: function withinTime(ts1, ts2, range) {
+	        if (Math.abs(ts1 - ts2) < range) {
+	            return true;
+	        } else {
+	            return false;
+	        }
 	    },
 	    getTrackerData: function getTrackerData() {
 	        var tracker = this.state.tracker;
@@ -25477,10 +25520,21 @@
 	                    var error = undefined;
 	                    if (row.properties.eventType == "failures") {
 	                        error = valAtTime.value("errorText");
+	                        var errorObj = void 0;
 	                        if (typeof error != "undefined") {
+	                            /* TODO: finish handling pscheduler's new error format
+	                            try {
+	                                errorObj = JSON.parse(error)
+	                                error = errorObj.error;
+	                             } catch (e) {
+	                                // we don't actually need to anything here
+	                             }
+	                            */
 	                            out.error = error;
+	                            out.ts = valAtTime.timestamp();
 	                        } else {
-	                            delete out.error;
+	                            // TODO: fix what happens when the error is undefined
+	                            //delete out.error;
 	                        }
 	                    }
 	
@@ -25488,7 +25542,7 @@
 	                }
 	            }
 	        }
-	        console.log("trackerData", trackerData);
+	        //console.log("trackerData", trackerData);
 	        return trackerData;
 	    },
 	    renderChart: function renderChart() {
@@ -25657,9 +25711,9 @@
 	                                infoWidth: 200
 	                                //infoStyle={infoStyle}
 	                                , min: failureData.stats.min,
-	                                max: failureData.stats.max,
-	                                onSelectionChange: this.handleSelectionChanged,
-	                                selected: this.state.selection
+	                                max: failureData.stats.max
+	                                //onSelectionChange={this.handleSelectionChanged}
+	                                , selected: this.state.selection
 	                                //onMouseNear={this.handleMouseNear}
 	                                //onClick={this.handleMouseNear}
 	                                , highlighted: this.state.highlight
@@ -37856,6 +37910,9 @@
 	var chartMetadata = [];
 	var chartData = [];
 	
+	var metadataURLs = {};
+	var dataURLs = {};
+	
 	module.exports = {
 	
 	    eventTypes: ['throughput', 'histogram-owdelay', 'packet-loss-rate', 'packet-retransmits', 'histogram-rtt', 'failures'],
@@ -37932,6 +37989,12 @@
 	                    }
 	                }
 	
+	                if (metadataURLs[url]) {
+	                    return "continue";
+	                } else {
+	                    metadataURLs[url] = 1;
+	                }
+	
 	                // url += "&time-start=" + start + "&time-end=" + end; TODO: add this back?
 	                console.log("metadata url: ", url);
 	
@@ -37945,7 +38008,9 @@
 	            };
 	
 	            for (var j in directions) {
-	                _loop2(j);
+	                var _ret2 = _loop2(j);
+	
+	                if (_ret2 === "continue") continue;
 	            }
 	        };
 	
@@ -79473,7 +79538,7 @@
 	                            _react2.default.createElement(
 	                                "a",
 	                                { href: "#", onClick: this.toggleType.bind(this, { eventType: "histogram-owdelay" }) },
-	                                "One-way latency"
+	                                "Latency"
 	                            )
 	                        ),
 	                        _react2.default.createElement(
@@ -79675,7 +79740,7 @@
 	                            _react2.default.createElement(
 	                                "a",
 	                                { href: "#", onClick: this.toggleType.bind(this, { "eventType": "failures" }) },
-	                                "Errors",
+	                                "Failures",
 	                                _react2.default.createElement(
 	                                    "svg",
 	                                    { width: "10", height: "10", className: "direction-label" },

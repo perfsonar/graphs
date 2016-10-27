@@ -254,7 +254,7 @@ export default React.createClass({
                                     <a href="#" onClick={this.toggleType.bind(this, {eventType: "packet-loss-rate", mainTestType: "latency"})}>Loss (Latency)</a>
                                 </li>
                                 <li className={"graph-filter__item ipv6 " + this.getActiveClass( this.state.active["eventType_histogram-owdelay_"] )}>
-                                    <a href="#" onClick={this.toggleType.bind(this, {eventType: "histogram-owdelay"})}>One-way latency</a>
+                                    <a href="#" onClick={this.toggleType.bind(this, {eventType: "histogram-owdelay"})}>Latency</a>
                                 </li>
                                 <li className={"graph-filter__item ipv4 " + this.getActiveClass( this.state.active["eventType_histogram-rtt_"])} >
                                     <a href="#" onClick={this.toggleType.bind(this, {eventType: "histogram-rtt"})}>Ping</a>
@@ -317,7 +317,7 @@ export default React.createClass({
                                     </a>
                                 </li>
                                 <li className={"graph-filter__item graph-filter__item--failures " + this.getActiveClass( this.state.active["eventType_failures_"] ) }>
-                                    <a href="#" onClick={this.toggleType.bind(this, {"eventType": "failures"})}>Errors
+                                    <a href="#" onClick={this.toggleType.bind(this, {"eventType": "failures"})}>Failures
                                     <svg width="10" height="10" className="direction-label">
                                           <circle cx="5" cy="5" r="4" fill="red" />
                                     </svg>
