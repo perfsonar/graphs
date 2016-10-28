@@ -25162,7 +25162,8 @@
 	            selection: null,
 	            loading: true,
 	            params: undefined,
-	            dataloaded: false
+	            dataloaded: false,
+	            initialLoading: true
 	        };
 	    },
 	    handleSelectionChanged: function handleSelectionChanged(point) {
@@ -25856,11 +25857,11 @@
 	        }
 	
 	        if (Object.keys(charts) == 0) {
-	            if (this.state.dataloaded) {
+	            if (!this.state.loading) {
 	                return _react2.default.createElement(
 	                    "div",
 	                    null,
-	                    "No data found for this timerange."
+	                    "No data found for this time range."
 	                );
 	            } else {
 	                return _react2.default.createElement("div", null);
@@ -26028,7 +26029,11 @@
 	
 	    updateChartData: function updateChartData() {
 	        var newChartSeries = _GraphDataStore2.default.getChartData();
-	        this.setState({ chartSeries: newChartSeries, loading: false, dataloaded: true });
+	        if (this.state.initialLoading) {
+	            this.setState({ chartSeries: newChartSeries, initialLoading: false });
+	        } else {
+	            this.setState({ chartSeries: newChartSeries, loading: false, dataloaded: false });
+	        }
 	        //this.forceUpdate();
 	    },
 	
@@ -38035,9 +38040,6 @@
 	            data = this.filterEventTypes(chartMetadata);
 	            data = this.getData(chartMetadata);
 	            console.log("chartMetadata", chartMetadata);
-	            if (chartMetadata.length == 0) {
-	                emitter.emit("get");
-	            }
 	        } else {
 	            console.log("completed " + reqCount + " requests");
 	        }

@@ -155,10 +155,6 @@ module.exports = {
             data = this.filterEventTypes( chartMetadata );
             data = this.getData( chartMetadata );
             console.log("chartMetadata", chartMetadata);
-            if ( chartMetadata.length == 0 ) {
-                emitter.emit("get");
-
-            }
 
         } else {
             console.log("completed " + reqCount + " requests");

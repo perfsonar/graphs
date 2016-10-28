@@ -305,6 +305,7 @@ export default React.createClass({
             loading: true,
             params: undefined,
             dataloaded: false,
+            initialLoading: true
         };
     },
     handleSelectionChanged(point) {
@@ -993,13 +994,14 @@ export default React.createClass({
         }
 
         if ( Object.keys( charts ) == 0 ) {
-            if ( this.state.dataloaded  ) {
-                return ( <div>No data found for this timerange.</div> );
+            if ( !this.state.loading ) {
+                return ( <div>No data found for this time range.</div> );
 
             } else { 
                 return ( <div></div> );
             }
-        }
+        } 
+
 
         return (
             <div
@@ -1162,7 +1164,11 @@ export default React.createClass({
 
     updateChartData: function() {
         let newChartSeries = GraphDataStore.getChartData();
-        this.setState({ chartSeries: newChartSeries, loading: false, dataloaded: true } );
+        if ( this.state.initialLoading ) {
+            this.setState({ chartSeries: newChartSeries, initialLoading: false } );
+        } else {
+            this.setState({ chartSeries: newChartSeries, loading: false, dataloaded: false } );
+        }
         //this.forceUpdate();
     },
 
