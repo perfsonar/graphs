@@ -25522,14 +25522,6 @@
 	                        error = valAtTime.value("errorText");
 	                        var errorObj = void 0;
 	                        if (typeof error != "undefined") {
-	                            /* TODO: finish handling pscheduler's new error format
-	                            try {
-	                                errorObj = JSON.parse(error)
-	                                error = errorObj.error;
-	                             } catch (e) {
-	                                // we don't actually need to anything here
-	                             }
-	                            */
 	                            out.error = error;
 	                            out.ts = valAtTime.timestamp();
 	                        } else {
