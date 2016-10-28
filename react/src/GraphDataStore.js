@@ -45,6 +45,8 @@ module.exports = {
         start = startInput;
         end = endInput;
 
+        metadataURLs = {};
+
         this.initVars();
 
         this.maURL = new URL(ma_url);
@@ -522,7 +524,7 @@ module.exports = {
                     value = val["val"].minimum;
                 }
                 if (value <= 0 ) {
-                    console.log("VALUE IS ZERO OR LESS", Date());
+                    //console.log("VALUE IS ZERO OR LESS", Date());
                     value = 0.000000001;
                 }
                 if ( eventType == "failures" ) {
@@ -530,7 +532,7 @@ module.exports = {
                     failureValue = value;
 
                 } else if ( isNaN(value) ) {
-                    console.log("VALUE IS NaN", eventType);
+                    //console.log("VALUE IS NaN", eventType);
                 }
                 if ( failureValue != null ) {
                     let failureObj = {

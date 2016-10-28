@@ -37926,6 +37926,8 @@
 	        start = startInput;
 	        end = endInput;
 	
+	        metadataURLs = {};
+	
 	        this.initVars();
 	
 	        this.maURL = new URL(ma_url);
@@ -38379,14 +38381,14 @@
 	                    value = val["val"].minimum;
 	                }
 	                if (value <= 0) {
-	                    console.log("VALUE IS ZERO OR LESS", Date());
+	                    //console.log("VALUE IS ZERO OR LESS", Date());
 	                    value = 0.000000001;
 	                }
 	                if (eventType == "failures") {
 	                    // handle failures, which are supposed to be NaN
 	                    failureValue = value;
 	                } else if (isNaN(value)) {
-	                    console.log("VALUE IS NaN", eventType);
+	                    //console.log("VALUE IS NaN", eventType);
 	                }
 	                if (failureValue != null) {
 	                    var failureObj = {
@@ -79782,6 +79784,7 @@
 	        */
 	
 	    handleTimerangeChange: function handleTimerangeChange(newTime, noupdateURL) {
+	        //console.log("chartLayout newTime", newTime);
 	        this.setState(newTime);
 	        if (!noupdateURL) {
 	            this.setHashVals(newTime);
@@ -80070,7 +80073,19 @@
 	        var period = event.target.value;
 	        var vars = this.getTimeVars(period);
 	        var timeDiff = vars.timeDiff;
-	        var newEnd = Math.floor(new Date().getTime() / 1000);
+	        var half = timeDiff / 2;
+	        var start = this.state.start;
+	        var end = this.state.end;
+	        var middle = (start + end) / 2;
+	        var now = Math.floor(new Date().getTime() / 1000);
+	        //let newEnd = Math.floor( new Date().getTime() / 1000 );
+	        var newEnd = middle + half;
+	        if (newEnd > now) {
+	            newEnd = now;
+	        }
+	        // convert ms to s
+	        //newEnd = Math.floor( newEnd / 1000 ); 
+	
 	        var newStart = newEnd - timeDiff;
 	
 	        var options = {
@@ -80322,13 +80337,13 @@
 	        this.handleTimerangeChange({ "start": newStart, "end": newEnd, timeframe: timeframe });
 	    },
 	    handleTimerangeChange: function handleTimerangeChange(options, noupdateURL) {
-	        this.setState(options);
-	        //this.forceUpdate();
 	        if (!"timeframe" in options) {
 	            options.timeframe = this.state.timeframe;
 	        }
+	        this.setState(options);
 	        this.props.updateTimerange(options, noupdateURL);
 	        emitter.emit("timerangeChange");
+	        this.forceUpdate();
 	    },
 	    subscribe: function subscribe(callback) {
 	        emitter.on("timerangeChange", callback);

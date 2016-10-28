@@ -109,7 +109,19 @@ export default React.createClass({
         let period = event.target.value;
         let vars = this.getTimeVars(period);
         let timeDiff = vars.timeDiff;
-        let newEnd = Math.floor( new Date().getTime() / 1000 );
+        let half = timeDiff / 2;
+        let start = this.state.start;
+        let end = this.state.end;
+        let middle = ( start + end ) / 2;
+        let now = Math.floor( new Date().getTime() / 1000 );
+        //let newEnd = Math.floor( new Date().getTime() / 1000 );
+        let newEnd = middle + half;
+        if ( newEnd > now ) {
+            newEnd = now;
+        }
+        // convert ms to s
+        //newEnd = Math.floor( newEnd / 1000 ); 
+
         let newStart = newEnd - timeDiff;
 
         let options = {
@@ -280,13 +292,13 @@ export default React.createClass({
 
     },
     handleTimerangeChange: function( options, noupdateURL ) {
-        this.setState( options );
-        //this.forceUpdate();
         if ( ! "timeframe" in options ) {
             options.timeframe = this.state.timeframe;
         }
+        this.setState( options );
         this.props.updateTimerange( options, noupdateURL );
         emitter.emit("timerangeChange");
+        this.forceUpdate();
 
     },
     subscribe: function( callback ) {

@@ -371,6 +371,7 @@ export default React.createClass({
     */
 
     handleTimerangeChange: function( newTime, noupdateURL ) {
+        //console.log("chartLayout newTime", newTime);
         this.setState( newTime );
         if ( !noupdateURL ) {
             this.setHashVals( newTime );
@@ -398,7 +399,6 @@ export default React.createClass({
         }
         hash += arr.join("&");
         window.location.hash = hash;
-
 
     },
 
