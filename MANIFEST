@@ -49,6 +49,12 @@ templates/serviceTest_error.tmpl
 html/public/bundle.js.map
 html/public/bundle.js
 html/public/css/font-awesome/css/font-awesome.min.css
+html/public/css/font-awesome/fonts/FontAwesome.otf
+html/public/css/font-awesome/fonts/fontawesome-webfont.eot
+html/public/css/font-awesome/fonts/fontawesome-webfont.svg
+html/public/css/font-awesome/fonts/fontawesome-webfont.ttf
+html/public/css/font-awesome/fonts/fontawesome-webfont.woff
+html/public/css/font-awesome/fonts/fontawesome-webfont.woff2
 html/public/css/foundation.min.css
 html/public/index.html
 
