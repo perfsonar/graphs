@@ -20,6 +20,9 @@ let end; // = Math.ceil( Date.now() / 1000 );
 let chartMetadata = [];
 let chartData = [];
 
+let metadataURLs = {};
+let dataURLs = {};
+
 module.exports = {
 
     eventTypes: ['throughput', 'histogram-owdelay', 'packet-loss-rate',
@@ -41,6 +44,8 @@ module.exports = {
     getHostPairMetadata: function ( sources, dests, startInput, endInput, ma_url, params ) {
         start = startInput;
         end = endInput;
+
+        metadataURLs = {};
 
         this.initVars();
 
@@ -102,7 +107,13 @@ module.exports = {
                     }
                 }
 
+                if ( metadataURLs[url] ) {
+                    continue;
 
+                } else {
+                    metadataURLs[url] = 1;
+
+                }
 
                 // url += "&time-start=" + start + "&time-end=" + end; TODO: add this back?
                 console.log("metadata url: ", url);
@@ -144,10 +155,6 @@ module.exports = {
             data = this.filterEventTypes( chartMetadata );
             data = this.getData( chartMetadata );
             console.log("chartMetadata", chartMetadata);
-            if ( chartMetadata.length == 0 ) {
-                emitter.emit("get");
-
-            }
 
         } else {
             console.log("completed " + reqCount + " requests");
@@ -274,7 +281,6 @@ module.exports = {
 
                 if ( eventType == "failures" ) {
                     console.log("FAILURES row", row);
-
 
                 }
                 this.serverRequest = $.get( url, function(data) {
@@ -514,7 +520,7 @@ module.exports = {
                     value = val["val"].minimum;
                 }
                 if (value <= 0 ) {
-                    console.log("VALUE IS ZERO OR LESS", Date());
+                    //console.log("VALUE IS ZERO OR LESS", Date());
                     value = 0.000000001;
                 }
                 if ( eventType == "failures" ) {
@@ -522,7 +528,7 @@ module.exports = {
                     failureValue = value;
 
                 } else if ( isNaN(value) ) {
-                    console.log("VALUE IS NaN", eventType);
+                    //console.log("VALUE IS NaN", eventType);
                 }
                 if ( failureValue != null ) {
                     let failureObj = {

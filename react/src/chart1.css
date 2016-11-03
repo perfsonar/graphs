@@ -17,9 +17,10 @@ rect.extent {
     display: block;
 }
 
-.yaxis text.yaxis-label {
+.yaxis text.yaxis-label, .yaxis > text {
+    text-anchor: middle;
     transform: rotate(-90deg) 
-        translate(-50px, -80px);
+        translate(-75px, -80px);
     font-size:14px;
 }
 

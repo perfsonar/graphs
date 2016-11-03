@@ -36,7 +36,6 @@ html/js/d3.js
 html/js/d3.min.js
 html/js/d3.v3.min.js
 html/js/dc.js
-html/js/dojo-release-ps-toolkit.tar.gz
 html/js/graphWidget.js
 html/js/ps-dc.js
 html/js/psGraph.js
@@ -47,11 +46,8 @@ templates/header.tmpl
 templates/serviceTest.tmpl
 templates/serviceTest_new.tmpl
 templates/serviceTest_error.tmpl
-templates/sidebar.html
-html/public
 html/public/bundle.js.map
 html/public/bundle.js
-html/public/css
 html/public/css/font-awesome/css/font-awesome.min.css
 html/public/css/foundation.min.css
 html/public/index.html
