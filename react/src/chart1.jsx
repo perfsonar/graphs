@@ -423,15 +423,16 @@ export default React.createClass({
                         dir = "\u003c-"; // Unicode <
 
                     }
-                    let label = "one-way";
+                    let label = "latency";
                     if ( row.properties.mainEventType == "histogram-rtt" ) {
                         label = "ping";
                     } else if ( row.properties.mainEventType == "throughput" ) {
                         label = "throughput"
 
                     }
+                    row.value = this._formatToolTipLossValue( row.value );
                     lossItems.push(
-                            <li>{dir} {row.value.toPrecision(4)}  {"(" + label + ")"} </li>
+                            <li>{dir} {row.value}  {"(" + label + ")"} </li>
 
                             );
 
@@ -449,12 +450,12 @@ export default React.createClass({
                         dir = "\u003c-"; // Unicode <
 
                     }
-                    let label = "one-way";
+                    let label = "";
                     if ( row.properties.mainEventType == "histogram-rtt" ) {
-                        label = "ping";
+                        label = "(ping)";
                     }
                     latencyItems.push(
-                            <li>{dir} {row.value.toFixed(1)} ms  {"(" + label + ")"} </li>
+                            <li>{dir} {row.value.toFixed(1)} ms {label} </li>
 
                             );
 
@@ -572,6 +573,17 @@ export default React.createClass({
             return null;
         }
 
+    },
+
+    _formatToolTipLossValue( value ) {
+        // Horrible hack; values of 0 are rewritten to 1e-9 since our log scale
+        // can't handle zeroes
+        if ( value == 1e-9 || value == 0 ) {
+            value = 0;
+        } else {
+            value = value.toPrecision(4);
+        }
+        return value;
     },
 
     compareToolTipData( a, b ) {
@@ -783,7 +795,7 @@ export default React.createClass({
                                     <LineChart key={type + Math.floor( Math.random() )}
                                         axis={"axis" + type} series={series}
                                         style={getChartStyle( properties )} smooth={false} breakLine={true}
-                                        min={stats.min}
+                                        min={0}
                                         max={stats.max}
                                         columns={[ "value" ]} />
                                     );
@@ -935,7 +947,7 @@ export default React.createClass({
                                 labelOffset={offsets.label}
                                 className="yaxis-label"
                                 format={format}
-                                min={charts[type].stats.min}
+                                min={0}
                                 max={charts[type].stats.max}
                                 width={80} type="linear" align="left" />
                             <Charts>

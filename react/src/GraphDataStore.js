@@ -276,7 +276,8 @@ module.exports = {
 
                 // Make sure we don't retrieve the same URL twice
                 if ( dataURLs[url] ) {
-                    continue;
+                    console.log("got the same URL twice: ", url);
+                    //continue;
 
                 } else {
                     dataURLs[url] = 1;
