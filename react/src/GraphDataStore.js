@@ -45,8 +45,6 @@ module.exports = {
         start = startInput;
         end = endInput;
 
-        metadataURLs = {};
-
         this.initVars();
 
         this.maURL = new URL(ma_url);
@@ -106,6 +104,8 @@ module.exports = {
 
                     }
                 }
+
+                // Make sure we don't retrieve the same URL twice
 
                 if ( metadataURLs[url] ) {
                     continue;
@@ -273,6 +273,15 @@ module.exports = {
                 uri += "?time-start=" + start + "&time-end=" + end;
                 let url = baseURL + uri;
                 console.log("data url", url);
+
+                // Make sure we don't retrieve the same URL twice
+                if ( dataURLs[url] ) {
+                    continue;
+
+                } else {
+                    dataURLs[url] = 1;
+
+                }
                 let row = pruneDatum( datum );
                 row.protocol = datum["ip-transport-protocol"];
                 row.ipversion = ipversion;

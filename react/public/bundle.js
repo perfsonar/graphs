@@ -37931,8 +37931,6 @@
 	        start = startInput;
 	        end = endInput;
 	
-	        metadataURLs = {};
-	
 	        this.initVars();
 	
 	        this.maURL = new URL(ma_url);
@@ -37987,6 +37985,8 @@
 	                        }
 	                    }
 	                }
+	
+	                // Make sure we don't retrieve the same URL twice
 	
 	                if (metadataURLs[url]) {
 	                    return "continue";
@@ -38144,6 +38144,13 @@
 	                uri += "?time-start=" + start + "&time-end=" + end;
 	                var url = baseURL + uri;
 	                console.log("data url", url);
+	
+	                // Make sure we don't retrieve the same URL twice
+	                if (dataURLs[url]) {
+	                    return "continue";
+	                } else {
+	                    dataURLs[url] = 1;
+	                }
 	                var row = pruneDatum(datum);
 	                row.protocol = datum["ip-transport-protocol"];
 	                row.ipversion = ipversion;
@@ -38159,7 +38166,9 @@
 	            };
 	
 	            for (var j in datum["event-types"]) {
-	                _loop3(j);
+	                var _ret3 = _loop3(j);
+	
+	                if (_ret3 === "continue") continue;
 	            }
 	        }
 	    },
