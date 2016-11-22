@@ -26046,6 +26046,11 @@
 	            "div",
 	            null,
 	            _react2.default.createElement(
+	                "h3",
+	                null,
+	                "Error loading data"
+	            ),
+	            _react2.default.createElement(
 	                "span",
 	                { className: "alert-small-failure" },
 	                _react2.default.createElement("i", { className: "fa fa-exclamation-triangle" }),
@@ -48966,16 +48971,16 @@
 	var metadataURLs = {};
 	var dataURLs = {};
 	
+	var lossTypes = ['packet-loss-rate', 'packet-count-lost', 'packet-count-sent'];
+	
 	module.exports = {
 	
-	    eventTypes: ['throughput', 'histogram-owdelay', 'packet-loss-rate', 'packet-retransmits', 'histogram-rtt', 'failures'],
-	    //|| ['histogram-rtt'];
 	    maURL: null,
 	
 	    initVars: function initVars() {
 	        chartMetadata = [];
 	        chartData = [];
-	        this.eventTypes = ['throughput', 'histogram-owdelay', 'packet-loss-rate', 'packet-retransmits', 'histogram-rtt', 'failures'];
+	        this.eventTypes = ['throughput', 'histogram-owdelay', 'packet-loss-rate', 'packet-count-lost', 'packet-count-sent', 'packet-retransmits', 'histogram-rtt', 'failures'];
 	        this.dataFilters = [];
 	        this.itemsToHide = [];
 	        this.errorData = undefined;
@@ -49056,6 +49061,7 @@
 	                _this.serverRequest = $.get(url, function (data) {
 	                    this.handleMetadataResponse(data, direction[j]);
 	                }.bind(_this)).fail(function (data) {
+	                    console.log("get metadata failed");
 	                    this.handleMetadataError(data);
 	                }.bind(_this));
 	
@@ -49219,6 +49225,12 @@
 	                }
 	                _this2.serverRequest = $.get(url, function (data) {
 	                    this.handleDataResponse(data, eventType, row);
+	                }.bind(_this2)).fail(function (data) {
+	                    console.log("get data failed; skipping this collection");
+	                    dataReqCount--;
+	                    if (dataReqCount <= 0) {
+	                        this.handleMetadataError(data);
+	                    }
 	                }.bind(_this2));
 	            };
 	
@@ -49574,7 +49586,7 @@
 	            testType = "latency";
 	        } else if (eventType == "throughput") {
 	            testType = "throughput";
-	        } else if (eventType == "packet-loss-rate") {
+	        } else if (eventType in lossTypes) {
 	            testType = "loss";
 	        }
 	        return testType;

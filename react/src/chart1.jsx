@@ -1059,6 +1059,7 @@ export default React.createClass({
         const data = this.state.dataError;
         return (
                 <div>
+                <h3>Error loading data</h3>
                     <span className="alert-small-failure">
                         <i className="fa fa-exclamation-triangle"></i>
                          <b>Error retrieving data</b>

@@ -23,17 +23,17 @@ let chartData = [];
 let metadataURLs = {};
 let dataURLs = {};
 
+let lossTypes = [ 'packet-loss-rate', 'packet-count-lost', 'packet-count-sent' ];
+
 module.exports = {
 
-    eventTypes: ['throughput', 'histogram-owdelay', 'packet-loss-rate',
-                    'packet-retransmits', 'histogram-rtt', 'failures'],
-            //|| ['histogram-rtt'];
     maURL: null,
 
     initVars: function() {
         chartMetadata = [];
         chartData = [];
         this.eventTypes = ['throughput', 'histogram-owdelay', 'packet-loss-rate',
+                    'packet-count-lost', 'packet-count-sent',
                     'packet-retransmits', 'histogram-rtt', 'failures'];
         this.dataFilters = [];
         this.itemsToHide = [];
@@ -122,6 +122,7 @@ module.exports = {
                     this.handleMetadataResponse(data, direction[j]);
                 }.bind(this))
                 .fail(function( data ) {
+                    console.log("get metadata failed");
                     this.handleMetadataError( data );
                 }.bind(this)
                 );
@@ -295,6 +296,13 @@ module.exports = {
                 }
                 this.serverRequest = $.get( url, function(data) {
                     this.handleDataResponse(data, eventType, row);
+                }.bind(this))
+                .fail(function( data ) {
+                    console.log("get data failed; skipping this collection");
+                    dataReqCount--;
+                    if ( dataReqCount <= 0 ) {
+                        this.handleMetadataError( data );
+                    }
                 }.bind(this));
 
 
@@ -667,7 +675,7 @@ module.exports = {
             testType = "latency";
         } else if ( eventType == "throughput") {
             testType = "throughput";
-        } else if ( eventType == "packet-loss-rate" ) {
+        } else if ( eventType in lossTypes ) {
             testType = "loss";
         }
         return testType;
