@@ -40,7 +40,12 @@ const typesToChart = [
         label: "Packet Loss",
         unit: "packet",
     },
-    /* TODO: decide whether we want to keep packet-loss-rate  */
+    {
+        name: "loss",
+        esmondName: "packet-count-lost-bidir",
+        label: "Packet Loss",
+        unit: "packet",
+    },
     {
         name: "loss",
         esmondName: "packet-loss-rate",
@@ -149,7 +154,7 @@ function getChartStyle( options, column ) {
             //width = 3;
             opacity = 0.8;
             break;
-        case "udp":
+        default:
             color = scheme.udp;
             //width = 3;
             opacity = 0.8;
@@ -444,13 +449,22 @@ export default React.createClass({
                         label = "throughput"
                     }
 
+
                     row.value = this._formatToolTipLossValue( row.value ) / 100;
                     row.lostValue = this._formatToolTipLossValue( row.lostValue, "integer" );
                     row.sentValue = this._formatToolTipLossValue( row.sentValue, "integer" );
 
+                    if ( row.lostValue != null
+                            && row.sentValue != null ) {
                     lossItems.push(
                             <li>{dir} {row.value}% lost ({row.lostValue} of {row.sentValue} packets sent) {"(" + label + ")"} </li>
                             );
+                    } else {
+                        lossItems.push(
+                                <li>{dir} {row.value}% ({label})</li>
+                                );
+
+                    }
 
                 }
 
@@ -668,7 +682,7 @@ export default React.createClass({
                     }
 
                     if ( eventType == "packet-count-lost" && value > 1e-9 ) {
-                        console.log("packet-count-lost value", value);
+                        //console.log("packet-count-lost value", value);
 
                     }
 
@@ -826,7 +840,9 @@ export default React.createClass({
 
                             // skip packet-count-lost and packet-count-sent
                             if ( esmondName != "packet-count-sent"
-                                    && esmondName != "packet-count-lost") {
+                                    && esmondName != "packet-count-lost"
+                                    && esmondName != "packet-count-lost-bidir"
+                                    ) {
 
                                 stats.min = GraphDataStore.getMin( data.stats.min, stats.min );
                                 stats.max = GraphDataStore.getMax( data.stats.max, stats.max );
@@ -1252,8 +1268,13 @@ export default React.createClass({
 
     },
 
+    getMetaDataFromMA: function() {
+
+    },
+
     getDataFromMA: function(src, dst, start, end, ma_url, params ) {
         this.setState({loading: true, dataloaded: false});
+        //let ma_url = this.props.ma_url || location.origin + "/esmond/perfsonar/archive/";
 
         GraphDataStore.subscribe(this.updateChartData);
 
@@ -1267,7 +1288,7 @@ export default React.createClass({
 
     },
     componentWillReceiveProps( nextProps ) {
-        //console.log("nextProps", nextProps);
+        console.log("nextProps", nextProps);
         let timerange = new TimeRange([nextProps.start * 1000, nextProps.end * 1000 ]);
         this.setState({itemsToHide: nextProps.itemsToHide});
         if ( nextProps.start != this.state.start

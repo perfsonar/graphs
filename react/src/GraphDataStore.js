@@ -19,6 +19,7 @@ let end; // = Math.ceil( Date.now() / 1000 );
 
 let chartMetadata = [];
 let chartData = [];
+let maURLs = [];
 
 let metadataURLs = {};
 let dataURLs = {};
@@ -32,12 +33,20 @@ module.exports = {
     initVars: function() {
         chartMetadata = [];
         chartData = [];
+        maURLs = [];
+        metadataURLs = {};
+        dataURLs = {};
+        reqCount = 0;
+        dataReqCount = 0;
+        completedReqs = 0;
+        completedDataReqs = 0;
+
         this.eventTypes = ['throughput', 'histogram-owdelay', 'packet-loss-rate',
                     'packet-count-lost', 'packet-count-sent', 'packet-count-lost-bidir',
                     'packet-retransmits', 'histogram-rtt', 'failures'];
         this.dataFilters = [];
         this.itemsToHide = [];
-        this.errorData = undefined;
+        this.errorData = null;
 
     },
 
@@ -47,7 +56,6 @@ module.exports = {
 
         this.initVars();
 
-        this.maURL = new URL(ma_url);
         if ( !$.isArray( sources ) ) {
             sources = [ sources ];
         }
@@ -58,6 +66,8 @@ module.exports = {
         if ( !$.isArray( ma_url ) ) {
             ma_url = [ ma_url ];
         }
+
+        maURLs = ma_url;
 
 
 
@@ -210,117 +220,127 @@ module.exports = {
         //window = 86400; // todo: this should be dynamic
         let defaultSummaryType = "aggregation"; // TODO: allow other aggregate types
         let multipleTypes = [ "histogram-rtt", "histogram-owdelay" ];
-        let baseURL = this.maURL.origin;
-        dataReqCount = 0;
-        for(let i in metaData) {
-            let datum = metaData[i];
-            let direction = datum.direction;
-            for( let j in datum["event-types"] ) {
-                let eventTypeObj = datum["event-types"][j];
-                let eventType = eventTypeObj["event-type"];
-                let summaries = eventTypeObj["summaries"];
-                let summaryType = defaultSummaryType;
 
-                let source = datum.source;
+        for(let ma_url in maURLs) {
+            let maURL = new URL( maURLs[ma_url] );
+            let baseURL = maURL.origin;
+            dataReqCount = 0;
+            for(let i in metaData) {
+                let datum = metaData[i];
+                let direction = datum.direction;
+                for( let j in datum["event-types"] ) {
+                    let eventTypeObj = datum["event-types"][j];
+                    let eventType = eventTypeObj["event-type"];
+                    let summaries = eventTypeObj["summaries"];
+                    let summaryType = defaultSummaryType;
 
-                let addr = ipaddr.parse( source );
+                    let source = datum.source;
 
-                let ipversion;
-                if ( ipaddr.isValid( source ) ) {
-                    ipversion = addr.kind( source ).substring(3);
+                    let addr = ipaddr.parse( source );
 
-                } else {
-                    console.log("invalid IP address");
+                    let ipversion;
+                    if ( ipaddr.isValid( source ) ) {
+                        ipversion = addr.kind( source ).substring(3);
 
-                }
-
-                let uri = null;
-
-                if ( $.inArray( eventType, multipleTypes ) >= 0 ) {
-                    summaryType = "statistics";
-                    let win = $.grep( summaries, function( summary, k ) {
-                        return summary["summary-type"] == summaryType && summary["summary-window"] == window;
-                    });
-                    if ( win.length > 1 ) {
-                        console.log("WEIRD: multiple summary windows found. This should not happen.");
-                    } else if ( win.length == 1 ) {
-                        console.log("one summary window found");
-                        uri = win[0].uri;
                     } else {
-                        console.log("no summary windows found");
+                        console.log("invalid IP address");
+
                     }
 
-                } else {
-                    let win = $.grep( summaries, function( summary, k ) {
-                        return summary["summary-type"] == summaryType && summary["summary-window"] == window;
-                    });
-                    // TODO: allow lower summary windows
-                    if ( win.length > 1 ) {
-                        console.log("WEIRD: multiple summary windows found. This should not happen.");
-                    } else if ( win.length == 1 ) {
-                        console.log("one summary window found");
-                        uri = win[0].uri;
+                    let uri = null;
+
+                    if ( $.inArray( eventType, multipleTypes ) >= 0 ) {
+                        summaryType = "statistics";
+                        let win = $.grep( summaries, function( summary, k ) {
+                            return summary["summary-type"] == summaryType && summary["summary-window"] == window;
+                        });
+                        if ( win.length > 1 ) {
+                            console.log("WEIRD: multiple summary windows found. This should not happen.");
+                        } else if ( win.length == 1 ) {
+                            console.log("one summary window found");
+                            uri = win[0].uri;
+                        } else {
+                            console.log("no summary windows found");
+                        }
+
                     } else {
-                        console.log("no summary windows found");
+                        let win = $.grep( summaries, function( summary, k ) {
+                            return summary["summary-type"] == summaryType && summary["summary-window"] == window;
+                        });
+                        // TODO: allow lower summary windows
+                        if ( win.length > 1 ) {
+                            console.log("WEIRD: multiple summary windows found. This should not happen.");
+                        } else if ( win.length == 1 ) {
+                            console.log("one summary window found");
+                            uri = win[0].uri;
+                        } else {
+                            console.log("no summary windows found");
+                        }
+
+
                     }
 
-
-                }
-
-                if ( uri === null ) {
-                    console.log("uri not found, setting ... ");
-                    uri = eventTypeObj["base-uri"];
-                }
-                uri += "?time-start=" + start + "&time-end=" + end;
-                let url = baseURL + uri;
-                console.log("data url", url);
-
-                // Make sure we don't retrieve the same URL twice
-                if ( dataURLs[url] ) {
-                    console.log("got the same URL twice: ", url);
-                    //continue;
-
-                } else {
-                    dataURLs[url] = 1;
-
-                }
-                let row = pruneDatum( datum );
-                row.protocol = datum["ip-transport-protocol"];
-                row.ipversion = ipversion;
-
-                dataReqCount++;
-
-                if ( eventType == "failures" ) {
-                    console.log("FAILURES row", row);
-
-                }
-                this.serverRequest = $.get( url, function(data) {
-                    this.handleDataResponse(data, eventType, row);
-                }.bind(this))
-                .fail(function( data ) {
-                    console.log("get data failed; skipping this collection");
-                    dataReqCount--;
-                    if ( dataReqCount <= 0 ) {
-                        this.handleMetadataError( data );
+                    if ( uri === null ) {
+                        console.log("uri not found, setting ... ");
+                        uri = eventTypeObj["base-uri"];
                     }
-                }.bind(this));
+                    uri += "?time-start=" + start + "&time-end=" + end;
+                    let url = baseURL + uri;
+                    console.log("data url", url);
+
+                    // Make sure we don't retrieve the same URL twice
+                    if ( dataURLs[url] ) {
+                        console.log("got the same URL twice: ", url);
+                        //continue;
+
+                    } else {
+                        dataURLs[url] = 1;
+
+                    }
+                    let row = pruneDatum( datum );
+                    row.protocol = datum["ip-transport-protocol"];
+                    row.ipversion = ipversion;
+
+                    dataReqCount++;
+
+                    if ( eventType == "failures" ) {
+                        console.log("FAILURES row", row);
+
+                    }
+                    this.serverRequest = $.get( url, function(data) {
+                        this.handleDataResponse(data, eventType, row);
+                    }.bind(this))
+                    .fail(function( data ) {
+                        console.log("get data failed; skipping this collection");
+                        this.handleDataResponse(null);
+                        //completedDataReqs++;
+                        //dataReqCount--;
+                        /*
+                        if ( dataReqCount <= 0 ) {
+                            this.handleMetadataError( data );
+                        }
+                        */
+                    }.bind(this));
 
 
+                }
             }
         }
 
     },
     handleDataResponse: function( data, eventType, datum ) {
-        let direction = datum.direction;
-        let protocol = datum.protocol;
-        let row = datum;
-        row.eventType = eventType;
-        row.data = data;
-        if (data.length > 0) {
-            chartData.push( row );
+        if ( data !== null ) {
+            let direction = datum.direction;
+            let protocol = datum.protocol;
+            let row = datum;
+            row.eventType = eventType;
+            row.data = data;
+            if (data.length > 0) {
+                chartData.push( row );
+            }
         }
         completedDataReqs++;
-        if ( completedDataReqs == dataReqCount ) {
+        if ( completedDataReqs >= dataReqCount ) {
             let endTime = Date.now();
             let duration = ( endTime - startTime ) / 1000;
             console.log("COMPLETED ALL DATA ", dataReqCount, " REQUESTS in", duration);
@@ -338,6 +358,9 @@ module.exports = {
             console.log("COMPLETED CREATING TIMESERIES in " , duration);
             console.log("chartData: ", chartData);
             emitter.emit("get");
+
+        } else {
+            //console.log("handled " + completedDataReqs + " out of " + dataReqCount + " data requests");
 
         }
     },
@@ -702,7 +725,11 @@ module.exports = {
             // If this is packet-count-sent, add the value to the
             // corresponding packet-count-lost type and delete this
 
-            if ( eventType == "packet-loss-rate" ) { 
+            if ( eventType == "packet-loss-rate" || eventType == "packet-loss-rate-bidir"  ) {
+                if ( eventType == "packet-loss-rate-bidir" ) {
+                    console.log("BIDIR", eventType);
+
+                }
                 let indices = $.map( data, function( item, index ) {
                     // If the value has the same "metadata-key", it's from the same test
                     if ( item.properties["metadata-key"] == key ) {
@@ -712,13 +739,14 @@ module.exports = {
                         } else if ( item.properties.eventType == "packet-count-lost" ) {
                             row.lostValue = data[index].value;
                             return index;
+                        } else if ( item.properties.eventType == "packet-count-lost-bidir" ) {
+                            console.log("bidir lost", data[index].value);
+                            row.lostValue = data[index].value;
+                            return index;
                         }
                     }
                 });
 
-                /*for( var j in indices ) {
-                    row.sentValue = data[j].value;
-                }*/
                 deleteIndices = deleteIndices.concat( indices );
 
             }

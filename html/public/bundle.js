@@ -25024,9 +25024,12 @@
 	    esmondName: "packet-count-lost",
 	    label: "Packet Loss",
 	    unit: "packet"
-	},
-	/* TODO: decide whether we want to keep packet-loss-rate  */
-	{
+	}, {
+	    name: "loss",
+	    esmondName: "packet-count-lost-bidir",
+	    label: "Packet Loss",
+	    unit: "packet"
+	}, {
 	    name: "loss",
 	    esmondName: "packet-loss-rate",
 	    label: "Packet Loss",
@@ -25128,7 +25131,7 @@
 	            //width = 3;
 	            opacity = 0.8;
 	            break;
-	        case "udp":
+	        default:
 	            color = scheme.udp;
 	            //width = 3;
 	            opacity = 0.8;
@@ -25433,20 +25436,33 @@
 	                    _row.lostValue = this._formatToolTipLossValue(_row.lostValue, "integer");
 	                    _row.sentValue = this._formatToolTipLossValue(_row.sentValue, "integer");
 	
-	                    lossItems.push(_react2.default.createElement(
-	                        "li",
-	                        null,
-	                        _dir,
-	                        " ",
-	                        _row.value,
-	                        "% lost (",
-	                        _row.lostValue,
-	                        " of ",
-	                        _row.sentValue,
-	                        " packets sent) ",
-	                        "(" + _label + ")",
-	                        " "
-	                    ));
+	                    if (_row.lostValue != null && _row.sentValue != null) {
+	                        lossItems.push(_react2.default.createElement(
+	                            "li",
+	                            null,
+	                            _dir,
+	                            " ",
+	                            _row.value,
+	                            "% lost (",
+	                            _row.lostValue,
+	                            " of ",
+	                            _row.sentValue,
+	                            " packets sent) ",
+	                            "(" + _label + ")",
+	                            " "
+	                        ));
+	                    } else {
+	                        lossItems.push(_react2.default.createElement(
+	                            "li",
+	                            null,
+	                            _dir,
+	                            " ",
+	                            _row.value,
+	                            "% (",
+	                            _label,
+	                            ")"
+	                        ));
+	                    }
 	                }
 	
 	                var latencyData = _GraphDataStore2.default.filterData(data, filters["latency"][_ipversion], this.state.itemsToHide);
@@ -25685,7 +25701,8 @@
 	                    }
 	
 	                    if (eventType == "packet-count-lost" && value > 1e-9) {
-	                        console.log("packet-count-lost value", value);
+	                        //console.log("packet-count-lost value", value);
+	
 	                    }
 	
 	                    var sortKey = eventType + protocol + direction;
@@ -25829,7 +25846,7 @@
 	                            charts[type].data.push(result);
 	
 	                            // skip packet-count-lost and packet-count-sent
-	                            if (esmondName != "packet-count-sent" && esmondName != "packet-count-lost") {
+	                            if (esmondName != "packet-count-sent" && esmondName != "packet-count-lost" && esmondName != "packet-count-lost-bidir") {
 	
 	                                stats.min = _GraphDataStore2.default.getMin(data.stats.min, stats.min);
 	                                stats.max = _GraphDataStore2.default.getMax(data.stats.max, stats.max);
@@ -26249,8 +26266,11 @@
 	        this.getDataFromMA(src, dst, start, end, ma_url, params);
 	    },
 	
+	    getMetaDataFromMA: function getMetaDataFromMA() {},
+	
 	    getDataFromMA: function getDataFromMA(src, dst, start, end, ma_url, params) {
 	        this.setState({ loading: true, dataloaded: false });
+	        //let ma_url = this.props.ma_url || location.origin + "/esmond/perfsonar/archive/";
 	
 	        _GraphDataStore2.default.subscribe(this.updateChartData);
 	
@@ -26263,7 +26283,7 @@
 	        this.setState({ dataError: data, loading: false });
 	    },
 	    componentWillReceiveProps: function componentWillReceiveProps(nextProps) {
-	        //console.log("nextProps", nextProps);
+	        console.log("nextProps", nextProps);
 	        var timerange = new _pondjs.TimeRange([nextProps.start * 1000, nextProps.end * 1000]);
 	        this.setState({ itemsToHide: nextProps.itemsToHide });
 	        if (nextProps.start != this.state.start || nextProps.end != this.state.end) {
@@ -49024,6 +49044,7 @@
 	
 	var chartMetadata = [];
 	var chartData = [];
+	var maURLs = [];
 	
 	var metadataURLs = {};
 	var dataURLs = {};
@@ -49037,10 +49058,18 @@
 	    initVars: function initVars() {
 	        chartMetadata = [];
 	        chartData = [];
+	        maURLs = [];
+	        metadataURLs = {};
+	        dataURLs = {};
+	        reqCount = 0;
+	        dataReqCount = 0;
+	        completedReqs = 0;
+	        completedDataReqs = 0;
+	
 	        this.eventTypes = ['throughput', 'histogram-owdelay', 'packet-loss-rate', 'packet-count-lost', 'packet-count-sent', 'packet-count-lost-bidir', 'packet-retransmits', 'histogram-rtt', 'failures'];
 	        this.dataFilters = [];
 	        this.itemsToHide = [];
-	        this.errorData = undefined;
+	        this.errorData = null;
 	    },
 	
 	    getHostPairMetadata: function getHostPairMetadata(sources, dests, startInput, endInput, ma_url, params) {
@@ -49051,7 +49080,6 @@
 	
 	        this.initVars();
 	
-	        this.maURL = new URL(ma_url);
 	        if (!$.isArray(sources)) {
 	            sources = [sources];
 	        }
@@ -49062,6 +49090,8 @@
 	        if (!$.isArray(ma_url)) {
 	            ma_url = [ma_url];
 	        }
+	
+	        maURLs = ma_url;
 	
 	        if (!end) {
 	            //end = Math.ceil( Date.now() / 1000 ); 
@@ -49203,110 +49233,120 @@
 	        //window = 86400; // todo: this should be dynamic
 	        var defaultSummaryType = "aggregation"; // TODO: allow other aggregate types
 	        var multipleTypes = ["histogram-rtt", "histogram-owdelay"];
-	        var baseURL = this.maURL.origin;
-	        dataReqCount = 0;
-	        for (var i in metaData) {
-	            var datum = metaData[i];
-	            var _direction = datum.direction;
 	
-	            var _loop3 = function _loop3(j) {
-	                var eventTypeObj = datum["event-types"][j];
-	                var eventType = eventTypeObj["event-type"];
-	                var summaries = eventTypeObj["summaries"];
-	                var summaryType = defaultSummaryType;
+	        for (var ma_url in maURLs) {
+	            var maURL = new URL(maURLs[ma_url]);
+	            var baseURL = maURL.origin;
+	            dataReqCount = 0;
+	            for (var i in metaData) {
+	                var datum = metaData[i];
+	                var _direction = datum.direction;
 	
-	                var source = datum.source;
+	                var _loop3 = function _loop3(j) {
+	                    var eventTypeObj = datum["event-types"][j];
+	                    var eventType = eventTypeObj["event-type"];
+	                    var summaries = eventTypeObj["summaries"];
+	                    var summaryType = defaultSummaryType;
 	
-	                var addr = ipaddr.parse(source);
+	                    var source = datum.source;
 	
-	                var ipversion = void 0;
-	                if (ipaddr.isValid(source)) {
-	                    ipversion = addr.kind(source).substring(3);
-	                } else {
-	                    console.log("invalid IP address");
-	                }
+	                    var addr = ipaddr.parse(source);
 	
-	                var uri = null;
-	
-	                if ($.inArray(eventType, multipleTypes) >= 0) {
-	                    summaryType = "statistics";
-	                    var win = $.grep(summaries, function (summary, k) {
-	                        return summary["summary-type"] == summaryType && summary["summary-window"] == window;
-	                    });
-	                    if (win.length > 1) {
-	                        console.log("WEIRD: multiple summary windows found. This should not happen.");
-	                    } else if (win.length == 1) {
-	                        console.log("one summary window found");
-	                        uri = win[0].uri;
+	                    var ipversion = void 0;
+	                    if (ipaddr.isValid(source)) {
+	                        ipversion = addr.kind(source).substring(3);
 	                    } else {
-	                        console.log("no summary windows found");
+	                        console.log("invalid IP address");
 	                    }
-	                } else {
-	                    var _win = $.grep(summaries, function (summary, k) {
-	                        return summary["summary-type"] == summaryType && summary["summary-window"] == window;
-	                    });
-	                    // TODO: allow lower summary windows
-	                    if (_win.length > 1) {
-	                        console.log("WEIRD: multiple summary windows found. This should not happen.");
-	                    } else if (_win.length == 1) {
-	                        console.log("one summary window found");
-	                        uri = _win[0].uri;
+	
+	                    var uri = null;
+	
+	                    if ($.inArray(eventType, multipleTypes) >= 0) {
+	                        summaryType = "statistics";
+	                        var win = $.grep(summaries, function (summary, k) {
+	                            return summary["summary-type"] == summaryType && summary["summary-window"] == window;
+	                        });
+	                        if (win.length > 1) {
+	                            console.log("WEIRD: multiple summary windows found. This should not happen.");
+	                        } else if (win.length == 1) {
+	                            console.log("one summary window found");
+	                            uri = win[0].uri;
+	                        } else {
+	                            console.log("no summary windows found");
+	                        }
 	                    } else {
-	                        console.log("no summary windows found");
+	                        var _win = $.grep(summaries, function (summary, k) {
+	                            return summary["summary-type"] == summaryType && summary["summary-window"] == window;
+	                        });
+	                        // TODO: allow lower summary windows
+	                        if (_win.length > 1) {
+	                            console.log("WEIRD: multiple summary windows found. This should not happen.");
+	                        } else if (_win.length == 1) {
+	                            console.log("one summary window found");
+	                            uri = _win[0].uri;
+	                        } else {
+	                            console.log("no summary windows found");
+	                        }
 	                    }
-	                }
 	
-	                if (uri === null) {
-	                    console.log("uri not found, setting ... ");
-	                    uri = eventTypeObj["base-uri"];
-	                }
-	                uri += "?time-start=" + start + "&time-end=" + end;
-	                var url = baseURL + uri;
-	                console.log("data url", url);
-	
-	                // Make sure we don't retrieve the same URL twice
-	                if (dataURLs[url]) {
-	                    console.log("got the same URL twice: ", url);
-	                    //continue;
-	                } else {
-	                    dataURLs[url] = 1;
-	                }
-	                var row = pruneDatum(datum);
-	                row.protocol = datum["ip-transport-protocol"];
-	                row.ipversion = ipversion;
-	
-	                dataReqCount++;
-	
-	                if (eventType == "failures") {
-	                    console.log("FAILURES row", row);
-	                }
-	                _this2.serverRequest = $.get(url, function (data) {
-	                    this.handleDataResponse(data, eventType, row);
-	                }.bind(_this2)).fail(function (data) {
-	                    console.log("get data failed; skipping this collection");
-	                    dataReqCount--;
-	                    if (dataReqCount <= 0) {
-	                        this.handleMetadataError(data);
+	                    if (uri === null) {
+	                        console.log("uri not found, setting ... ");
+	                        uri = eventTypeObj["base-uri"];
 	                    }
-	                }.bind(_this2));
-	            };
+	                    uri += "?time-start=" + start + "&time-end=" + end;
+	                    var url = baseURL + uri;
+	                    console.log("data url", url);
 	
-	            for (var j in datum["event-types"]) {
-	                _loop3(j);
+	                    // Make sure we don't retrieve the same URL twice
+	                    if (dataURLs[url]) {
+	                        console.log("got the same URL twice: ", url);
+	                        //continue;
+	                    } else {
+	                        dataURLs[url] = 1;
+	                    }
+	                    var row = pruneDatum(datum);
+	                    row.protocol = datum["ip-transport-protocol"];
+	                    row.ipversion = ipversion;
+	
+	                    dataReqCount++;
+	
+	                    if (eventType == "failures") {
+	                        console.log("FAILURES row", row);
+	                    }
+	                    _this2.serverRequest = $.get(url, function (data) {
+	                        this.handleDataResponse(data, eventType, row);
+	                    }.bind(_this2)).fail(function (data) {
+	                        console.log("get data failed; skipping this collection");
+	                        this.handleDataResponse(null);
+	                        //completedDataReqs++;
+	                        //dataReqCount--;
+	                        /*
+	                        if ( dataReqCount <= 0 ) {
+	                            this.handleMetadataError( data );
+	                        }
+	                        */
+	                    }.bind(_this2));
+	                };
+	
+	                for (var j in datum["event-types"]) {
+	                    _loop3(j);
+	                }
 	            }
 	        }
 	    },
 	    handleDataResponse: function handleDataResponse(data, eventType, datum) {
-	        var direction = datum.direction;
-	        var protocol = datum.protocol;
-	        var row = datum;
-	        row.eventType = eventType;
-	        row.data = data;
-	        if (data.length > 0) {
-	            chartData.push(row);
+	        if (data !== null) {
+	            var _direction2 = datum.direction;
+	            var protocol = datum.protocol;
+	            var _row = datum;
+	            _row.eventType = eventType;
+	            _row.data = data;
+	            if (data.length > 0) {
+	                chartData.push(_row);
+	            }
 	        }
 	        completedDataReqs++;
-	        if (completedDataReqs == dataReqCount) {
+	        if (completedDataReqs >= dataReqCount) {
 	            var endTime = Date.now();
 	            var duration = (endTime - startTime) / 1000;
 	            console.log("COMPLETED ALL DATA ", dataReqCount, " REQUESTS in", duration);
@@ -49324,6 +49364,9 @@
 	            console.log("COMPLETED CREATING TIMESERIES in ", duration);
 	            console.log("chartData: ", chartData);
 	            emitter.emit("get");
+	        } else {
+	            //console.log("handled " + completedDataReqs + " out of " + dataReqCount + " data requests");
+	
 	        }
 	    },
 	
@@ -49669,7 +49712,10 @@
 	            // If this is packet-count-sent, add the value to the
 	            // corresponding packet-count-lost type and delete this
 	
-	            if (eventType == "packet-loss-rate") {
+	            if (eventType == "packet-loss-rate" || eventType == "packet-loss-rate-bidir") {
+	                if (eventType == "packet-loss-rate-bidir") {
+	                    console.log("BIDIR", eventType);
+	                }
 	                var indices = $.map(data, function (item, index) {
 	                    // If the value has the same "metadata-key", it's from the same test
 	                    if (item.properties["metadata-key"] == key) {
@@ -49679,13 +49725,14 @@
 	                        } else if (item.properties.eventType == "packet-count-lost") {
 	                            row.lostValue = data[index].value;
 	                            return index;
+	                        } else if (item.properties.eventType == "packet-count-lost-bidir") {
+	                            console.log("bidir lost", data[index].value);
+	                            row.lostValue = data[index].value;
+	                            return index;
 	                        }
 	                    }
 	                });
 	
-	                /*for( var j in indices ) {
-	                    row.sentValue = data[j].value;
-	                }*/
 	                deleteIndices = deleteIndices.concat(indices);
 	            }
 	        };
@@ -91081,11 +91128,11 @@
 	        */
 	
 	    handleTimerangeChange: function handleTimerangeChange(newTime, noupdateURL) {
-	        //console.log("chartLayout newTime", newTime);
+	        console.log("chartLayout newTime", newTime);
 	        this.setState(newTime);
-	        if (!noupdateURL) {
-	            this.setHashVals(newTime);
-	        }
+	        //if ( !noupdateURL ) {
+	        this.setHashVals(newTime);
+	        //}
 	        //this.forceUpdate();
 	    },
 	

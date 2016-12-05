@@ -371,11 +371,11 @@ export default React.createClass({
     */
 
     handleTimerangeChange: function( newTime, noupdateURL ) {
-        //console.log("chartLayout newTime", newTime);
+        console.log("chartLayout newTime", newTime);
         this.setState( newTime );
-        if ( !noupdateURL ) {
+        //if ( !noupdateURL ) {
             this.setHashVals( newTime );
-        }
+        //}
         //this.forceUpdate();
 
     },
