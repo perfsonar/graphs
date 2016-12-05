@@ -23,7 +23,7 @@ let chartData = [];
 let metadataURLs = {};
 let dataURLs = {};
 
-let lossTypes = [ 'packet-loss-rate', 'packet-count-lost', 'packet-count-sent' ];
+let lossTypes = [ 'packet-loss-rate', 'packet-count-lost', 'packet-count-sent', 'packet-count-lost-bidir' ];
 
 module.exports = {
 
@@ -33,7 +33,7 @@ module.exports = {
         chartMetadata = [];
         chartData = [];
         this.eventTypes = ['throughput', 'histogram-owdelay', 'packet-loss-rate',
-                    'packet-count-lost', 'packet-count-sent',
+                    'packet-count-lost', 'packet-count-sent', 'packet-count-lost-bidir',
                     'packet-retransmits', 'histogram-rtt', 'failures'];
         this.dataFilters = [];
         this.itemsToHide = [];
@@ -525,6 +525,10 @@ module.exports = {
 
 
             testType = self.eventTypeToTestType( eventType );
+            if ( typeof testType == "undefined" ) {
+                console.log("undefined testType", datum);
+
+            }
             mainTestType = self.eventTypeToTestType( mainEventType );
 
             $.each(datum.data, function( valIndex, val ) {
@@ -536,6 +540,14 @@ module.exports = {
                     value = val["val"].minimum;
                 } else if ( eventType == 'histogram-rtt' ) {
                     value = val["val"].minimum;
+                } else if ( eventType == 'packet-count-lost' ) {
+                    if ( val["val"] > 0 ) {
+                        //console.log('packet count lost > 0', val);
+                    }
+
+                } else if ( eventType == 'packet-count-sent' ) {
+                    //console.log('packet count sent', val);
+
                 }
                 if (value <= 0 ) {
                     //console.log("VALUE IS ZERO OR LESS", Date());
@@ -569,8 +581,6 @@ module.exports = {
                 } else if ( value > max ) {
                     max = value;
                 }
-
-
 
             });
 
@@ -675,10 +685,56 @@ module.exports = {
             testType = "latency";
         } else if ( eventType == "throughput") {
             testType = "throughput";
-        } else if ( eventType in lossTypes ) {
+        } else if ( lossTypes.indexOf( eventType ) > -1 ) {
             testType = "loss";
         }
         return testType;
+
+    },
+    pairSentLost: function( data ) {
+        let deleteIndices = [];
+
+        for(var i in data ) {
+            let row = data[i];
+            let eventType = row.properties.eventType;
+            let key = row.properties["metadata-key"];
+
+            // If this is packet-count-sent, add the value to the
+            // corresponding packet-count-lost type and delete this
+
+            if ( eventType == "packet-loss-rate" ) { 
+                let indices = $.map( data, function( item, index ) {
+                    // If the value has the same "metadata-key", it's from the same test
+                    if ( item.properties["metadata-key"] == key ) {
+                        if ( item.properties.eventType == "packet-count-sent" ) {
+                            row.sentValue = data[index].value;
+                            return index;
+                        } else if ( item.properties.eventType == "packet-count-lost" ) {
+                            row.lostValue = data[index].value;
+                            return index;
+                        }
+                    }
+                });
+
+                /*for( var j in indices ) {
+                    row.sentValue = data[j].value;
+                }*/
+                deleteIndices = deleteIndices.concat( indices );
+
+            }
+
+        }
+
+        // Delete the values with "packet-count-sent"
+        data = $.map( data, function( item, index ) {
+            if ( deleteIndices.indexOf( index ) > -1 ) {
+                return null;
+            } else {
+                return item;
+            }
+        });
+
+        return data;
 
     },
     subscribe: function( callback ) {

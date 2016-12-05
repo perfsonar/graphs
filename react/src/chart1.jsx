@@ -30,6 +30,19 @@ const typesToChart = [
     },
     {
         name: "loss",
+        esmondName: "packet-count-sent",
+        label: "Packet Loss",
+        unit: "packet",
+    },
+    {
+        name: "loss",
+        esmondName: "packet-count-lost",
+        label: "Packet Loss",
+        unit: "packet",
+    },
+    /* TODO: decide whether we want to keep packet-loss-rate  */
+    {
+        name: "loss",
         esmondName: "packet-loss-rate",
         label: "Packet Loss",
         unit: "fractional",
@@ -412,9 +425,10 @@ export default React.createClass({
 
                 }
 
-
-
                 let lossData = GraphDataStore.filterData( data, filters["loss"][ipversion], this.state.itemsToHide );
+
+                lossData = GraphDataStore.pairSentLost( lossData );
+
                 lossData.sort(this.compareToolTipData);
                 for(let i in lossData) {
                     let row = lossData[i];
@@ -428,12 +442,14 @@ export default React.createClass({
                         label = "ping";
                     } else if ( row.properties.mainEventType == "throughput" ) {
                         label = "throughput"
-
                     }
-                    row.value = this._formatToolTipLossValue( row.value );
-                    lossItems.push(
-                            <li>{dir} {row.value}  {"(" + label + ")"} </li>
 
+                    row.value = this._formatToolTipLossValue( row.value ) / 100;
+                    row.lostValue = this._formatToolTipLossValue( row.lostValue, "integer" );
+                    row.sentValue = this._formatToolTipLossValue( row.sentValue, "integer" );
+
+                    lossItems.push(
+                            <li>{dir} {row.value}% lost ({row.lostValue} of {row.sentValue} packets sent) {"(" + label + ")"} </li>
                             );
 
                 }
@@ -575,13 +591,27 @@ export default React.createClass({
 
     },
 
-    _formatToolTipLossValue( value ) {
+    _formatToolTipLossValue( value, format ) {
+        if ( typeof ( format == "undefined" ) ) {
+            format = "float";
+        }
         // Horrible hack; values of 0 are rewritten to 1e-9 since our log scale
         // can't handle zeroes
-        if ( value == 1e-9 || value == 0 ) {
+        if ( typeof value == "undefined" ) {
+            return null;
+        }
+
+        if ( value == 1e-9 ) {
             value = 0;
-        } else {
-            value = value.toPrecision(4);
+        }  else {
+            if ( format == "integer" ) {
+                value = Math.floor( value );
+            } else if ( format == "percent" ) {
+                value = (value / 100).toPrecision(4);
+            } else {
+                value = value.toPrecision(4);
+
+            }
         }
         return value;
     },
@@ -628,12 +658,19 @@ export default React.createClass({
                     } else {
                         continue; // TODO: fix this so it actually removes the values?
                     }
-                    
-                    
 
                     let eventType = row.properties.eventType;
                     let direction = row.properties.direction;
                     let protocol = row.properties.protocol;
+
+                    if ( typeof protocol == "undefined" ) {
+                        protocol = "";
+                    }
+
+                    if ( eventType == "packet-count-lost" && value > 1e-9 ) {
+                        console.log("packet-count-lost value", value);
+
+                    }
 
                     let sortKey = eventType + protocol + direction;
 
@@ -784,8 +821,19 @@ export default React.createClass({
                             let result = data.results[j];
                             let series = result.values;
                             let properties = result.properties;
-                            stats.min = GraphDataStore.getMin( data.stats.min, stats.min );
-                            stats.max = GraphDataStore.getMax( data.stats.max, stats.max );
+
+                            charts[type].data.push( result );
+
+                            // skip packet-count-lost and packet-count-sent
+                            if ( esmondName != "packet-count-sent"
+                                    && esmondName != "packet-count-lost") {
+
+                                stats.min = GraphDataStore.getMin( data.stats.min, stats.min );
+                                stats.max = GraphDataStore.getMax( data.stats.max, stats.max );
+                            }  else {
+                                continue;
+
+                            }
                             // TODO: Try changing stats
                             //stats.min = data.stats.min;
                             //stats.max = data.stats.max;
@@ -800,10 +848,10 @@ export default React.createClass({
                                         columns={[ "value" ]} />
                                     );
                             //for(let result in data.results ) {
-                                charts[type].data.push( result );
                             //}
 
                             // push the brush charts, if enabled
+                            /*
                             if ( this.state.showBrush === true ) {
                                 brushCharts[type][ipv].push(
                                         <LineChart key={"brush" + [type] + Math.floor( Math.random() )}
@@ -816,6 +864,7 @@ export default React.createClass({
                                 brushCharts[type].stats = stats;
                             }
 
+                        */
                         }
                         charts[type].stats = stats;
 

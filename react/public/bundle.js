@@ -24959,6 +24959,10 @@
 	    value: true
 	});
 	
+	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+	//import Highlighter from "./highlighter";
+	
+	
 	var _react = __webpack_require__(/*! react */ 1);
 	
 	var _react2 = _interopRequireDefault(_react);
@@ -25001,9 +25005,6 @@
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
-	//import Highlighter from "./highlighter";
-	
-	
 	var charts = void 0;
 	var chartData = void 0;
 	
@@ -25014,6 +25015,18 @@
 	    label: "Throughput",
 	    unit: "bps"
 	}, {
+	    name: "loss",
+	    esmondName: "packet-count-sent",
+	    label: "Packet Loss",
+	    unit: "packet"
+	}, {
+	    name: "loss",
+	    esmondName: "packet-count-lost",
+	    label: "Packet Loss",
+	    unit: "packet"
+	},
+	/* TODO: decide whether we want to keep packet-loss-rate  */
+	{
 	    name: "loss",
 	    esmondName: "packet-loss-rate",
 	    label: "Packet Loss",
@@ -25399,6 +25412,9 @@
 	                }
 	
 	                var lossData = _GraphDataStore2.default.filterData(data, filters["loss"][_ipversion], this.state.itemsToHide);
+	
+	                lossData = _GraphDataStore2.default.pairSentLost(lossData);
+	
 	                lossData.sort(this.compareToolTipData);
 	                for (var _i3 in lossData) {
 	                    var _row = lossData[_i3];
@@ -25412,14 +25428,22 @@
 	                    } else if (_row.properties.mainEventType == "throughput") {
 	                        _label = "throughput";
 	                    }
-	                    _row.value = this._formatToolTipLossValue(_row.value);
+	
+	                    _row.value = this._formatToolTipLossValue(_row.value) / 100;
+	                    _row.lostValue = this._formatToolTipLossValue(_row.lostValue, "integer");
+	                    _row.sentValue = this._formatToolTipLossValue(_row.sentValue, "integer");
+	
 	                    lossItems.push(_react2.default.createElement(
 	                        "li",
 	                        null,
 	                        _dir,
 	                        " ",
 	                        _row.value,
-	                        "  ",
+	                        "% lost (",
+	                        _row.lostValue,
+	                        " of ",
+	                        _row.sentValue,
+	                        " packets sent) ",
 	                        "(" + _label + ")",
 	                        " "
 	                    ));
@@ -25592,13 +25616,26 @@
 	            return null;
 	        }
 	    },
-	    _formatToolTipLossValue: function _formatToolTipLossValue(value) {
+	    _formatToolTipLossValue: function _formatToolTipLossValue(value, format) {
+	        if (_typeof(format == "undefined")) {
+	            format = "float";
+	        }
 	        // Horrible hack; values of 0 are rewritten to 1e-9 since our log scale
 	        // can't handle zeroes
-	        if (value == 1e-9 || value == 0) {
+	        if (typeof value == "undefined") {
+	            return null;
+	        }
+	
+	        if (value == 1e-9) {
 	            value = 0;
 	        } else {
-	            value = value.toPrecision(4);
+	            if (format == "integer") {
+	                value = Math.floor(value);
+	            } else if (format == "percent") {
+	                value = (value / 100).toPrecision(4);
+	            } else {
+	                value = value.toPrecision(4);
+	            }
 	        }
 	        return value;
 	    },
@@ -25642,6 +25679,14 @@
 	                    var eventType = row.properties.eventType;
 	                    var direction = row.properties.direction;
 	                    var protocol = row.properties.protocol;
+	
+	                    if (typeof protocol == "undefined") {
+	                        protocol = "";
+	                    }
+	
+	                    if (eventType == "packet-count-lost" && value > 1e-9) {
+	                        console.log("packet-count-lost value", value);
+	                    }
 	
 	                    var sortKey = eventType + protocol + direction;
 	
@@ -25780,8 +25825,17 @@
 	                            var result = data.results[j];
 	                            var series = result.values;
 	                            var properties = result.properties;
-	                            stats.min = _GraphDataStore2.default.getMin(data.stats.min, stats.min);
-	                            stats.max = _GraphDataStore2.default.getMax(data.stats.max, stats.max);
+	
+	                            charts[type].data.push(result);
+	
+	                            // skip packet-count-lost and packet-count-sent
+	                            if (esmondName != "packet-count-sent" && esmondName != "packet-count-lost") {
+	
+	                                stats.min = _GraphDataStore2.default.getMin(data.stats.min, stats.min);
+	                                stats.max = _GraphDataStore2.default.getMax(data.stats.max, stats.max);
+	                            } else {
+	                                continue;
+	                            }
 	                            // TODO: Try changing stats
 	                            //stats.min = data.stats.min;
 	                            //stats.max = data.stats.max;
@@ -25794,19 +25848,22 @@
 	                                max: stats.max,
 	                                columns: ["value"] }));
 	                            //for(let result in data.results ) {
-	                            charts[type].data.push(result);
 	                            //}
 	
 	                            // push the brush charts, if enabled
-	                            if (this.state.showBrush === true) {
-	                                brushCharts[type][ipv].push(_react2.default.createElement(_reactTimeseriesCharts.LineChart, { key: "brush" + [type] + Math.floor(Math.random()),
-	                                    axis: "brush_axis" + [type], series: series,
-	                                    style: getChartStyle(properties), smooth: false, breakLine: true,
-	                                    min: stats.min,
-	                                    max: stats.max,
-	                                    columns: ["value"] }));
+	                            /*
+	                            if ( this.state.showBrush === true ) {
+	                                brushCharts[type][ipv].push(
+	                                        <LineChart key={"brush" + [type] + Math.floor( Math.random() )}
+	                                            axis={"brush_axis" + [type]} series={series}
+	                                            style={getChartStyle( properties )} smooth={false} breakLine={true}
+	                                            min={stats.min}
+	                                            max={stats.max}
+	                                            columns={[ "value" ]} />
+	                                        );
 	                                brushCharts[type].stats = stats;
 	                            }
+	                            */
 	                        }
 	                        charts[type].stats = stats;
 	                    }
@@ -48971,7 +49028,7 @@
 	var metadataURLs = {};
 	var dataURLs = {};
 	
-	var lossTypes = ['packet-loss-rate', 'packet-count-lost', 'packet-count-sent'];
+	var lossTypes = ['packet-loss-rate', 'packet-count-lost', 'packet-count-sent', 'packet-count-lost-bidir'];
 	
 	module.exports = {
 	
@@ -48980,7 +49037,7 @@
 	    initVars: function initVars() {
 	        chartMetadata = [];
 	        chartData = [];
-	        this.eventTypes = ['throughput', 'histogram-owdelay', 'packet-loss-rate', 'packet-count-lost', 'packet-count-sent', 'packet-retransmits', 'histogram-rtt', 'failures'];
+	        this.eventTypes = ['throughput', 'histogram-owdelay', 'packet-loss-rate', 'packet-count-lost', 'packet-count-sent', 'packet-count-lost-bidir', 'packet-retransmits', 'histogram-rtt', 'failures'];
 	        this.dataFilters = [];
 	        this.itemsToHide = [];
 	        this.errorData = undefined;
@@ -49446,6 +49503,9 @@
 	            var mainTestType = void 0;
 	
 	            testType = self.eventTypeToTestType(eventType);
+	            if (typeof testType == "undefined") {
+	                console.log("undefined testType", datum);
+	            }
 	            mainTestType = self.eventTypeToTestType(mainEventType);
 	
 	            $.each(datum.data, function (valIndex, val) {
@@ -49457,6 +49517,13 @@
 	                    value = val["val"].minimum;
 	                } else if (eventType == 'histogram-rtt') {
 	                    value = val["val"].minimum;
+	                } else if (eventType == 'packet-count-lost') {
+	                    if (val["val"] > 0) {
+	                        //console.log('packet count lost > 0', val);
+	                    }
+	                } else if (eventType == 'packet-count-sent') {
+	                    //console.log('packet count sent', val);
+	
 	                }
 	                if (value <= 0) {
 	                    //console.log("VALUE IS ZERO OR LESS", Date());
@@ -49586,10 +49653,57 @@
 	            testType = "latency";
 	        } else if (eventType == "throughput") {
 	            testType = "throughput";
-	        } else if (eventType in lossTypes) {
+	        } else if (lossTypes.indexOf(eventType) > -1) {
 	            testType = "loss";
 	        }
 	        return testType;
+	    },
+	    pairSentLost: function pairSentLost(data) {
+	        var deleteIndices = [];
+	
+	        var _loop4 = function _loop4() {
+	            var row = data[i];
+	            var eventType = row.properties.eventType;
+	            var key = row.properties["metadata-key"];
+	
+	            // If this is packet-count-sent, add the value to the
+	            // corresponding packet-count-lost type and delete this
+	
+	            if (eventType == "packet-loss-rate") {
+	                var indices = $.map(data, function (item, index) {
+	                    // If the value has the same "metadata-key", it's from the same test
+	                    if (item.properties["metadata-key"] == key) {
+	                        if (item.properties.eventType == "packet-count-sent") {
+	                            row.sentValue = data[index].value;
+	                            return index;
+	                        } else if (item.properties.eventType == "packet-count-lost") {
+	                            row.lostValue = data[index].value;
+	                            return index;
+	                        }
+	                    }
+	                });
+	
+	                /*for( var j in indices ) {
+	                    row.sentValue = data[j].value;
+	                }*/
+	                deleteIndices = deleteIndices.concat(indices);
+	            }
+	        };
+	
+	        for (var i in data) {
+	            _loop4();
+	        }
+	
+	        // Delete the values with "packet-count-sent"
+	        data = $.map(data, function (item, index) {
+	            if (deleteIndices.indexOf(index) > -1) {
+	                return null;
+	            } else {
+	                return item;
+	            }
+	        });
+	
+	        return data;
 	    },
 	    subscribe: function subscribe(callback) {
 	        emitter.on("get", callback);
