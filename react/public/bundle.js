@@ -26242,7 +26242,7 @@
 	    updateChartData: function updateChartData() {
 	        var newChartSeries = _GraphDataStore2.default.getChartData();
 	        if (this.state.initialLoading) {
-	            this.setState({ chartSeries: newChartSeries, initialLoading: false });
+	            this.setState({ chartSeries: newChartSeries, initialLoading: false, loading: true });
 	        } else {
 	            this.setState({ chartSeries: newChartSeries, loading: false, dataloaded: false });
 	        }
@@ -26261,7 +26261,7 @@
 	            tool: tool,
 	            ipversion: ipversion
 	        };
-	        this.setState({ params: params });
+	        this.setState({ params: params, loading: true });
 	        var ma_url = this.props.ma_url || location.origin + "/esmond/perfsonar/archive/";
 	        this.getDataFromMA(src, dst, start, end, ma_url, params);
 	    },

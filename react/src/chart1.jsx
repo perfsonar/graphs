@@ -1243,7 +1243,7 @@ export default React.createClass({
     updateChartData: function() {
         let newChartSeries = GraphDataStore.getChartData();
         if ( this.state.initialLoading ) {
-            this.setState({ chartSeries: newChartSeries, initialLoading: false } );
+            this.setState({ chartSeries: newChartSeries, initialLoading: false, loading: true } );
         } else {
             this.setState({ chartSeries: newChartSeries, loading: false, dataloaded: false } );
         }
@@ -1260,9 +1260,9 @@ export default React.createClass({
         let ipversion = this.props.ipversion;
         let params = {
             tool: tool,
-            ipversion: ipversion,
+            ipversion: ipversion
         };
-        this.setState({params: params});
+        this.setState({params: params, loading: true});
         let ma_url = this.props.ma_url || location.origin + "/esmond/perfsonar/archive/";
         this.getDataFromMA(src, dst, start, end, ma_url, params);
 
