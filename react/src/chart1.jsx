@@ -446,11 +446,13 @@ export default React.createClass({
                     if ( row.properties.mainEventType == "histogram-rtt" ) {
                         label = "ping";
                     } else if ( row.properties.mainEventType == "throughput" ) {
-                        label = "throughput"
+                        label = "UDP throughput"
+                    } else if ( row.properties.mainEventType == "histogram-owdelay" ) {
+                        label = "owamp";
                     }
 
 
-                    row.value = this._formatToolTipLossValue( row.value ) / 100;
+                    row.value = this._formatToolTipLossValue( row.value, "percent" );
                     row.lostValue = this._formatToolTipLossValue( row.lostValue, "integer" );
                     row.sentValue = this._formatToolTipLossValue( row.sentValue, "integer" );
 
@@ -606,28 +608,44 @@ export default React.createClass({
     },
 
     _formatToolTipLossValue( value, format ) {
-        if ( typeof ( format == "undefined" ) ) {
+        if ( typeof format == "undefined" ) {
             format = "float";
         }
-        // Horrible hack; values of 0 are rewritten to 1e-9 since our log scale
-        // can't handle zeroes
         if ( typeof value == "undefined" ) {
             return null;
         }
 
+        // Horrible hack; values of 0 are rewritten to 1e-9 since our log scale
+        // can't handle zeroes
         if ( value == 1e-9 ) {
             value = 0;
         }  else {
             if ( format == "integer" ) {
                 value = Math.floor( value );
             } else if ( format == "percent" ) {
-                value = (value / 100).toPrecision(4);
+                value = parseFloat( (value / 100).toPrecision(6) );
             } else {
-                value = value.toPrecision(4);
+                value = parseFloat( value.toPrecision(6) );
 
             }
         }
+        value = this._removeExp( value );
         return value;
+    },
+
+    _removeExp( val ) {
+        val += "";
+        if ( ( val ).includes("e") ) {
+            var arr = val.split('e');
+            var precision = Math.abs(arr[1]);
+            var num = arr[0].split('.');
+            precision += num[1].length;
+
+            val = (+val).toFixed(precision);
+        }
+
+        return val;
+
     },
 
     compareToolTipData( a, b ) {

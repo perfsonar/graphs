@@ -107,7 +107,7 @@
 	    ),
 	    _react2.default.createElement(
 	        _reactRouter.Route,
-	        { path: "/perfsonar-graphs", component: _chartLayout2.default },
+	        { path: "/perfsonar-graphs/", component: _chartLayout2.default },
 	        _react2.default.createElement(_reactRouter.Route, { path: "chart1webservice", component: _chart1webservice2.default })
 	    )
 	), document.getElementById("content"));
@@ -24959,10 +24959,6 @@
 	    value: true
 	});
 	
-	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
-	//import Highlighter from "./highlighter";
-	
-	
 	var _react = __webpack_require__(/*! react */ 1);
 	
 	var _react2 = _interopRequireDefault(_react);
@@ -25004,6 +25000,9 @@
 	__webpack_require__(/*! ../css/spinner.css */ 605);
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
+	//import Highlighter from "./highlighter";
+	
 	
 	var charts = void 0;
 	var chartData = void 0;
@@ -25429,10 +25428,12 @@
 	                    if (_row.properties.mainEventType == "histogram-rtt") {
 	                        _label = "ping";
 	                    } else if (_row.properties.mainEventType == "throughput") {
-	                        _label = "throughput";
+	                        _label = "UDP throughput";
+	                    } else if (_row.properties.mainEventType == "histogram-owdelay") {
+	                        _label = "owamp";
 	                    }
 	
-	                    _row.value = this._formatToolTipLossValue(_row.value) / 100;
+	                    _row.value = this._formatToolTipLossValue(_row.value, "percent");
 	                    _row.lostValue = this._formatToolTipLossValue(_row.lostValue, "integer");
 	                    _row.sentValue = this._formatToolTipLossValue(_row.sentValue, "integer");
 	
@@ -25633,27 +25634,41 @@
 	        }
 	    },
 	    _formatToolTipLossValue: function _formatToolTipLossValue(value, format) {
-	        if (_typeof(format == "undefined")) {
+	        if (typeof format == "undefined") {
 	            format = "float";
 	        }
-	        // Horrible hack; values of 0 are rewritten to 1e-9 since our log scale
-	        // can't handle zeroes
 	        if (typeof value == "undefined") {
 	            return null;
 	        }
 	
+	        // Horrible hack; values of 0 are rewritten to 1e-9 since our log scale
+	        // can't handle zeroes
 	        if (value == 1e-9) {
 	            value = 0;
 	        } else {
 	            if (format == "integer") {
 	                value = Math.floor(value);
 	            } else if (format == "percent") {
-	                value = (value / 100).toPrecision(4);
+	                value = parseFloat((value / 100).toPrecision(6));
 	            } else {
-	                value = value.toPrecision(4);
+	                value = parseFloat(value.toPrecision(6));
 	            }
 	        }
+	        value = this._removeExp(value);
 	        return value;
+	    },
+	    _removeExp: function _removeExp(val) {
+	        val += "";
+	        if (val.includes("e")) {
+	            var arr = val.split('e');
+	            var precision = Math.abs(arr[1]);
+	            var num = arr[0].split('.');
+	            precision += num[1].length;
+	
+	            val = (+val).toFixed(precision);
+	        }
+	
+	        return val;
 	    },
 	    compareToolTipData: function compareToolTipData(a, b) {
 	        if (a.sortKey < b.sortKey) return -1;
