@@ -25,20 +25,6 @@ const scheme = {
     connections: "#990000"
 };
 
-/* copied frmo chart1.jsx
-const scheme = {
-    tcp: "#0076b4", // blue
-    udp: "#cc7dbe", // purple
-    ipv4: "#e5a11c", // yellow
-    ipv6: "#633", // brown
-    throughput: "#0076b4", // blue
-    throughputTCP: "#0076b4", // blue
-    throughputUDP: "#2b9f78", // green
-    "histogram-rtt": "#e5a11c", // yellow
-    "histogram-owdelay": "#633", // brown
-    "packet-loss-rate": "#cc7dbe" // purple
-};
-*/
 
 const connectionsStyle = {
     color: scheme.requests,
@@ -52,7 +38,7 @@ const requestsStyle = {
 };
 
 const lineStyles = {
-    value: { 
+    value: {
         stroke: scheme.requests,
         strokeWidth: 1
     }
@@ -248,16 +234,16 @@ export default React.createClass({
                                 </li>
                                 */}
                                 <li className={"graph-filter__item graph-filter__item loss-throughput " + this.getActiveClass( this.state.active["eventType_packet-loss-rate_mainTestType_throughput_"] ) }>
-                                    <a href="#" onClick={this.toggleType.bind(this, {eventType: "packet-loss-rate", mainTestType: "throughput"})}>Loss (Throughput)</a>
+                                    <a href="#" onClick={this.toggleType.bind(this, {eventType: "packet-loss-rate", mainTestType: "throughput"})}>Loss (UDP tput)</a>
                                 </li>
                                 <li className={"graph-filter__item graph-filter__item loss-latency " + this.getActiveClass( this.state.active["eventType_packet-loss-rate_mainTestType_latency_"] )}>
-                                    <a href="#" onClick={this.toggleType.bind(this, {eventType: "packet-loss-rate", mainTestType: "latency"})}>Loss (Latency)</a>
+                                    <a href="#" onClick={this.toggleType.bind(this, {eventType: "packet-loss-rate", mainTestType: "latency"})}>Loss (owamp)</a>
                                 </li>
                                 <li className={"graph-filter__item ipv6 " + this.getActiveClass( this.state.active["eventType_histogram-owdelay_"] )}>
-                                    <a href="#" onClick={this.toggleType.bind(this, {eventType: "histogram-owdelay"})}>Latency</a>
+                                    <a href="#" onClick={this.toggleType.bind(this, {eventType: "histogram-owdelay"})}>Latency (owamp)</a>
                                 </li>
                                 <li className={"graph-filter__item ipv4 " + this.getActiveClass( this.state.active["eventType_histogram-rtt_"])} >
-                                    <a href="#" onClick={this.toggleType.bind(this, {eventType: "histogram-rtt"})}>Ping</a>
+                                    <a href="#" onClick={this.toggleType.bind(this, {eventType: "histogram-rtt"})}>Latency (ping)</a>
                                 </li>
                             </ul>
                         </div>

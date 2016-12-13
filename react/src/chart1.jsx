@@ -343,7 +343,7 @@ export default React.createClass({
         }
         let { toolTipWidth, toolTipHeight } = this.refs.tooltip;
         //let offsetX = toolTipWidth;
-        let offsetX = Math.floor( clientWidth * 0.18 );
+        let offsetX = Math.floor( clientWidth * 0.23 );
         if ( posX < 0.25 * clientWidth ) {
             posX += offsetX / 4;
         } else {
