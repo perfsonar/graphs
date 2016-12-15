@@ -69,15 +69,15 @@
 	
 	var _chartLayout2 = _interopRequireDefault(_chartLayout);
 	
-	var _chart1webservice = __webpack_require__(/*! ./chart1webservice */ 604);
+	var _chart1webservice = __webpack_require__(/*! ./chart1webservice */ 611);
 	
 	var _chart1webservice2 = _interopRequireDefault(_chart1webservice);
 	
-	var _createBrowserHistory = __webpack_require__(/*! history/lib/createBrowserHistory */ 605);
+	var _createBrowserHistory = __webpack_require__(/*! history/lib/createBrowserHistory */ 612);
 	
 	var _createBrowserHistory2 = _interopRequireDefault(_createBrowserHistory);
 	
-	var _useStandardScroll = __webpack_require__(/*! scroll-behavior/lib/useStandardScroll */ 606);
+	var _useStandardScroll = __webpack_require__(/*! scroll-behavior/lib/useStandardScroll */ 613);
 	
 	var _useStandardScroll2 = _interopRequireDefault(_useStandardScroll);
 	
@@ -24979,6 +24979,10 @@
 	
 	var _GraphDataStore2 = _interopRequireDefault(_GraphDataStore);
 	
+	var _GraphUtilities = __webpack_require__(/*! ./GraphUtilities */ 506);
+	
+	var _GraphUtilities2 = _interopRequireDefault(_GraphUtilities);
+	
 	var _reactTimeseriesCharts = __webpack_require__(/*! react-timeseries-charts */ 507);
 	
 	var _pondjs = __webpack_require__(/*! pondjs */ 345);
@@ -24993,11 +24997,11 @@
 	
 	var _chartLayout2 = _interopRequireDefault(_chartLayout);
 	
-	__webpack_require__(/*! ../css/graphs.css */ 598);
+	__webpack_require__(/*! ../css/graphs.css */ 601);
 	
-	__webpack_require__(/*! ../../toolkit/web-ng/root/css/app.css */ 600);
+	__webpack_require__(/*! ../../toolkit/web-ng/root/css/app.css */ 607);
 	
-	__webpack_require__(/*! ../css/spinner.css */ 602);
+	__webpack_require__(/*! ../css/spinner.css */ 609);
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
@@ -25280,6 +25284,7 @@
 	            //dst: null,
 	            start: this.props.start,
 	            end: this.props.end,
+	            agent: this.props.agent,
 	            tracker: null,
 	            chartSeries: null,
 	            timerange: timerange,
@@ -25346,8 +25351,9 @@
 	
 	    renderToolTip: function renderToolTip() {
 	        var tracker = this.state.tracker;
-	        var dateFormat = "MM/DD/YYYY HH:mm:ss ZZ";
+	        var dateFormat = "MM/DD/YYYY HH:mm:ss";
 	        var date = (0, _moment2.default)(tracker).format(dateFormat);
+	        var tz = _GraphUtilities2.default.getTimezone(tracker);
 	
 	        var display = "block";
 	
@@ -25428,7 +25434,7 @@
 	                    if (_row.properties.mainEventType == "histogram-rtt") {
 	                        _label = "ping";
 	                    } else if (_row.properties.mainEventType == "throughput") {
-	                        _label = "UDP throughput";
+	                        _label = "UDP";
 	                    } else if (_row.properties.mainEventType == "histogram-owdelay") {
 	                        _label = "owamp";
 	                    }
@@ -25448,7 +25454,7 @@
 	                            _row.lostValue,
 	                            " of ",
 	                            _row.sentValue,
-	                            " packets sent) ",
+	                            " packets) ",
 	                            "(" + _label + ")",
 	                            " "
 	                        ));
@@ -25477,7 +25483,7 @@
 	                    if (_row2.properties.direction == "reverse") {
 	                        _dir2 = "<-"; // Unicode <
 	                    }
-	                    var _label2 = "";
+	                    var _label2 = "(owamp)";
 	                    if (_row2.properties.mainEventType == "histogram-rtt") {
 	                        _label2 = "(ping)";
 	                    }
@@ -25620,7 +25626,9 @@
 	                    _react2.default.createElement(
 	                        "span",
 	                        { className: "graph-values-popover__heading" },
-	                        date
+	                        date,
+	                        " ",
+	                        tz
 	                    ),
 	                    _react2.default.createElement(
 	                        "ul",
@@ -26272,9 +26280,11 @@
 	        var end = this.state.end;
 	        var tool = this.props.tool;
 	        var ipversion = this.props.ipversion;
+	        var agent = this.props.agent;
 	        var params = {
 	            tool: tool,
-	            ipversion: ipversion
+	            ipversion: ipversion,
+	            agent: agent
 	        };
 	        this.setState({ params: params, loading: true });
 	        var ma_url = this.props.ma_url || location.origin + "/esmond/perfsonar/archive/";
@@ -49145,6 +49155,10 @@
 	                            } else if (val[i] == 6) {
 	                                url += "&dns-match-rule=only-v6";
 	                            }
+	                        } else if (name == "agent") {
+	                            if (typeof val[i] != "undefined") {
+	                                url += "&measurement-agent=" + val[i];
+	                            }
 	                        }
 	                    }
 	                }
@@ -49596,7 +49610,7 @@
 	                if (failureValue != null) {
 	                    var failureObj = {
 	                        errorText: failureValue.error,
-	                        value: 85,
+	                        value: 95,
 	                        type: "error"
 	                    };
 	                    var errorEvent = new _pondjs.Event(timestamp, failureObj);
@@ -69105,7 +69119,49 @@
 
 
 /***/ },
-/* 506 */,
+/* 506 */
+/*!*******************************!*\
+  !*** ./src/GraphUtilities.js ***!
+  \*******************************/
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+	
+	var _moment = __webpack_require__(/*! moment */ 211);
+	
+	var _moment2 = _interopRequireDefault(_moment);
+	
+	var _pondjs = __webpack_require__(/*! pondjs */ 345);
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
+	module.exports = {
+	    getTimezone: function getTimezone(date) {
+	        var tz = void 0;
+	        var tzRe = /\(([^)]+)\)/;
+	        var out = void 0;
+	        var offset = void 0;
+	
+	        if (typeof date == "undefined" || date == null) {
+	            return;
+	        } else if (date.toString() == "Invalid Date") {
+	            tz = "";
+	            out = "";
+	        } else {
+	            tz = tzRe.exec(date.toString())[1];
+	            var dateMoment = (0, _moment2.default)(date);
+	            offset = dateMoment.utcOffset() / 60;
+	            if (offset >= 0) {
+	                offset = "+" + offset;
+	            }
+	        }
+	
+	        out = tz + " (GMT " + offset + ")";
+	        return out;
+	    }
+	};
+
+/***/ },
 /* 507 */
 /*!************************************************!*\
   !*** ./~/react-timeseries-charts/lib/entry.js ***!
@@ -90605,17 +90661,17 @@
 	
 	var _chart2 = _interopRequireDefault(_chart);
 	
-	var _ChartHeader = __webpack_require__(/*! ./ChartHeader */ 616);
+	var _ChartHeader = __webpack_require__(/*! ./ChartHeader */ 598);
 	
 	var _ChartHeader2 = _interopRequireDefault(_ChartHeader);
 	
-	var _HostInfoStore = __webpack_require__(/*! ./HostInfoStore */ 617);
+	var _HostInfoStore = __webpack_require__(/*! ./HostInfoStore */ 599);
 	
 	var _HostInfoStore2 = _interopRequireDefault(_HostInfoStore);
 	
-	__webpack_require__(/*! ../css/graphs.css */ 598);
+	__webpack_require__(/*! ../css/graphs.css */ 601);
 	
-	__webpack_require__(/*! ../../toolkit/web-ng/root/js/app.js */ 622);
+	__webpack_require__(/*! ../../toolkit/web-ng/root/js/app.js */ 606);
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
@@ -90755,6 +90811,7 @@
 	            end: newState.end,
 	            timeframe: newState.timeframe,
 	            ma_url: newState.ma_url,
+	            agent: newState.agent,
 	            itemsToHide: {},
 	            tool: newState.tool,
 	            ipversion: newState.ipversion,
@@ -90841,7 +90898,7 @@
 	                            _react2.default.createElement(
 	                                "a",
 	                                { href: "#", onClick: this.toggleType.bind(this, { eventType: "throughput", protocol: "tcp" }) },
-	                                "Throughput (TCP)"
+	                                "Tput (TCP)"
 	                            )
 	                        ),
 	                        _react2.default.createElement(
@@ -90850,7 +90907,7 @@
 	                            _react2.default.createElement(
 	                                "a",
 	                                { href: "#", onClick: this.toggleType.bind(this, { eventType: "throughput", protocol: "udp" }) },
-	                                "Throughput (UDP)"
+	                                "Tput (UDP)"
 	                            )
 	                        ),
 	                        _react2.default.createElement(
@@ -90859,7 +90916,7 @@
 	                            _react2.default.createElement(
 	                                "a",
 	                                { href: "#", onClick: this.toggleType.bind(this, { eventType: "packet-loss-rate", mainTestType: "throughput" }) },
-	                                "Loss (UDP tput)"
+	                                "Loss (UDP)"
 	                            )
 	                        ),
 	                        _react2.default.createElement(
@@ -91102,6 +91159,7 @@
 	                        start: this.state.start,
 	                        end: this.state.end,
 	                        ma_url: this.state.ma_url,
+	                        agent: this.state.agent,
 	                        tool: this.state.tool,
 	                        ipversion: this.state.ipversion,
 	                        updateHiddenItems: this.handleHiddenItemsChange,
@@ -91182,6 +91240,7 @@
 	        var end = defaults.end;
 	        var timeframe = defaults.timeframe;
 	        var tool = qs.tool;
+	        var agent = qs.agent || [];
 	        var ipversion = void 0;
 	        //let timeRange = this.getTimeVars( defaults.timeframe );
 	        //
@@ -91210,12 +91269,18 @@
 	            ma_urls = [ma_urls];
 	        }
 	
+	        if (!$.isArray(agent)) {
+	            agent = [agent];
+	        }
+	
 	        for (var _i in ma_urls) {
 	            var ma_url = ma_urls[_i];
 	            var found = ma_url.match(localhostRe);
 	            var host = location.host;
 	            if (found !== null) {
 	                console.log("ma_url", ma_url);
+	
+	                // replace 'localhost' with the local hostname
 	                var new_url = ma_url.replace(localhostRe, host);
 	
 	                console.log('localhost URL found, rewriting to host', host, "new ma url", new_url);
@@ -91229,6 +91294,7 @@
 	            end: end,
 	            ma_url: ma_urls,
 	            tool: tool,
+	            agent: agent,
 	            ipversion: ipversion,
 	            timeframe: timeframe,
 	            hashValues: hashObj
@@ -91246,1317 +91312,6 @@
 
 /***/ },
 /* 598 */
-/*!************************!*\
-  !*** ./css/graphs.css ***!
-  \************************/
-/***/ function(module, exports, __webpack_require__) {
-
-	// style-loader: Adds some css to the DOM by adding a <style> tag
-	
-	// load the styles
-	var content = __webpack_require__(/*! !./../~/css-loader!./graphs.css */ 599);
-	if(typeof content === 'string') content = [[module.id, content, '']];
-	// add the styles to the DOM
-	var update = __webpack_require__(/*! ./../~/style-loader/addStyles.js */ 596)(content, {});
-	if(content.locals) module.exports = content.locals;
-	// Hot Module Replacement
-	if(false) {
-		// When the styles change, update the <style> tags
-		if(!content.locals) {
-			module.hot.accept("!!./../node_modules/css-loader/index.js!./graphs.css", function() {
-				var newContent = require("!!./../node_modules/css-loader/index.js!./graphs.css");
-				if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
-				update(newContent);
-			});
-		}
-		// When the module is disposed, remove the <style> tags
-		module.hot.dispose(function() { update(); });
-	}
-
-/***/ },
-/* 599 */
-/*!***************************************!*\
-  !*** ./~/css-loader!./css/graphs.css ***!
-  \***************************************/
-/***/ function(module, exports, __webpack_require__) {
-
-	exports = module.exports = __webpack_require__(/*! ./~/css-loader/cssToString.js */ 595)();
-	exports.push([module.id, "/*----------------------------------------------------------\n\n    Graphs\n\n----------------------------------------------------------*/\n\n.graph-filter {\n    padding: 0.25em 0;\n}\n\n.graph-label {\n    display: block;\n    float: left;\n    padding-top: .7em;\n    margin-right: .5em;\n}\n\n.graph-filter__list {\n    display: block;\n    list-style: none;\n    padding: 0;\n    margin: 0;\n    border: 1px solid #ccc;\n    border-radius: 4px;\n    display: inline-block;\n}\n\n.blockTrace {\n    display:block; \n}\n\n.hiddenTrace {\n    display:none;\n}\n\n/*\n * Clear fix\n*/\n.graph:after,\n.graph-filters:after,\n.graph-filter:after,\n.graph-filter__list:after {\n    content: \"\";\n    clear: both;\n    display: block;\n}\n\n.graph-filter__item {\n    float: left;\n    border-right: 1px solid #ccc;\n    margin: 0;\n}\n\n/*\n * Filter active states\n*/\n\n.graph-filter__item.graph-filter__item a {\n    color: #fff;\n    background-color: #ccc;\n}\n\n.graph-filter__item.graph-filter__item--blue-active a {\n    background-color: #0076b4;\n}\n\n.graph-filter__item.graph-filter__item--forward.active a, .graph-filter__item.graph-filter__item--reverse.active a, .graph-filter__item.graph-filter__item--failures.active a\n{\n    background-color: #0076b4;\n}\n\n\n.graph-filter__item.graph-filter__item.throughput-tcp.active a {\n    background-color: #0076b4;\n}\n\n.graph-filter__item.graph-filter__item.udp.active a {\n    background-color: #d6641e;\n    /*background-color: #cc7dbe;*/ /*pink */\n}\n\n.graph-filter__item.graph-filter__item.ipv4.active a {\n    background-color: #e5a11c;\n}\n\n.graph-filter__item.graph-filter__item.ipv6.active a {\n    background-color: #633;\n}\n\n.graph-filter__item.graph-filter__item.loss-throughput.active a {\n    background-color: #cc7dbe;\n}\n\n.graph-filter__item.graph-filter__item.loss-latency.active a {\n    background-color: #2b9f78;\n}\n\n\n.graph-filter__item svg.direction-label {\n    margin-left: 1em;\n    vertical-align: middle;\n}\n\n.graph-filter__item:last-child {\n    border-right: none;\n}\n\n.graph-filter__item a {\n    color: #383f44;\n    display: inline-block;\n    padding: .75em 1em;\n}\n\n.graph-filter__item a:hover {\n    background-color: #ccc;\n    color: #383f44;\n}\n\n.graph-settings {\n    border: 1px solid #383f44;\n    border-radius: 4px;\n    color: #383f44;\n    display: inline-block;\n    margin-left: 1em;\n    /*\n     * This is a magic number to make this thing look right.\n    */\n    padding: .71em;\n}\n\n.graph-settings i {\n    font-size: 1.5em;\n}\n\n.graph-wrapper {\n\n}\n\n.graph-header {\n    border-bottom: 1px solid #ccc;\n    margin-top: 1em;\n    padding-bottom: .5em;\n}\n\n.graph-module,\n.graph-holder {\n    min-height: 400px;\n}\n\n.graph-module {\n    display: flex;\n    flex-direction: column;\n    justify-content: space-around;\n}\n\n.graph-module--small,\n.graph-holder--small {\n    min-height: 150px;\n}\n\n.graph-holder {\n    background-color: #ddd;\n}\n\n.graph-module__cell {\n    /*\n     * This is sort of brittle because it relies on a\n     * specific amount of padding to veritcally center\n     * the label\n    */\n    padding-top: 4em;\n    text-align: center;\n    border-bottom: 1px solid #ccc;\n    flex-grow: 1;\n    align-content: center;\n}\n\n.graph-module__cell--small {\n    padding-top: 1em;\n}\n\n.graph-module__cell--left {\n    padding-top: 1em;\n    padding-left: 1em;\n    text-align: left;\n}\n\n.graph-module__stat {\n    display: block;\n    line-height: 1.8;\n}\n\n.graph-module__stat i {\n    margin-right: 1em;\n}\n\n.graph-module__controls {\n    color: #383f44;\n}\n\n.graph-small {\n    margin-top: 1em;\n}\n\n.graph .hostLabel {\n    font-weight:700;\n}\n\n.sidebar-popover__close span {\n    float:left;\n}\n\n/* Graph-Values popover */\n\n.sidebar-popover span:after {\n    display:inline;\n}\n\n.sidebar-popover.graph-values-popover {\n  position: absolute;\n  top: -33px;\n  right: 0;\n  font-size: 80%;\n  padding: 1em 1em 0 1em;\n  display:block;\n  opacity:0.9;\n}\n\n.graph-values-popover .graph-type {\n  margin: 0;\n  padding: 0;\n  font-weight: 700;\n}\n\n.graph-values-popover__heading {\n  border-bottom: 1px solid rgba(255, 255, 255, .5);\n  font-size: 1.1em;\n  color: #fff;\n  padding: .5em 0;\n}\n\n.graph-values-popover__list {\n  list-style: none;\n  padding: 0;\n  margin: 2px 0 0 0;\n}\n\n.graph-values-popover__item {\n  padding: 1em 0;\n  border-top: 1px dashed rgba(255, 255, 255, .5);\n}\n\n.graph-values-popover__item:first-child {\n  border-top: none;\n  padding-top: 1.5em;\n}\n\n.graph-values-popover__item ul {\n  list-style: none;\n  margin: 0;\n}\n\n.graph-values-popover__item li:first-child {\n  font-size: 1.1em;\n  font-weight: 700;\n}\n\ndiv.graphholder div.small-2.columns {\n    float:right;\n    display:block;\n    width:23%;\n}\n\ndiv.graphholder #loading {\n    margin-top:4em;\n}\n", ""]);
-
-/***/ },
-/* 600 */
-/*!******************************************!*\
-  !*** ../toolkit/web-ng/root/css/app.css ***!
-  \******************************************/
-/***/ function(module, exports, __webpack_require__) {
-
-	// style-loader: Adds some css to the DOM by adding a <style> tag
-	
-	// load the styles
-	var content = __webpack_require__(/*! !./../../../../react/~/css-loader!./app.css */ 601);
-	if(typeof content === 'string') content = [[module.id, content, '']];
-	// add the styles to the DOM
-	var update = __webpack_require__(/*! ./../../../../react/~/style-loader/addStyles.js */ 596)(content, {});
-	if(content.locals) module.exports = content.locals;
-	// Hot Module Replacement
-	if(false) {
-		// When the styles change, update the <style> tags
-		if(!content.locals) {
-			module.hot.accept("!!./../../../../react/node_modules/css-loader/index.js!./app.css", function() {
-				var newContent = require("!!./../../../../react/node_modules/css-loader/index.js!./app.css");
-				if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
-				update(newContent);
-			});
-		}
-		// When the module is disposed, remove the <style> tags
-		module.hot.dispose(function() { update(); });
-	}
-
-/***/ },
-/* 601 */
-/*!*********************************************************!*\
-  !*** ./~/css-loader!../toolkit/web-ng/root/css/app.css ***!
-  \*********************************************************/
-/***/ function(module, exports, __webpack_require__) {
-
-	exports = module.exports = __webpack_require__(/*! ./~/css-loader/cssToString.js */ 595)();
-	exports.push([module.id, "/*------------------------------------------------------------------------------\n\n    Utilities\n\n------------------------------------------------------------------------------*/\n/* Color classes */\n.color-primary {\n  color: #0089ff !important;\n}\n\n.color-bg-accent {\n  color: #f7f7f7 !important;\n}\n\n.color-light, .test_results .host_ip {\n  color: #919ca1 !important;\n}\n\n.color-medium {\n  color: #4d565b !important;\n}\n\n.color-black {\n  color: #383f44 !important;\n}\n\n.color-success {\n  color: #a2d4ba !important;\n}\n\n.color-message {\n  color: #f3dda8 !important;\n}\n\n.color-failure {\n  color: #f7a9a1 !important;\n}\n\n.color-disabled {\n  color: #919ca1 !important;\n}\n\n.color-red, #host_services .off {\n  color: #ef402f !important;\n}\n\n.color-yellow {\n  color: #e5b53e !important;\n}\n\n.color-green, #host_services .running {\n  color: #32a066 !important;\n}\n\n#host_services .disabled {\n  color: #A9B1B5;\n}\n\n/* Typography classes */\n.font-light {\n  font-weight: 300;\n}\n\n.font-regular {\n  font-weight: 400;\n}\n\n.font-bold {\n  font-weight: 700;\n}\n\n.font-size--small {\n  font-size: 0.8em;\n}\n\n/* Float classes */\n.left {\n  float: left;\n}\n\n.right {\n  float: right;\n}\n\n/* Lists add to ul and ol */\n\n.no-list {\n  list-style: none;\n  padding-left: 0;\n}\n\n/* Visibility classes */\n.hidden {\n  display: none;\n}\n\n.visible-inline {\n  display: inline-block;\n}\n\n.display-inline {\n  display: inline-block !important;\n}\n\n/* Margin utilities */\n\n.no-margin {\n    margin: 0;\n}\n\n.no-margin-top {\n    margin-top: 0;\n}\n\n.no-margin-bottom {\n    margin-bottom: 0;\n}\n\n/*! normalize.css v3.0.2 | MIT License | git.io/normalize */\n/**\n * 1. Set default font family to sans-serif.\n * 2. Prevent iOS text size adjust after orientation change, without disabling\n *    user zoom.\n */\nhtml {\n  font-family: sans-serif;\n  /* 1 */\n  -ms-text-size-adjust: 100%;\n  /* 2 */\n  -webkit-text-size-adjust: 100%;\n  /* 2 */\n}\n\n/**\n * Remove default margin.\n */\nbody {\n  margin: 0;\n}\n\n/* HTML5 display definitions\n   ========================================================================== */\n/**\n * Correct `block` display not defined for any HTML5 element in IE 8/9.\n * Correct `block` display not defined for `details` or `summary` in IE 10/11\n * and Firefox.\n * Correct `block` display not defined for `main` in IE 11.\n */\narticle,\naside,\ndetails,\nfigcaption,\nfigure,\nfooter,\nheader,\nhgroup,\nmain,\nmenu,\nnav,\nsection,\nsummary {\n  display: block;\n}\n\n/**\n * 1. Correct `inline-block` display not defined in IE 8/9.\n * 2. Normalize vertical alignment of `progress` in Chrome, Firefox, and Opera.\n */\naudio,\ncanvas,\nprogress,\nvideo {\n  display: inline-block;\n  /* 1 */\n  vertical-align: baseline;\n  /* 2 */\n}\n\n/**\n * Prevent modern browsers from displaying `audio` without controls.\n * Remove excess height in iOS 5 devices.\n */\naudio:not([controls]) {\n  display: none;\n  height: 0;\n}\n\n/**\n * Address `[hidden]` styling not present in IE 8/9/10.\n * Hide the `template` element in IE 8/9/11, Safari, and Firefox < 22.\n */\n[hidden],\ntemplate {\n  display: none;\n}\n\n/* Links\n   ========================================================================== */\n/**\n * Remove the gray background color from active links in IE 10.\n */\na {\n  background-color: transparent;\n}\n\n/**\n * Improve readability when focused and also mouse hovered in all browsers.\n */\na:active,\na:hover {\n  outline: 0;\n}\n\n/* Text-level semantics\n   ========================================================================== */\n/**\n * Address styling not present in IE 8/9/10/11, Safari, and Chrome.\n */\nabbr[title] {\n  border-bottom: 1px dotted;\n}\n\n/**\n * Address style set to `bolder` in Firefox 4+, Safari, and Chrome.\n */\nb,\nstrong {\n  font-weight: bold;\n}\n\n/**\n * Address styling not present in Safari and Chrome.\n */\ndfn {\n  font-style: italic;\n}\n\n/**\n * Address variable `h1` font-size and margin within `section` and `article`\n * contexts in Firefox 4+, Safari, and Chrome.\n */\nh1 {\n  font-size: 2em;\n  margin: 0.67em 0;\n}\n\n/**\n * Address styling not present in IE 8/9.\n */\nmark {\n  background: #ff0;\n  color: #000;\n}\n\n/**\n * Address inconsistent and variable font size in all browsers.\n */\nsmall {\n  font-size: 80%;\n}\n\n/**\n * Prevent `sub` and `sup` affecting `line-height` in all browsers.\n */\nsub,\nsup {\n  font-size: 75%;\n  line-height: 0;\n  position: relative;\n  vertical-align: baseline;\n}\n\nsup {\n  top: -0.5em;\n}\n\nsub {\n  bottom: -0.25em;\n}\n\n/* Embedded content\n   ========================================================================== */\n/**\n * Remove border when inside `a` element in IE 8/9/10.\n */\nimg {\n  border: 0;\n}\n\n/**\n * Correct overflow not hidden in IE 9/10/11.\n */\nsvg:not(:root) {\n  overflow: hidden;\n}\n\n/* Grouping content\n   ========================================================================== */\n/**\n * Address margin not present in IE 8/9 and Safari.\n */\nfigure {\n  margin: 1em 40px;\n}\n\n/**\n * Address differences between Firefox and other browsers.\n */\nhr {\n  -moz-box-sizing: content-box;\n  box-sizing: content-box;\n  height: 0;\n}\n\n/**\n * Contain overflow in all browsers.\n */\npre {\n  overflow: auto;\n}\n\n/**\n * Address odd `em`-unit font size rendering in all browsers.\n */\ncode,\nkbd,\npre,\nsamp {\n  font-family: monospace, monospace;\n  font-size: 1em;\n}\n\n/* Forms\n   ========================================================================== */\n/**\n * Known limitation: by default, Chrome and Safari on OS X allow very limited\n * styling of `select`, unless a `border` property is set.\n */\n/**\n * 1. Correct color not being inherited.\n *    Known issue: affects color of disabled elements.\n * 2. Correct font properties not being inherited.\n * 3. Address margins set differently in Firefox 4+, Safari, and Chrome.\n */\nbutton,\ninput,\noptgroup,\nselect,\ntextarea {\n  color: inherit;\n  /* 1 */\n  font: inherit;\n  /* 2 */\n  margin: 0;\n  /* 3 */\n}\n\n/**\n * Address `overflow` set to `hidden` in IE 8/9/10/11.\n */\nbutton {\n  overflow: visible;\n}\n\n/**\n * Address inconsistent `text-transform` inheritance for `button` and `select`.\n * All other form control elements do not inherit `text-transform` values.\n * Correct `button` style inheritance in Firefox, IE 8/9/10/11, and Opera.\n * Correct `select` style inheritance in Firefox.\n */\nbutton,\nselect {\n  text-transform: none;\n}\n\n/**\n * 1. Avoid the WebKit bug in Android 4.0.* where (2) destroys native `audio`\n *    and `video` controls.\n * 2. Correct inability to style clickable `input` types in iOS.\n * 3. Improve usability and consistency of cursor style between image-type\n *    `input` and others.\n */\nbutton,\nhtml input[type=\"button\"],\ninput[type=\"reset\"],\ninput[type=\"submit\"] {\n  -webkit-appearance: button;\n  /* 2 */\n  cursor: pointer;\n  /* 3 */\n}\n\n/**\n * Re-set default cursor for disabled elements.\n */\nbutton[disabled],\nhtml input[disabled] {\n  cursor: default;\n}\n\n/**\n * Remove inner padding and border in Firefox 4+.\n */\nbutton::-moz-focus-inner,\ninput::-moz-focus-inner {\n  border: 0;\n  padding: 0;\n}\n\n/**\n * Address Firefox 4+ setting `line-height` on `input` using `!important` in\n * the UA stylesheet.\n */\ninput {\n  line-height: normal;\n}\n\n/**\n * It's recommended that you don't attempt to style these elements.\n * Firefox's implementation doesn't respect box-sizing, padding, or width.\n *\n * 1. Address box sizing set to `content-box` in IE 8/9/10.\n * 2. Remove excess padding in IE 8/9/10.\n */\ninput[type=\"checkbox\"],\ninput[type=\"radio\"] {\n  box-sizing: border-box;\n  /* 1 */\n  padding: 0;\n  /* 2 */\n}\n\n/**\n * Fix the cursor style for Chrome's increment/decrement buttons. For certain\n * `font-size` values of the `input`, it causes the cursor style of the\n * decrement button to change from `default` to `text`.\n */\ninput[type=\"number\"]::-webkit-inner-spin-button,\ninput[type=\"number\"]::-webkit-outer-spin-button {\n  height: auto;\n}\n\n/**\n * 1. Address `appearance` set to `searchfield` in Safari and Chrome.\n * 2. Address `box-sizing` set to `border-box` in Safari and Chrome\n *    (include `-moz` to future-proof).\n */\ninput[type=\"search\"] {\n  -webkit-appearance: textfield;\n  /* 1 */\n  -moz-box-sizing: content-box;\n  -webkit-box-sizing: content-box;\n  /* 2 */\n  box-sizing: content-box;\n}\n\n/**\n * Remove inner padding and search cancel button in Safari and Chrome on OS X.\n * Safari (but not Chrome) clips the cancel button when the search input has\n * padding (and `textfield` appearance).\n */\ninput[type=\"search\"]::-webkit-search-cancel-button,\ninput[type=\"search\"]::-webkit-search-decoration {\n  -webkit-appearance: none;\n}\n\n/**\n * Define consistent border, margin, and padding.\n */\nfieldset {\n  border: 1px solid #c0c0c0;\n  margin: 0 2px;\n  padding: 0.35em 0.625em 0.75em;\n}\n\n/**\n * 1. Correct `color` not being inherited in IE 8/9/10/11.\n * 2. Remove padding so people aren't caught out if they zero out fieldsets.\n */\nlegend {\n  border: 0;\n  /* 1 */\n  padding: 0;\n  /* 2 */\n}\n\n/**\n * Remove default vertical scrollbar in IE 8/9/10/11.\n */\ntextarea {\n  overflow: auto;\n}\n\n/**\n * Don't inherit the `font-weight` (applied by a rule above).\n * NOTE: the default cannot safely be changed in Chrome and Safari on OS X.\n */\noptgroup {\n  font-weight: bold;\n}\n\n/* Tables\n   ========================================================================== */\n/**\n * Remove most spacing between table cells.\n */\ntable {\n  border-collapse: collapse;\n  border-spacing: 0;\n}\n\ntd,\nth {\n  padding: 0;\n}\n\n/*------------------------------------------------------------------------------\n\n    Base styles\n\n------------------------------------------------------------------------------*/\nbody {\n  font-family: \"Open Sans\", \"Helvetica Neue\", \"Helvetica\", Arial, sans-serif;\n  font-weight: 400;\n  color: #383f44;\n  /* Set base font-size to 14px to start out with due to how much text is on\n  ** the screen at one time\n  */\n  font-size: 87.5%;\n}\n\nhtml,\nbody {\n  font-family: \"Open Sans\", \"Helvetica Neue\", \"Helvetica\", Arial, sans-serif;\n  height: 100%;\n}\n\nh1,\nh2,\nh3,\nh4,\nh5,\nh6 {\n  font-family: \"Open Sans\", \"Helvetica Neue\", \"Helvetica\", Arial, sans-serif;\n  font-weight: 400;\n  color: #383f44;\n}\n\na {\n  color: #0089ff;\n  /* text-decoration: underline; */\n}\na:hover {\n  color: #a5d5ff;\n}\n\na:focus {\n  color: #006dcc;\n}\n\n/*\n** These rules overide Foundation's more specific styles for lists\n** Switching these to em make the relational to the base font size\n** that we can adjust if we want to scale up the font on bigger screens.\n*/\nol,\nul,\ndl {\n  font-size: 1em;\n}\n\np {\n  font-size: 1em;\n}\n\n/* End text-level Foundation overides */\nstrong {\n  font-weight: 700;\n}\n\nselect {\n  margin-bottom: 1em;\n}\n\n/* Hide only visually, but have it available for screenreaders: h5bp.com/v */\n.visuallyhidden {\n  border: 0;\n  clip: rect(0 0 0 0);\n  height: 1px;\n  margin: -1px;\n  overflow: hidden;\n  padding: 0;\n  position: absolute;\n  width: 1px;\n}\n\n/* Extends the .visuallyhidden class to allow the element to be focusable when navigated to via the keyboard: h5bp.com/p */\n.visuallyhidden.focusable:active, .visuallyhidden.focusable:focus {\n  clip: auto;\n  height: auto;\n  margin: 0;\n  overflow: visible;\n  position: static;\n  width: auto;\n}\n\n/*\n** Foundation overrides\n** We need these rules to override some of the Foundation grid functionality\n** to make it match the fluid nature of the app.\n*/\n.row {\n  max-width: 100%;\n}\n\n.row--fixed {\n  max-width: 1080px;\n}\n\n/*------------------------------------------------------------------------------\n\n    Utitilities\n\n------------------------------------------------------------------------------*/\n/*\n** Make an unordered list display inline, remove list style, and margins\n*/\n.u-list-nav {\n  list-style-type: none;\n  margin: 0;\n}\n.u-list-nav li {\n  display: inline-block;\n}\n\n/*------------------------------------------------------------------------------\n\n    Grid\n\n------------------------------------------------------------------------------*/\n.container {\n  max-width: 100%;\n  margin: 0 auto;\n}\n.container:after {\n  content: \"\";\n  display: block;\n  clear: both;\n}\n.container:before {\n  content: \"\";\n  display: block;\n  clear: both;\n}\n\n.collapse .unit:first-child {\n  padding-left: 0;\n}\n.collapse .unit:last-child {\n  padding-right: 0;\n}\n\n.unit {\n  padding-left: 24px;\n  padding-right: 24px;\n  padding-top: 24px;\n  padding-bottom: 24px;\n  float: left;\n  -webkit-box-sizing: border-box;\n  -moz-box-sizing: border-box;\n  box-sizing: border-box;\n}\n.unit:after {\n  content: \"\";\n  display: block;\n  clear: both;\n}\n\n.container.kill-vertical .unit {\n  padding-top: 0;\n  padding-bottom: 0;\n}\n\n/* Get rid of container padding when grids are nested */\n.container .container .unit {\n  padding-top: 0;\n}\n.container .container .unit:first-child {\n  padding-left: 0;\n}\n.container .container .unit:last-child {\n  padding-right: 0;\n}\n\n.centered {\n  margin: 0 auto;\n  float: none !important;\n}\n\n.last {\n  float: right;\n}\n\n.whole {\n  width: 100%;\n}\n\n.half {\n  width: 50%;\n}\n\n.one-third {\n  width: 33.33333%;\n}\n\n.two-thirds {\n  width: 66.666666666667%;\n}\n\n.one-fourth {\n  width: 25%;\n}\n\n.three-fourths {\n  width: 75%;\n}\n\n.one-fifth {\n  width: 20%;\n}\n\n.two-fifths {\n  width: 40%;\n}\n\n.three-fifths {\n  width: 60%;\n}\n\n.four-fifths {\n  width: 80%;\n}\n\n/* Push and pull classes */\n.push {\n  float: right;\n}\n\n.pull {\n  float: left;\n}\n\n.container > .unit.pull {\n  padding-left: 0;\n  padding-right: 24px !important;\n}\n\n.container > .unit.push {\n  padding-right: 0;\n  padding-left: 24px !important;\n}\n\n/* List grid */\nul.list-grid-fourths {\n  display: block;\n  list-style-type: none;\n  margin: -24px;\n}\nul.list-grid-fourths:after {\n  content: \"\";\n  display: block;\n  clear: both;\n}\nul.list-grid-fourths li {\n  display: block;\n  float: left;\n  width: 25%;\n  padding: 24px;\n  -webkit-box-sizing: border-box;\n  -moz-box-sizing: border-box;\n  box-sizing: border-box;\n}\n\nul.list-grid-thirds {\n  display: block;\n  list-style-type: none;\n  margin: -24px;\n}\nul.list-grid-thirds:after {\n  content: \"\";\n  display: block;\n  clear: both;\n}\nul.list-grid-thirds li {\n  display: block;\n  float: left;\n  width: 33.333333333333%;\n  padding: 24px;\n  -webkit-box-sizing: border-box;\n  -moz-box-sizing: border-box;\n  box-sizing: border-box;\n}\n\n@media screen and (max-width: 768px) {\n  .unit {\n    float: none;\n    padding-top: 12px;\n    padding-bottom: 12px;\n    padding-right: 12px;\n    padding-left: 12px;\n  }\n\n  .unit .container .unit:first-child {\n    padding-top: 0;\n  }\n\n  .container .container .unit {\n    padding: 24px 0;\n  }\n\n  /* Small grid - This will keep the proportions of the grid even on small devices */\n  .container.small-grid .unit.half {\n    width: 50%;\n    float: left;\n  }\n\n  .container.small-grid .unit.one-third {\n    width: 33.333333333333%;\n    float: left;\n  }\n\n  .container.small-grid .unit.two-thirds {\n    width: 66.666666666667%;\n    float: left;\n  }\n\n  .container.small-grid .unit.one-fourth {\n    width: 25%;\n    float: left;\n  }\n\n  .container.small-grid .unit.three-fourths {\n    width: 75%;\n    float: left;\n  }\n\n  .container.small-grid .unit.one-fifth {\n    width: 20%;\n    float: left;\n  }\n\n  .container.small-grid .unit.two-fifths {\n    width: 40%;\n    float: left;\n  }\n\n  .container.small-grid .unit.three-fifths {\n    width: 60%;\n    float: left;\n  }\n\n  .container.small-grid .unit.four-fifths {\n    width: 80%;\n    float: left;\n  }\n\n  .whole,\n  .half,\n  .one-third,\n  .two-thirds,\n  .one-fourth,\n  .three-fourths,\n  .one-fifth,\n  .two-fifths,\n  .three-fifths,\n  .four-fifths {\n    width: 100% !important;\n  }\n\n  .push,\n  .pull {\n    float: none;\n  }\n\n  .container > .unit.pull {\n    padding-left: 0;\n    padding-right: 0 !important;\n  }\n\n  .container > .unit.push {\n    padding-right: 0;\n    padding-left: 0 !important;\n  }\n\n  ul.list-grid-fourths li {\n    width: 100%;\n    float: none;\n  }\n\n  ul.list-grid-thirds li {\n    width: 100%;\n    float: none;\n  }\n}\n/*------------------------------------------------------------------------------\n\n    Main app header\n\n------------------------------------------------------------------------------*/\n.app-header {\n  padding: 1em 2em;\n  background-color: #383f44;\n  color: white;\n}\n.app-header:after {\n  content: \"\";\n  clear: both;\n  display: block;\n}\n.app-header h1 {\n  margin: 0;\n  color: white;\n  font-size: 1em;\n  padding-top: .15em;\n}\n.app-header h1 a {\n  text-decoration: none;\n  color: white;\n}\n\n@media screen and (max-width: 580px) {\n  .app-header {\n    padding: 1em 12px;\n  }\n}\n.app-logo {\n  float: left;\n}\n.app-logo h1 {\n  font-size: 1.35em;\n  float:right;\n  margin-top: 0;\n}\n\n.app-header img.logo {\n  height: auto;\n  max-width: 150px;\n  margin-right: 1em;\n}\n\n@media screen and (max-width: 580px) {\n  .app-logo h1 {\n    font-size: .9em;\n  }\n}\n.app-nav {\n  float: right;\n  text-align: right;\n}\n.app-nav ul {\n  margin: 0;\n  padding: 0;\n  list-style-type: none;\n}\n.app-nav ul li {\n  display: inline-block;\n  margin-right: 1.25em;\n}\n.app-nav ul li:last-child {\n  margin-right: 0;\n}\n.app-nav ul li a {\n  color: white;\n  display: inline-block;\n  padding: .25em .5em;\n  border: 1px solid rgba(255, 255, 255, 0.5);\n  -webkit-border-radius: 4px;\n  -moz-border-radius: 4px;\n  -ms-border-radius: 4px;\n  -o-border-radius: 4px;\n  border-radius: 4px;\n  text-decoration: none;\n}\n.app-nav ul li a:hover {\n  background-color: #0089ff;\n  border-color: #0089ff;\n  color: white;\n}\n.app-nav ul li a:hover i {\n  color: white;\n}\n.app-nav ul li a i {\n  display: inline-block;\n  margin: 0 .25em;\n  color: white;\n}\n\n@media screen and (max-width: 580px) {\n  .app-nav ul li {\n    margin-right: .8em;\n  }\n\n  .app-nav ul li a {\n    font-size: .8em;\n  }\n}\n/* Dropdowns */\n\n/* These selectors are very specific makes them less reusable\n * with any kind of variation in the markup (on the graphs\n * for instance). I added a less specific versio of each\n * selector, just in case, but I would say the super specific\n * ones could be removed.\n*/\nli.nav-dropdown,\n.nav-dropdown {\n  position: relative;\n}\n\nli.nav-dropdown ul.nav-dropdown-menu,\n.nav-dropdown-menu {\n  display: none;\n  position: absolute;\n  min-width: 250px;\n  top: 42px;\n  right: 0px;\n  z-index: 10;\n  background-color: rgba(255, 255, 255, 0.95);\n  -webkit-border-radius: 4px;\n  -moz-border-radius: 4px;\n  -ms-border-radius: 4px;\n  -o-border-radius: 4px;\n  border-radius: 4px;\n  -webkit-box-shadow: 0px 0px 5px rgba(0, 0, 0, .13);\n  -moz-box-shadow: 0px 0px 5px rgba(0, 0, 0, .13);\n  -o-box-shadow: 0px 0px 5px rgba(0, 0, 0, .13);\n  box-shadow: 0px 0px 5px rgba(0, 0, 0, .13);\n}\nli.nav-dropdown ul.nav-dropdown-menu:before,\n.nav-dropdown-menu:before {\n  content: \"\";\n  display: block;\n  width: 0;\n  height: 0;\n  border: inset 6px;\n  border-color: transparent transparent white;\n  border-bottom-style: solid;\n  position: absolute;\n  top: -12px;\n  right: 25px;\n  z-index: 99;\n}\nli.nav-dropdown ul.nav-dropdown-menu li,\n.nav-dropdown .nav-dropdown-menu li {\n  display: block;\n  margin: 0;\n  text-align: left;\n}\nli.nav-dropdown ul.nav-dropdown-menu li a,\n.nav-dropdown .nav-dropdown-menu li a {\n  display: block;\n  margin: 0;\n  padding: 8px 10px;\n  border: none;\n  border-radius: 0;\n  color: #4d565b;\n}\nli.nav-dropdown ul.nav-dropdown-menu li a:hover,\n.nav-dropdown .nav-dropdown-menu li a:hover {\n  background-color: #ddd;\n  color: #0089ff;\n  border-top-right-radius: 4px;\n  border-top-left-radius: 4px;\n}\n\n.nav-dropdown-menu.visible {\n  display: block !important;\n}\n\n.nav-dropdown-menu__heading {\n    font-weight: 700;\n    padding: 8px 10px;\n    border-bottom: 1px solid #ccc;\n}\n\n/*------------------------------------------------------------------------------\n\n    Footer\n\n------------------------------------------------------------------------------*/\n.site-footer {\n  display: block;\n  padding: 2em;\n  margin-top: 5em;\n  text-align: right;\n  color: #919ca1;\n  border-top: 1px solid #ddd;\n}\n\n/*------------------------------------------------------------------------------\n\n    Main sidebar nav\n\n------------------------------------------------------------------------------*/\n.sidebar {\n  width: 25%;\n  float: left;\n  min-height: 100%;\n  background-color: #f7f7f7;\n  border-left: 1px solid #ddd;\n  float: right;\n  position: relative;\n}\n\n.sidebar:after {\n  content: \"\";\n  display: block;\n  position: absolute;\n  left: -1px;\n  bottom: -99em;\n  height: 99em;\n  width: 100%;\n  background: #f7f7f7;\n  border-left: 1px solid #ddd;\n}\n\n@media screen and (max-width: 850px) {\n  .sidebar {\n    width: 100%;\n    float: none;\n    padding: 0 1em;\n  }\n}\n.sidebar__heading {\n  font-size: 1em;\n  font-weight: 700;\n  background-color: #eaeaea;\n  margin: 1em 0 0 0;\n  padding: 1em 1.5em;\n}\n.sidebar__heading i {\n  color: #4d565b;\n}\n.sidebar__heading:first-of-type {\n  margin-top: 0;\n}\n\n.sidebar-list {\n  display: block;\n  list-style-type: none;\n  margin: 0;\n}\n\n.sidebar-list__item {\n  padding: .5em 1em .5em 1.5em;\n  border-bottom: 1px solid #ddd;\n  position: relative;\n}\n.sidebar-list__item:after {\n  content: \"\";\n  clear: both;\n  display: block;\n}\n.sidebar-list__item:last-child {\n  border-bottom: none;\n}\n\n.sidebar-list__item a {\n  text-decoration: none;\n}\n\n.sidebar-list__parameter {\n  width: 50%;\n  float: left;\n  overflow-wrap: break-word;\n  color:#919ca1;\n}\n.sidebar-list__parameter.communities {\n  width: 100%;\n  padding: 0 0 .3em 0;\n}\n\n.sidebar-list__value {\n  float: left;\n  width: 50%;\n  overflow-wrap: break-word;\n}\n.sidebar-list__value.communities {\n  width: 100%;\n  padding: 0;\n}\n\n/* \n  Graph Options popover\n*/\n.sidebar-popover.options-popover {\n  position: absolute;\n  top: 17em;\n  right: 2.5%;\n  background-color: white;\n  color: #383f44;\n  z-index: 105;\n  padding: 2em;\n  border-radius: 4px;\n  border: 1px solid #383f44;\n  min-width: 55%;\n}\n\n.options-popover .sidebar-popover__close, .sidebar-popover i.fa {\n  color: #a9b1b5;\n}\n\n.options-popover__heading {\n  border-bottom: 1px solid rgba(255, 255, 255, .2);\n  font-size: 1.2em;\n  color: #383f44;\n  padding: 0 0 .2em 0;\n}\n\n.options-popover__list {\n  list-style: none;\n  margin: 0em 0;\n}\n\n.options-popover__list>li {\n  padding: 0.1em 0;\n  white-space: nowrap;\n}\n\n.options-popover__list .options-popover__row {\n  margin: 0;\n}\n\n.options-popover__row>li {\n  list-style: none;\n  display: inline-block;\n}\n\n.options-popover__row li:first-child {\n    width: 16%;\n    margin-right: 8px;\n    color: black:\n}\n\n.options-popover__row input[type=\"checkbox\"] {\n   margin: 0;\n}\n.options-popover__row input[type=\"checkbox\"]+label {\n    margin-left: .1em;\n}\n\n#timeperiod {\n    width:60%;\n    margin: 0 .75em 0 .75em;\n    border: 1px solid #919ca1;\n    padding: 0 0.5rem;\n}\n\nspan.timerange_holder {\n    float:left;\n    margin:0.1rem 0.4rem;\n}\n\n/*\n  Sidebar popover\n*/\n\n.sidebar-popover {\n  display: none;\n  position: absolute;\n  top: 2.65em;\n  right: 2.5%;\n  background-color: rgba(56, 63, 68, .95);\n  color: #fff;\n  z-index: 205;\n  padding: .75em;\n  border-radius: 4px;\n  min-width: 95%;\n}\n\n.sidebar-popover.double {\n  width: 180%;\n}\n\n.sidebar-popover--overview {\n    top: 5.75em;\n}\n\n.sidebar-popover :after {\n  content: \"\";\n  clear: both;\n  display: block;\n}\n\n.sidebar-popover__heading {\n  border-bottom: 1px solid rgba(255, 255, 255, .2);\n  font-size: 1.2em;\n  color: #fff;\n  padding: 1em 0 .5em 0;\n}\n\n.sidebar-popover__heading:first-of-type {\n  /*padding-top: 0;*/\n}\n\n.sidebar-popover__list,\n.sidebar-popover-double__list {\n  list-style: none;\n  margin: 0;\n}\n\n.sidebar-popover-double__list {\n  width: 50%;\n  float: left;\n  padding: 0 .75em;\n}\n\n.sidebar-popover-double__list.onright {\n  border-left: 1px solid rgba(255, 255, 255, .2);\n}\n\n.sidebar-popover__item {\n  padding: .2em 0;\n}\n\n.sidebar-popover__param,\n.sidebar-popover__value,\n.sidebar-popover__param-3col,\n.sidebar-popover__value-3col,\n.sidebar-popover__subvalue_wide {\n  display: block;\n}\n\n.sidebar-popover__param {\n  float: left;\n  color: #ccc;\n  width: 45%;\n}\n\n.sidebar-popover__param-3col {\n  float: left;\n  color: #ccc;\n  width: 33%;\n}\n.sidebar-popover__param-3col.right {\n  text-align: right;\n}\n\n.sidebar-popover__value {\n  float: right;\n  text-align: right;\n  width: 55%;\n}\n\n.sidebar-popover__value-3col {\n  float: left;\n  text-align: right;\n  width: 33%;\n}\n\n.sidebar-popover__subvalue_wide {\n  float: right;\n  width: 90%;\n  text-align: right;\n  font-size: 85%;\n  color: #ccc;\n  margin: -3px 0 5px 0;\n}\n\n.sidebar-popover-toggle:focus {\n  color: #0089ff;\n}\n\n.sidebar-popover__close {\n  color: #ccc;\n  display: block;\n  position: absolute;\n  top: .9em;\n  right: .7em;\n}\n\n.sidebar-popover__close:hover i {\n  color: #a5d5ff;\n}\n\n.sidebar-popover__close i {\n  color: #fff;\n}\n\n/*------------------------------------------------------------------------------\n\n    Breadcrumbs\n\n------------------------------------------------------------------------------*/\n.nav--breadcrumbs {\n  padding: 0;\n  margin-bottom: 2em;\n}\n.nav--breadcrumbs li:after {\n  content: \"/\";\n  display: inline-block;\n  margin: 0 10px;\n  color: #919ca1;\n}\n.nav--breadcrumbs li:last-child:after {\n  content: \"\";\n}\n\n.nav--breadcrumbs li a,\n.nav--breadcrumbs li a i {\n  color: #919ca1;\n}\n\n.nav--breadcrumbs li a:hover,\n.nav--breadcrumbs li a:hover i {\n  color: #0089ff;\n}\n\n.nav--breadcrumbs li.active a,\n.nav--breadcrumbs li.active a i {\n  color: #0089ff;\n  cursor: default;\n}\n\n/*------------------------------------------------------------------------------\n\n    Tables\n\n------------------------------------------------------------------------------*/\ntable {\n  border: none;\n  font-size: 1em !important;\n  width: 100%;\n  overflow: auto;\n}\n\ntable tr td {\n  font-size: 1em;\n  padding: .75em .5em;\n}\n\ntable thead {\n  background-color: transparent;\n}\n\ntable thead tr th,\n.sub-heading {\n  font-weight: 400;\n  color: #919ca1;\n  text-transform: uppercase;\n  letter-spacing: .07em;\n  background-color:#eee;\n}\n\n/*\n**  Override: make zebra stripes on tables a bit darker\n*/\n\ntable tr.even, table tr.alt, table tr:nth-of-type(even) {\n    background-color:#eee;\n}\n\ntable tr.odd, table tr:nth-of-type(odd) { \n    background-color: #fff;\n}\n\n.services {\n  -webkit-box-sizing: border-box;\n  -moz-box-sizing: border-box;\n  box-sizing: border-box;\n}\n\n.services--title {\n  /*color: #919ca1;*/\n  /* color:##383F44; */\n  color: #0089FF;\n  display: block;\n  font-weight: 700;\n  text-decoration: none;\n}\n\n.services--title-link, .services--title a {\n  display: block;\n  font-weight: 700;\n  text-decoration: none;\n}\n.services--title-link i {\n  color: #919ca1;\n}\n\n.services--list {\n  display: none;\n  list-style-type: none;\n  margin-top: .75em;\n  /* This (-999px) is a hack to fix some weirdness caused by the jQuery toggle we are using */\n  padding-left: 1em;\n  border-left: 5px solid #ddd;\n}\n.services--list li {\n  padding: .35em 0;\n}\n\n.visible-inline {\n  display: inline-block;\n}\n\n/* Test results */\n.test-results:after {\n  content: \"\";\n  clear: both;\n  display: block;\n}\ntable.test_results tr {\n  vertical-align: top;\n}\n.test-results table tr td span,\n.test-results table tr td a {\n  display: block;\n  line-height: 1.5;\n}\n.test_results .traceroute_link_container.has_traceroute {\n    display:inline;\n}\n.test_results .traceroute_link_container {\n    display:none;\n}\n\n/* Pay special attention here. For some reason, this fontawesome override doesn't work with .test-results, only .test_results. */\n.test_results i.fa {\n  font-size: 10px;\n  color: #919ca1;\n}\n\n.test_results i.fa-external-link {\n    color:inherit;\n}\n\ni.fa.disabled, tr.disabled td, tr.disabled td i.fa {\n    color:#aaa;\n}\n\n\ntd.test-values {\n  font-weight:bold;\n}\ntd.test-values.loss {\n    white-space: nowrap;\n}\n\n.test-results--warnings {\n  list-style-type: none;\n  margin: 0;\n}\n\n.timeperiod-div {\n    width: 170px;\n    float: right;\n    position: relative;\n    z-index: 101;\n    }\n#testResultsTable_filter label input {\n    height: 19px;\n    margin-left: 0px;\n    display: block !important;\n}\n#testResultsTable_length label {\n    color: #999;\n}\n#testResultsTable_length select {\n    padding: 0 8 1 8;\n    height: 30;\n}\n#testResultsTable_info {\n    margin: 0 30px 0 30px;\n}\n#testResultsTable thead .sorting, #testResultsTable thead .sorting_asc, #testResultsTable thead .sorting_desc, #testResultsTable thead .sorting_asc_disabled, #testResultsTable thead .sorting_desc_disabled {\n    background-position: center left;\n}\n#testResultsTable thead > tr > th.sorting_asc, #testResultsTable thead > tr > th.sorting_desc, #testResultsTable thead > tr > th.sorting, #testResultsTable thead > tr > td.sorting_asc, #testResultsTable thead > tr > td.sorting_desc, #testResultsTable thead > tr > td.sorting {\n    padding-left: 1.5em;\n}\n\n@media screen and (max-width: 580px) {\n  .test-results, .services {\n    overflow-x: scroll;\n    border: 1px solid #ddd;\n    -webkit-border-radius: 4px;\n    -moz-border-radius: 4px;\n    -ms-border-radius: 4px;\n    -o-border-radius: 4px;\n    border-radius: 4px;\n    padding: 1em;\n  }\n}\n/*------------------------------------------------------------------------------\n\n    Forms\n\n------------------------------------------------------------------------------*/\nlabel {\n  color: #4d565b;\n}\n\n.inline-label {\n  display: inline;\n}\n\nfieldset {\n  border-color: #ddd;\n  background-color: #f7f7f7;\n  padding-top: 1em;\n  padding-bottom: 1em;\n  margin-bottom: 1.5em;\n  -webkit-border-radius: 4px;\n  -moz-border-radius: 4px;\n  -ms-border-radius: 4px;\n  -o-border-radius: 4px;\n  border-radius: 4px;\n}\n\ninput[type=\"text\"],\ninput[type=\"password\"],\ninput[type=\"date\"],\ninput[type=\"datetime\"],\ninput[type=\"datetime-local\"],\ninput[type=\"month\"],\ninput[type=\"week\"],\ninput[type=\"email\"],\ninput[type=\"number\"],\ninput[type=\"search\"],\ninput[type=\"tel\"],\ninput[type=\"time\"],\ninput[type=\"url\"],\ninput[type=\"color\"],\ntextarea,\nselect {\n  -webkit-border-radius: 4px;\n  -moz-border-radius: 4px;\n  -ms-border-radius: 4px;\n  -o-border-radius: 4px;\n  border-radius: 4px;\n}\n\n.inline-input {\n  display: inline !important;\n  width: auto;\n}\n\n.advanced_params { \n  padding-top: 4px;\n  display: none;\n}\n\n/*------------------------------------------------------------------------------\n\n    Alerts\n\n------------------------------------------------------------------------------*/\n/* Altert colors */\n.alert-success {\n  color: #a2d4ba;\n}\n\n.alert-message {\n  color: #f3dda8;\n}\n\n.alert-failure {\n  color: #f7a9a1;\n}\n\n.alert-disabled {\n  color: #919ca1;\n}\n\n.alert-message--bg {\n  background-color: #f3dda8;\n}\n\n.alert-failure--bg {\n  background-color: #f7a9a1;\n}\n\n/* Block alerts - these will fill the full width of the parent container */\n.alert-small-success, .alert-small-success--inline {\n  position: relative;\n  display: block;\n  margin: 1em 0;\n  padding: .2em .45em;\n  background-color: #a2d4ba;\n  color: #698978;\n  -webkit-border-radius: 4px;\n  -moz-border-radius: 4px;\n  -ms-border-radius: 4px;\n  -o-border-radius: 4px;\n  border-radius: 4px;\n}\n.alert-small-success i, .alert-small-success--inline i {\n  color: #698978;\n}\n\n.alert-small-message, .alert-small-message--inline {\n  position: relative;\n  display: block;\n  margin: 1em 0;\n  padding: .2em .45em;\n  background-color: #f3dda8;\n  color: #9d8f6d;\n  -webkit-border-radius: 4px;\n  -moz-border-radius: 4px;\n  -ms-border-radius: 4px;\n  -o-border-radius: 4px;\n  border-radius: 4px;\n}\n.alert-small-message i, .alert-small-message--inline i {\n  color: #9d8f6d;\n}\n\n.alert-small-failure, .alert-small-failure--inline {\n  position: relative;\n  display: block;\n  margin: 1em 0;\n  padding: .2em .45em;\n  background-color: #f7a9a1;\n  color: #a06d68;\n  -webkit-border-radius: 4px;\n  -moz-border-radius: 4px;\n  -ms-border-radius: 4px;\n  -o-border-radius: 4px;\n  border-radius: 4px;\n}\n.alert-small-failure i, .alert-small-failure--inline i {\n  color: #a06d68;\n}\n\n/* Inline Alerts - these will display inline and will only be the width of the content inside */\n.alert-small-success--inline {\n  display: inline-block;\n}\n\n.alert-small-message--inline {\n  display: inline-block;\n}\n\n.alert-small-failure--inline {\n  display: inline-block;\n}\n\n.alert-small-failure a, .alert-small-failure--inline a,\n.alert-small-message a,\n.alert-small-message--inline a,\n.alert-small-success a,\n.alert-small-success--inline a {\n  color: #383f44;\n}\n.alert-small-failure a:hover, .alert-small-failure--inline a:hover,\n.alert-small-message a:hover,\n.alert-small-message--inline a:hover,\n.alert-small-success a:hover,\n.alert-small-success--inline a:hover {\n  color: #9b9fa1;\n}\n\n.alert--dismiss {\n  display: inline-block;\n  position: absolute;\n  top: 0;\n  right: .65em;\n}\n\n/*------------------------------------------------------------------------------\n\n    Buttons\n\n------------------------------------------------------------------------------*/\n\nbutton:hover, button:focus {\n  background-color: #8f9699;\n}\n\nbutton,\ninput[type=\"submit\"],\ninput[type=\"button\"],\n.button-primary,\n.button-primary--small,\n.button-secondary,\n.button-secondary:hover,\n.button-secondary--small,\n.button-secondary--small:hover,\n.button-alternate,\n.button-alternate:hover,\n.button-alternate--small,\n.button-alternate--small:hover,\ninput.button-primary,\ninput.button-primary--small,\ninput.button-secondary,\ninput.button-secondary--small,\ninput.button-alternate,\ninput.button-alternate--small {\n  display: inline-block;\n  padding: .25em .45em;\n  line-height: 1.65;\n  min-width: 120px;\n  min-height: 37px;\n  color: white;\n  background-color: #0089ff;\n  -webkit-appearance: none;\n  -moz-appearance: none;\n  appearance: none;\n  border: none;\n  font-family: \"Open Sans\", \"Helvetica Neue\", \"Helvetica\", Arial, sans-serif;\n  text-decoration: none;\n  text-align: center;\n  border-radius: 4px;\n}\n\n.button-primary,\n.button-primary--small,\ninput.button-primary,\ninput.button-primary--small {\n  background-color: #0089ff;\n}\n.button-primary:hover,\n.button-primary--small:hover,\ninput.button-primary:hover,\ninput.button-primary--small:hover {\n  background-color: #0074d8;\n}\n\ninput[type='button']:disabled, input[type='button']:disabled.cancel, input[type='submit']:disabled {\n    color:#ddd;\n    border-color:#ddd;\n}\n\ninput[type='button']:disabled.button-primary,\ninput[type='submit']:disabled.button-primary  {\n    background-color: rgba(0, 137, 255, 0.81);\n}\n\ninput[type='button']:disabled.button-primary.cancel, input[type='button']:disabled.button-primary.cancel:hover {\n    background-color: rgba(0, 0, 0, 0.1);\n}\n\n.button-secondary,\n.button-secondary--small,\ninput.button-secondary,\ninput.button-secondary--small {\n  background-color: #32a066;\n}\n.button-secondary:hover,\n.button-secondary--small:hover,\ninput.button-secondary:hover,\ninput.button-secondary--small:hover {\n  background-color: #2a8856;\n}\n\n.button-alternate,\n.button-alternate--small,\ninput.button-alternate,\ninput.button-alternate--small {\n  background-color: #ef402f;\n}\n.button-alternate:hover,\n.button-alternate--small:hover,\ninput.button-alternate:hover,\ninput.button-alternate--small:hover {\n  background-color: #cb3627;\n}\n\n.button-quiet,\n.button-quiet--small,\ninput.button-quiet,\ninput.button-quiet--small {\n  background-color: transparent;\n  border: 1px solid #919ca1;\n  color: #4d565b;\n}\n.button-quiet:hover,\n.button-quiet--small:hover,\ninput.button-quiet:hover,\ninput.button-quiet--small:hover {\n  background-color: #8f9699;\n}\n\n.button-primary--small,\n.button-secondary--small,\n.button-alternate--small,\ninput.button-primary--small,\ninput.button-secondary--small,\ninput.button-alternate--small {\n  padding: .25em .45em;\n  line-height: 1.65;\n}\n\n.button-primary.hollow, input[type='button'].cancel {\n  display: inline-block;\n  background-color: transparent;\n  border: 1px solid #fff;\n  color: #fff;\n  text-decoration: none;\n  padding: .25em .5em;\n  border-radius: 4px;\n  margin: 0;\n}\n.button-primary.hollow:hover, input[type='button']:enabled.cancel:hover {\n  background-color: #f7f7f7;\n  border-color: #f7f7f7;\n  color: #383f44;\n}\n\n.button-secondary--form-align,\n.button-primary--form-align,\n.button-quiet--form-align {\n  margin-top: 1.5em;\n  width: 100%;\n}\n\n/*\n * Button modifiers\n*/\n\n\n/*\n * This class will make a button take up the full width\n * of it's parent container.\n*/\n.button--full-width {\n    display: block;\n    width: 100%\n}\n\n/*\n**  Overide Foundation dropdown buttons\n*/\n\n.dropdown.button::after, button.dropdown::after {\n  border-color: #444 transparent transparent transparent;\n}\n\n.f-dropdown {\n  background-color: rgba(255, 255, 255, 0.95);\n  border: none;\n  -webkit-border-radius: 4px;\n  -moz-border-radius: 4px;\n  -ms-border-radius: 4px;\n  -o-border-radius: 4px;\n  border-radius: 4px;\n  -webkit-box-shadow: 0px 2px 2px #ccc;\n  -moz-box-shadow: 0px 2px 2px #ccc;\n  -o-box-shadow: 0px 2px 2px #ccc;\n  box-shadow: 0px 2px 2px #ccc;\n}\n\n.f-dropdown a {\n  text-decoration: none;\n}\n\n/*\n** Disabled states for Config buttons\n*/\n\ninput[type='button']:disabled.button-primary, input[type='submit']:disabled.button-primary {\n  background-color: #999;\n  color: #666;\n  border: none;\n}\n\ninput[type='button']:disabled.button-primary:hover, input[type='submit']:disabled.button-primary:hover {\n  background-color: #999;\n  border-color: #999;\n  color: #666;\n  cursor: default;\n}\n\ninput[type='button']:disabled.button-primary--hollow {\n  border: 1px solid #999;\n  color: #888;\n  background-color:transparent;\n}\n\ninput[type='button']:disabled.button-primary--hollow:hover {\n  background-color: transparent;\n  border-color: #999;\n  color: #888;\n  cursor: default;\n}\n\n.button-dropdown {\n\n}\n\n/*\n**  Button group\n*/\n\n.button-group {\n  padding: 1em 0;\n}\n\n.button-group-testing {\n    float:right;\n}\n\n.button-group button, .button-group-testing button {\n  margin-right: 1em;\n}\n\n.overview {\n  background-color: #f7f7f7;\n  position: relative;\n  padding: 1em 1em 1em 2em;\n  margin: 1em 0;\n  -webkit-border-radius: 4px;\n  -moz-border-radius: 4px;\n  -ms-border-radius: 4px;\n  -o-border-radius: 4px;\n  border-radius: 4px;\n  border: 1px solid #dedede;\n}\n\n.overview--no-pad {\n    padding-left: 0;\n    padding-right: 0;\n}\n\n.overview--list {\n  margin-bottom: 0;\n}\n.overview--list dt, .overview--list dd {\n  float: left;\n  margin-bottom: 0;\n}\n.overview--list dt {\n  clear: both;\n  margin-right: .65em;\n}\n\n.overview--list:after {\n  content: \"\";\n  clear: both;\n  display: block;\n}\n\n.overview--title {\n  font-size: 1.75em;\n  line-height: 1.2;\n  font-weight: 700;\n  margin-bottom: .65em;\n}\n.overview--title i {\n  margin-left: -20px;\n  color: #ef402f;\n}\n\n.overview--edit {\n  position: absolute;\n  display: inline-block;\n  top: 0;\n  right: 0;\n  padding: .75em 1em;\n  color: #0089ff;\n  text-decoration: none;\n}\n.overview--edit i {\n  color: #0089ff;\n}\n.overview--edit:hover {\n  text-decoration: underline;\n  color: #a5d5ff;\n}\n.overview--edit:hover i {\n  text-decoration: underline;\n  color: #a5d5ff;\n}\n\n/* Module header block */\n.module-header {\n  position: relative;\n  padding: .5em;\n  background-color: #4d565b;\n}\n\n.module-header__title {\n  font-size: 1.25em;\n}\n\n.module-header .module-header__title {\n  margin: 0;\n}\n\n.module-header__action {\n  position: absolute;\n  display: inline-block;\n  top: 0;\n  right: 0;\n  padding: .6em .75em;\n  border-left: 1px solid #353b40;\n  color: #f7f7f7;\n  text-decoration: none;\n}\n.module-header__action:hover i {\n  color: #a5d5ff;\n}\n.module-header__action i {\n  color: #f7f7f7;\n}\n\n@media screen and (max-width: 580px) {\n  .module-header .module-header__action {\n    display: block;\n    position: relative;\n    top: 0;\n    border-left: none;\n    padding: 0;\n  }\n\n  .module-header .module-header__title {\n    display: block;\n  }\n}\n/*------------------------------------------------------------------------------\n\n    Aside - Components/modules use in sidebars, etc. for secondary\n    or subordinate information.\n\n------------------------------------------------------------------------------*/\n.aside {\n  position: relative;\n  margin: 2em 0;\n  background-color: #f7f7f7;\n  border: 1px solid #DDDDDD;\n  -webkit-border-radius: 4px;\n  -moz-border-radius: 4px;\n  -ms-border-radius: 4px;\n  -o-border-radius: 4px;\n  border-radius: 4px;\n}\n.aside a:hover {\n  color: #a5d5ff;\n}\n\n.aside__heading {\n  font-size: 1em;\n  font-weight: 700;\n  padding: .825em;\n  margin-top: 0;\n  background-color: #ddd;\n}\n\n.aside__list {\n  display: block;\n  list-style-type: none;\n  margin: 0;\n  padding: .825em;\n}\n\n.aside__list li {\n  padding: .35em 0;\n}\n.aside__list li:after {\n  content: \"\";\n  clear: both;\n  display: block;\n}\n.aside__list li:first-child {\n  padding-top: 0;\n}\n\n.aside__list li a {\n  text-decoration: none;\n}\n\n.aside--nav-list {\n  list-style-type: none;\n  margin: 0 0 1em 0;\n}\n.aside--nav-list li {\n  border-bottom: 1px solid #3d4448;\n  padding: .35em 0;\n}\n.aside--nav-list li:last-child {\n  border-bottom: none;\n}\n.aside--nav-list li a {\n  text-decoration: none;\n  color: #919ca1;\n}\n.aside--nav-list li a:hover {\n  text-decoration: underline;\n}\n.aside--nav-list li a i {\n  color: #919ca1;\n}\n\n/*------------------------------------------------------------------------------\n\n    Sticky bar\n\n------------------------------------------------------------------------------*/\n.sticky-bar {\n  position: fixed;\n  bottom: 0;\n  right: 0;\n  /*text-align: center;*/\n  width: 100%;\n  height: 70px;\n  font-size: 1.15em;\n}\n\n.sticky-bar__message {\n  display: inline-block;\n}\n\n.js-unsaved-message {\n  display: none;\n}\n\n.sticky-bar--unsaved {\n  background: rgba(56, 63, 68, 0.85);\n  /*display: none;*/\n  color: #ffffff;\n  padding-top: 1.15em;\n}\n\n.sticky-bar--saved {\n  background-color: #32a066;\n  color: #fff;\n  display: none;\n  padding-top: 1.5em;\n}\n\n.sticky-bar--failure {\n  /*background-color: #ef402f;*/\n  background-color: #f7a9a1;\n  color: #a06d68;\n  display: none;\n  padding-top: 1.5em;\n}\n\n.sticky-bar--failure a {\n  color: #383f44;\n}\n\n.sticky-bar--failure a:hover {\n  text-decoration: none;\n}\n\n.sticky-bar__message {\n  margin-right: 1em;\n  padding-left: 2.35em;\n}\n\n.sticky-bar__dismiss {\n  position: absolute;\n  right: 1.4em;\n  top: 1.4em;\n}\n\n.sticky-bar__dismiss a {\n  text-decoration: none;\n}\n\n.sticky-bar__dismiss i:hover {\n  color: #a06d68;\n}\n\n/* ** Get rid of this thing once you figure out a better place\nto put the stuff inside. */\n.module {\n  margin: 2em 0 1em 0;\n}\n\n.module--config-table {\n  margin-top: 1em;\n}\n\n.dashboard-main {\n  width: 75%;\n  padding: 1em 3em 0 2em;\n  float: left;\n}\n\n.config-panel-wrapper {\n  max-width: 1080px;\n  padding: 2em 1em;\n  margin: 0 auto;\n}\n\n.config-panel-wrapper div.actions {\n    text-align:center;\n}\n\n.config-panel-wrapper div.actions a {\n    margin:1em;\n}\n\n.config-panel-wrapper .config__form label {\n    /* width:70px; */\n}\n\n.config-panel-wrapper .config__form dl dt input[type=checkbox] {\n    margin:0;\n}\n\n.uninstalled {\n    color:#999;\n}\n\n.config-panel-wrapper .config__form dl dt {\n    float:left;\n    clear:left;\n    width:7em;\n}\n\n.config-panel-wrapper .config__form dl dd {\n}\n\n.config-panel-wrapper span.label-description {\n    /*position:absolute;\n    left:10em;*/\n    /* margin-right:0.5em; */\n}\n\n@media screen and (max-width: 850px) {\n  .dashboard-main {\n    float: none;\n    width: 100%;\n    padding: 1em;\n  }\n}\n/* Key for icons */\n.key {\n  color: #919ca1;\n  margin-top: 1.5em;\n}\n\n.key__items {\n  list-style-type: none;\n  margin: 0;\n}\n\n.key__item {\n  display: inline-block;\n  margin-right: 1em;\n  font-size: .875em;\n}\n\n.key__item:last-child {\n  margin-right: 0;\n}\n\n.key__item--normal i {\n  color: #ef402f;\n}\n\n.key__item--vm i {\n  color: #e5b53e;\n}\n\n.key__item--small i {\n  color: #32a066;\n}\n\n/*------------------------------------------------------------------------------\n\n    Tab navigation\n\n------------------------------------------------------------------------------*/\n.nav-tabs {\n  display: block;\n  margin-top: 1em;\n  border-bottom: 1px solid #ddd;\n}\n\n.nav-tabs__panel {\n  border: 1px solid #ddd;\n  border-right: none;\n  border-bottom: none;\n  margin-right: -4px;\n}\n.nav-tabs__panel:first-child {\n  border-top-left-radius: 4px;\n}\n.nav-tabs__panel:last-child {\n  border-right: 1px solid #ddd;\n  border-top-right-radius: 4px;\n}\n.nav-tabs__panel a {\n  background-color: #f7f7f7;\n  display: inline-block;\n  text-decoration: none;\n  padding: .5em 1em;\n  color: #0089ff;\n}\n.nav-tabs__panel a:hover {\n  background-color: #f1f1f1;\n  color: #a5d5ff;\n}\n\n.nav-tabs__panel--active a, .nav-tabs__panel.active a {\n  background-color: #ddd;\n  cursor: default;\n  color: #999;\n  border-color: #0089ff;\n}\n.nav-tabs__panel--active, .nav-tabs__panel.active a:hover {\n  background-color: #ddd;\n  color: #999;\n}\n\n/*------------------------------------------------------------------------------\n\n    Config forms\n\n------------------------------------------------------------------------------*/\n.config__form {\n  padding: 2em 0;\n  margin-bottom: 6em;\n}\n\n.config__breadcrumbs {\n    /*background-color: #f7f7f7;*/\n    padding: .85em;\n    text-align: right;\n}\n\n.config__breadcrumbs a {\n    text-decoration: none;\n}\n\n/*\n  Select2 add servers - Adding a bunch of rules to override conflicts between\n  Foundation and Select2 plugin\n*/\n\n.select2-search__field {\n  box-shadow: none !important;\n  transition: none !important;\n}\n\n.servers input,\n.servers select,\n.servers li {\n  margin: 0;\n}\n\n.select2-container .select2-search--inline .select2-search__field {\n  margin: 0 !important;\n}\n\n/*------------------------------------------------------------------------------\n\n    Communities module\n\n------------------------------------------------------------------------------*/\n.communities,\n.servers {\n  padding: 1em 0;\n}\n.communities:after,\n.servers:after {\n  content: \"\";\n  clear: both;\n  display: block;\n}\n\n.communities__popular,\n.servers__popular, .add_panel {\n  display: none;\n  padding: 1em 0 0 0;\n}\n\n.communities__popular a:hover,\n.servers__popular a:hover {\n  background-color: #32a066;\n}\n\n.communities__popular input,\n.servers__popular input {\n  /*margin: 0;*/\n}\n\n@media screen and (max-width: 850px) {\n  .servers__popular input {\n    margin-bottom: 1em;\n  }\n}\n.communities__node,\n.servers__node {\n  position: relative;\n  border: 1px solid #ddd;\n  -webkit-border-radius: 4px;\n  -moz-border-radius: 4px;\n  -ms-border-radius: 4px;\n  -o-border-radius: 4px;\n  border-radius: 4px;\n  margin: 0 .875em .875em 0;\n  padding-left: .75em;\n  background-color: #f7f7f7;\n  overflow: hidden;\n}\n\n.communities__node a,\n.servers__node a {\n  text-decoration: none;\n  display: inline-block;\n  padding: .25em .5em;\n  margin-left: .5em;\n  font-size: .875em;\n  color: #ef402f;\n  border-left: 1px solid #ddd;\n}\n.communities__node a:hover,\n.servers__node a:hover {\n  background-color: #ef402f;\n  color: white;\n}\n\n/*\n.communities__add,\n.servers__add {\n  display: inline-block;\n  margin: 1em 0;\n}\n*/\n\n.servers__options-list {\n  list-style: none;\n  padding: 0;\n  margin: 1.5em 0;\n}\n\n.servers__options-item {\n  padding: .5em 0;\n}\n\n/* Override Foundation's switch color */\n.switch input:checked + label {\n  background-color: #32a066;\n}\n\n.switch-wrapper {\n  margin-bottom: 3em;\n}\n\n/*------------------------------------------------------------------------------\n\n    Manage NTP servers modal\n\n------------------------------------------------------------------------------*/\n\n.ntp-servers {\n  text-align: left;\n}\n\n.ntp-list {\n  list-style: none;\n  padding: 0;\n  margin: 0;\n  border: 1px solid #ddd;\n  border-radius: 4px;\n  max-height: 500px;\n  overflow: scroll;\n}\n\n.ntp-list__item {\n  border-bottom: 1px solid #ddd;\n  padding: .5em 1em;\n  position: relative;\n}\n\n.ntp-list__item:nth-of-type(2n +1) {\n  background-color: #f7f7f7;\n}\n\n.ntp-list__item:last-child {\n  border-bottom: none;\n}\n\n.ntp-list__title {\n  margin-right: 1em;\n  font-weight: 700;\n}\n\n.ntp-list__description {\n  font-style: italic;\n  color: #919ca1;\n}\n\n.ntp-list__delete {\n  color: #ef402f;\n  position: absolute;\n  top: .7em;\n  right: 1em;\n  text-decoration: none;\n}\n\n.ntp-list__delete:hover {\n  color: #ef402f;\n  text-decoration: underline;\n}\n\n/*------------------------------------------------------------------------------\n\n    Austin's shame\n\n------------------------------------------------------------------------------*/\n.wrapper {\n  overflow: hidden;\n  min-height: 100%;\n  position: relative;\n}\n\n/* Modals */\n\n/*\n * Getting rid of this centered text rule because it is cause weird issues\n * inside the modals on some stuff (like graphs) where elements are set to\n * display: inline-block but the text should not be centere.\n *\n * Use Foundation's .text-center utility class instead on the modals that\n * need to have the text centered.\n\n .reveal-modal {\n   text-align: center;\n }\n\n\n*/\n\n.reveal-modal.loading {\n  position: fixed;\n  overflow: hidden;\n  /* top: 50px !important; */\n  top:30% !important;  /* previous value */\n  left:20% !important;\n  height:150px;\n  width:300px;\n  /*bottom: 50% !important; */\n  transform:translate(-40%, 0);\n\n}\n\n.reveal-modal.large {\n  position: fixed;\n  overflow: scroll;\n  top: 50px !important;\n  /* top:50% !important; */ /* previous value */\n  left:50% !important;\n  bottom: 50px !important;\n  transform:translate(-50%, 0);\n\n}\n\n.reveal-modal.xlarge {\n  /*width: 95%;*/\n  position: fixed;\n  overflow: scroll;\n  top: 30px !important;\n/*  left:95% !important;\n  transform:translate(-97%, 0);\n\n  bottom: 50px !important;\n*/\n}\n\n.reveal-modal-bg { position: fixed; }\n\n.reveal-modal__heading {\n  font-weight: 700;\n  font-size: 1.15em;\n  margin-top: 1.5em;\n}\n\n.reveal-modal__heading:first-child {\n  margin-top: 0;\n  margin-bottom: 1em;\n}\n\n.reveal-modal__heading--large {\n    font-size: 2em;\n    border-bottom: 1px solid #ddd;\n}\n\n.reveal-modal .close-reveal-modal {\n  font-size: 1.5em;\n}\n\n/*\n**  Test config table styling\n*/\n\n.subrow td {\n  /*padding-left: 3.5em;*/\n  /*background-color: #eee;*/\n  line-height: 1.25em;\n}\n\n.subrow input {\n  margin: 0;\n}\n\n.subrow--heading td {\n  background-color: #ddd;\n  border-top: 1px solid #ccc;\n  color: #888;\n  text-transform: uppercase;\n  letter-spacing: 2px;\n  padding: .25em .5em;\n}\n\n.subrow--content {\n  border-top: 1px solid #ddd;\n}\n\n.subrow--indent td:first-child {\n  padding-left: 3em;\n}\n\n/*.subrow--content td:first-child {\n  padding-left: 3em;\n}*/\n\n.subrow--content td a {\n  display: inline-block;\n  margin-right: 1em;\n  color: #383f44;\n}\n\n.subrow--content td a:hover {\n  color: #999;\n}\n\n.subrow--content td:first-child {\n  font-weight: 700;\n}\n\n.new-host-save {\n  display: none;\n}\n\ntable .has-tip {\n    border-bottom:none;\n    font-weight:inherit;\n    color:inherit;\n}\n\ntable .has-tip:hover {\n    border-bottom:none;\n}\n", ""]);
-
-/***/ },
-/* 602 */
-/*!*******************************!*\
-  !*** ../html/css/spinner.css ***!
-  \*******************************/
-/***/ function(module, exports, __webpack_require__) {
-
-	// style-loader: Adds some css to the DOM by adding a <style> tag
-	
-	// load the styles
-	var content = __webpack_require__(/*! !./../../react/~/css-loader!./spinner.css */ 603);
-	if(typeof content === 'string') content = [[module.id, content, '']];
-	// add the styles to the DOM
-	var update = __webpack_require__(/*! ./../../react/~/style-loader/addStyles.js */ 596)(content, {});
-	if(content.locals) module.exports = content.locals;
-	// Hot Module Replacement
-	if(false) {
-		// When the styles change, update the <style> tags
-		if(!content.locals) {
-			module.hot.accept("!!./../../react/node_modules/css-loader/index.js!./spinner.css", function() {
-				var newContent = require("!!./../../react/node_modules/css-loader/index.js!./spinner.css");
-				if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
-				update(newContent);
-			});
-		}
-		// When the module is disposed, remove the <style> tags
-		module.hot.dispose(function() { update(); });
-	}
-
-/***/ },
-/* 603 */
-/*!**********************************************!*\
-  !*** ./~/css-loader!../html/css/spinner.css ***!
-  \**********************************************/
-/***/ function(module, exports, __webpack_require__) {
-
-	exports = module.exports = __webpack_require__(/*! ./~/css-loader/cssToString.js */ 595)();
-	exports.push([module.id, "#loading {\n    /*position:relative;*/\n    /*top:150px;*/\n    /*left:300px;*/\n    width:200px;\n    margin-left:auto;\n    margin-right:auto;\n    background-color:#ffffff;\n}\n#loading h4 {\n    margin-left:80px;\n    padding-top:20px;\n}\n#circularG{\n    position:relative;\n    float:left;\n    width:64px;\n    height:64px}\n.circularG{\n    position:absolute;\n    background-color:#405E9A;\n    width:15px;\n    height:15px;\n    -moz-border-radius:10px;\n    -moz-animation-name:bounce_circularG;\n    -moz-animation-duration:1.04s;\n    -moz-animation-iteration-count:infinite;\n    -moz-animation-direction:linear;\n    -webkit-border-radius:10px;\n    -webkit-animation-name:bounce_circularG;\n    -webkit-animation-duration:1.04s;\n    -webkit-animation-iteration-count:infinite;\n    -webkit-animation-direction:linear;\n    -ms-border-radius:10px;\n    -ms-animation-name:bounce_circularG;\n    -ms-animation-duration:1.04s;\n    -ms-animation-iteration-count:infinite;\n    -ms-animation-direction:linear;\n    -o-border-radius:10px;\n    -o-animation-name:bounce_circularG;\n    -o-animation-duration:1.04s;\n    -o-animation-iteration-count:infinite;\n    -o-animation-direction:linear;\n    border-radius:10px;\n    animation-name:bounce_circularG;\n    animation-duration:1.04s;\n    animation-iteration-count:infinite;\n    animation-direction:linear;\n}\n\n#circularG_1{\n    left:0;\n    top:25px;\n    -moz-animation-delay:0.39s;\n    -webkit-animation-delay:0.39s;\n    -ms-animation-delay:0.39s;\n    -o-animation-delay:0.39s;\n    animation-delay:0.39s;\n}\n\n#circularG_2{\n    left:7px;\n    top:7px;\n    -moz-animation-delay:0.52s;\n    -webkit-animation-delay:0.52s;\n    -ms-animation-delay:0.52s;\n    -o-animation-delay:0.52s;\n    animation-delay:0.52s;\n}\n\n#circularG_3{\n    top:0;\n    left:25px;\n    -moz-animation-delay:0.65s;\n    -webkit-animation-delay:0.65s;\n    -ms-animation-delay:0.65s;\n    -o-animation-delay:0.65s;\n    animation-delay:0.65s;\n}\n\n#circularG_4{\n    right:7px;\n    top:7px;\n    -moz-animation-delay:0.78s;\n    -webkit-animation-delay:0.78s;\n    -ms-animation-delay:0.78s;\n    -o-animation-delay:0.78s;\n    animation-delay:0.78s;\n}\n\n#circularG_5{\n    right:0;\n    top:25px;\n    -moz-animation-delay:0.91s;\n    -webkit-animation-delay:0.91s;\n    -ms-animation-delay:0.91s;\n    -o-animation-delay:0.91s;\n    animation-delay:0.91s;\n}\n\n#circularG_6{\n    right:7px;\n    bottom:7px;\n    -moz-animation-delay:1.04s;\n    -webkit-animation-delay:1.04s;\n    -ms-animation-delay:1.04s;\n    -o-animation-delay:1.04s;\n    animation-delay:1.04s;\n}\n\n#circularG_7{\n    left:25px;\n    bottom:0;\n    -moz-animation-delay:1.17s;\n    -webkit-animation-delay:1.17s;\n    -ms-animation-delay:1.17s;\n    -o-animation-delay:1.17s;\n    animation-delay:1.17s;\n}\n\n#circularG_8{\n    left:7px;\n    bottom:7px;\n    -moz-animation-delay:1.3s;\n    -webkit-animation-delay:1.3s;\n    -ms-animation-delay:1.3s;\n    -o-animation-delay:1.3s;\n    animation-delay:1.3s;\n}\n\n@-moz-keyframes bounce_circularG{\n    0%{\n        -moz-transform:scale(1)}\n\n    100%{\n        -moz-transform:scale(.3)}\n\n}\n\n@-webkit-keyframes bounce_circularG{\n    0%{\n        -webkit-transform:scale(1)}\n\n    100%{\n        -webkit-transform:scale(.3)}\n\n}\n\n@-ms-keyframes bounce_circularG{\n    0%{\n        -ms-transform:scale(1)}\n\n    100%{\n        -ms-transform:scale(.3)}\n\n}\n\n@-o-keyframes bounce_circularG{\n    0%{\n        -o-transform:scale(1)}\n\n    100%{\n        -o-transform:scale(.3)}\n\n}\n\n@keyframes bounce_circularG{\n    0%{\n        transform:scale(1)}\n\n    100%{\n        transform:scale(.3)}\n\n}\n\n", ""]);
-
-/***/ },
-/* 604 */
-/*!**********************************!*\
-  !*** ./src/chart1webservice.jsx ***!
-  \**********************************/
-/***/ function(module, exports, __webpack_require__) {
-
-	"use strict";
-	
-	Object.defineProperty(exports, "__esModule", {
-	    value: true
-	});
-	
-	var _react = __webpack_require__(/*! react */ 1);
-	
-	var _react2 = _interopRequireDefault(_react);
-	
-	var _underscore = __webpack_require__(/*! underscore */ 210);
-	
-	var _underscore2 = _interopRequireDefault(_underscore);
-	
-	var _moment = __webpack_require__(/*! moment */ 211);
-	
-	var _moment2 = _interopRequireDefault(_moment);
-	
-	var _reactMarkdown = __webpack_require__(/*! react-markdown */ 322);
-	
-	var _reactMarkdown2 = _interopRequireDefault(_reactMarkdown);
-	
-	var _reactTimeseriesCharts = __webpack_require__(/*! react-timeseries-charts */ 507);
-	
-	var _pondjs = __webpack_require__(/*! pondjs */ 345);
-	
-	__webpack_require__(/*! ./chart1.css */ 593);
-	
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-	
-	function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
-	//import Highlighter from "./highlighter";
-	
-	var throughputValues = [];
-	var reverseThroughputValues = [];
-	
-	var latencyValues = [];
-	var reverseLatencyValues = [];
-	
-	var lossValues = [];
-	var reverseLossValues = [];
-	
-	var failures = [];
-	var row = {};
-	row.ts = 1460152800; //000;
-	row.val = 500000000; //'Generic error message 1';
-	failures.push(row);
-	
-	row = {};
-	row.ts = 1460175800; //000;
-	row.val = 500000000; //'Generic error message 3';
-	failures.push(row);
-	row = {};
-	
-	var failureMessages = [];
-	failureMessages[1460152800] = 'Generic error message 1';
-	failureMessages[1460175800] = 'Generic error message 3';
-	
-	var failureSeries = null;
-	var failureValues = null;
-	
-	var throughputSeries = null;
-	var reverseThroughputSeries = null;
-	
-	var latencySeries = null;
-	var reverseLatencySeries = null;
-	
-	var lossSeries = null;
-	var reverseLossSeries = null;
-	
-	var text = 'Example ddos chart';
-	
-	var lineStyle = {
-	    node: {
-	        normal: { stroke: "#737373", strokeWidth: 4, fill: "none" },
-	        highlighted: { stroke: "#b1b1b1", strokeWidth: 4, fill: "#b1b1b1" }
-	    },
-	    line: {
-	        normal: { stroke: "#1f77b4", strokeWidth: 3, fill: "none" },
-	        highlighted: { stroke: "#4EC1E0", strokeWidth: 4, fill: "none" }
-	    },
-	    label: {
-	        normal: { fill: "#9D9D9D", fontFamily: "verdana, sans-serif", fontSize: 10 }
-	    }
-	};
-	
-	var scheme = {
-	    requests: "#2ca02c",
-	    connections: "#990000"
-	};
-	
-	var connectionsStyle = {
-	    color: scheme.connections,
-	    width: 1
-	};
-	
-	var requestsStyle = {
-	    color: scheme.requests,
-	    width: 2,
-	    strokeDasharray: "4,2"
-	};
-	
-	var brushStyle = {
-	    boxShadow: "inset 0px 2px 5px -2px rgba(189, 189, 189, 0.75)",
-	    background: "#FEFEFE",
-	    paddingTop: 10
-	};
-	
-	exports.default = _react2.default.createClass({
-	    displayName: "chart1webservice",
-	
-	
-	    mixins: [_reactTimeseriesCharts.Highlighter],
-	
-	    getInitialState: function getInitialState() {
-	        return {
-	            markdown: text,
-	            active: {
-	                throughput: true,
-	                reverse: true
-	            },
-	            tracker: null,
-	            timerange: _pondjs.TimeRange.lastThirtyDays(),
-	            initialTimerange: null,
-	            maxLatency: 1,
-	            maxThroughput: 1,
-	            maxLoss: 0.0000000001,
-	            latencySeries: null
-	        };
-	    },
-	    handleTrackerChanged: function handleTrackerChanged(trackerVal, selection) {
-	        var seconds = Math.floor(trackerVal.getTime() / 1000);
-	        //console.log('trackerVal seconds', seconds, 'selection', selection);
-	        //var pos = this.state.tracker;
-	        this.setState({ tracker: trackerVal });
-	        if (failureMessages[seconds]) {
-	            console.log('failure message: ', failureMessages[seconds]);
-	        }
-	        //this.setState({selectionType, selection});
-	        //return pos;
-	    },
-	    renderChart: function renderChart() {
-	        var charts = [];
-	        var latencyCharts = [];
-	        var lossCharts = [];
-	        if (this.state.active.throughput && throughputSeries) {
-	            charts.push(_react2.default.createElement(_reactTimeseriesCharts.LineChart, { key: "throughput", axis: "axis2", series: throughputSeries, style: connectionsStyle, smooth: false, breakLine: true, min: "{throughutSeries.min()", max: "{throughputSeries.max()}" }));
-	        }
-	        if (this.state.active.reverse && reverseThroughputSeries) {
-	            charts.push(_react2.default.createElement(_reactTimeseriesCharts.LineChart, { key: "reverse", axis: "axis2", series: reverseThroughputSeries, style: requestsStyle, smooth: false, breakLine: true }));
-	        }
-	        if (this.state.active.throughput && this.state.latencySeries) {
-	            // TODO: fix state part
-	            latencyCharts.push(_react2.default.createElement(_reactTimeseriesCharts.LineChart, { key: "latency", axis: "axis1", series: this.state.latencySeries, style: connectionsStyle, smooth: false, breakLine: false, min: this.state.latencySeries.min(), max: this.state.latencySeries.max(), onTimeRangeChanged: this.handleTimeRangeChange }));
-	        }
-	        if (this.state.active.reverse && reverseLatencySeries) {
-	            // TODO: fix state part
-	            latencyCharts.push(_react2.default.createElement(_reactTimeseriesCharts.LineChart, { key: "reverseLatency", axis: "axis1", series: reverseLatencySeries, style: requestsStyle, smooth: false, breakLine: false, min: reverseLatencySeries.min(), max: reverseLatencySeries.max() }));
-	        }
-	        if (this.state.active.throughput && lossSeries) {
-	            lossCharts.push(
-	            /*
-	            <LineChart key="loss" axis="lossAxis" series={lossSeries} style={connectionsStyle} smooth={false} breakLine={true} />
-	            */
-	            _react2.default.createElement(_reactTimeseriesCharts.ScatterChart, { key: "loss", axis: "lossAxis", series: lossSeries, style: { color: "#2ca02c", opacity: 0.5 } }));
-	        }
-	        if (this.state.active.reverse && reverseLossSeries) {
-	            lossCharts.push(_react2.default.createElement(_reactTimeseriesCharts.LineChart, { key: "reverseLoss", axis: "lossAxis", series: reverseLossSeries, style: requestsStyle, smooth: false, breakLine: true })
-	            /*
-	                            <ScatterChart key="reverseLoss" axis="lossAxis" series={reverseLossSeries} style={{color: "#2ca02c", opacity: 0.5}} />
-	                            */
-	            );
-	        }
-	        var timerange;
-	        if (throughputSeries) {
-	            //console.log('throughputSeries is defined');
-	            timerange = throughputSeries.timerange();
-	            //console.log('throughput timerange', timerange);
-	        } else if (reverseThroughputSeries) {
-	            //console.log('reverseThroughputSeries is defined');
-	            timerange = reverseThroughputSeries.timerange();
-	            //console.log('reverse timerange', timerange);
-	        }
-	        this.timerange = timerange;
-	        if (!timerange) {
-	            return _react2.default.createElement("div", null);
-	        }
-	        if (this.state.initialTimerange === null) {
-	            console.log("initial timerange", timerange);
-	            this.setState({ initialTimerange: timerange });
-	        }
-	        return _react2.default.createElement(
-	            "div",
-	            null,
-	            _react2.default.createElement(
-	                "div",
-	                { className: "row" },
-	                _react2.default.createElement(
-	                    "div",
-	                    { className: "col-md-12" },
-	                    _react2.default.createElement(
-	                        _reactTimeseriesCharts.Resizable,
-	                        null,
-	                        _react2.default.createElement(
-	                            _reactTimeseriesCharts.ChartContainer,
-	                            _defineProperty({ timeRange: timerange,
-	                                trackerPosition: this.state.tracker
-	                                //onTrackerChanged={(tracker) => this.handleTrackerChanged({tracker})}
-	                                , onTrackerChanged: this.handleTrackerChanged
-	                                //onTrackerChanged={(tracker) => this.setState({tracker})}
-	                                , enablePanZoom: true
-	                                //onTimeRangeChanged={(timerange) => this.setState({timerange})}
-	                                , onTimeRangeChanged: this.handleTimeRangeChange
-	                            }, "timeRange", this.state.timerange),
-	                            _react2.default.createElement(
-	                                _reactTimeseriesCharts.ChartRow,
-	                                { height: "200", debug: false },
-	                                _react2.default.createElement(
-	                                    _reactTimeseriesCharts.Charts,
-	                                    null,
-	                                    charts,
-	                                    _react2.default.createElement(_reactTimeseriesCharts.ScatterChart, { axis: "axis2", series: failureSeries, style: { color: "steelblue", opacity: 0.5 } })
-	                                ),
-	                                _react2.default.createElement(_reactTimeseriesCharts.YAxis, { id: "axis2", label: "Throughput", style: { labelColor: scheme.connections },
-	                                    labelOffset: 20, min: 0, format: ".2s", max: this.state.maxThroughput, width: "80", type: "linear" })
-	                            ),
-	                            _react2.default.createElement(
-	                                _reactTimeseriesCharts.ChartRow,
-	                                { height: "200", debug: false },
-	                                _react2.default.createElement(
-	                                    _reactTimeseriesCharts.Charts,
-	                                    null,
-	                                    lossCharts
-	                                ),
-	                                _react2.default.createElement(_reactTimeseriesCharts.YAxis, { id: "lossAxis", label: "Loss", style: { labelColor: scheme.connections },
-	                                    labelOffset: 20, min: 0.000000001, format: ",.4f", max: this.state.maxLoss, width: "80", type: "log" })
-	                            ),
-	                            _react2.default.createElement(
-	                                _reactTimeseriesCharts.ChartRow,
-	                                { height: "200", debug: false },
-	                                _react2.default.createElement(
-	                                    _reactTimeseriesCharts.Charts,
-	                                    null,
-	                                    latencyCharts
-	                                ),
-	                                _react2.default.createElement(_reactTimeseriesCharts.YAxis, { id: "axis1", label: "Latency", style: { labelColor: scheme.connections },
-	                                    labelOffset: 20, min: 0.000000001, format: ",.4f", max: this.state.maxLatency, width: "80", type: "linear" })
-	                            )
-	                        )
-	                    )
-	                )
-	            ),
-	            _react2.default.createElement(
-	                "div",
-	                { className: "row" },
-	                _react2.default.createElement(
-	                    "div",
-	                    { className: "col-md-12", style: brushStyle },
-	                    _react2.default.createElement(
-	                        _reactTimeseriesCharts.Resizable,
-	                        null,
-	                        this.renderBrush()
-	                    )
-	                )
-	            )
-	        );
-	    },
-	    handleActiveChange: function handleActiveChange(key, disabled) {
-	        var active = this.state.active;
-	        active[key] = !disabled;
-	        this.setState({ active: active });
-	    },
-	    render: function render() {
-	        var legend = [{
-	            key: "throughput",
-	            label: "Forward",
-	            disabled: !this.state.active.throughput,
-	            style: {
-	                backgroundColor: scheme.connections,
-	                stroke: scheme.connections
-	            }
-	        }, {
-	            key: "reverse",
-	            label: "Reverse",
-	            disabled: !this.state.active.reverse,
-	            style: {
-	                backgroundColor: scheme.requests,
-	                stroke: scheme.requests,
-	                strokeDasharray: "4,2"
-	            }
-	        }];
-	
-	        return _react2.default.createElement(
-	            "div",
-	            null,
-	            _react2.default.createElement(
-	                "div",
-	                { className: "row" },
-	                _react2.default.createElement(
-	                    "div",
-	                    { className: "col-md-12" },
-	                    _react2.default.createElement(
-	                        "h3",
-	                        null,
-	                        "perfSONAR Test Results"
-	                    )
-	                )
-	            ),
-	            _react2.default.createElement(
-	                "div",
-	                { className: "row" },
-	                _react2.default.createElement(
-	                    "div",
-	                    { className: "col-md-12" },
-	                    _react2.default.createElement(_reactTimeseriesCharts.Legend, { type: "line", categories: legend, onChange: this.handleActiveChange })
-	                )
-	            ),
-	            _react2.default.createElement("hr", null),
-	            this.renderChart(),
-	            _react2.default.createElement("hr", null)
-	        );
-	    },
-	    handleTimeRangeChange: function handleTimeRangeChange(timerange) {
-	        //if ( timerange.begin().toString() != timerange.end().toString() ) {
-	        this.setState({ timerange: timerange });
-	
-	        /*
-	        } else {
-	        this.setState({timerange: this.initialTimerange});
-	         this.forceUpdate();
-	        }
-	        */
-	    },
-	    handleBrushCleared: function handleBrushCleared(val) {
-	        this.setState({ timerange: this.state.initialTimerange });
-	        console.log("brush cleared, initial timerange", this.state.initialTimerange);
-	    },
-	    renderBrush: function renderBrush() {
-	        return _react2.default.createElement(
-	            _reactTimeseriesCharts.ChartContainer,
-	            {
-	                timeRange: throughputSeries.timerange(),
-	                format: "relative",
-	                trackerPosition: this.state.tracker },
-	            _react2.default.createElement(
-	                _reactTimeseriesCharts.ChartRow,
-	                { height: "100", debug: false },
-	                _react2.default.createElement(_reactTimeseriesCharts.Brush, {
-	                    timeRange: null
-	                    //timeRange={this.state.timerange}
-	                    , onTimeRangeChanged: this.handleTimeRangeChange,
-	                    onBrushCleared: this.handleBrushCleared
-	                }),
-	                _react2.default.createElement(_reactTimeseriesCharts.YAxis, {
-	                    id: "brushAxis1",
-	                    label: "Throughput",
-	                    min: 0, max: this.state.maxThroughput,
-	                    width: 70, type: "linear", format: ".1s" }),
-	                _react2.default.createElement(
-	                    _reactTimeseriesCharts.Charts,
-	                    null,
-	                    _react2.default.createElement(_reactTimeseriesCharts.LineChart, {
-	                        key: "brushThroughput",
-	                        axis: "brushAxis1",
-	                        style: { up: ["#DDD"] },
-	                        columns: { up: ["throughput"], down: [] },
-	                        series: throughputSeries })
-	                )
-	            )
-	        );
-	    },
-	
-	
-	    componentDidMount: function componentDidMount() {
-	        var url = 'http://perfsonar-dev.grnoc.iu.edu/esmond/perfsonar/archive/9808c289fc07446e9939330706b896d6/throughput/base';
-	        url += '?time-range=' + 86400 * 30;
-	        //var url = 'http://perfsonar-dev.grnoc.iu.edu/esmond/perfsonar/archive/050056d85a8344bc844e2aeaa472db9b/throughput/base';
-	
-	        this.serverRequest = $.get(url, function (data) {
-	            console.log('ajax request came back; throughput data', Date(), data);
-	            var values = this.esmondToTimeSeries(data, 'throughput');
-	            throughputValues = values.values;
-	            throughputSeries = values.series;
-	            console.log('throughput values', Date(), throughputValues);
-	            //this.renderChart();
-	            this.forceUpdate();
-	        }.bind(this));
-	
-	        var url2 = 'http://perfsonar-dev.grnoc.iu.edu/esmond/perfsonar/archive/f1f55c1d158545c29ff8700980948d30/throughput/base';
-	        url2 += '?time-range=' + 86400 * 30;
-	
-	        this.serverRequest = $.get(url2, function (data) {
-	            console.log('ajax request came back; reverse throughput data', Date(), data);
-	            var values = this.esmondToTimeSeries(data, 'reverseThroughput');
-	            reverseThroughputValues = values.values;
-	            reverseThroughputSeries = values.series;
-	            console.log('reverse throughput values', Date(), reverseThroughputValues);
-	            //this.renderChart();
-	            this.forceUpdate();
-	        }.bind(this));
-	
-	        // http://perfsonar-dev.grnoc.iu.edu/esmond/perfsonar/archive/c1eb8fb9fd87429bb3bfaf79aca6424b/histogram-owdelay/statistics/3600
-	        var url3 = 'http://perfsonar-dev.grnoc.iu.edu/esmond/perfsonar/archive/c1eb8fb9fd87429bb3bfaf79aca6424b/histogram-owdelay/statistics/3600';
-	        url3 += '?time-range=' + 86400 * 30;
-	
-	        this.serverRequest = $.get(url3, function (data) {
-	            console.log('ajax request came back; latency data', Date(), data);
-	            var values = this.esmondToTimeSeries(data, 'latency');
-	            latencyValues = values.values;
-	            this.setState({ latencySeries: values.series });
-	            console.log('latency values', Date(), latencyValues);
-	            //this.renderChart();
-	            this.forceUpdate();
-	        }.bind(this));
-	
-	        // http://perfsonar-dev.grnoc.iu.edu/esmond/perfsonar/archive/5a1707536a5143759713adddc5cafa66/histogram-rtt/statistics/3600
-	        var url4 = 'http://perfsonar-dev.grnoc.iu.edu/esmond/perfsonar/archive/5a1707536a5143759713adddc5cafa66/histogram-rtt/statistics/3600';
-	        url4 += '?time-range=' + 86400 * 30;
-	
-	        this.serverRequest = $.get(url4, function (data) {
-	            console.log('ajax request came back; latency data', Date(), data);
-	            var values = this.esmondToTimeSeries(data, 'reverseLatency');
-	            reverseLatencyValues = values.values;
-	            reverseLatencySeries = values.series;
-	            console.log('reverse latency values', Date(), reverseLatencyValues);
-	            //this.renderChart();
-	            this.forceUpdate();
-	        }.bind(this));
-	
-	        var url5 = 'http://perfsonar-dev.grnoc.iu.edu/esmond/perfsonar/archive/0121d658a72a4f119a99c5e03bfa674b/packet-loss-rate/base';
-	        url5 += '?time-range=' + 86400 * 30;
-	        this.serverRequest = $.get(url5, function (data) {
-	            console.log('ajax request came back; loss data', Date(), data);
-	            var values = this.esmondToTimeSeries(data, 'loss');
-	            lossValues = values.values;
-	            lossSeries = values.series;
-	            console.log('loss values', Date(), lossValues);
-	            //this.renderChart();
-	            this.forceUpdate();
-	        }.bind(this));
-	
-	        var url6 = 'http://perfsonar-dev.grnoc.iu.edu/esmond/perfsonar/archive/0acdc51a787a43c4b2b81c66e9d564da/packet-loss-rate/aggregations/86400';
-	        url6 += '?time-range=' + 86400 * 30;
-	        this.serverRequest = $.get(url6, function (data) {
-	            console.log('ajax request came back; reverse loss data', Date(), data);
-	            var values = this.esmondToTimeSeries(data, 'reverseLoss');
-	            reverseLossValues = values.values;
-	            reverseLossSeries = values.series;
-	            console.log('reverse loss values', Date(), reverseLossValues);
-	            //this.renderChart();
-	            this.forceUpdate();
-	        }.bind(this));
-	
-	        var values = this.esmondToTimeSeries(failures, 'failures');
-	        failureValues = values.values;
-	        failureSeries = values.series;
-	        console.log('failure values', failureValues);
-	        console.log('failure series', failureSeries);
-	    },
-	
-	    componentWillUnmount: function componentWillUnmount() {
-	        this.serverRequest.abort();
-	    },
-	
-	    _checkSortOrder: function _checkSortOrder(ary) {
-	        var valName = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 'ts';
-	
-	        var lastVal = 0;
-	        _underscore2.default.each(ary, function (val) {
-	            //console.log('val', val);
-	            if (val.ts <= lastVal) {
-	                console.log('ts is not greater than last ts');
-	            } else {
-	                //console.log('ts is greater than last ts');
-	
-	            }
-	            lastVal = val.ts;
-	        });
-	    },
-	
-	    esmondToTimeSeries: function esmondToTimeSeries(inputData, seriesName) {
-	        var values = [];
-	        var series = {};
-	
-	        //this._checkSortOrder(inputData); // TODO: review: do we need this?
-	
-	        var maxThroughput = this.state.maxThroughput;
-	        var maxLatency = this.state.maxLatency;
-	        var maxLoss = this.state.maxLoss;
-	
-	        _underscore2.default.each(inputData, function (val) {
-	            var ts = val["ts"];
-	            var timestamp = new _moment2.default(new Date(ts * 1000)); // 'Date' expects milliseconds
-	            var value = val["val"];
-	            if (seriesName == 'latency' || seriesName == 'reverseLatency') {
-	                value = val["val"].minimum;
-	                maxLatency = value > maxLatency ? value : maxLatency;
-	                //console.log('maxLatency', maxLatency);
-	                /*(
-	                const active = this.state.active;
-	                active[key] = !disabled;
-	                this.setState({active});
-	                */
-	            }
-	            // TODO: change this section to use else if
-	            if (seriesName == 'loss' || seriesName == 'reverseLoss') {
-	                maxLoss = value > maxLoss ? value : maxLoss;
-	            }
-	            if (seriesName == 'throughput' || seriesName == 'reverseThroughput') {
-	                maxThroughput = value > maxThroughput ? value : maxThroughput;
-	            }
-	            if (value <= 0) {
-	                console.log("VALUE IS ZERO OR LESS", Date());
-	                value = 0.000000001;
-	            }
-	            if (isNaN(value)) {
-	                console.log("VALUE IS NaN");
-	            }
-	            values.push([timestamp.toDate().getTime(), value]);
-	        });
-	        this.setState({ maxThroughput: maxThroughput });
-	        this.setState({ maxLatency: maxLatency });
-	        this.setState({ maxLoss: maxLoss });
-	        console.log('creating series ...', Date());
-	
-	        series = new _pondjs.TimeSeries({
-	            name: seriesName,
-	            columns: ["time", "value"],
-	            points: values
-	        });
-	        /*
-	         * Shouldn't need this as _checkSortOrder is called above
-	        var lastTS = 0;
-	        for (let i=0; i < series.size(); i++) {
-	            //console.log(series.at(i).toString());
-	            //console.log('series.at(i)', series.at(i));
-	            var ts = series.at(i).timestamp().getTime();
-	            if ( ts > lastTS ) {
-	                //console.log( 'new ts > last TS', ts, lastTS );
-	             } else {
-	                console.log( 'BAD: new ts <= last TS', ts, lastTS );
-	             }
-	            lastTS = ts;
-	        }
-	        */
-	        return { values: values, series: series };
-	    }
-	});
-
-/***/ },
-/* 605 */
-/*!***********************************************!*\
-  !*** ./~/history/lib/createBrowserHistory.js ***!
-  \***********************************************/
-/***/ function(module, exports, __webpack_require__) {
-
-	/* WEBPACK VAR INJECTION */(function(process) {'use strict';
-	
-	exports.__esModule = true;
-	
-	var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
-	
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
-	
-	var _invariant = __webpack_require__(/*! invariant */ 164);
-	
-	var _invariant2 = _interopRequireDefault(_invariant);
-	
-	var _Actions = __webpack_require__(/*! ./Actions */ 165);
-	
-	var _ExecutionEnvironment = __webpack_require__(/*! ./ExecutionEnvironment */ 166);
-	
-	var _DOMUtils = __webpack_require__(/*! ./DOMUtils */ 167);
-	
-	var _DOMStateStorage = __webpack_require__(/*! ./DOMStateStorage */ 168);
-	
-	var _createDOMHistory = __webpack_require__(/*! ./createDOMHistory */ 169);
-	
-	var _createDOMHistory2 = _interopRequireDefault(_createDOMHistory);
-	
-	var _parsePath = __webpack_require__(/*! ./parsePath */ 176);
-	
-	var _parsePath2 = _interopRequireDefault(_parsePath);
-	
-	/**
-	 * Creates and returns a history object that uses HTML5's history API
-	 * (pushState, replaceState, and the popstate event) to manage history.
-	 * This is the recommended method of managing history in browsers because
-	 * it provides the cleanest URLs.
-	 *
-	 * Note: In browsers that do not support the HTML5 history API full
-	 * page reloads will be used to preserve URLs.
-	 */
-	function createBrowserHistory() {
-	  var options = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
-	
-	  !_ExecutionEnvironment.canUseDOM ? process.env.NODE_ENV !== 'production' ? _invariant2['default'](false, 'Browser history needs a DOM') : _invariant2['default'](false) : undefined;
-	
-	  var forceRefresh = options.forceRefresh;
-	
-	  var isSupported = _DOMUtils.supportsHistory();
-	  var useRefresh = !isSupported || forceRefresh;
-	
-	  function getCurrentLocation(historyState) {
-	    historyState = historyState || window.history.state || {};
-	
-	    var path = _DOMUtils.getWindowPath();
-	    var _historyState = historyState;
-	    var key = _historyState.key;
-	
-	    var state = undefined;
-	    if (key) {
-	      state = _DOMStateStorage.readState(key);
-	    } else {
-	      state = null;
-	      key = history.createKey();
-	
-	      if (isSupported) window.history.replaceState(_extends({}, historyState, { key: key }), null, path);
-	    }
-	
-	    var location = _parsePath2['default'](path);
-	
-	    return history.createLocation(_extends({}, location, { state: state }), undefined, key);
-	  }
-	
-	  function startPopStateListener(_ref) {
-	    var transitionTo = _ref.transitionTo;
-	
-	    function popStateListener(event) {
-	      if (event.state === undefined) return; // Ignore extraneous popstate events in WebKit.
-	
-	      transitionTo(getCurrentLocation(event.state));
-	    }
-	
-	    _DOMUtils.addEventListener(window, 'popstate', popStateListener);
-	
-	    return function () {
-	      _DOMUtils.removeEventListener(window, 'popstate', popStateListener);
-	    };
-	  }
-	
-	  function finishTransition(location) {
-	    var basename = location.basename;
-	    var pathname = location.pathname;
-	    var search = location.search;
-	    var hash = location.hash;
-	    var state = location.state;
-	    var action = location.action;
-	    var key = location.key;
-	
-	    if (action === _Actions.POP) return; // Nothing to do.
-	
-	    _DOMStateStorage.saveState(key, state);
-	
-	    var path = (basename || '') + pathname + search + hash;
-	    var historyState = {
-	      key: key
-	    };
-	
-	    if (action === _Actions.PUSH) {
-	      if (useRefresh) {
-	        window.location.href = path;
-	        return false; // Prevent location update.
-	      } else {
-	          window.history.pushState(historyState, null, path);
-	        }
-	    } else {
-	      // REPLACE
-	      if (useRefresh) {
-	        window.location.replace(path);
-	        return false; // Prevent location update.
-	      } else {
-	          window.history.replaceState(historyState, null, path);
-	        }
-	    }
-	  }
-	
-	  var history = _createDOMHistory2['default'](_extends({}, options, {
-	    getCurrentLocation: getCurrentLocation,
-	    finishTransition: finishTransition,
-	    saveState: _DOMStateStorage.saveState
-	  }));
-	
-	  var listenerCount = 0,
-	      stopPopStateListener = undefined;
-	
-	  function listenBefore(listener) {
-	    if (++listenerCount === 1) stopPopStateListener = startPopStateListener(history);
-	
-	    var unlisten = history.listenBefore(listener);
-	
-	    return function () {
-	      unlisten();
-	
-	      if (--listenerCount === 0) stopPopStateListener();
-	    };
-	  }
-	
-	  function listen(listener) {
-	    if (++listenerCount === 1) stopPopStateListener = startPopStateListener(history);
-	
-	    var unlisten = history.listen(listener);
-	
-	    return function () {
-	      unlisten();
-	
-	      if (--listenerCount === 0) stopPopStateListener();
-	    };
-	  }
-	
-	  // deprecated
-	  function registerTransitionHook(hook) {
-	    if (++listenerCount === 1) stopPopStateListener = startPopStateListener(history);
-	
-	    history.registerTransitionHook(hook);
-	  }
-	
-	  // deprecated
-	  function unregisterTransitionHook(hook) {
-	    history.unregisterTransitionHook(hook);
-	
-	    if (--listenerCount === 0) stopPopStateListener();
-	  }
-	
-	  return _extends({}, history, {
-	    listenBefore: listenBefore,
-	    listen: listen,
-	    registerTransitionHook: registerTransitionHook,
-	    unregisterTransitionHook: unregisterTransitionHook
-	  });
-	}
-	
-	exports['default'] = createBrowserHistory;
-	module.exports = exports['default'];
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(/*! (webpack)/~/node-libs-browser/~/process/browser.js */ 4)))
-
-/***/ },
-/* 606 */
-/*!****************************************************!*\
-  !*** ./~/scroll-behavior/lib/useStandardScroll.js ***!
-  \****************************************************/
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-	
-	exports.__esModule = true;
-	
-	var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
-	
-	exports['default'] = useStandardScroll;
-	
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
-	
-	var _domHelpersEventsOff = __webpack_require__(/*! dom-helpers/events/off */ 607);
-	
-	var _domHelpersEventsOff2 = _interopRequireDefault(_domHelpersEventsOff);
-	
-	var _domHelpersEventsOn = __webpack_require__(/*! dom-helpers/events/on */ 609);
-	
-	var _domHelpersEventsOn2 = _interopRequireDefault(_domHelpersEventsOn);
-	
-	var _domHelpersQueryScrollLeft = __webpack_require__(/*! dom-helpers/query/scrollLeft */ 610);
-	
-	var _domHelpersQueryScrollLeft2 = _interopRequireDefault(_domHelpersQueryScrollLeft);
-	
-	var _domHelpersQueryScrollTop = __webpack_require__(/*! dom-helpers/query/scrollTop */ 612);
-	
-	var _domHelpersQueryScrollTop2 = _interopRequireDefault(_domHelpersQueryScrollTop);
-	
-	var _domHelpersUtilRequestAnimationFrame = __webpack_require__(/*! dom-helpers/util/requestAnimationFrame */ 613);
-	
-	var _domHelpersUtilRequestAnimationFrame2 = _interopRequireDefault(_domHelpersUtilRequestAnimationFrame);
-	
-	var _historyLibDOMStateStorage = __webpack_require__(/*! history/lib/DOMStateStorage */ 168);
-	
-	var _utilsCreateUseScroll = __webpack_require__(/*! ./utils/createUseScroll */ 614);
-	
-	var _utilsCreateUseScroll2 = _interopRequireDefault(_utilsCreateUseScroll);
-	
-	var _utilsSetScrollRestoration = __webpack_require__(/*! ./utils/setScrollRestoration */ 615);
-	
-	var _utilsSetScrollRestoration2 = _interopRequireDefault(_utilsSetScrollRestoration);
-	
-	/**
-	 * `useStandardScroll` attempts to imitate native browser scroll behavior by
-	 * recording updates to the window scroll position, then restoring the previous
-	 * scroll position upon a `POP` transition.
-	 */
-	
-	function useStandardScroll(createHistory) {
-	  var currentKey = undefined;
-	
-	  function getScrollPosition() {
-	    var state = _historyLibDOMStateStorage.readState(currentKey);
-	    if (!state) {
-	      return null;
-	    }
-	
-	    return state.scrollPosition;
-	  }
-	
-	  // `history` will invoke this listener synchronously, so `currentKey` will
-	  // always be defined.
-	  function updateLocation(_ref) {
-	    var key = _ref.key;
-	
-	    currentKey = key;
-	  }
-	
-	  function updateScroll() {
-	    var _ref2 = getScrollPosition() || [0, 0];
-	
-	    var x = _ref2[0];
-	    var y = _ref2[1];
-	
-	    window.scrollTo(x, y);
-	  }
-	
-	  var unsetScrollRestoration = undefined,
-	      unlistenScroll = undefined,
-	      unlistenBefore = undefined;
-	
-	  function start(history) {
-	    // This helps avoid some jankiness in fighting against the browser's
-	    // default scroll behavior on `POP` transitions.
-	    unsetScrollRestoration = _utilsSetScrollRestoration2['default']('manual');
-	
-	    var savePositionHandle = null;
-	
-	    // We have to listen to each scroll update rather than to just location
-	    // updates, because some browsers will update scroll position before
-	    // emitting the location change.
-	    function onScroll() {
-	      if (savePositionHandle !== null) {
-	        return;
-	      }
-	
-	      // It's possible that this scroll operation was triggered by what will be
-	      // a `POP` transition. Instead of updating the saved location
-	      // immediately, we have to enqueue the update, then potentially cancel it
-	      // if we observe a location update.
-	      savePositionHandle = _domHelpersUtilRequestAnimationFrame2['default'](function () {
-	        savePositionHandle = null;
-	
-	        var state = _historyLibDOMStateStorage.readState(currentKey);
-	        var scrollPosition = [_domHelpersQueryScrollLeft2['default'](window), _domHelpersQueryScrollTop2['default'](window)];
-	
-	        // We have to directly update `DOMStateStorage`, because actually
-	        // updating the location could cause e.g. React Router to re-render the
-	        // entire page, which would lead to observably bad scroll performance.
-	        _historyLibDOMStateStorage.saveState(currentKey, _extends({}, state, { scrollPosition: scrollPosition }));
-	      });
-	    }
-	
-	    _domHelpersEventsOn2['default'](window, 'scroll', onScroll);
-	    unlistenScroll = function () {
-	      return _domHelpersEventsOff2['default'](window, 'scroll', onScroll);
-	    };
-	
-	    unlistenBefore = history.listenBefore(function () {
-	      if (savePositionHandle !== null) {
-	        _domHelpersUtilRequestAnimationFrame2['default'].cancel(savePositionHandle);
-	        savePositionHandle = null;
-	      }
-	    });
-	  }
-	
-	  function stop() {
-	    /* istanbul ignore if: not supported by any browsers on Travis */
-	    if (unsetScrollRestoration) {
-	      unsetScrollRestoration();
-	    }
-	
-	    unlistenScroll();
-	    unlistenBefore();
-	  }
-	
-	  return _utilsCreateUseScroll2['default'](updateScroll, start, stop, updateLocation)(createHistory);
-	}
-	
-	module.exports = exports['default'];
-
-/***/ },
-/* 607 */
-/*!*******************************************************!*\
-  !*** ./~/scroll-behavior/~/dom-helpers/events/off.js ***!
-  \*******************************************************/
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-	var canUseDOM = __webpack_require__(/*! ../util/inDOM */ 608);
-	var off = function off() {};
-	
-	if (canUseDOM) {
-	
-	  off = (function () {
-	
-	    if (document.addEventListener) return function (node, eventName, handler, capture) {
-	      return node.removeEventListener(eventName, handler, capture || false);
-	    };else if (document.attachEvent) return function (node, eventName, handler) {
-	      return node.detachEvent('on' + eventName, handler);
-	    };
-	  })();
-	}
-	
-	module.exports = off;
-
-/***/ },
-/* 608 */
-/*!*******************************************************!*\
-  !*** ./~/scroll-behavior/~/dom-helpers/util/inDOM.js ***!
-  \*******************************************************/
-/***/ function(module, exports) {
-
-	'use strict';
-	module.exports = !!(typeof window !== 'undefined' && window.document && window.document.createElement);
-
-/***/ },
-/* 609 */
-/*!******************************************************!*\
-  !*** ./~/scroll-behavior/~/dom-helpers/events/on.js ***!
-  \******************************************************/
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-	var canUseDOM = __webpack_require__(/*! ../util/inDOM */ 608);
-	var on = function on() {};
-	
-	if (canUseDOM) {
-	  on = (function () {
-	
-	    if (document.addEventListener) return function (node, eventName, handler, capture) {
-	      return node.addEventListener(eventName, handler, capture || false);
-	    };else if (document.attachEvent) return function (node, eventName, handler) {
-	      return node.attachEvent('on' + eventName, handler);
-	    };
-	  })();
-	}
-	
-	module.exports = on;
-
-/***/ },
-/* 610 */
-/*!*************************************************************!*\
-  !*** ./~/scroll-behavior/~/dom-helpers/query/scrollLeft.js ***!
-  \*************************************************************/
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-	var getWindow = __webpack_require__(/*! ./isWindow */ 611);
-	
-	module.exports = function scrollTop(node, val) {
-	  var win = getWindow(node);
-	
-	  if (val === undefined) return win ? 'pageXOffset' in win ? win.pageXOffset : win.document.documentElement.scrollLeft : node.scrollLeft;
-	
-	  if (win) win.scrollTo(val, 'pageYOffset' in win ? win.pageYOffset : win.document.documentElement.scrollTop);else node.scrollLeft = val;
-	};
-
-/***/ },
-/* 611 */
-/*!***********************************************************!*\
-  !*** ./~/scroll-behavior/~/dom-helpers/query/isWindow.js ***!
-  \***********************************************************/
-/***/ function(module, exports) {
-
-	'use strict';
-	
-	module.exports = function getWindow(node) {
-	  return node === node.window ? node : node.nodeType === 9 ? node.defaultView || node.parentWindow : false;
-	};
-
-/***/ },
-/* 612 */
-/*!************************************************************!*\
-  !*** ./~/scroll-behavior/~/dom-helpers/query/scrollTop.js ***!
-  \************************************************************/
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-	var getWindow = __webpack_require__(/*! ./isWindow */ 611);
-	
-	module.exports = function scrollTop(node, val) {
-	  var win = getWindow(node);
-	
-	  if (val === undefined) return win ? 'pageYOffset' in win ? win.pageYOffset : win.document.documentElement.scrollTop : node.scrollTop;
-	
-	  if (win) win.scrollTo('pageXOffset' in win ? win.pageXOffset : win.document.documentElement.scrollLeft, val);else node.scrollTop = val;
-	};
-
-/***/ },
-/* 613 */
-/*!***********************************************************************!*\
-  !*** ./~/scroll-behavior/~/dom-helpers/util/requestAnimationFrame.js ***!
-  \***********************************************************************/
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-	
-	var canUseDOM = __webpack_require__(/*! ./inDOM */ 608);
-	
-	var vendors = ['', 'webkit', 'moz', 'o', 'ms'],
-	    cancel = 'clearTimeout',
-	    raf = fallback,
-	    compatRaf;
-	
-	var getKey = function getKey(vendor, k) {
-	  return vendor + (!vendor ? k : k[0].toUpperCase() + k.substr(1)) + 'AnimationFrame';
-	};
-	
-	if (canUseDOM) {
-	  vendors.some(function (vendor) {
-	    var rafKey = getKey(vendor, 'request');
-	
-	    if (rafKey in window) {
-	      cancel = getKey(vendor, 'cancel');
-	      return raf = function (cb) {
-	        return window[rafKey](cb);
-	      };
-	    }
-	  });
-	}
-	
-	/* https://github.com/component/raf */
-	var prev = new Date().getTime();
-	
-	function fallback(fn) {
-	  var curr = new Date().getTime(),
-	      ms = Math.max(0, 16 - (curr - prev)),
-	      req = setTimeout(fn, ms);
-	
-	  prev = curr;
-	  return req;
-	}
-	
-	compatRaf = function (cb) {
-	  return raf(cb);
-	};
-	compatRaf.cancel = function (id) {
-	  return window[cancel](id);
-	};
-	
-	module.exports = compatRaf;
-
-/***/ },
-/* 614 */
-/*!********************************************************!*\
-  !*** ./~/scroll-behavior/lib/utils/createUseScroll.js ***!
-  \********************************************************/
-/***/ function(module, exports) {
-
-	"use strict";
-	
-	exports.__esModule = true;
-	
-	var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
-	
-	exports["default"] = createUseScroll;
-	
-	function _objectWithoutProperties(obj, keys) { var target = {}; for (var i in obj) { if (keys.indexOf(i) >= 0) continue; if (!Object.prototype.hasOwnProperty.call(obj, i)) continue; target[i] = obj[i]; } return target; }
-	
-	function createUseScroll(updateScroll, start, stop, updateLocation) {
-	  return function (createHistory) {
-	    return function () {
-	      var options = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
-	      var shouldUpdateScroll = options.shouldUpdateScroll;
-	
-	      var historyOptions = _objectWithoutProperties(options, ["shouldUpdateScroll"]);
-	
-	      var history = createHistory(historyOptions);
-	
-	      var numListeners = 0;
-	
-	      function checkStart() {
-	        if (++numListeners === 1 && start) {
-	          start(history);
-	        }
-	      }
-	
-	      function checkStop() {
-	        if (--numListeners === 0 && stop) {
-	          stop();
-	        }
-	      }
-	
-	      function listenBefore(hook) {
-	        checkStart();
-	        var unlisten = history.listenBefore(hook);
-	
-	        return function () {
-	          unlisten();
-	          checkStop();
-	        };
-	      }
-	
-	      var oldLocation = undefined;
-	      var listeners = [],
-	          currentLocation = undefined,
-	          unlisten = undefined;
-	
-	      function onChange(location) {
-	        oldLocation = currentLocation;
-	        currentLocation = location;
-	
-	        listeners.forEach(function (listener) {
-	          return listener(location);
-	        });
-	
-	        // useStandardScroll needs the new location even when not updating the
-	        // scroll position, to update the current key.
-	        if (updateLocation) {
-	          updateLocation(location);
-	        }
-	
-	        if (!shouldUpdateScroll || shouldUpdateScroll(oldLocation, currentLocation)) {
-	          updateScroll(location);
-	        }
-	      }
-	
-	      function listen(listener) {
-	        checkStart();
-	
-	        if (listeners.length === 0) {
-	          unlisten = history.listen(onChange);
-	        }
-	
-	        // Add the listener to the list afterward so we can manage calling it
-	        // initially with the current location.
-	        listeners.push(listener);
-	        listener(currentLocation);
-	
-	        return function () {
-	          listeners = listeners.filter(function (item) {
-	            return item !== listener;
-	          });
-	          if (listeners.length === 0) {
-	            unlisten();
-	          }
-	
-	          checkStop();
-	        };
-	      }
-	
-	      return _extends({}, history, {
-	        listenBefore: listenBefore,
-	        listen: listen
-	      });
-	    };
-	  };
-	}
-	
-	module.exports = exports["default"];
-
-/***/ },
-/* 615 */
-/*!*************************************************************!*\
-  !*** ./~/scroll-behavior/lib/utils/setScrollRestoration.js ***!
-  \*************************************************************/
-/***/ function(module, exports) {
-
-	'use strict';
-	
-	exports.__esModule = true;
-	exports['default'] = setScrollRestoration;
-	
-	function setScrollRestoration(scrollRestoration) {
-	  /* istanbul ignore if: not supported by any browsers on Travis */
-	  if ('scrollRestoration' in window.history) {
-	    var _ret = (function () {
-	      var oldScrollRestoration = window.history.scrollRestoration;
-	      window.history.scrollRestoration = scrollRestoration;
-	
-	      return {
-	        v: function () {
-	          window.history.scrollRestoration = oldScrollRestoration;
-	        }
-	      };
-	    })();
-	
-	    if (typeof _ret === 'object') return _ret.v;
-	  }
-	
-	  return null;
-	}
-	
-	module.exports = exports['default'];
-
-/***/ },
-/* 616 */
 /*!*****************************!*\
   !*** ./src/ChartHeader.jsx ***!
   \*****************************/
@@ -92572,19 +91327,23 @@
 	
 	var _react2 = _interopRequireDefault(_react);
 	
-	var _HostInfoStore = __webpack_require__(/*! ./HostInfoStore */ 617);
+	var _HostInfoStore = __webpack_require__(/*! ./HostInfoStore */ 599);
 	
 	var _HostInfoStore2 = _interopRequireDefault(_HostInfoStore);
 	
-	var _InterfaceInfoStore = __webpack_require__(/*! ./InterfaceInfoStore */ 618);
+	var _InterfaceInfoStore = __webpack_require__(/*! ./InterfaceInfoStore */ 600);
 	
 	var _InterfaceInfoStore2 = _interopRequireDefault(_InterfaceInfoStore);
+	
+	var _GraphUtilities = __webpack_require__(/*! ./GraphUtilities */ 506);
+	
+	var _GraphUtilities2 = _interopRequireDefault(_GraphUtilities);
 	
 	var _SIValue = __webpack_require__(/*! ./SIValue */ 592);
 	
 	var _SIValue2 = _interopRequireDefault(_SIValue);
 	
-	__webpack_require__(/*! ../css/graphs.css */ 598);
+	__webpack_require__(/*! ../css/graphs.css */ 601);
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
@@ -92592,7 +91351,7 @@
 	
 	var emitter = new EventEmitter();
 	
-	var moment = __webpack_require__(/*! moment-timezone */ 619);
+	var moment = __webpack_require__(/*! moment-timezone */ 603);
 	
 	exports.default = _react2.default.createClass({
 	    displayName: "ChartHeader",
@@ -92619,38 +91378,14 @@
 	    render: function render() {
 	        var startDate = new Date(this.state.start * 1000);
 	        var endDate = new Date(this.state.end * 1000);
-	
-	        var tzRe = /\(([^)]+)\)/;
-	        var startTZ = void 0;
-	        var endTZ = void 0;
-	        if (startDate.toString() == "Invalid Date") {
-	            //startTZ = "";
-	            //endTZ = "";
-	
-	        } else {
-	            startTZ = tzRe.exec(startDate.toString())[1];
-	            endTZ = tzRe.exec(endDate.toString())[1];
-	        }
-	
-	        var date = "ddd MM/DD/YYYY";
-	        var time = "HH:mm:ss";
-	        //let time = "HH:mm:ss [GMT-]ZZ";
-	
 	        var startMoment = moment(startDate);
 	        var endMoment = moment(endDate);
 	
-	        var startOffset = startMoment.utcOffset() / 60;
-	        if (startOffset >= 0) {
-	            startOffset = "+" + startOffset;
-	        }
-	        var endOffset = endMoment.utcOffset() / 60;
-	        if (endOffset >= 0) {
-	            endOffset = "+" + endOffset;
-	        }
+	        var startTZ = _GraphUtilities2.default.getTimezone(startDate);
+	        var endTZ = _GraphUtilities2.default.getTimezone(endDate);
 	
-	        console.log("startMoment", startMoment);
-	        //let startOut = startMoment.format( format );
-	        var endOut = endMoment.format(date);
+	        var date = "ddd MM/DD/YYYY";
+	        var time = "HH:mm:ss";
 	
 	        return _react2.default.createElement(
 	            "div",
@@ -92728,10 +91463,7 @@
 	                                _react2.default.createElement("br", null),
 	                                startMoment.format(time),
 	                                " ",
-	                                startTZ,
-	                                " (GMT",
-	                                startOffset,
-	                                ")"
+	                                startTZ
 	                            ),
 	                            _react2.default.createElement(
 	                                "span",
@@ -92745,10 +91477,7 @@
 	                                _react2.default.createElement("br", null),
 	                                endMoment.format(time),
 	                                " ",
-	                                endTZ,
-	                                " (GMT",
-	                                endOffset,
-	                                ")"
+	                                endTZ
 	                            )
 	                        )
 	                    )
@@ -93103,7 +91832,7 @@
 	});
 
 /***/ },
-/* 617 */
+/* 599 */
 /*!******************************!*\
   !*** ./src/HostInfoStore.js ***!
   \******************************/
@@ -93235,7 +91964,7 @@
 	};
 
 /***/ },
-/* 618 */
+/* 600 */
 /*!***********************************!*\
   !*** ./src/InterfaceInfoStore.js ***!
   \***********************************/
@@ -93456,18 +92185,57 @@
 	};
 
 /***/ },
-/* 619 */
+/* 601 */
+/*!************************!*\
+  !*** ./css/graphs.css ***!
+  \************************/
+/***/ function(module, exports, __webpack_require__) {
+
+	// style-loader: Adds some css to the DOM by adding a <style> tag
+	
+	// load the styles
+	var content = __webpack_require__(/*! !./../~/css-loader!./graphs.css */ 602);
+	if(typeof content === 'string') content = [[module.id, content, '']];
+	// add the styles to the DOM
+	var update = __webpack_require__(/*! ./../~/style-loader/addStyles.js */ 596)(content, {});
+	if(content.locals) module.exports = content.locals;
+	// Hot Module Replacement
+	if(false) {
+		// When the styles change, update the <style> tags
+		if(!content.locals) {
+			module.hot.accept("!!./../node_modules/css-loader/index.js!./graphs.css", function() {
+				var newContent = require("!!./../node_modules/css-loader/index.js!./graphs.css");
+				if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
+				update(newContent);
+			});
+		}
+		// When the module is disposed, remove the <style> tags
+		module.hot.dispose(function() { update(); });
+	}
+
+/***/ },
+/* 602 */
+/*!***************************************!*\
+  !*** ./~/css-loader!./css/graphs.css ***!
+  \***************************************/
+/***/ function(module, exports, __webpack_require__) {
+
+	exports = module.exports = __webpack_require__(/*! ./~/css-loader/cssToString.js */ 595)();
+	exports.push([module.id, "/*----------------------------------------------------------\n\n    Graphs\n\n----------------------------------------------------------*/\n\n.graph-filter {\n    padding: 0.25em 0;\n}\n\n.graph-label {\n    display: block;\n    float: left;\n    padding-top: .7em;\n    margin-right: .5em;\n}\n\n.graph-filter__list {\n    display: block;\n    list-style: none;\n    padding: 0;\n    margin: 0;\n    border: 1px solid #ccc;\n    border-radius: 4px;\n    display: inline-block;\n}\n\n.blockTrace {\n    display:block; \n}\n\n.hiddenTrace {\n    display:none;\n}\n\n/*\n * Clear fix\n*/\n.graph:after,\n.graph-filters:after,\n.graph-filter:after,\n.graph-filter__list:after {\n    content: \"\";\n    clear: both;\n    display: block;\n}\n\n.graph-filter__item {\n    float: left;\n    border-right: 1px solid #ccc;\n    margin: 0;\n}\n\n/*\n * Filter active states\n*/\n\n.graph-filter__item.graph-filter__item a {\n    color: #fff;\n    background-color: #ccc;\n}\n\n.graph-filter__item.graph-filter__item--blue-active a {\n    background-color: #0076b4;\n}\n\n.graph-filter__item.graph-filter__item--forward.active a, .graph-filter__item.graph-filter__item--reverse.active a, .graph-filter__item.graph-filter__item--failures.active a\n{\n    background-color: #0076b4;\n}\n\n\n.graph-filter__item.graph-filter__item.throughput-tcp.active a {\n    background-color: #0076b4;\n}\n\n.graph-filter__item.graph-filter__item.udp.active a {\n    background-color: #d6641e;\n    /*background-color: #cc7dbe;*/ /*pink */\n}\n\n.graph-filter__item.graph-filter__item.ipv4.active a {\n    background-color: #e5a11c;\n}\n\n.graph-filter__item.graph-filter__item.ipv6.active a {\n    background-color: #633;\n}\n\n.graph-filter__item.graph-filter__item.loss-throughput.active a {\n    background-color: #cc7dbe;\n}\n\n.graph-filter__item.graph-filter__item.loss-latency.active a {\n    background-color: #2b9f78;\n}\n\n\n.graph-filter__item svg.direction-label {\n    margin-left: 1em;\n    vertical-align: middle;\n}\n\n.graph-filter__item:last-child {\n    border-right: none;\n}\n\n.graph-filter__item a {\n    color: #383f44;\n    display: inline-block;\n    padding: .75em 1em;\n}\n\n.graph-filter__item a:hover {\n    background-color: #ccc;\n    color: #383f44;\n}\n\n.graph-settings {\n    border: 1px solid #383f44;\n    border-radius: 4px;\n    color: #383f44;\n    display: inline-block;\n    margin-left: 1em;\n    /*\n     * This is a magic number to make this thing look right.\n    */\n    padding: .71em;\n}\n\n.graph-settings i {\n    font-size: 1.5em;\n}\n\n.graph-wrapper {\n\n}\n\n.graph-header {\n    border-bottom: 1px solid #ccc;\n    margin-top: 1em;\n    padding-bottom: .5em;\n}\n\n.graph-module,\n.graph-holder {\n    min-height: 400px;\n}\n\n.graph-module {\n    display: flex;\n    flex-direction: column;\n    justify-content: space-around;\n}\n\n.graph-module--small,\n.graph-holder--small {\n    min-height: 150px;\n}\n\n.graph-holder {\n    background-color: #ddd;\n}\n\n.graph-module__cell {\n    /*\n     * This is sort of brittle because it relies on a\n     * specific amount of padding to veritcally center\n     * the label\n    */\n    padding-top: 4em;\n    text-align: center;\n    border-bottom: 1px solid #ccc;\n    flex-grow: 1;\n    align-content: center;\n}\n\n.graph-module__cell--small {\n    padding-top: 1em;\n}\n\n.graph-module__cell--left {\n    padding-top: 1em;\n    padding-left: 1em;\n    text-align: left;\n}\n\n.graph-module__stat {\n    display: block;\n    line-height: 1.8;\n}\n\n.graph-module__stat i {\n    margin-right: 1em;\n}\n\n.graph-module__controls {\n    color: #383f44;\n}\n\n.graph-small {\n    margin-top: 1em;\n}\n\n.graph .hostLabel {\n    font-weight:700;\n}\n\n.sidebar-popover__close span {\n    float:left;\n}\n\n/* Graph-Values popover */\n\n.sidebar-popover span:after {\n    display:inline;\n}\n\n.sidebar-popover.graph-values-popover {\n  position: absolute;\n  top: -33px;\n  right: 0;\n  font-size: 80%;\n  padding: 1em 1em 0 1em;\n  display:block;\n  opacity:0.9;\n}\n\n.graph-values-popover .graph-type {\n  margin: 0;\n  padding: 0;\n  font-weight: 700;\n}\n\n.graph-values-popover__heading {\n  border-bottom: 1px solid rgba(255, 255, 255, .5);\n  font-size: 1.1em;\n  color: #fff;\n  padding: .5em 0;\n}\n\n.graph-values-popover__list {\n  list-style: none;\n  padding: 0;\n  margin: 2px 0 0 0;\n}\n\n.graph-values-popover__item {\n  padding: 1em 0;\n  border-top: 1px dashed rgba(255, 255, 255, .5);\n}\n\n.graph-values-popover__item:first-child {\n  border-top: none;\n  padding-top: 1.5em;\n}\n\n.graph-values-popover__item ul {\n  list-style: none;\n  margin: 0;\n}\n\n.graph-values-popover__item li:first-child {\n  font-size: 1.1em;\n  font-weight: 700;\n}\n\ndiv.graphholder div.small-2.columns {\n    float:right;\n    display:block;\n    width:23%;\n}\n\ndiv.graphholder #loading {\n    margin-top:4em;\n}\n", ""]);
+
+/***/ },
+/* 603 */
 /*!************************************!*\
   !*** ./~/moment-timezone/index.js ***!
   \************************************/
 /***/ function(module, exports, __webpack_require__) {
 
-	var moment = module.exports = __webpack_require__(/*! ./moment-timezone */ 620);
-	moment.tz.load(__webpack_require__(/*! ./data/packed/latest.json */ 621));
+	var moment = module.exports = __webpack_require__(/*! ./moment-timezone */ 604);
+	moment.tz.load(__webpack_require__(/*! ./data/packed/latest.json */ 605));
 
 
 /***/ },
-/* 620 */
+/* 604 */
 /*!**********************************************!*\
   !*** ./~/moment-timezone/moment-timezone.js ***!
   \**********************************************/
@@ -94077,7 +92845,7 @@
 
 
 /***/ },
-/* 621 */
+/* 605 */
 /*!***************************************************!*\
   !*** ./~/moment-timezone/data/packed/latest.json ***!
   \***************************************************/
@@ -94684,7 +93452,7 @@
 	};
 
 /***/ },
-/* 622 */
+/* 606 */
 /*!****************************************!*\
   !*** ../toolkit/web-ng/root/js/app.js ***!
   \****************************************/
@@ -94793,6 +93561,1278 @@
 	    });
 	    */
 	});
+
+/***/ },
+/* 607 */
+/*!******************************************!*\
+  !*** ../toolkit/web-ng/root/css/app.css ***!
+  \******************************************/
+/***/ function(module, exports, __webpack_require__) {
+
+	// style-loader: Adds some css to the DOM by adding a <style> tag
+	
+	// load the styles
+	var content = __webpack_require__(/*! !./../../../../react/~/css-loader!./app.css */ 608);
+	if(typeof content === 'string') content = [[module.id, content, '']];
+	// add the styles to the DOM
+	var update = __webpack_require__(/*! ./../../../../react/~/style-loader/addStyles.js */ 596)(content, {});
+	if(content.locals) module.exports = content.locals;
+	// Hot Module Replacement
+	if(false) {
+		// When the styles change, update the <style> tags
+		if(!content.locals) {
+			module.hot.accept("!!./../../../../react/node_modules/css-loader/index.js!./app.css", function() {
+				var newContent = require("!!./../../../../react/node_modules/css-loader/index.js!./app.css");
+				if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
+				update(newContent);
+			});
+		}
+		// When the module is disposed, remove the <style> tags
+		module.hot.dispose(function() { update(); });
+	}
+
+/***/ },
+/* 608 */
+/*!*********************************************************!*\
+  !*** ./~/css-loader!../toolkit/web-ng/root/css/app.css ***!
+  \*********************************************************/
+/***/ function(module, exports, __webpack_require__) {
+
+	exports = module.exports = __webpack_require__(/*! ./~/css-loader/cssToString.js */ 595)();
+	exports.push([module.id, "/*------------------------------------------------------------------------------\n\n    Utilities\n\n------------------------------------------------------------------------------*/\n/* Color classes */\n.color-primary {\n  color: #0089ff !important;\n}\n\n.color-bg-accent {\n  color: #f7f7f7 !important;\n}\n\n.color-light, .test_results .host_ip {\n  color: #919ca1 !important;\n}\n\n.color-medium {\n  color: #4d565b !important;\n}\n\n.color-black {\n  color: #383f44 !important;\n}\n\n.color-success {\n  color: #a2d4ba !important;\n}\n\n.color-message {\n  color: #f3dda8 !important;\n}\n\n.color-failure {\n  color: #f7a9a1 !important;\n}\n\n.color-disabled {\n  color: #919ca1 !important;\n}\n\n.color-red, #host_services .off {\n  color: #ef402f !important;\n}\n\n.color-yellow {\n  color: #e5b53e !important;\n}\n\n.color-green, #host_services .running {\n  color: #32a066 !important;\n}\n\n#host_services .disabled {\n  color: #A9B1B5;\n}\n\n/* Typography classes */\n.font-light {\n  font-weight: 300;\n}\n\n.font-regular {\n  font-weight: 400;\n}\n\n.font-bold {\n  font-weight: 700;\n}\n\n.font-size--small {\n  font-size: 0.8em;\n}\n\n/* Float classes */\n.left {\n  float: left;\n}\n\n.right {\n  float: right;\n}\n\n/* Lists add to ul and ol */\n\n.no-list {\n  list-style: none;\n  padding-left: 0;\n}\n\n/* Visibility classes */\n.hidden {\n  display: none;\n}\n\n.visible-inline {\n  display: inline-block;\n}\n\n.display-inline {\n  display: inline-block !important;\n}\n\n/* Margin utilities */\n\n.no-margin {\n    margin: 0;\n}\n\n.no-margin-top {\n    margin-top: 0;\n}\n\n.no-margin-bottom {\n    margin-bottom: 0;\n}\n\n/*! normalize.css v3.0.2 | MIT License | git.io/normalize */\n/**\n * 1. Set default font family to sans-serif.\n * 2. Prevent iOS text size adjust after orientation change, without disabling\n *    user zoom.\n */\nhtml {\n  font-family: sans-serif;\n  /* 1 */\n  -ms-text-size-adjust: 100%;\n  /* 2 */\n  -webkit-text-size-adjust: 100%;\n  /* 2 */\n}\n\n/**\n * Remove default margin.\n */\nbody {\n  margin: 0;\n}\n\n/* HTML5 display definitions\n   ========================================================================== */\n/**\n * Correct `block` display not defined for any HTML5 element in IE 8/9.\n * Correct `block` display not defined for `details` or `summary` in IE 10/11\n * and Firefox.\n * Correct `block` display not defined for `main` in IE 11.\n */\narticle,\naside,\ndetails,\nfigcaption,\nfigure,\nfooter,\nheader,\nhgroup,\nmain,\nmenu,\nnav,\nsection,\nsummary {\n  display: block;\n}\n\n/**\n * 1. Correct `inline-block` display not defined in IE 8/9.\n * 2. Normalize vertical alignment of `progress` in Chrome, Firefox, and Opera.\n */\naudio,\ncanvas,\nprogress,\nvideo {\n  display: inline-block;\n  /* 1 */\n  vertical-align: baseline;\n  /* 2 */\n}\n\n/**\n * Prevent modern browsers from displaying `audio` without controls.\n * Remove excess height in iOS 5 devices.\n */\naudio:not([controls]) {\n  display: none;\n  height: 0;\n}\n\n/**\n * Address `[hidden]` styling not present in IE 8/9/10.\n * Hide the `template` element in IE 8/9/11, Safari, and Firefox < 22.\n */\n[hidden],\ntemplate {\n  display: none;\n}\n\n/* Links\n   ========================================================================== */\n/**\n * Remove the gray background color from active links in IE 10.\n */\na {\n  background-color: transparent;\n}\n\n/**\n * Improve readability when focused and also mouse hovered in all browsers.\n */\na:active,\na:hover {\n  outline: 0;\n}\n\n/* Text-level semantics\n   ========================================================================== */\n/**\n * Address styling not present in IE 8/9/10/11, Safari, and Chrome.\n */\nabbr[title] {\n  border-bottom: 1px dotted;\n}\n\n/**\n * Address style set to `bolder` in Firefox 4+, Safari, and Chrome.\n */\nb,\nstrong {\n  font-weight: bold;\n}\n\n/**\n * Address styling not present in Safari and Chrome.\n */\ndfn {\n  font-style: italic;\n}\n\n/**\n * Address variable `h1` font-size and margin within `section` and `article`\n * contexts in Firefox 4+, Safari, and Chrome.\n */\nh1 {\n  font-size: 2em;\n  margin: 0.67em 0;\n}\n\n/**\n * Address styling not present in IE 8/9.\n */\nmark {\n  background: #ff0;\n  color: #000;\n}\n\n/**\n * Address inconsistent and variable font size in all browsers.\n */\nsmall {\n  font-size: 80%;\n}\n\n/**\n * Prevent `sub` and `sup` affecting `line-height` in all browsers.\n */\nsub,\nsup {\n  font-size: 75%;\n  line-height: 0;\n  position: relative;\n  vertical-align: baseline;\n}\n\nsup {\n  top: -0.5em;\n}\n\nsub {\n  bottom: -0.25em;\n}\n\n/* Embedded content\n   ========================================================================== */\n/**\n * Remove border when inside `a` element in IE 8/9/10.\n */\nimg {\n  border: 0;\n}\n\n/**\n * Correct overflow not hidden in IE 9/10/11.\n */\nsvg:not(:root) {\n  overflow: hidden;\n}\n\n/* Grouping content\n   ========================================================================== */\n/**\n * Address margin not present in IE 8/9 and Safari.\n */\nfigure {\n  margin: 1em 40px;\n}\n\n/**\n * Address differences between Firefox and other browsers.\n */\nhr {\n  -moz-box-sizing: content-box;\n  box-sizing: content-box;\n  height: 0;\n}\n\n/**\n * Contain overflow in all browsers.\n */\npre {\n  overflow: auto;\n}\n\n/**\n * Address odd `em`-unit font size rendering in all browsers.\n */\ncode,\nkbd,\npre,\nsamp {\n  font-family: monospace, monospace;\n  font-size: 1em;\n}\n\n/* Forms\n   ========================================================================== */\n/**\n * Known limitation: by default, Chrome and Safari on OS X allow very limited\n * styling of `select`, unless a `border` property is set.\n */\n/**\n * 1. Correct color not being inherited.\n *    Known issue: affects color of disabled elements.\n * 2. Correct font properties not being inherited.\n * 3. Address margins set differently in Firefox 4+, Safari, and Chrome.\n */\nbutton,\ninput,\noptgroup,\nselect,\ntextarea {\n  color: inherit;\n  /* 1 */\n  font: inherit;\n  /* 2 */\n  margin: 0;\n  /* 3 */\n}\n\n/**\n * Address `overflow` set to `hidden` in IE 8/9/10/11.\n */\nbutton {\n  overflow: visible;\n}\n\n/**\n * Address inconsistent `text-transform` inheritance for `button` and `select`.\n * All other form control elements do not inherit `text-transform` values.\n * Correct `button` style inheritance in Firefox, IE 8/9/10/11, and Opera.\n * Correct `select` style inheritance in Firefox.\n */\nbutton,\nselect {\n  text-transform: none;\n}\n\n/**\n * 1. Avoid the WebKit bug in Android 4.0.* where (2) destroys native `audio`\n *    and `video` controls.\n * 2. Correct inability to style clickable `input` types in iOS.\n * 3. Improve usability and consistency of cursor style between image-type\n *    `input` and others.\n */\nbutton,\nhtml input[type=\"button\"],\ninput[type=\"reset\"],\ninput[type=\"submit\"] {\n  -webkit-appearance: button;\n  /* 2 */\n  cursor: pointer;\n  /* 3 */\n}\n\n/**\n * Re-set default cursor for disabled elements.\n */\nbutton[disabled],\nhtml input[disabled] {\n  cursor: default;\n}\n\n/**\n * Remove inner padding and border in Firefox 4+.\n */\nbutton::-moz-focus-inner,\ninput::-moz-focus-inner {\n  border: 0;\n  padding: 0;\n}\n\n/**\n * Address Firefox 4+ setting `line-height` on `input` using `!important` in\n * the UA stylesheet.\n */\ninput {\n  line-height: normal;\n}\n\n/**\n * It's recommended that you don't attempt to style these elements.\n * Firefox's implementation doesn't respect box-sizing, padding, or width.\n *\n * 1. Address box sizing set to `content-box` in IE 8/9/10.\n * 2. Remove excess padding in IE 8/9/10.\n */\ninput[type=\"checkbox\"],\ninput[type=\"radio\"] {\n  box-sizing: border-box;\n  /* 1 */\n  padding: 0;\n  /* 2 */\n}\n\n/**\n * Fix the cursor style for Chrome's increment/decrement buttons. For certain\n * `font-size` values of the `input`, it causes the cursor style of the\n * decrement button to change from `default` to `text`.\n */\ninput[type=\"number\"]::-webkit-inner-spin-button,\ninput[type=\"number\"]::-webkit-outer-spin-button {\n  height: auto;\n}\n\n/**\n * 1. Address `appearance` set to `searchfield` in Safari and Chrome.\n * 2. Address `box-sizing` set to `border-box` in Safari and Chrome\n *    (include `-moz` to future-proof).\n */\ninput[type=\"search\"] {\n  -webkit-appearance: textfield;\n  /* 1 */\n  -moz-box-sizing: content-box;\n  -webkit-box-sizing: content-box;\n  /* 2 */\n  box-sizing: content-box;\n}\n\n/**\n * Remove inner padding and search cancel button in Safari and Chrome on OS X.\n * Safari (but not Chrome) clips the cancel button when the search input has\n * padding (and `textfield` appearance).\n */\ninput[type=\"search\"]::-webkit-search-cancel-button,\ninput[type=\"search\"]::-webkit-search-decoration {\n  -webkit-appearance: none;\n}\n\n/**\n * Define consistent border, margin, and padding.\n */\nfieldset {\n  border: 1px solid #c0c0c0;\n  margin: 0 2px;\n  padding: 0.35em 0.625em 0.75em;\n}\n\n/**\n * 1. Correct `color` not being inherited in IE 8/9/10/11.\n * 2. Remove padding so people aren't caught out if they zero out fieldsets.\n */\nlegend {\n  border: 0;\n  /* 1 */\n  padding: 0;\n  /* 2 */\n}\n\n/**\n * Remove default vertical scrollbar in IE 8/9/10/11.\n */\ntextarea {\n  overflow: auto;\n}\n\n/**\n * Don't inherit the `font-weight` (applied by a rule above).\n * NOTE: the default cannot safely be changed in Chrome and Safari on OS X.\n */\noptgroup {\n  font-weight: bold;\n}\n\n/* Tables\n   ========================================================================== */\n/**\n * Remove most spacing between table cells.\n */\ntable {\n  border-collapse: collapse;\n  border-spacing: 0;\n}\n\ntd,\nth {\n  padding: 0;\n}\n\n/*------------------------------------------------------------------------------\n\n    Base styles\n\n------------------------------------------------------------------------------*/\nbody {\n  font-family: \"Open Sans\", \"Helvetica Neue\", \"Helvetica\", Arial, sans-serif;\n  font-weight: 400;\n  color: #383f44;\n  /* Set base font-size to 14px to start out with due to how much text is on\n  ** the screen at one time\n  */\n  font-size: 87.5%;\n}\n\nhtml,\nbody {\n  font-family: \"Open Sans\", \"Helvetica Neue\", \"Helvetica\", Arial, sans-serif;\n  height: 100%;\n}\n\nh1,\nh2,\nh3,\nh4,\nh5,\nh6 {\n  font-family: \"Open Sans\", \"Helvetica Neue\", \"Helvetica\", Arial, sans-serif;\n  font-weight: 400;\n  color: #383f44;\n}\n\na {\n  color: #0089ff;\n  /* text-decoration: underline; */\n}\na:hover {\n  color: #a5d5ff;\n}\n\na:focus {\n  color: #006dcc;\n}\n\n/*\n** These rules overide Foundation's more specific styles for lists\n** Switching these to em make the relational to the base font size\n** that we can adjust if we want to scale up the font on bigger screens.\n*/\nol,\nul,\ndl {\n  font-size: 1em;\n}\n\np {\n  font-size: 1em;\n}\n\n/* End text-level Foundation overides */\nstrong {\n  font-weight: 700;\n}\n\nselect {\n  margin-bottom: 1em;\n}\n\n/* Hide only visually, but have it available for screenreaders: h5bp.com/v */\n.visuallyhidden {\n  border: 0;\n  clip: rect(0 0 0 0);\n  height: 1px;\n  margin: -1px;\n  overflow: hidden;\n  padding: 0;\n  position: absolute;\n  width: 1px;\n}\n\n/* Extends the .visuallyhidden class to allow the element to be focusable when navigated to via the keyboard: h5bp.com/p */\n.visuallyhidden.focusable:active, .visuallyhidden.focusable:focus {\n  clip: auto;\n  height: auto;\n  margin: 0;\n  overflow: visible;\n  position: static;\n  width: auto;\n}\n\n/*\n** Foundation overrides\n** We need these rules to override some of the Foundation grid functionality\n** to make it match the fluid nature of the app.\n*/\n.row {\n  max-width: 100%;\n}\n\n.row--fixed {\n  max-width: 1080px;\n}\n\n/*------------------------------------------------------------------------------\n\n    Utitilities\n\n------------------------------------------------------------------------------*/\n/*\n** Make an unordered list display inline, remove list style, and margins\n*/\n.u-list-nav {\n  list-style-type: none;\n  margin: 0;\n}\n.u-list-nav li {\n  display: inline-block;\n}\n\n/*------------------------------------------------------------------------------\n\n    Grid\n\n------------------------------------------------------------------------------*/\n.container {\n  max-width: 100%;\n  margin: 0 auto;\n}\n.container:after {\n  content: \"\";\n  display: block;\n  clear: both;\n}\n.container:before {\n  content: \"\";\n  display: block;\n  clear: both;\n}\n\n.collapse .unit:first-child {\n  padding-left: 0;\n}\n.collapse .unit:last-child {\n  padding-right: 0;\n}\n\n.unit {\n  padding-left: 24px;\n  padding-right: 24px;\n  padding-top: 24px;\n  padding-bottom: 24px;\n  float: left;\n  -webkit-box-sizing: border-box;\n  -moz-box-sizing: border-box;\n  box-sizing: border-box;\n}\n.unit:after {\n  content: \"\";\n  display: block;\n  clear: both;\n}\n\n.container.kill-vertical .unit {\n  padding-top: 0;\n  padding-bottom: 0;\n}\n\n/* Get rid of container padding when grids are nested */\n.container .container .unit {\n  padding-top: 0;\n}\n.container .container .unit:first-child {\n  padding-left: 0;\n}\n.container .container .unit:last-child {\n  padding-right: 0;\n}\n\n.centered {\n  margin: 0 auto;\n  float: none !important;\n}\n\n.last {\n  float: right;\n}\n\n.whole {\n  width: 100%;\n}\n\n.half {\n  width: 50%;\n}\n\n.one-third {\n  width: 33.33333%;\n}\n\n.two-thirds {\n  width: 66.666666666667%;\n}\n\n.one-fourth {\n  width: 25%;\n}\n\n.three-fourths {\n  width: 75%;\n}\n\n.one-fifth {\n  width: 20%;\n}\n\n.two-fifths {\n  width: 40%;\n}\n\n.three-fifths {\n  width: 60%;\n}\n\n.four-fifths {\n  width: 80%;\n}\n\n/* Push and pull classes */\n.push {\n  float: right;\n}\n\n.pull {\n  float: left;\n}\n\n.container > .unit.pull {\n  padding-left: 0;\n  padding-right: 24px !important;\n}\n\n.container > .unit.push {\n  padding-right: 0;\n  padding-left: 24px !important;\n}\n\n/* List grid */\nul.list-grid-fourths {\n  display: block;\n  list-style-type: none;\n  margin: -24px;\n}\nul.list-grid-fourths:after {\n  content: \"\";\n  display: block;\n  clear: both;\n}\nul.list-grid-fourths li {\n  display: block;\n  float: left;\n  width: 25%;\n  padding: 24px;\n  -webkit-box-sizing: border-box;\n  -moz-box-sizing: border-box;\n  box-sizing: border-box;\n}\n\nul.list-grid-thirds {\n  display: block;\n  list-style-type: none;\n  margin: -24px;\n}\nul.list-grid-thirds:after {\n  content: \"\";\n  display: block;\n  clear: both;\n}\nul.list-grid-thirds li {\n  display: block;\n  float: left;\n  width: 33.333333333333%;\n  padding: 24px;\n  -webkit-box-sizing: border-box;\n  -moz-box-sizing: border-box;\n  box-sizing: border-box;\n}\n\n@media screen and (max-width: 768px) {\n  .unit {\n    float: none;\n    padding-top: 12px;\n    padding-bottom: 12px;\n    padding-right: 12px;\n    padding-left: 12px;\n  }\n\n  .unit .container .unit:first-child {\n    padding-top: 0;\n  }\n\n  .container .container .unit {\n    padding: 24px 0;\n  }\n\n  /* Small grid - This will keep the proportions of the grid even on small devices */\n  .container.small-grid .unit.half {\n    width: 50%;\n    float: left;\n  }\n\n  .container.small-grid .unit.one-third {\n    width: 33.333333333333%;\n    float: left;\n  }\n\n  .container.small-grid .unit.two-thirds {\n    width: 66.666666666667%;\n    float: left;\n  }\n\n  .container.small-grid .unit.one-fourth {\n    width: 25%;\n    float: left;\n  }\n\n  .container.small-grid .unit.three-fourths {\n    width: 75%;\n    float: left;\n  }\n\n  .container.small-grid .unit.one-fifth {\n    width: 20%;\n    float: left;\n  }\n\n  .container.small-grid .unit.two-fifths {\n    width: 40%;\n    float: left;\n  }\n\n  .container.small-grid .unit.three-fifths {\n    width: 60%;\n    float: left;\n  }\n\n  .container.small-grid .unit.four-fifths {\n    width: 80%;\n    float: left;\n  }\n\n  .whole,\n  .half,\n  .one-third,\n  .two-thirds,\n  .one-fourth,\n  .three-fourths,\n  .one-fifth,\n  .two-fifths,\n  .three-fifths,\n  .four-fifths {\n    width: 100% !important;\n  }\n\n  .push,\n  .pull {\n    float: none;\n  }\n\n  .container > .unit.pull {\n    padding-left: 0;\n    padding-right: 0 !important;\n  }\n\n  .container > .unit.push {\n    padding-right: 0;\n    padding-left: 0 !important;\n  }\n\n  ul.list-grid-fourths li {\n    width: 100%;\n    float: none;\n  }\n\n  ul.list-grid-thirds li {\n    width: 100%;\n    float: none;\n  }\n}\n/*------------------------------------------------------------------------------\n\n    Main app header\n\n------------------------------------------------------------------------------*/\n.app-header {\n  padding: 1em 2em;\n  background-color: #383f44;\n  color: white;\n}\n.app-header:after {\n  content: \"\";\n  clear: both;\n  display: block;\n}\n.app-header h1 {\n  margin: 0;\n  color: white;\n  font-size: 1em;\n  padding-top: .15em;\n}\n.app-header h1 a {\n  text-decoration: none;\n  color: white;\n}\n\n@media screen and (max-width: 580px) {\n  .app-header {\n    padding: 1em 12px;\n  }\n}\n.app-logo {\n  float: left;\n}\n.app-logo h1 {\n  font-size: 1.35em;\n  float:right;\n  margin-top: 0;\n}\n\n.app-header img.logo {\n  height: auto;\n  max-width: 150px;\n  margin-right: 1em;\n}\n\n@media screen and (max-width: 580px) {\n  .app-logo h1 {\n    font-size: .9em;\n  }\n}\n.app-nav {\n  float: right;\n  text-align: right;\n}\n.app-nav ul {\n  margin: 0;\n  padding: 0;\n  list-style-type: none;\n}\n.app-nav ul li {\n  display: inline-block;\n  margin-right: 1.25em;\n}\n.app-nav ul li:last-child {\n  margin-right: 0;\n}\n.app-nav ul li a {\n  color: white;\n  display: inline-block;\n  padding: .25em .5em;\n  border: 1px solid rgba(255, 255, 255, 0.5);\n  -webkit-border-radius: 4px;\n  -moz-border-radius: 4px;\n  -ms-border-radius: 4px;\n  -o-border-radius: 4px;\n  border-radius: 4px;\n  text-decoration: none;\n}\n.app-nav ul li a:hover {\n  background-color: #0089ff;\n  border-color: #0089ff;\n  color: white;\n}\n.app-nav ul li a:hover i {\n  color: white;\n}\n.app-nav ul li a i {\n  display: inline-block;\n  margin: 0 .25em;\n  color: white;\n}\n\n@media screen and (max-width: 580px) {\n  .app-nav ul li {\n    margin-right: .8em;\n  }\n\n  .app-nav ul li a {\n    font-size: .8em;\n  }\n}\n/* Dropdowns */\n\n/* These selectors are very specific makes them less reusable\n * with any kind of variation in the markup (on the graphs\n * for instance). I added a less specific versio of each\n * selector, just in case, but I would say the super specific\n * ones could be removed.\n*/\nli.nav-dropdown,\n.nav-dropdown {\n  position: relative;\n}\n\nli.nav-dropdown ul.nav-dropdown-menu,\n.nav-dropdown-menu {\n  display: none;\n  position: absolute;\n  min-width: 250px;\n  top: 42px;\n  right: 0px;\n  z-index: 10;\n  background-color: rgba(255, 255, 255, 0.95);\n  -webkit-border-radius: 4px;\n  -moz-border-radius: 4px;\n  -ms-border-radius: 4px;\n  -o-border-radius: 4px;\n  border-radius: 4px;\n  -webkit-box-shadow: 0px 0px 5px rgba(0, 0, 0, .13);\n  -moz-box-shadow: 0px 0px 5px rgba(0, 0, 0, .13);\n  -o-box-shadow: 0px 0px 5px rgba(0, 0, 0, .13);\n  box-shadow: 0px 0px 5px rgba(0, 0, 0, .13);\n}\nli.nav-dropdown ul.nav-dropdown-menu:before,\n.nav-dropdown-menu:before {\n  content: \"\";\n  display: block;\n  width: 0;\n  height: 0;\n  border: inset 6px;\n  border-color: transparent transparent white;\n  border-bottom-style: solid;\n  position: absolute;\n  top: -12px;\n  right: 25px;\n  z-index: 99;\n}\nli.nav-dropdown ul.nav-dropdown-menu li,\n.nav-dropdown .nav-dropdown-menu li {\n  display: block;\n  margin: 0;\n  text-align: left;\n}\nli.nav-dropdown ul.nav-dropdown-menu li a,\n.nav-dropdown .nav-dropdown-menu li a {\n  display: block;\n  margin: 0;\n  padding: 8px 10px;\n  border: none;\n  border-radius: 0;\n  color: #4d565b;\n}\nli.nav-dropdown ul.nav-dropdown-menu li a:hover,\n.nav-dropdown .nav-dropdown-menu li a:hover {\n  background-color: #ddd;\n  color: #0089ff;\n  border-top-right-radius: 4px;\n  border-top-left-radius: 4px;\n}\n\n.nav-dropdown-menu.visible {\n  display: block !important;\n}\n\n.nav-dropdown-menu__heading {\n    font-weight: 700;\n    padding: 8px 10px;\n    border-bottom: 1px solid #ccc;\n}\n\n/*------------------------------------------------------------------------------\n\n    Footer\n\n------------------------------------------------------------------------------*/\n.site-footer {\n  display: block;\n  padding: 2em;\n  margin-top: 5em;\n  text-align: right;\n  color: #919ca1;\n  border-top: 1px solid #ddd;\n}\n\n/*------------------------------------------------------------------------------\n\n    Main sidebar nav\n\n------------------------------------------------------------------------------*/\n.sidebar {\n  width: 25%;\n  float: left;\n  min-height: 100%;\n  background-color: #f7f7f7;\n  border-left: 1px solid #ddd;\n  float: right;\n  position: relative;\n}\n\n.sidebar:after {\n  content: \"\";\n  display: block;\n  position: absolute;\n  left: -1px;\n  bottom: -99em;\n  height: 99em;\n  width: 100%;\n  background: #f7f7f7;\n  border-left: 1px solid #ddd;\n}\n\n@media screen and (max-width: 850px) {\n  .sidebar {\n    width: 100%;\n    float: none;\n    padding: 0 1em;\n  }\n}\n.sidebar__heading {\n  font-size: 1em;\n  font-weight: 700;\n  background-color: #eaeaea;\n  margin: 1em 0 0 0;\n  padding: 1em 1.5em;\n}\n.sidebar__heading i {\n  color: #4d565b;\n}\n.sidebar__heading:first-of-type {\n  margin-top: 0;\n}\n\n.sidebar-list {\n  display: block;\n  list-style-type: none;\n  margin: 0;\n}\n\n.sidebar-list__item {\n  padding: .5em 1em .5em 1.5em;\n  border-bottom: 1px solid #ddd;\n  position: relative;\n}\n.sidebar-list__item:after {\n  content: \"\";\n  clear: both;\n  display: block;\n}\n.sidebar-list__item:last-child {\n  border-bottom: none;\n}\n\n.sidebar-list__item a {\n  text-decoration: none;\n}\n\n.sidebar-list__parameter {\n  width: 50%;\n  float: left;\n  overflow-wrap: break-word;\n  color:#919ca1;\n}\n.sidebar-list__parameter.communities {\n  width: 100%;\n  padding: 0 0 .3em 0;\n}\n\n.sidebar-list__value {\n  float: left;\n  width: 50%;\n  overflow-wrap: break-word;\n}\n.sidebar-list__value.communities {\n  width: 100%;\n  padding: 0;\n}\n\n/* \n  Graph Options popover\n*/\n.sidebar-popover.options-popover {\n  position: absolute;\n  top: 17em;\n  right: 2.5%;\n  background-color: white;\n  color: #383f44;\n  z-index: 105;\n  padding: 2em;\n  border-radius: 4px;\n  border: 1px solid #383f44;\n  min-width: 55%;\n}\n\n.options-popover .sidebar-popover__close, .sidebar-popover i.fa {\n  color: #a9b1b5;\n}\n\n.options-popover__heading {\n  border-bottom: 1px solid rgba(255, 255, 255, .2);\n  font-size: 1.2em;\n  color: #383f44;\n  padding: 0 0 .2em 0;\n}\n\n.options-popover__list {\n  list-style: none;\n  margin: 0em 0;\n}\n\n.options-popover__list>li {\n  padding: 0.1em 0;\n  white-space: nowrap;\n}\n\n.options-popover__list .options-popover__row {\n  margin: 0;\n}\n\n.options-popover__row>li {\n  list-style: none;\n  display: inline-block;\n}\n\n.options-popover__row li:first-child {\n    width: 16%;\n    margin-right: 8px;\n    color: black:\n}\n\n.options-popover__row input[type=\"checkbox\"] {\n   margin: 0;\n}\n.options-popover__row input[type=\"checkbox\"]+label {\n    margin-left: .1em;\n}\n\n#timeperiod {\n    width:60%;\n    margin: 0 .75em 0 .75em;\n    border: 1px solid #919ca1;\n    padding: 0 0.5rem;\n}\n\nspan.timerange_holder {\n    float:left;\n    margin:0.1rem 0.4rem;\n}\n\n/*\n  Sidebar popover\n*/\n\n.sidebar-popover {\n  display: none;\n  position: absolute;\n  top: 2.65em;\n  right: 2.5%;\n  background-color: rgba(56, 63, 68, .95);\n  color: #fff;\n  z-index: 205;\n  padding: .75em;\n  border-radius: 4px;\n  min-width: 95%;\n}\n\n.sidebar-popover.double {\n  width: 180%;\n}\n\n.sidebar-popover--overview {\n    top: 5.75em;\n}\n\n.sidebar-popover :after {\n  content: \"\";\n  clear: both;\n  display: block;\n}\n\n.sidebar-popover__heading {\n  border-bottom: 1px solid rgba(255, 255, 255, .2);\n  font-size: 1.2em;\n  color: #fff;\n  padding: 1em 0 .5em 0;\n}\n\n.sidebar-popover__heading:first-of-type {\n  /*padding-top: 0;*/\n}\n\n.sidebar-popover__list,\n.sidebar-popover-double__list {\n  list-style: none;\n  margin: 0;\n}\n\n.sidebar-popover-double__list {\n  width: 50%;\n  float: left;\n  padding: 0 .75em;\n}\n\n.sidebar-popover-double__list.onright {\n  border-left: 1px solid rgba(255, 255, 255, .2);\n}\n\n.sidebar-popover__item {\n  padding: .2em 0;\n}\n\n.sidebar-popover__param,\n.sidebar-popover__value,\n.sidebar-popover__param-3col,\n.sidebar-popover__value-3col,\n.sidebar-popover__subvalue_wide {\n  display: block;\n}\n\n.sidebar-popover__param {\n  float: left;\n  color: #ccc;\n  width: 45%;\n}\n\n.sidebar-popover__param-3col {\n  float: left;\n  color: #ccc;\n  width: 33%;\n}\n.sidebar-popover__param-3col.right {\n  text-align: right;\n}\n\n.sidebar-popover__value {\n  float: right;\n  text-align: right;\n  width: 55%;\n}\n\n.sidebar-popover__value-3col {\n  float: left;\n  text-align: right;\n  width: 33%;\n}\n\n.sidebar-popover__subvalue_wide {\n  float: right;\n  width: 90%;\n  text-align: right;\n  font-size: 85%;\n  color: #ccc;\n  margin: -3px 0 5px 0;\n}\n\n.sidebar-popover-toggle:focus {\n  color: #0089ff;\n}\n\n.sidebar-popover__close {\n  color: #ccc;\n  display: block;\n  position: absolute;\n  top: .9em;\n  right: .7em;\n}\n\n.sidebar-popover__close:hover i {\n  color: #a5d5ff;\n}\n\n.sidebar-popover__close i {\n  color: #fff;\n}\n\n/*------------------------------------------------------------------------------\n\n    Breadcrumbs\n\n------------------------------------------------------------------------------*/\n.nav--breadcrumbs {\n  padding: 0;\n  margin-bottom: 2em;\n}\n.nav--breadcrumbs li:after {\n  content: \"/\";\n  display: inline-block;\n  margin: 0 10px;\n  color: #919ca1;\n}\n.nav--breadcrumbs li:last-child:after {\n  content: \"\";\n}\n\n.nav--breadcrumbs li a,\n.nav--breadcrumbs li a i {\n  color: #919ca1;\n}\n\n.nav--breadcrumbs li a:hover,\n.nav--breadcrumbs li a:hover i {\n  color: #0089ff;\n}\n\n.nav--breadcrumbs li.active a,\n.nav--breadcrumbs li.active a i {\n  color: #0089ff;\n  cursor: default;\n}\n\n/*------------------------------------------------------------------------------\n\n    Tables\n\n------------------------------------------------------------------------------*/\ntable {\n  border: none;\n  font-size: 1em !important;\n  width: 100%;\n  overflow: auto;\n}\n\ntable tr td {\n  font-size: 1em;\n  padding: .75em .5em;\n}\n\ntable thead {\n  background-color: transparent;\n}\n\ntable thead tr th,\n.sub-heading {\n  font-weight: 400;\n  color: #919ca1;\n  text-transform: uppercase;\n  letter-spacing: .07em;\n  background-color:#eee;\n}\n\n/*\n**  Override: make zebra stripes on tables a bit darker\n*/\n\ntable tr.even, table tr.alt, table tr:nth-of-type(even) {\n    background-color:#eee;\n}\n\ntable tr.odd, table tr:nth-of-type(odd) { \n    background-color: #fff;\n}\n\n.services {\n  -webkit-box-sizing: border-box;\n  -moz-box-sizing: border-box;\n  box-sizing: border-box;\n}\n\n.services--title {\n  /*color: #919ca1;*/\n  /* color:##383F44; */\n  color: #0089FF;\n  display: block;\n  font-weight: 700;\n  text-decoration: none;\n}\n\n.services--title-link, .services--title a {\n  display: block;\n  font-weight: 700;\n  text-decoration: none;\n}\n.services--title-link i {\n  color: #919ca1;\n}\n\n.services--list {\n  display: none;\n  list-style-type: none;\n  margin-top: .75em;\n  /* This (-999px) is a hack to fix some weirdness caused by the jQuery toggle we are using */\n  padding-left: 1em;\n  border-left: 5px solid #ddd;\n}\n.services--list li {\n  padding: .35em 0;\n}\n\n.visible-inline {\n  display: inline-block;\n}\n\n/* Test results */\n.test-results:after {\n  content: \"\";\n  clear: both;\n  display: block;\n}\ntable.test_results tr {\n  vertical-align: top;\n}\n.test-results table tr td span,\n.test-results table tr td a {\n  display: block;\n  line-height: 1.5;\n}\n.test_results .traceroute_link_container.has_traceroute {\n    display:inline;\n}\n.test_results .traceroute_link_container {\n    display:none;\n}\n\n/* Pay special attention here. For some reason, this fontawesome override doesn't work with .test-results, only .test_results. */\n.test_results i.fa {\n  font-size: 10px;\n  color: #919ca1;\n}\n\n.test_results i.fa-external-link {\n    color:inherit;\n}\n\ni.fa.disabled, tr.disabled td, tr.disabled td i.fa {\n    color:#aaa;\n}\n\n\ntd.test-values {\n  font-weight:bold;\n}\ntd.test-values.loss {\n    white-space: nowrap;\n}\n\n.test-results--warnings {\n  list-style-type: none;\n  margin: 0;\n}\n\n.timeperiod-div {\n    width: 170px;\n    float: right;\n    position: relative;\n    z-index: 101;\n    }\n#testResultsTable_filter label input {\n    height: 19px;\n    margin-left: 0px;\n    display: block !important;\n}\n#testResultsTable_length label {\n    color: #999;\n}\n#testResultsTable_length select {\n    padding: 0 8 1 8;\n    height: 30;\n}\n#testResultsTable_info {\n    margin: 0 30px 0 30px;\n}\n#testResultsTable thead .sorting, #testResultsTable thead .sorting_asc, #testResultsTable thead .sorting_desc, #testResultsTable thead .sorting_asc_disabled, #testResultsTable thead .sorting_desc_disabled {\n    background-position: center left;\n}\n#testResultsTable thead > tr > th.sorting_asc, #testResultsTable thead > tr > th.sorting_desc, #testResultsTable thead > tr > th.sorting, #testResultsTable thead > tr > td.sorting_asc, #testResultsTable thead > tr > td.sorting_desc, #testResultsTable thead > tr > td.sorting {\n    padding-left: 1.5em;\n}\n\n@media screen and (max-width: 580px) {\n  .test-results, .services {\n    overflow-x: scroll;\n    border: 1px solid #ddd;\n    -webkit-border-radius: 4px;\n    -moz-border-radius: 4px;\n    -ms-border-radius: 4px;\n    -o-border-radius: 4px;\n    border-radius: 4px;\n    padding: 1em;\n  }\n}\n/*------------------------------------------------------------------------------\n\n    Forms\n\n------------------------------------------------------------------------------*/\nlabel {\n  color: #4d565b;\n}\n\n.inline-label {\n  display: inline;\n}\n\nfieldset {\n  border-color: #ddd;\n  background-color: #f7f7f7;\n  padding-top: 1em;\n  padding-bottom: 1em;\n  margin-bottom: 1.5em;\n  -webkit-border-radius: 4px;\n  -moz-border-radius: 4px;\n  -ms-border-radius: 4px;\n  -o-border-radius: 4px;\n  border-radius: 4px;\n}\n\ninput[type=\"text\"],\ninput[type=\"password\"],\ninput[type=\"date\"],\ninput[type=\"datetime\"],\ninput[type=\"datetime-local\"],\ninput[type=\"month\"],\ninput[type=\"week\"],\ninput[type=\"email\"],\ninput[type=\"number\"],\ninput[type=\"search\"],\ninput[type=\"tel\"],\ninput[type=\"time\"],\ninput[type=\"url\"],\ninput[type=\"color\"],\ntextarea,\nselect {\n  -webkit-border-radius: 4px;\n  -moz-border-radius: 4px;\n  -ms-border-radius: 4px;\n  -o-border-radius: 4px;\n  border-radius: 4px;\n}\n\n.inline-input {\n  display: inline !important;\n  width: auto;\n}\n\n.advanced_params { \n  padding-top: 4px;\n  display: none;\n}\n\n/*------------------------------------------------------------------------------\n\n    Alerts\n\n------------------------------------------------------------------------------*/\n/* Altert colors */\n.alert-success {\n  color: #a2d4ba;\n}\n\n.alert-message {\n  color: #f3dda8;\n}\n\n.alert-failure {\n  color: #f7a9a1;\n}\n\n.alert-disabled {\n  color: #919ca1;\n}\n\n.alert-message--bg {\n  background-color: #f3dda8;\n}\n\n.alert-failure--bg {\n  background-color: #f7a9a1;\n}\n\n/* Block alerts - these will fill the full width of the parent container */\n.alert-small-success, .alert-small-success--inline {\n  position: relative;\n  display: block;\n  margin: 1em 0;\n  padding: .2em .45em;\n  background-color: #a2d4ba;\n  color: #698978;\n  -webkit-border-radius: 4px;\n  -moz-border-radius: 4px;\n  -ms-border-radius: 4px;\n  -o-border-radius: 4px;\n  border-radius: 4px;\n}\n.alert-small-success i, .alert-small-success--inline i {\n  color: #698978;\n}\n\n.alert-small-message, .alert-small-message--inline {\n  position: relative;\n  display: block;\n  margin: 1em 0;\n  padding: .2em .45em;\n  background-color: #f3dda8;\n  color: #9d8f6d;\n  -webkit-border-radius: 4px;\n  -moz-border-radius: 4px;\n  -ms-border-radius: 4px;\n  -o-border-radius: 4px;\n  border-radius: 4px;\n}\n.alert-small-message i, .alert-small-message--inline i {\n  color: #9d8f6d;\n}\n\n.alert-small-failure, .alert-small-failure--inline {\n  position: relative;\n  display: block;\n  margin: 1em 0;\n  padding: .2em .45em;\n  background-color: #f7a9a1;\n  color: #a06d68;\n  -webkit-border-radius: 4px;\n  -moz-border-radius: 4px;\n  -ms-border-radius: 4px;\n  -o-border-radius: 4px;\n  border-radius: 4px;\n}\n.alert-small-failure i, .alert-small-failure--inline i {\n  color: #a06d68;\n}\n\n/* Inline Alerts - these will display inline and will only be the width of the content inside */\n.alert-small-success--inline {\n  display: inline-block;\n}\n\n.alert-small-message--inline {\n  display: inline-block;\n}\n\n.alert-small-failure--inline {\n  display: inline-block;\n}\n\n.alert-small-failure a, .alert-small-failure--inline a,\n.alert-small-message a,\n.alert-small-message--inline a,\n.alert-small-success a,\n.alert-small-success--inline a {\n  color: #383f44;\n}\n.alert-small-failure a:hover, .alert-small-failure--inline a:hover,\n.alert-small-message a:hover,\n.alert-small-message--inline a:hover,\n.alert-small-success a:hover,\n.alert-small-success--inline a:hover {\n  color: #9b9fa1;\n}\n\n.alert--dismiss {\n  display: inline-block;\n  position: absolute;\n  top: 0;\n  right: .65em;\n}\n\n/*------------------------------------------------------------------------------\n\n    Buttons\n\n------------------------------------------------------------------------------*/\n\nbutton:hover, button:focus {\n  background-color: #8f9699;\n}\n\nbutton,\ninput[type=\"submit\"],\ninput[type=\"button\"],\n.button-primary,\n.button-primary--small,\n.button-secondary,\n.button-secondary:hover,\n.button-secondary--small,\n.button-secondary--small:hover,\n.button-alternate,\n.button-alternate:hover,\n.button-alternate--small,\n.button-alternate--small:hover,\ninput.button-primary,\ninput.button-primary--small,\ninput.button-secondary,\ninput.button-secondary--small,\ninput.button-alternate,\ninput.button-alternate--small {\n  display: inline-block;\n  padding: .25em .45em;\n  line-height: 1.65;\n  min-width: 120px;\n  min-height: 37px;\n  color: white;\n  background-color: #0089ff;\n  -webkit-appearance: none;\n  -moz-appearance: none;\n  appearance: none;\n  border: none;\n  font-family: \"Open Sans\", \"Helvetica Neue\", \"Helvetica\", Arial, sans-serif;\n  text-decoration: none;\n  text-align: center;\n  border-radius: 4px;\n}\n\n.button-primary,\n.button-primary--small,\ninput.button-primary,\ninput.button-primary--small {\n  background-color: #0089ff;\n}\n.button-primary:hover,\n.button-primary--small:hover,\ninput.button-primary:hover,\ninput.button-primary--small:hover {\n  background-color: #0074d8;\n}\n\ninput[type='button']:disabled, input[type='button']:disabled.cancel, input[type='submit']:disabled {\n    color:#ddd;\n    border-color:#ddd;\n}\n\ninput[type='button']:disabled.button-primary,\ninput[type='submit']:disabled.button-primary  {\n    background-color: rgba(0, 137, 255, 0.81);\n}\n\ninput[type='button']:disabled.button-primary.cancel, input[type='button']:disabled.button-primary.cancel:hover {\n    background-color: rgba(0, 0, 0, 0.1);\n}\n\n.button-secondary,\n.button-secondary--small,\ninput.button-secondary,\ninput.button-secondary--small {\n  background-color: #32a066;\n}\n.button-secondary:hover,\n.button-secondary--small:hover,\ninput.button-secondary:hover,\ninput.button-secondary--small:hover {\n  background-color: #2a8856;\n}\n\n.button-alternate,\n.button-alternate--small,\ninput.button-alternate,\ninput.button-alternate--small {\n  background-color: #ef402f;\n}\n.button-alternate:hover,\n.button-alternate--small:hover,\ninput.button-alternate:hover,\ninput.button-alternate--small:hover {\n  background-color: #cb3627;\n}\n\n.button-quiet,\n.button-quiet--small,\ninput.button-quiet,\ninput.button-quiet--small {\n  background-color: transparent;\n  border: 1px solid #919ca1;\n  color: #4d565b;\n}\n.button-quiet:hover,\n.button-quiet--small:hover,\ninput.button-quiet:hover,\ninput.button-quiet--small:hover {\n  background-color: #8f9699;\n}\n\n.button-primary--small,\n.button-secondary--small,\n.button-alternate--small,\ninput.button-primary--small,\ninput.button-secondary--small,\ninput.button-alternate--small {\n  padding: .25em .45em;\n  line-height: 1.65;\n}\n\n.button-primary.hollow, input[type='button'].cancel {\n  display: inline-block;\n  background-color: transparent;\n  border: 1px solid #fff;\n  color: #fff;\n  text-decoration: none;\n  padding: .25em .5em;\n  border-radius: 4px;\n  margin: 0;\n}\n.button-primary.hollow:hover, input[type='button']:enabled.cancel:hover {\n  background-color: #f7f7f7;\n  border-color: #f7f7f7;\n  color: #383f44;\n}\n\n.button-secondary--form-align,\n.button-primary--form-align,\n.button-quiet--form-align {\n  margin-top: 1.5em;\n  width: 100%;\n}\n\n/*\n * Button modifiers\n*/\n\n\n/*\n * This class will make a button take up the full width\n * of it's parent container.\n*/\n.button--full-width {\n    display: block;\n    width: 100%\n}\n\n/*\n**  Overide Foundation dropdown buttons\n*/\n\n.dropdown.button::after, button.dropdown::after {\n  border-color: #444 transparent transparent transparent;\n}\n\n.f-dropdown {\n  background-color: rgba(255, 255, 255, 0.95);\n  border: none;\n  -webkit-border-radius: 4px;\n  -moz-border-radius: 4px;\n  -ms-border-radius: 4px;\n  -o-border-radius: 4px;\n  border-radius: 4px;\n  -webkit-box-shadow: 0px 2px 2px #ccc;\n  -moz-box-shadow: 0px 2px 2px #ccc;\n  -o-box-shadow: 0px 2px 2px #ccc;\n  box-shadow: 0px 2px 2px #ccc;\n}\n\n.f-dropdown a {\n  text-decoration: none;\n}\n\n/*\n** Disabled states for Config buttons\n*/\n\ninput[type='button']:disabled.button-primary, input[type='submit']:disabled.button-primary {\n  background-color: #999;\n  color: #666;\n  border: none;\n}\n\ninput[type='button']:disabled.button-primary:hover, input[type='submit']:disabled.button-primary:hover {\n  background-color: #999;\n  border-color: #999;\n  color: #666;\n  cursor: default;\n}\n\ninput[type='button']:disabled.button-primary--hollow {\n  border: 1px solid #999;\n  color: #888;\n  background-color:transparent;\n}\n\ninput[type='button']:disabled.button-primary--hollow:hover {\n  background-color: transparent;\n  border-color: #999;\n  color: #888;\n  cursor: default;\n}\n\n.button-dropdown {\n\n}\n\n/*\n**  Button group\n*/\n\n.button-group {\n  padding: 1em 0;\n}\n\n.button-group-testing {\n    float:right;\n}\n\n.button-group button, .button-group-testing button {\n  margin-right: 1em;\n}\n\n.overview {\n  background-color: #f7f7f7;\n  position: relative;\n  padding: 1em 1em 1em 2em;\n  margin: 1em 0;\n  -webkit-border-radius: 4px;\n  -moz-border-radius: 4px;\n  -ms-border-radius: 4px;\n  -o-border-radius: 4px;\n  border-radius: 4px;\n  border: 1px solid #dedede;\n}\n\n.overview--no-pad {\n    padding-left: 0;\n    padding-right: 0;\n}\n\n.overview--list {\n  margin-bottom: 0;\n}\n.overview--list dt, .overview--list dd {\n  float: left;\n  margin-bottom: 0;\n}\n.overview--list dt {\n  clear: both;\n  margin-right: .65em;\n}\n\n.overview--list:after {\n  content: \"\";\n  clear: both;\n  display: block;\n}\n\n.overview--title {\n  font-size: 1.75em;\n  line-height: 1.2;\n  font-weight: 700;\n  margin-bottom: .65em;\n}\n.overview--title i {\n  margin-left: -20px;\n  color: #ef402f;\n}\n\n.overview--edit {\n  position: absolute;\n  display: inline-block;\n  top: 0;\n  right: 0;\n  padding: .75em 1em;\n  color: #0089ff;\n  text-decoration: none;\n}\n.overview--edit i {\n  color: #0089ff;\n}\n.overview--edit:hover {\n  text-decoration: underline;\n  color: #a5d5ff;\n}\n.overview--edit:hover i {\n  text-decoration: underline;\n  color: #a5d5ff;\n}\n\n/* Module header block */\n.module-header {\n  position: relative;\n  padding: .5em;\n  background-color: #4d565b;\n}\n\n.module-header__title {\n  font-size: 1.25em;\n}\n\n.module-header .module-header__title {\n  margin: 0;\n}\n\n.module-header__action {\n  position: absolute;\n  display: inline-block;\n  top: 0;\n  right: 0;\n  padding: .6em .75em;\n  border-left: 1px solid #353b40;\n  color: #f7f7f7;\n  text-decoration: none;\n}\n.module-header__action:hover i {\n  color: #a5d5ff;\n}\n.module-header__action i {\n  color: #f7f7f7;\n}\n\n@media screen and (max-width: 580px) {\n  .module-header .module-header__action {\n    display: block;\n    position: relative;\n    top: 0;\n    border-left: none;\n    padding: 0;\n  }\n\n  .module-header .module-header__title {\n    display: block;\n  }\n}\n/*------------------------------------------------------------------------------\n\n    Aside - Components/modules use in sidebars, etc. for secondary\n    or subordinate information.\n\n------------------------------------------------------------------------------*/\n.aside {\n  position: relative;\n  margin: 2em 0;\n  background-color: #f7f7f7;\n  border: 1px solid #DDDDDD;\n  -webkit-border-radius: 4px;\n  -moz-border-radius: 4px;\n  -ms-border-radius: 4px;\n  -o-border-radius: 4px;\n  border-radius: 4px;\n}\n.aside a:hover {\n  color: #a5d5ff;\n}\n\n.aside__heading {\n  font-size: 1em;\n  font-weight: 700;\n  padding: .825em;\n  margin-top: 0;\n  background-color: #ddd;\n}\n\n.aside__list {\n  display: block;\n  list-style-type: none;\n  margin: 0;\n  padding: .825em;\n}\n\n.aside__list li {\n  padding: .35em 0;\n}\n.aside__list li:after {\n  content: \"\";\n  clear: both;\n  display: block;\n}\n.aside__list li:first-child {\n  padding-top: 0;\n}\n\n.aside__list li a {\n  text-decoration: none;\n}\n\n.aside--nav-list {\n  list-style-type: none;\n  margin: 0 0 1em 0;\n}\n.aside--nav-list li {\n  border-bottom: 1px solid #3d4448;\n  padding: .35em 0;\n}\n.aside--nav-list li:last-child {\n  border-bottom: none;\n}\n.aside--nav-list li a {\n  text-decoration: none;\n  color: #919ca1;\n}\n.aside--nav-list li a:hover {\n  text-decoration: underline;\n}\n.aside--nav-list li a i {\n  color: #919ca1;\n}\n\n/*------------------------------------------------------------------------------\n\n    Sticky bar\n\n------------------------------------------------------------------------------*/\n.sticky-bar {\n  position: fixed;\n  bottom: 0;\n  right: 0;\n  /*text-align: center;*/\n  width: 100%;\n  height: 70px;\n  font-size: 1.15em;\n}\n\n.sticky-bar__message {\n  display: inline-block;\n}\n\n.js-unsaved-message {\n  display: none;\n}\n\n.sticky-bar--unsaved {\n  background: rgba(56, 63, 68, 0.85);\n  /*display: none;*/\n  color: #ffffff;\n  padding-top: 1.15em;\n}\n\n.sticky-bar--saved {\n  background-color: #32a066;\n  color: #fff;\n  display: none;\n  padding-top: 1.5em;\n}\n\n.sticky-bar--failure {\n  /*background-color: #ef402f;*/\n  background-color: #f7a9a1;\n  color: #a06d68;\n  display: none;\n  padding-top: 1.5em;\n}\n\n.sticky-bar--failure a {\n  color: #383f44;\n}\n\n.sticky-bar--failure a:hover {\n  text-decoration: none;\n}\n\n.sticky-bar__message {\n  margin-right: 1em;\n  padding-left: 2.35em;\n}\n\n.sticky-bar__dismiss {\n  position: absolute;\n  right: 1.4em;\n  top: 1.4em;\n}\n\n.sticky-bar__dismiss a {\n  text-decoration: none;\n}\n\n.sticky-bar__dismiss i:hover {\n  color: #a06d68;\n}\n\n/* ** Get rid of this thing once you figure out a better place\nto put the stuff inside. */\n.module {\n  margin: 2em 0 1em 0;\n}\n\n.module--config-table {\n  margin-top: 1em;\n}\n\n.dashboard-main {\n  width: 75%;\n  padding: 1em 3em 0 2em;\n  float: left;\n}\n\n.config-panel-wrapper {\n  max-width: 1080px;\n  padding: 2em 1em;\n  margin: 0 auto;\n}\n\n.config-panel-wrapper div.actions {\n    text-align:center;\n}\n\n.config-panel-wrapper div.actions a {\n    margin:1em;\n}\n\n.config-panel-wrapper .config__form label {\n    /* width:70px; */\n}\n\n.config-panel-wrapper .config__form dl dt input[type=checkbox] {\n    margin:0;\n}\n\n.uninstalled {\n    color:#999;\n}\n\n.config-panel-wrapper .config__form dl dt {\n    float:left;\n    clear:left;\n    width:7em;\n}\n\n.config-panel-wrapper .config__form dl dd {\n}\n\n.config-panel-wrapper span.label-description {\n    /*position:absolute;\n    left:10em;*/\n    /* margin-right:0.5em; */\n}\n\n@media screen and (max-width: 850px) {\n  .dashboard-main {\n    float: none;\n    width: 100%;\n    padding: 1em;\n  }\n}\n/* Key for icons */\n.key {\n  color: #919ca1;\n  margin-top: 1.5em;\n}\n\n.key__items {\n  list-style-type: none;\n  margin: 0;\n}\n\n.key__item {\n  display: inline-block;\n  margin-right: 1em;\n  font-size: .875em;\n}\n\n.key__item:last-child {\n  margin-right: 0;\n}\n\n.key__item--normal i {\n  color: #ef402f;\n}\n\n.key__item--vm i {\n  color: #e5b53e;\n}\n\n.key__item--small i {\n  color: #32a066;\n}\n\n/*------------------------------------------------------------------------------\n\n    Tab navigation\n\n------------------------------------------------------------------------------*/\n.nav-tabs {\n  display: block;\n  margin-top: 1em;\n  border-bottom: 1px solid #ddd;\n}\n\n.nav-tabs__panel {\n  border: 1px solid #ddd;\n  border-right: none;\n  border-bottom: none;\n  margin-right: -4px;\n}\n.nav-tabs__panel:first-child {\n  border-top-left-radius: 4px;\n}\n.nav-tabs__panel:last-child {\n  border-right: 1px solid #ddd;\n  border-top-right-radius: 4px;\n}\n.nav-tabs__panel a {\n  background-color: #f7f7f7;\n  display: inline-block;\n  text-decoration: none;\n  padding: .5em 1em;\n  color: #0089ff;\n}\n.nav-tabs__panel a:hover {\n  background-color: #f1f1f1;\n  color: #a5d5ff;\n}\n\n.nav-tabs__panel--active a, .nav-tabs__panel.active a {\n  background-color: #ddd;\n  cursor: default;\n  color: #999;\n  border-color: #0089ff;\n}\n.nav-tabs__panel--active, .nav-tabs__panel.active a:hover {\n  background-color: #ddd;\n  color: #999;\n}\n\n/*------------------------------------------------------------------------------\n\n    Config forms\n\n------------------------------------------------------------------------------*/\n.config__form {\n  padding: 2em 0;\n  margin-bottom: 6em;\n}\n\n.config__breadcrumbs {\n    /*background-color: #f7f7f7;*/\n    padding: .85em;\n    text-align: right;\n}\n\n.config__breadcrumbs a {\n    text-decoration: none;\n}\n\n/*\n  Select2 add servers - Adding a bunch of rules to override conflicts between\n  Foundation and Select2 plugin\n*/\n\n.select2-search__field {\n  box-shadow: none !important;\n  transition: none !important;\n}\n\n.servers input,\n.servers select,\n.servers li {\n  margin: 0;\n}\n\n.select2-container .select2-search--inline .select2-search__field {\n  margin: 0 !important;\n}\n\n/*------------------------------------------------------------------------------\n\n    Communities module\n\n------------------------------------------------------------------------------*/\n.communities,\n.servers {\n  padding: 1em 0;\n}\n.communities:after,\n.servers:after {\n  content: \"\";\n  clear: both;\n  display: block;\n}\n\n.communities__popular,\n.servers__popular, .add_panel {\n  display: none;\n  padding: 1em 0 0 0;\n}\n\n.communities__popular a:hover,\n.servers__popular a:hover {\n  background-color: #32a066;\n}\n\n.communities__popular input,\n.servers__popular input {\n  /*margin: 0;*/\n}\n\n@media screen and (max-width: 850px) {\n  .servers__popular input {\n    margin-bottom: 1em;\n  }\n}\n.communities__node,\n.servers__node {\n  position: relative;\n  border: 1px solid #ddd;\n  -webkit-border-radius: 4px;\n  -moz-border-radius: 4px;\n  -ms-border-radius: 4px;\n  -o-border-radius: 4px;\n  border-radius: 4px;\n  margin: 0 .875em .875em 0;\n  padding-left: .75em;\n  background-color: #f7f7f7;\n  overflow: hidden;\n}\n\n.communities__node a,\n.servers__node a {\n  text-decoration: none;\n  display: inline-block;\n  padding: .25em .5em;\n  margin-left: .5em;\n  font-size: .875em;\n  color: #ef402f;\n  border-left: 1px solid #ddd;\n}\n.communities__node a:hover,\n.servers__node a:hover {\n  background-color: #ef402f;\n  color: white;\n}\n\n/*\n.communities__add,\n.servers__add {\n  display: inline-block;\n  margin: 1em 0;\n}\n*/\n\n.servers__options-list {\n  list-style: none;\n  padding: 0;\n  margin: 1.5em 0;\n}\n\n.servers__options-item {\n  padding: .5em 0;\n}\n\n/* Override Foundation's switch color */\n.switch input:checked + label {\n  background-color: #32a066;\n}\n\n.switch-wrapper {\n  margin-bottom: 3em;\n}\n\n/*------------------------------------------------------------------------------\n\n    Manage NTP servers modal\n\n------------------------------------------------------------------------------*/\n\n.ntp-servers {\n  text-align: left;\n}\n\n.ntp-list {\n  list-style: none;\n  padding: 0;\n  margin: 0;\n  border: 1px solid #ddd;\n  border-radius: 4px;\n  max-height: 500px;\n  overflow: scroll;\n}\n\n.ntp-list__item {\n  border-bottom: 1px solid #ddd;\n  padding: .5em 1em;\n  position: relative;\n}\n\n.ntp-list__item:nth-of-type(2n +1) {\n  background-color: #f7f7f7;\n}\n\n.ntp-list__item:last-child {\n  border-bottom: none;\n}\n\n.ntp-list__title {\n  margin-right: 1em;\n  font-weight: 700;\n}\n\n.ntp-list__description {\n  font-style: italic;\n  color: #919ca1;\n}\n\n.ntp-list__delete {\n  color: #ef402f;\n  position: absolute;\n  top: .7em;\n  right: 1em;\n  text-decoration: none;\n}\n\n.ntp-list__delete:hover {\n  color: #ef402f;\n  text-decoration: underline;\n}\n\n/*------------------------------------------------------------------------------\n\n    Austin's shame\n\n------------------------------------------------------------------------------*/\n.wrapper {\n  overflow: hidden;\n  min-height: 100%;\n  position: relative;\n}\n\n/* Modals */\n\n/*\n * Getting rid of this centered text rule because it is cause weird issues\n * inside the modals on some stuff (like graphs) where elements are set to\n * display: inline-block but the text should not be centere.\n *\n * Use Foundation's .text-center utility class instead on the modals that\n * need to have the text centered.\n\n .reveal-modal {\n   text-align: center;\n }\n\n\n*/\n\n.reveal-modal.loading {\n  position: fixed;\n  overflow: hidden;\n  /* top: 50px !important; */\n  top:30% !important;  /* previous value */\n  left:20% !important;\n  height:150px;\n  width:300px;\n  /*bottom: 50% !important; */\n  transform:translate(-40%, 0);\n\n}\n\n.reveal-modal.large {\n  position: fixed;\n  overflow: scroll;\n  top: 50px !important;\n  /* top:50% !important; */ /* previous value */\n  left:50% !important;\n  bottom: 50px !important;\n  transform:translate(-50%, 0);\n\n}\n\n.reveal-modal.xlarge {\n  /*width: 95%;*/\n  position: fixed;\n  overflow: scroll;\n  top: 30px !important;\n/*  left:95% !important;\n  transform:translate(-97%, 0);\n\n  bottom: 50px !important;\n*/\n}\n\n.reveal-modal-bg { position: fixed; }\n\n.reveal-modal__heading {\n  font-weight: 700;\n  font-size: 1.15em;\n  margin-top: 1.5em;\n}\n\n.reveal-modal__heading:first-child {\n  margin-top: 0;\n  margin-bottom: 1em;\n}\n\n.reveal-modal__heading--large {\n    font-size: 2em;\n    border-bottom: 1px solid #ddd;\n}\n\n.reveal-modal .close-reveal-modal {\n  font-size: 1.5em;\n}\n\n/*\n**  Test config table styling\n*/\n\n.subrow td {\n  /*padding-left: 3.5em;*/\n  /*background-color: #eee;*/\n  line-height: 1.25em;\n}\n\n.subrow input {\n  margin: 0;\n}\n\n.subrow--heading td {\n  background-color: #ddd;\n  border-top: 1px solid #ccc;\n  color: #888;\n  text-transform: uppercase;\n  letter-spacing: 2px;\n  padding: .25em .5em;\n}\n\n.subrow--content {\n  border-top: 1px solid #ddd;\n}\n\n.subrow--indent td:first-child {\n  padding-left: 3em;\n}\n\n/*.subrow--content td:first-child {\n  padding-left: 3em;\n}*/\n\n.subrow--content td a {\n  display: inline-block;\n  margin-right: 1em;\n  color: #383f44;\n}\n\n.subrow--content td a:hover {\n  color: #999;\n}\n\n.subrow--content td:first-child {\n  font-weight: 700;\n}\n\n.new-host-save {\n  display: none;\n}\n\ntable .has-tip {\n    border-bottom:none;\n    font-weight:inherit;\n    color:inherit;\n}\n\ntable .has-tip:hover {\n    border-bottom:none;\n}\n", ""]);
+
+/***/ },
+/* 609 */
+/*!*******************************!*\
+  !*** ../html/css/spinner.css ***!
+  \*******************************/
+/***/ function(module, exports, __webpack_require__) {
+
+	// style-loader: Adds some css to the DOM by adding a <style> tag
+	
+	// load the styles
+	var content = __webpack_require__(/*! !./../../react/~/css-loader!./spinner.css */ 610);
+	if(typeof content === 'string') content = [[module.id, content, '']];
+	// add the styles to the DOM
+	var update = __webpack_require__(/*! ./../../react/~/style-loader/addStyles.js */ 596)(content, {});
+	if(content.locals) module.exports = content.locals;
+	// Hot Module Replacement
+	if(false) {
+		// When the styles change, update the <style> tags
+		if(!content.locals) {
+			module.hot.accept("!!./../../react/node_modules/css-loader/index.js!./spinner.css", function() {
+				var newContent = require("!!./../../react/node_modules/css-loader/index.js!./spinner.css");
+				if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
+				update(newContent);
+			});
+		}
+		// When the module is disposed, remove the <style> tags
+		module.hot.dispose(function() { update(); });
+	}
+
+/***/ },
+/* 610 */
+/*!**********************************************!*\
+  !*** ./~/css-loader!../html/css/spinner.css ***!
+  \**********************************************/
+/***/ function(module, exports, __webpack_require__) {
+
+	exports = module.exports = __webpack_require__(/*! ./~/css-loader/cssToString.js */ 595)();
+	exports.push([module.id, "#loading {\n    /*position:relative;*/\n    /*top:150px;*/\n    /*left:300px;*/\n    width:200px;\n    margin-left:auto;\n    margin-right:auto;\n    background-color:#ffffff;\n}\n#loading h4 {\n    margin-left:80px;\n    padding-top:20px;\n}\n#circularG{\n    position:relative;\n    float:left;\n    width:64px;\n    height:64px}\n.circularG{\n    position:absolute;\n    background-color:#405E9A;\n    width:15px;\n    height:15px;\n    -moz-border-radius:10px;\n    -moz-animation-name:bounce_circularG;\n    -moz-animation-duration:1.04s;\n    -moz-animation-iteration-count:infinite;\n    -moz-animation-direction:linear;\n    -webkit-border-radius:10px;\n    -webkit-animation-name:bounce_circularG;\n    -webkit-animation-duration:1.04s;\n    -webkit-animation-iteration-count:infinite;\n    -webkit-animation-direction:linear;\n    -ms-border-radius:10px;\n    -ms-animation-name:bounce_circularG;\n    -ms-animation-duration:1.04s;\n    -ms-animation-iteration-count:infinite;\n    -ms-animation-direction:linear;\n    -o-border-radius:10px;\n    -o-animation-name:bounce_circularG;\n    -o-animation-duration:1.04s;\n    -o-animation-iteration-count:infinite;\n    -o-animation-direction:linear;\n    border-radius:10px;\n    animation-name:bounce_circularG;\n    animation-duration:1.04s;\n    animation-iteration-count:infinite;\n    animation-direction:linear;\n}\n\n#circularG_1{\n    left:0;\n    top:25px;\n    -moz-animation-delay:0.39s;\n    -webkit-animation-delay:0.39s;\n    -ms-animation-delay:0.39s;\n    -o-animation-delay:0.39s;\n    animation-delay:0.39s;\n}\n\n#circularG_2{\n    left:7px;\n    top:7px;\n    -moz-animation-delay:0.52s;\n    -webkit-animation-delay:0.52s;\n    -ms-animation-delay:0.52s;\n    -o-animation-delay:0.52s;\n    animation-delay:0.52s;\n}\n\n#circularG_3{\n    top:0;\n    left:25px;\n    -moz-animation-delay:0.65s;\n    -webkit-animation-delay:0.65s;\n    -ms-animation-delay:0.65s;\n    -o-animation-delay:0.65s;\n    animation-delay:0.65s;\n}\n\n#circularG_4{\n    right:7px;\n    top:7px;\n    -moz-animation-delay:0.78s;\n    -webkit-animation-delay:0.78s;\n    -ms-animation-delay:0.78s;\n    -o-animation-delay:0.78s;\n    animation-delay:0.78s;\n}\n\n#circularG_5{\n    right:0;\n    top:25px;\n    -moz-animation-delay:0.91s;\n    -webkit-animation-delay:0.91s;\n    -ms-animation-delay:0.91s;\n    -o-animation-delay:0.91s;\n    animation-delay:0.91s;\n}\n\n#circularG_6{\n    right:7px;\n    bottom:7px;\n    -moz-animation-delay:1.04s;\n    -webkit-animation-delay:1.04s;\n    -ms-animation-delay:1.04s;\n    -o-animation-delay:1.04s;\n    animation-delay:1.04s;\n}\n\n#circularG_7{\n    left:25px;\n    bottom:0;\n    -moz-animation-delay:1.17s;\n    -webkit-animation-delay:1.17s;\n    -ms-animation-delay:1.17s;\n    -o-animation-delay:1.17s;\n    animation-delay:1.17s;\n}\n\n#circularG_8{\n    left:7px;\n    bottom:7px;\n    -moz-animation-delay:1.3s;\n    -webkit-animation-delay:1.3s;\n    -ms-animation-delay:1.3s;\n    -o-animation-delay:1.3s;\n    animation-delay:1.3s;\n}\n\n@-moz-keyframes bounce_circularG{\n    0%{\n        -moz-transform:scale(1)}\n\n    100%{\n        -moz-transform:scale(.3)}\n\n}\n\n@-webkit-keyframes bounce_circularG{\n    0%{\n        -webkit-transform:scale(1)}\n\n    100%{\n        -webkit-transform:scale(.3)}\n\n}\n\n@-ms-keyframes bounce_circularG{\n    0%{\n        -ms-transform:scale(1)}\n\n    100%{\n        -ms-transform:scale(.3)}\n\n}\n\n@-o-keyframes bounce_circularG{\n    0%{\n        -o-transform:scale(1)}\n\n    100%{\n        -o-transform:scale(.3)}\n\n}\n\n@keyframes bounce_circularG{\n    0%{\n        transform:scale(1)}\n\n    100%{\n        transform:scale(.3)}\n\n}\n\n", ""]);
+
+/***/ },
+/* 611 */
+/*!**********************************!*\
+  !*** ./src/chart1webservice.jsx ***!
+  \**********************************/
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+	
+	Object.defineProperty(exports, "__esModule", {
+	    value: true
+	});
+	
+	var _react = __webpack_require__(/*! react */ 1);
+	
+	var _react2 = _interopRequireDefault(_react);
+	
+	var _underscore = __webpack_require__(/*! underscore */ 210);
+	
+	var _underscore2 = _interopRequireDefault(_underscore);
+	
+	var _moment = __webpack_require__(/*! moment */ 211);
+	
+	var _moment2 = _interopRequireDefault(_moment);
+	
+	var _reactMarkdown = __webpack_require__(/*! react-markdown */ 322);
+	
+	var _reactMarkdown2 = _interopRequireDefault(_reactMarkdown);
+	
+	var _reactTimeseriesCharts = __webpack_require__(/*! react-timeseries-charts */ 507);
+	
+	var _pondjs = __webpack_require__(/*! pondjs */ 345);
+	
+	__webpack_require__(/*! ./chart1.css */ 593);
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
+	function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+	//import Highlighter from "./highlighter";
+	
+	var throughputValues = [];
+	var reverseThroughputValues = [];
+	
+	var latencyValues = [];
+	var reverseLatencyValues = [];
+	
+	var lossValues = [];
+	var reverseLossValues = [];
+	
+	var failures = [];
+	var row = {};
+	row.ts = 1460152800; //000;
+	row.val = 500000000; //'Generic error message 1';
+	failures.push(row);
+	
+	row = {};
+	row.ts = 1460175800; //000;
+	row.val = 500000000; //'Generic error message 3';
+	failures.push(row);
+	row = {};
+	
+	var failureMessages = [];
+	failureMessages[1460152800] = 'Generic error message 1';
+	failureMessages[1460175800] = 'Generic error message 3';
+	
+	var failureSeries = null;
+	var failureValues = null;
+	
+	var throughputSeries = null;
+	var reverseThroughputSeries = null;
+	
+	var latencySeries = null;
+	var reverseLatencySeries = null;
+	
+	var lossSeries = null;
+	var reverseLossSeries = null;
+	
+	var text = 'Example ddos chart';
+	
+	var lineStyle = {
+	    node: {
+	        normal: { stroke: "#737373", strokeWidth: 4, fill: "none" },
+	        highlighted: { stroke: "#b1b1b1", strokeWidth: 4, fill: "#b1b1b1" }
+	    },
+	    line: {
+	        normal: { stroke: "#1f77b4", strokeWidth: 3, fill: "none" },
+	        highlighted: { stroke: "#4EC1E0", strokeWidth: 4, fill: "none" }
+	    },
+	    label: {
+	        normal: { fill: "#9D9D9D", fontFamily: "verdana, sans-serif", fontSize: 10 }
+	    }
+	};
+	
+	var scheme = {
+	    requests: "#2ca02c",
+	    connections: "#990000"
+	};
+	
+	var connectionsStyle = {
+	    color: scheme.connections,
+	    width: 1
+	};
+	
+	var requestsStyle = {
+	    color: scheme.requests,
+	    width: 2,
+	    strokeDasharray: "4,2"
+	};
+	
+	var brushStyle = {
+	    boxShadow: "inset 0px 2px 5px -2px rgba(189, 189, 189, 0.75)",
+	    background: "#FEFEFE",
+	    paddingTop: 10
+	};
+	
+	exports.default = _react2.default.createClass({
+	    displayName: "chart1webservice",
+	
+	
+	    mixins: [_reactTimeseriesCharts.Highlighter],
+	
+	    getInitialState: function getInitialState() {
+	        return {
+	            markdown: text,
+	            active: {
+	                throughput: true,
+	                reverse: true
+	            },
+	            tracker: null,
+	            timerange: _pondjs.TimeRange.lastThirtyDays(),
+	            initialTimerange: null,
+	            maxLatency: 1,
+	            maxThroughput: 1,
+	            maxLoss: 0.0000000001,
+	            latencySeries: null
+	        };
+	    },
+	    handleTrackerChanged: function handleTrackerChanged(trackerVal, selection) {
+	        var seconds = Math.floor(trackerVal.getTime() / 1000);
+	        //console.log('trackerVal seconds', seconds, 'selection', selection);
+	        //var pos = this.state.tracker;
+	        this.setState({ tracker: trackerVal });
+	        if (failureMessages[seconds]) {
+	            console.log('failure message: ', failureMessages[seconds]);
+	        }
+	        //this.setState({selectionType, selection});
+	        //return pos;
+	    },
+	    renderChart: function renderChart() {
+	        var charts = [];
+	        var latencyCharts = [];
+	        var lossCharts = [];
+	        if (this.state.active.throughput && throughputSeries) {
+	            charts.push(_react2.default.createElement(_reactTimeseriesCharts.LineChart, { key: "throughput", axis: "axis2", series: throughputSeries, style: connectionsStyle, smooth: false, breakLine: true, min: "{throughutSeries.min()", max: "{throughputSeries.max()}" }));
+	        }
+	        if (this.state.active.reverse && reverseThroughputSeries) {
+	            charts.push(_react2.default.createElement(_reactTimeseriesCharts.LineChart, { key: "reverse", axis: "axis2", series: reverseThroughputSeries, style: requestsStyle, smooth: false, breakLine: true }));
+	        }
+	        if (this.state.active.throughput && this.state.latencySeries) {
+	            // TODO: fix state part
+	            latencyCharts.push(_react2.default.createElement(_reactTimeseriesCharts.LineChart, { key: "latency", axis: "axis1", series: this.state.latencySeries, style: connectionsStyle, smooth: false, breakLine: false, min: this.state.latencySeries.min(), max: this.state.latencySeries.max(), onTimeRangeChanged: this.handleTimeRangeChange }));
+	        }
+	        if (this.state.active.reverse && reverseLatencySeries) {
+	            // TODO: fix state part
+	            latencyCharts.push(_react2.default.createElement(_reactTimeseriesCharts.LineChart, { key: "reverseLatency", axis: "axis1", series: reverseLatencySeries, style: requestsStyle, smooth: false, breakLine: false, min: reverseLatencySeries.min(), max: reverseLatencySeries.max() }));
+	        }
+	        if (this.state.active.throughput && lossSeries) {
+	            lossCharts.push(
+	            /*
+	            <LineChart key="loss" axis="lossAxis" series={lossSeries} style={connectionsStyle} smooth={false} breakLine={true} />
+	            */
+	            _react2.default.createElement(_reactTimeseriesCharts.ScatterChart, { key: "loss", axis: "lossAxis", series: lossSeries, style: { color: "#2ca02c", opacity: 0.5 } }));
+	        }
+	        if (this.state.active.reverse && reverseLossSeries) {
+	            lossCharts.push(_react2.default.createElement(_reactTimeseriesCharts.LineChart, { key: "reverseLoss", axis: "lossAxis", series: reverseLossSeries, style: requestsStyle, smooth: false, breakLine: true })
+	            /*
+	                            <ScatterChart key="reverseLoss" axis="lossAxis" series={reverseLossSeries} style={{color: "#2ca02c", opacity: 0.5}} />
+	                            */
+	            );
+	        }
+	        var timerange;
+	        if (throughputSeries) {
+	            //console.log('throughputSeries is defined');
+	            timerange = throughputSeries.timerange();
+	            //console.log('throughput timerange', timerange);
+	        } else if (reverseThroughputSeries) {
+	            //console.log('reverseThroughputSeries is defined');
+	            timerange = reverseThroughputSeries.timerange();
+	            //console.log('reverse timerange', timerange);
+	        }
+	        this.timerange = timerange;
+	        if (!timerange) {
+	            return _react2.default.createElement("div", null);
+	        }
+	        if (this.state.initialTimerange === null) {
+	            console.log("initial timerange", timerange);
+	            this.setState({ initialTimerange: timerange });
+	        }
+	        return _react2.default.createElement(
+	            "div",
+	            null,
+	            _react2.default.createElement(
+	                "div",
+	                { className: "row" },
+	                _react2.default.createElement(
+	                    "div",
+	                    { className: "col-md-12" },
+	                    _react2.default.createElement(
+	                        _reactTimeseriesCharts.Resizable,
+	                        null,
+	                        _react2.default.createElement(
+	                            _reactTimeseriesCharts.ChartContainer,
+	                            _defineProperty({ timeRange: timerange,
+	                                trackerPosition: this.state.tracker
+	                                //onTrackerChanged={(tracker) => this.handleTrackerChanged({tracker})}
+	                                , onTrackerChanged: this.handleTrackerChanged
+	                                //onTrackerChanged={(tracker) => this.setState({tracker})}
+	                                , enablePanZoom: true
+	                                //onTimeRangeChanged={(timerange) => this.setState({timerange})}
+	                                , onTimeRangeChanged: this.handleTimeRangeChange
+	                            }, "timeRange", this.state.timerange),
+	                            _react2.default.createElement(
+	                                _reactTimeseriesCharts.ChartRow,
+	                                { height: "200", debug: false },
+	                                _react2.default.createElement(
+	                                    _reactTimeseriesCharts.Charts,
+	                                    null,
+	                                    charts,
+	                                    _react2.default.createElement(_reactTimeseriesCharts.ScatterChart, { axis: "axis2", series: failureSeries, style: { color: "steelblue", opacity: 0.5 } })
+	                                ),
+	                                _react2.default.createElement(_reactTimeseriesCharts.YAxis, { id: "axis2", label: "Throughput", style: { labelColor: scheme.connections },
+	                                    labelOffset: 20, min: 0, format: ".2s", max: this.state.maxThroughput, width: "80", type: "linear" })
+	                            ),
+	                            _react2.default.createElement(
+	                                _reactTimeseriesCharts.ChartRow,
+	                                { height: "200", debug: false },
+	                                _react2.default.createElement(
+	                                    _reactTimeseriesCharts.Charts,
+	                                    null,
+	                                    lossCharts
+	                                ),
+	                                _react2.default.createElement(_reactTimeseriesCharts.YAxis, { id: "lossAxis", label: "Loss", style: { labelColor: scheme.connections },
+	                                    labelOffset: 20, min: 0.000000001, format: ",.4f", max: this.state.maxLoss, width: "80", type: "log" })
+	                            ),
+	                            _react2.default.createElement(
+	                                _reactTimeseriesCharts.ChartRow,
+	                                { height: "200", debug: false },
+	                                _react2.default.createElement(
+	                                    _reactTimeseriesCharts.Charts,
+	                                    null,
+	                                    latencyCharts
+	                                ),
+	                                _react2.default.createElement(_reactTimeseriesCharts.YAxis, { id: "axis1", label: "Latency", style: { labelColor: scheme.connections },
+	                                    labelOffset: 20, min: 0.000000001, format: ",.4f", max: this.state.maxLatency, width: "80", type: "linear" })
+	                            )
+	                        )
+	                    )
+	                )
+	            ),
+	            _react2.default.createElement(
+	                "div",
+	                { className: "row" },
+	                _react2.default.createElement(
+	                    "div",
+	                    { className: "col-md-12", style: brushStyle },
+	                    _react2.default.createElement(
+	                        _reactTimeseriesCharts.Resizable,
+	                        null,
+	                        this.renderBrush()
+	                    )
+	                )
+	            )
+	        );
+	    },
+	    handleActiveChange: function handleActiveChange(key, disabled) {
+	        var active = this.state.active;
+	        active[key] = !disabled;
+	        this.setState({ active: active });
+	    },
+	    render: function render() {
+	        var legend = [{
+	            key: "throughput",
+	            label: "Forward",
+	            disabled: !this.state.active.throughput,
+	            style: {
+	                backgroundColor: scheme.connections,
+	                stroke: scheme.connections
+	            }
+	        }, {
+	            key: "reverse",
+	            label: "Reverse",
+	            disabled: !this.state.active.reverse,
+	            style: {
+	                backgroundColor: scheme.requests,
+	                stroke: scheme.requests,
+	                strokeDasharray: "4,2"
+	            }
+	        }];
+	
+	        return _react2.default.createElement(
+	            "div",
+	            null,
+	            _react2.default.createElement(
+	                "div",
+	                { className: "row" },
+	                _react2.default.createElement(
+	                    "div",
+	                    { className: "col-md-12" },
+	                    _react2.default.createElement(
+	                        "h3",
+	                        null,
+	                        "perfSONAR Test Results"
+	                    )
+	                )
+	            ),
+	            _react2.default.createElement(
+	                "div",
+	                { className: "row" },
+	                _react2.default.createElement(
+	                    "div",
+	                    { className: "col-md-12" },
+	                    _react2.default.createElement(_reactTimeseriesCharts.Legend, { type: "line", categories: legend, onChange: this.handleActiveChange })
+	                )
+	            ),
+	            _react2.default.createElement("hr", null),
+	            this.renderChart(),
+	            _react2.default.createElement("hr", null)
+	        );
+	    },
+	    handleTimeRangeChange: function handleTimeRangeChange(timerange) {
+	        //if ( timerange.begin().toString() != timerange.end().toString() ) {
+	        this.setState({ timerange: timerange });
+	
+	        /*
+	        } else {
+	        this.setState({timerange: this.initialTimerange});
+	         this.forceUpdate();
+	        }
+	        */
+	    },
+	    handleBrushCleared: function handleBrushCleared(val) {
+	        this.setState({ timerange: this.state.initialTimerange });
+	        console.log("brush cleared, initial timerange", this.state.initialTimerange);
+	    },
+	    renderBrush: function renderBrush() {
+	        return _react2.default.createElement(
+	            _reactTimeseriesCharts.ChartContainer,
+	            {
+	                timeRange: throughputSeries.timerange(),
+	                format: "relative",
+	                trackerPosition: this.state.tracker },
+	            _react2.default.createElement(
+	                _reactTimeseriesCharts.ChartRow,
+	                { height: "100", debug: false },
+	                _react2.default.createElement(_reactTimeseriesCharts.Brush, {
+	                    timeRange: null
+	                    //timeRange={this.state.timerange}
+	                    , onTimeRangeChanged: this.handleTimeRangeChange,
+	                    onBrushCleared: this.handleBrushCleared
+	                }),
+	                _react2.default.createElement(_reactTimeseriesCharts.YAxis, {
+	                    id: "brushAxis1",
+	                    label: "Throughput",
+	                    min: 0, max: this.state.maxThroughput,
+	                    width: 70, type: "linear", format: ".1s" }),
+	                _react2.default.createElement(
+	                    _reactTimeseriesCharts.Charts,
+	                    null,
+	                    _react2.default.createElement(_reactTimeseriesCharts.LineChart, {
+	                        key: "brushThroughput",
+	                        axis: "brushAxis1",
+	                        style: { up: ["#DDD"] },
+	                        columns: { up: ["throughput"], down: [] },
+	                        series: throughputSeries })
+	                )
+	            )
+	        );
+	    },
+	
+	
+	    componentDidMount: function componentDidMount() {
+	        var url = 'http://perfsonar-dev.grnoc.iu.edu/esmond/perfsonar/archive/9808c289fc07446e9939330706b896d6/throughput/base';
+	        url += '?time-range=' + 86400 * 30;
+	        //var url = 'http://perfsonar-dev.grnoc.iu.edu/esmond/perfsonar/archive/050056d85a8344bc844e2aeaa472db9b/throughput/base';
+	
+	        this.serverRequest = $.get(url, function (data) {
+	            console.log('ajax request came back; throughput data', Date(), data);
+	            var values = this.esmondToTimeSeries(data, 'throughput');
+	            throughputValues = values.values;
+	            throughputSeries = values.series;
+	            console.log('throughput values', Date(), throughputValues);
+	            //this.renderChart();
+	            this.forceUpdate();
+	        }.bind(this));
+	
+	        var url2 = 'http://perfsonar-dev.grnoc.iu.edu/esmond/perfsonar/archive/f1f55c1d158545c29ff8700980948d30/throughput/base';
+	        url2 += '?time-range=' + 86400 * 30;
+	
+	        this.serverRequest = $.get(url2, function (data) {
+	            console.log('ajax request came back; reverse throughput data', Date(), data);
+	            var values = this.esmondToTimeSeries(data, 'reverseThroughput');
+	            reverseThroughputValues = values.values;
+	            reverseThroughputSeries = values.series;
+	            console.log('reverse throughput values', Date(), reverseThroughputValues);
+	            //this.renderChart();
+	            this.forceUpdate();
+	        }.bind(this));
+	
+	        // http://perfsonar-dev.grnoc.iu.edu/esmond/perfsonar/archive/c1eb8fb9fd87429bb3bfaf79aca6424b/histogram-owdelay/statistics/3600
+	        var url3 = 'http://perfsonar-dev.grnoc.iu.edu/esmond/perfsonar/archive/c1eb8fb9fd87429bb3bfaf79aca6424b/histogram-owdelay/statistics/3600';
+	        url3 += '?time-range=' + 86400 * 30;
+	
+	        this.serverRequest = $.get(url3, function (data) {
+	            console.log('ajax request came back; latency data', Date(), data);
+	            var values = this.esmondToTimeSeries(data, 'latency');
+	            latencyValues = values.values;
+	            this.setState({ latencySeries: values.series });
+	            console.log('latency values', Date(), latencyValues);
+	            //this.renderChart();
+	            this.forceUpdate();
+	        }.bind(this));
+	
+	        // http://perfsonar-dev.grnoc.iu.edu/esmond/perfsonar/archive/5a1707536a5143759713adddc5cafa66/histogram-rtt/statistics/3600
+	        var url4 = 'http://perfsonar-dev.grnoc.iu.edu/esmond/perfsonar/archive/5a1707536a5143759713adddc5cafa66/histogram-rtt/statistics/3600';
+	        url4 += '?time-range=' + 86400 * 30;
+	
+	        this.serverRequest = $.get(url4, function (data) {
+	            console.log('ajax request came back; latency data', Date(), data);
+	            var values = this.esmondToTimeSeries(data, 'reverseLatency');
+	            reverseLatencyValues = values.values;
+	            reverseLatencySeries = values.series;
+	            console.log('reverse latency values', Date(), reverseLatencyValues);
+	            //this.renderChart();
+	            this.forceUpdate();
+	        }.bind(this));
+	
+	        var url5 = 'http://perfsonar-dev.grnoc.iu.edu/esmond/perfsonar/archive/0121d658a72a4f119a99c5e03bfa674b/packet-loss-rate/base';
+	        url5 += '?time-range=' + 86400 * 30;
+	        this.serverRequest = $.get(url5, function (data) {
+	            console.log('ajax request came back; loss data', Date(), data);
+	            var values = this.esmondToTimeSeries(data, 'loss');
+	            lossValues = values.values;
+	            lossSeries = values.series;
+	            console.log('loss values', Date(), lossValues);
+	            //this.renderChart();
+	            this.forceUpdate();
+	        }.bind(this));
+	
+	        var url6 = 'http://perfsonar-dev.grnoc.iu.edu/esmond/perfsonar/archive/0acdc51a787a43c4b2b81c66e9d564da/packet-loss-rate/aggregations/86400';
+	        url6 += '?time-range=' + 86400 * 30;
+	        this.serverRequest = $.get(url6, function (data) {
+	            console.log('ajax request came back; reverse loss data', Date(), data);
+	            var values = this.esmondToTimeSeries(data, 'reverseLoss');
+	            reverseLossValues = values.values;
+	            reverseLossSeries = values.series;
+	            console.log('reverse loss values', Date(), reverseLossValues);
+	            //this.renderChart();
+	            this.forceUpdate();
+	        }.bind(this));
+	
+	        var values = this.esmondToTimeSeries(failures, 'failures');
+	        failureValues = values.values;
+	        failureSeries = values.series;
+	        console.log('failure values', failureValues);
+	        console.log('failure series', failureSeries);
+	    },
+	
+	    componentWillUnmount: function componentWillUnmount() {
+	        this.serverRequest.abort();
+	    },
+	
+	    _checkSortOrder: function _checkSortOrder(ary) {
+	        var valName = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 'ts';
+	
+	        var lastVal = 0;
+	        _underscore2.default.each(ary, function (val) {
+	            //console.log('val', val);
+	            if (val.ts <= lastVal) {
+	                console.log('ts is not greater than last ts');
+	            } else {
+	                //console.log('ts is greater than last ts');
+	
+	            }
+	            lastVal = val.ts;
+	        });
+	    },
+	
+	    esmondToTimeSeries: function esmondToTimeSeries(inputData, seriesName) {
+	        var values = [];
+	        var series = {};
+	
+	        //this._checkSortOrder(inputData); // TODO: review: do we need this?
+	
+	        var maxThroughput = this.state.maxThroughput;
+	        var maxLatency = this.state.maxLatency;
+	        var maxLoss = this.state.maxLoss;
+	
+	        _underscore2.default.each(inputData, function (val) {
+	            var ts = val["ts"];
+	            var timestamp = new _moment2.default(new Date(ts * 1000)); // 'Date' expects milliseconds
+	            var value = val["val"];
+	            if (seriesName == 'latency' || seriesName == 'reverseLatency') {
+	                value = val["val"].minimum;
+	                maxLatency = value > maxLatency ? value : maxLatency;
+	                //console.log('maxLatency', maxLatency);
+	                /*(
+	                const active = this.state.active;
+	                active[key] = !disabled;
+	                this.setState({active});
+	                */
+	            }
+	            // TODO: change this section to use else if
+	            if (seriesName == 'loss' || seriesName == 'reverseLoss') {
+	                maxLoss = value > maxLoss ? value : maxLoss;
+	            }
+	            if (seriesName == 'throughput' || seriesName == 'reverseThroughput') {
+	                maxThroughput = value > maxThroughput ? value : maxThroughput;
+	            }
+	            if (value <= 0) {
+	                console.log("VALUE IS ZERO OR LESS", Date());
+	                value = 0.000000001;
+	            }
+	            if (isNaN(value)) {
+	                console.log("VALUE IS NaN");
+	            }
+	            values.push([timestamp.toDate().getTime(), value]);
+	        });
+	        this.setState({ maxThroughput: maxThroughput });
+	        this.setState({ maxLatency: maxLatency });
+	        this.setState({ maxLoss: maxLoss });
+	        console.log('creating series ...', Date());
+	
+	        series = new _pondjs.TimeSeries({
+	            name: seriesName,
+	            columns: ["time", "value"],
+	            points: values
+	        });
+	        /*
+	         * Shouldn't need this as _checkSortOrder is called above
+	        var lastTS = 0;
+	        for (let i=0; i < series.size(); i++) {
+	            //console.log(series.at(i).toString());
+	            //console.log('series.at(i)', series.at(i));
+	            var ts = series.at(i).timestamp().getTime();
+	            if ( ts > lastTS ) {
+	                //console.log( 'new ts > last TS', ts, lastTS );
+	             } else {
+	                console.log( 'BAD: new ts <= last TS', ts, lastTS );
+	             }
+	            lastTS = ts;
+	        }
+	        */
+	        return { values: values, series: series };
+	    }
+	});
+
+/***/ },
+/* 612 */
+/*!***********************************************!*\
+  !*** ./~/history/lib/createBrowserHistory.js ***!
+  \***********************************************/
+/***/ function(module, exports, __webpack_require__) {
+
+	/* WEBPACK VAR INJECTION */(function(process) {'use strict';
+	
+	exports.__esModule = true;
+	
+	var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	var _invariant = __webpack_require__(/*! invariant */ 164);
+	
+	var _invariant2 = _interopRequireDefault(_invariant);
+	
+	var _Actions = __webpack_require__(/*! ./Actions */ 165);
+	
+	var _ExecutionEnvironment = __webpack_require__(/*! ./ExecutionEnvironment */ 166);
+	
+	var _DOMUtils = __webpack_require__(/*! ./DOMUtils */ 167);
+	
+	var _DOMStateStorage = __webpack_require__(/*! ./DOMStateStorage */ 168);
+	
+	var _createDOMHistory = __webpack_require__(/*! ./createDOMHistory */ 169);
+	
+	var _createDOMHistory2 = _interopRequireDefault(_createDOMHistory);
+	
+	var _parsePath = __webpack_require__(/*! ./parsePath */ 176);
+	
+	var _parsePath2 = _interopRequireDefault(_parsePath);
+	
+	/**
+	 * Creates and returns a history object that uses HTML5's history API
+	 * (pushState, replaceState, and the popstate event) to manage history.
+	 * This is the recommended method of managing history in browsers because
+	 * it provides the cleanest URLs.
+	 *
+	 * Note: In browsers that do not support the HTML5 history API full
+	 * page reloads will be used to preserve URLs.
+	 */
+	function createBrowserHistory() {
+	  var options = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
+	
+	  !_ExecutionEnvironment.canUseDOM ? process.env.NODE_ENV !== 'production' ? _invariant2['default'](false, 'Browser history needs a DOM') : _invariant2['default'](false) : undefined;
+	
+	  var forceRefresh = options.forceRefresh;
+	
+	  var isSupported = _DOMUtils.supportsHistory();
+	  var useRefresh = !isSupported || forceRefresh;
+	
+	  function getCurrentLocation(historyState) {
+	    historyState = historyState || window.history.state || {};
+	
+	    var path = _DOMUtils.getWindowPath();
+	    var _historyState = historyState;
+	    var key = _historyState.key;
+	
+	    var state = undefined;
+	    if (key) {
+	      state = _DOMStateStorage.readState(key);
+	    } else {
+	      state = null;
+	      key = history.createKey();
+	
+	      if (isSupported) window.history.replaceState(_extends({}, historyState, { key: key }), null, path);
+	    }
+	
+	    var location = _parsePath2['default'](path);
+	
+	    return history.createLocation(_extends({}, location, { state: state }), undefined, key);
+	  }
+	
+	  function startPopStateListener(_ref) {
+	    var transitionTo = _ref.transitionTo;
+	
+	    function popStateListener(event) {
+	      if (event.state === undefined) return; // Ignore extraneous popstate events in WebKit.
+	
+	      transitionTo(getCurrentLocation(event.state));
+	    }
+	
+	    _DOMUtils.addEventListener(window, 'popstate', popStateListener);
+	
+	    return function () {
+	      _DOMUtils.removeEventListener(window, 'popstate', popStateListener);
+	    };
+	  }
+	
+	  function finishTransition(location) {
+	    var basename = location.basename;
+	    var pathname = location.pathname;
+	    var search = location.search;
+	    var hash = location.hash;
+	    var state = location.state;
+	    var action = location.action;
+	    var key = location.key;
+	
+	    if (action === _Actions.POP) return; // Nothing to do.
+	
+	    _DOMStateStorage.saveState(key, state);
+	
+	    var path = (basename || '') + pathname + search + hash;
+	    var historyState = {
+	      key: key
+	    };
+	
+	    if (action === _Actions.PUSH) {
+	      if (useRefresh) {
+	        window.location.href = path;
+	        return false; // Prevent location update.
+	      } else {
+	          window.history.pushState(historyState, null, path);
+	        }
+	    } else {
+	      // REPLACE
+	      if (useRefresh) {
+	        window.location.replace(path);
+	        return false; // Prevent location update.
+	      } else {
+	          window.history.replaceState(historyState, null, path);
+	        }
+	    }
+	  }
+	
+	  var history = _createDOMHistory2['default'](_extends({}, options, {
+	    getCurrentLocation: getCurrentLocation,
+	    finishTransition: finishTransition,
+	    saveState: _DOMStateStorage.saveState
+	  }));
+	
+	  var listenerCount = 0,
+	      stopPopStateListener = undefined;
+	
+	  function listenBefore(listener) {
+	    if (++listenerCount === 1) stopPopStateListener = startPopStateListener(history);
+	
+	    var unlisten = history.listenBefore(listener);
+	
+	    return function () {
+	      unlisten();
+	
+	      if (--listenerCount === 0) stopPopStateListener();
+	    };
+	  }
+	
+	  function listen(listener) {
+	    if (++listenerCount === 1) stopPopStateListener = startPopStateListener(history);
+	
+	    var unlisten = history.listen(listener);
+	
+	    return function () {
+	      unlisten();
+	
+	      if (--listenerCount === 0) stopPopStateListener();
+	    };
+	  }
+	
+	  // deprecated
+	  function registerTransitionHook(hook) {
+	    if (++listenerCount === 1) stopPopStateListener = startPopStateListener(history);
+	
+	    history.registerTransitionHook(hook);
+	  }
+	
+	  // deprecated
+	  function unregisterTransitionHook(hook) {
+	    history.unregisterTransitionHook(hook);
+	
+	    if (--listenerCount === 0) stopPopStateListener();
+	  }
+	
+	  return _extends({}, history, {
+	    listenBefore: listenBefore,
+	    listen: listen,
+	    registerTransitionHook: registerTransitionHook,
+	    unregisterTransitionHook: unregisterTransitionHook
+	  });
+	}
+	
+	exports['default'] = createBrowserHistory;
+	module.exports = exports['default'];
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(/*! (webpack)/~/node-libs-browser/~/process/browser.js */ 4)))
+
+/***/ },
+/* 613 */
+/*!****************************************************!*\
+  !*** ./~/scroll-behavior/lib/useStandardScroll.js ***!
+  \****************************************************/
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	exports.__esModule = true;
+	
+	var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+	
+	exports['default'] = useStandardScroll;
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+	
+	var _domHelpersEventsOff = __webpack_require__(/*! dom-helpers/events/off */ 614);
+	
+	var _domHelpersEventsOff2 = _interopRequireDefault(_domHelpersEventsOff);
+	
+	var _domHelpersEventsOn = __webpack_require__(/*! dom-helpers/events/on */ 616);
+	
+	var _domHelpersEventsOn2 = _interopRequireDefault(_domHelpersEventsOn);
+	
+	var _domHelpersQueryScrollLeft = __webpack_require__(/*! dom-helpers/query/scrollLeft */ 617);
+	
+	var _domHelpersQueryScrollLeft2 = _interopRequireDefault(_domHelpersQueryScrollLeft);
+	
+	var _domHelpersQueryScrollTop = __webpack_require__(/*! dom-helpers/query/scrollTop */ 619);
+	
+	var _domHelpersQueryScrollTop2 = _interopRequireDefault(_domHelpersQueryScrollTop);
+	
+	var _domHelpersUtilRequestAnimationFrame = __webpack_require__(/*! dom-helpers/util/requestAnimationFrame */ 620);
+	
+	var _domHelpersUtilRequestAnimationFrame2 = _interopRequireDefault(_domHelpersUtilRequestAnimationFrame);
+	
+	var _historyLibDOMStateStorage = __webpack_require__(/*! history/lib/DOMStateStorage */ 168);
+	
+	var _utilsCreateUseScroll = __webpack_require__(/*! ./utils/createUseScroll */ 621);
+	
+	var _utilsCreateUseScroll2 = _interopRequireDefault(_utilsCreateUseScroll);
+	
+	var _utilsSetScrollRestoration = __webpack_require__(/*! ./utils/setScrollRestoration */ 622);
+	
+	var _utilsSetScrollRestoration2 = _interopRequireDefault(_utilsSetScrollRestoration);
+	
+	/**
+	 * `useStandardScroll` attempts to imitate native browser scroll behavior by
+	 * recording updates to the window scroll position, then restoring the previous
+	 * scroll position upon a `POP` transition.
+	 */
+	
+	function useStandardScroll(createHistory) {
+	  var currentKey = undefined;
+	
+	  function getScrollPosition() {
+	    var state = _historyLibDOMStateStorage.readState(currentKey);
+	    if (!state) {
+	      return null;
+	    }
+	
+	    return state.scrollPosition;
+	  }
+	
+	  // `history` will invoke this listener synchronously, so `currentKey` will
+	  // always be defined.
+	  function updateLocation(_ref) {
+	    var key = _ref.key;
+	
+	    currentKey = key;
+	  }
+	
+	  function updateScroll() {
+	    var _ref2 = getScrollPosition() || [0, 0];
+	
+	    var x = _ref2[0];
+	    var y = _ref2[1];
+	
+	    window.scrollTo(x, y);
+	  }
+	
+	  var unsetScrollRestoration = undefined,
+	      unlistenScroll = undefined,
+	      unlistenBefore = undefined;
+	
+	  function start(history) {
+	    // This helps avoid some jankiness in fighting against the browser's
+	    // default scroll behavior on `POP` transitions.
+	    unsetScrollRestoration = _utilsSetScrollRestoration2['default']('manual');
+	
+	    var savePositionHandle = null;
+	
+	    // We have to listen to each scroll update rather than to just location
+	    // updates, because some browsers will update scroll position before
+	    // emitting the location change.
+	    function onScroll() {
+	      if (savePositionHandle !== null) {
+	        return;
+	      }
+	
+	      // It's possible that this scroll operation was triggered by what will be
+	      // a `POP` transition. Instead of updating the saved location
+	      // immediately, we have to enqueue the update, then potentially cancel it
+	      // if we observe a location update.
+	      savePositionHandle = _domHelpersUtilRequestAnimationFrame2['default'](function () {
+	        savePositionHandle = null;
+	
+	        var state = _historyLibDOMStateStorage.readState(currentKey);
+	        var scrollPosition = [_domHelpersQueryScrollLeft2['default'](window), _domHelpersQueryScrollTop2['default'](window)];
+	
+	        // We have to directly update `DOMStateStorage`, because actually
+	        // updating the location could cause e.g. React Router to re-render the
+	        // entire page, which would lead to observably bad scroll performance.
+	        _historyLibDOMStateStorage.saveState(currentKey, _extends({}, state, { scrollPosition: scrollPosition }));
+	      });
+	    }
+	
+	    _domHelpersEventsOn2['default'](window, 'scroll', onScroll);
+	    unlistenScroll = function () {
+	      return _domHelpersEventsOff2['default'](window, 'scroll', onScroll);
+	    };
+	
+	    unlistenBefore = history.listenBefore(function () {
+	      if (savePositionHandle !== null) {
+	        _domHelpersUtilRequestAnimationFrame2['default'].cancel(savePositionHandle);
+	        savePositionHandle = null;
+	      }
+	    });
+	  }
+	
+	  function stop() {
+	    /* istanbul ignore if: not supported by any browsers on Travis */
+	    if (unsetScrollRestoration) {
+	      unsetScrollRestoration();
+	    }
+	
+	    unlistenScroll();
+	    unlistenBefore();
+	  }
+	
+	  return _utilsCreateUseScroll2['default'](updateScroll, start, stop, updateLocation)(createHistory);
+	}
+	
+	module.exports = exports['default'];
+
+/***/ },
+/* 614 */
+/*!*******************************************************!*\
+  !*** ./~/scroll-behavior/~/dom-helpers/events/off.js ***!
+  \*******************************************************/
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	var canUseDOM = __webpack_require__(/*! ../util/inDOM */ 615);
+	var off = function off() {};
+	
+	if (canUseDOM) {
+	
+	  off = (function () {
+	
+	    if (document.addEventListener) return function (node, eventName, handler, capture) {
+	      return node.removeEventListener(eventName, handler, capture || false);
+	    };else if (document.attachEvent) return function (node, eventName, handler) {
+	      return node.detachEvent('on' + eventName, handler);
+	    };
+	  })();
+	}
+	
+	module.exports = off;
+
+/***/ },
+/* 615 */
+/*!*******************************************************!*\
+  !*** ./~/scroll-behavior/~/dom-helpers/util/inDOM.js ***!
+  \*******************************************************/
+/***/ function(module, exports) {
+
+	'use strict';
+	module.exports = !!(typeof window !== 'undefined' && window.document && window.document.createElement);
+
+/***/ },
+/* 616 */
+/*!******************************************************!*\
+  !*** ./~/scroll-behavior/~/dom-helpers/events/on.js ***!
+  \******************************************************/
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	var canUseDOM = __webpack_require__(/*! ../util/inDOM */ 615);
+	var on = function on() {};
+	
+	if (canUseDOM) {
+	  on = (function () {
+	
+	    if (document.addEventListener) return function (node, eventName, handler, capture) {
+	      return node.addEventListener(eventName, handler, capture || false);
+	    };else if (document.attachEvent) return function (node, eventName, handler) {
+	      return node.attachEvent('on' + eventName, handler);
+	    };
+	  })();
+	}
+	
+	module.exports = on;
+
+/***/ },
+/* 617 */
+/*!*************************************************************!*\
+  !*** ./~/scroll-behavior/~/dom-helpers/query/scrollLeft.js ***!
+  \*************************************************************/
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	var getWindow = __webpack_require__(/*! ./isWindow */ 618);
+	
+	module.exports = function scrollTop(node, val) {
+	  var win = getWindow(node);
+	
+	  if (val === undefined) return win ? 'pageXOffset' in win ? win.pageXOffset : win.document.documentElement.scrollLeft : node.scrollLeft;
+	
+	  if (win) win.scrollTo(val, 'pageYOffset' in win ? win.pageYOffset : win.document.documentElement.scrollTop);else node.scrollLeft = val;
+	};
+
+/***/ },
+/* 618 */
+/*!***********************************************************!*\
+  !*** ./~/scroll-behavior/~/dom-helpers/query/isWindow.js ***!
+  \***********************************************************/
+/***/ function(module, exports) {
+
+	'use strict';
+	
+	module.exports = function getWindow(node) {
+	  return node === node.window ? node : node.nodeType === 9 ? node.defaultView || node.parentWindow : false;
+	};
+
+/***/ },
+/* 619 */
+/*!************************************************************!*\
+  !*** ./~/scroll-behavior/~/dom-helpers/query/scrollTop.js ***!
+  \************************************************************/
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	var getWindow = __webpack_require__(/*! ./isWindow */ 618);
+	
+	module.exports = function scrollTop(node, val) {
+	  var win = getWindow(node);
+	
+	  if (val === undefined) return win ? 'pageYOffset' in win ? win.pageYOffset : win.document.documentElement.scrollTop : node.scrollTop;
+	
+	  if (win) win.scrollTo('pageXOffset' in win ? win.pageXOffset : win.document.documentElement.scrollLeft, val);else node.scrollTop = val;
+	};
+
+/***/ },
+/* 620 */
+/*!***********************************************************************!*\
+  !*** ./~/scroll-behavior/~/dom-helpers/util/requestAnimationFrame.js ***!
+  \***********************************************************************/
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	var canUseDOM = __webpack_require__(/*! ./inDOM */ 615);
+	
+	var vendors = ['', 'webkit', 'moz', 'o', 'ms'],
+	    cancel = 'clearTimeout',
+	    raf = fallback,
+	    compatRaf;
+	
+	var getKey = function getKey(vendor, k) {
+	  return vendor + (!vendor ? k : k[0].toUpperCase() + k.substr(1)) + 'AnimationFrame';
+	};
+	
+	if (canUseDOM) {
+	  vendors.some(function (vendor) {
+	    var rafKey = getKey(vendor, 'request');
+	
+	    if (rafKey in window) {
+	      cancel = getKey(vendor, 'cancel');
+	      return raf = function (cb) {
+	        return window[rafKey](cb);
+	      };
+	    }
+	  });
+	}
+	
+	/* https://github.com/component/raf */
+	var prev = new Date().getTime();
+	
+	function fallback(fn) {
+	  var curr = new Date().getTime(),
+	      ms = Math.max(0, 16 - (curr - prev)),
+	      req = setTimeout(fn, ms);
+	
+	  prev = curr;
+	  return req;
+	}
+	
+	compatRaf = function (cb) {
+	  return raf(cb);
+	};
+	compatRaf.cancel = function (id) {
+	  return window[cancel](id);
+	};
+	
+	module.exports = compatRaf;
+
+/***/ },
+/* 621 */
+/*!********************************************************!*\
+  !*** ./~/scroll-behavior/lib/utils/createUseScroll.js ***!
+  \********************************************************/
+/***/ function(module, exports) {
+
+	"use strict";
+	
+	exports.__esModule = true;
+	
+	var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+	
+	exports["default"] = createUseScroll;
+	
+	function _objectWithoutProperties(obj, keys) { var target = {}; for (var i in obj) { if (keys.indexOf(i) >= 0) continue; if (!Object.prototype.hasOwnProperty.call(obj, i)) continue; target[i] = obj[i]; } return target; }
+	
+	function createUseScroll(updateScroll, start, stop, updateLocation) {
+	  return function (createHistory) {
+	    return function () {
+	      var options = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
+	      var shouldUpdateScroll = options.shouldUpdateScroll;
+	
+	      var historyOptions = _objectWithoutProperties(options, ["shouldUpdateScroll"]);
+	
+	      var history = createHistory(historyOptions);
+	
+	      var numListeners = 0;
+	
+	      function checkStart() {
+	        if (++numListeners === 1 && start) {
+	          start(history);
+	        }
+	      }
+	
+	      function checkStop() {
+	        if (--numListeners === 0 && stop) {
+	          stop();
+	        }
+	      }
+	
+	      function listenBefore(hook) {
+	        checkStart();
+	        var unlisten = history.listenBefore(hook);
+	
+	        return function () {
+	          unlisten();
+	          checkStop();
+	        };
+	      }
+	
+	      var oldLocation = undefined;
+	      var listeners = [],
+	          currentLocation = undefined,
+	          unlisten = undefined;
+	
+	      function onChange(location) {
+	        oldLocation = currentLocation;
+	        currentLocation = location;
+	
+	        listeners.forEach(function (listener) {
+	          return listener(location);
+	        });
+	
+	        // useStandardScroll needs the new location even when not updating the
+	        // scroll position, to update the current key.
+	        if (updateLocation) {
+	          updateLocation(location);
+	        }
+	
+	        if (!shouldUpdateScroll || shouldUpdateScroll(oldLocation, currentLocation)) {
+	          updateScroll(location);
+	        }
+	      }
+	
+	      function listen(listener) {
+	        checkStart();
+	
+	        if (listeners.length === 0) {
+	          unlisten = history.listen(onChange);
+	        }
+	
+	        // Add the listener to the list afterward so we can manage calling it
+	        // initially with the current location.
+	        listeners.push(listener);
+	        listener(currentLocation);
+	
+	        return function () {
+	          listeners = listeners.filter(function (item) {
+	            return item !== listener;
+	          });
+	          if (listeners.length === 0) {
+	            unlisten();
+	          }
+	
+	          checkStop();
+	        };
+	      }
+	
+	      return _extends({}, history, {
+	        listenBefore: listenBefore,
+	        listen: listen
+	      });
+	    };
+	  };
+	}
+	
+	module.exports = exports["default"];
+
+/***/ },
+/* 622 */
+/*!*************************************************************!*\
+  !*** ./~/scroll-behavior/lib/utils/setScrollRestoration.js ***!
+  \*************************************************************/
+/***/ function(module, exports) {
+
+	'use strict';
+	
+	exports.__esModule = true;
+	exports['default'] = setScrollRestoration;
+	
+	function setScrollRestoration(scrollRestoration) {
+	  /* istanbul ignore if: not supported by any browsers on Travis */
+	  if ('scrollRestoration' in window.history) {
+	    var _ret = (function () {
+	      var oldScrollRestoration = window.history.scrollRestoration;
+	      window.history.scrollRestoration = scrollRestoration;
+	
+	      return {
+	        v: function () {
+	          window.history.scrollRestoration = oldScrollRestoration;
+	        }
+	      };
+	    })();
+	
+	    if (typeof _ret === 'object') return _ret.v;
+	  }
+	
+	  return null;
+	}
+	
+	module.exports = exports['default'];
 
 /***/ }
 /******/ ]);

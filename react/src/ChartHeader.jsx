@@ -4,6 +4,8 @@ import HostInfoStore from "./HostInfoStore";
 
 import InterfaceInfoStore from "./InterfaceInfoStore";
 
+import GraphUtilities from "./GraphUtilities";
+
 import SIValue from "./SIValue";
 
 import "../css/graphs.css";
@@ -39,38 +41,14 @@ export default React.createClass({
     render() {
         let startDate = new Date( this.state.start * 1000 );
         let endDate = new Date( this.state.end * 1000 );
-
-        let tzRe = /\(([^)]+)\)/;
-        let startTZ;
-        let endTZ;
-        if ( startDate.toString() == "Invalid Date" ) {
-            //startTZ = "";
-            //endTZ = "";
-
-        } else {
-            startTZ = tzRe.exec((startDate).toString())[1];
-            endTZ = tzRe.exec((endDate).toString())[1];
-        }
-
-        let date = "ddd MM/DD/YYYY";
-        let time = "HH:mm:ss";
-        //let time = "HH:mm:ss [GMT-]ZZ";
-
         let startMoment = moment( startDate );
         let endMoment = moment( endDate );
 
-        let startOffset = startMoment.utcOffset() / 60;
-        if ( startOffset >= 0 ) {
-            startOffset = "+" + startOffset
-        }
-        let endOffset = endMoment.utcOffset() / 60;
-        if ( endOffset >= 0 ) {
-            endOffset = "+" + endOffset
-        }
+        let startTZ = GraphUtilities.getTimezone( startDate );
+        let endTZ = GraphUtilities.getTimezone( endDate );
 
-console.log("startMoment", startMoment);
-        //let startOut = startMoment.format( format );
-        let endOut = endMoment.format( date );
+        let date = "ddd MM/DD/YYYY";
+        let time = "HH:mm:ss";
 
         return (
 
@@ -109,7 +87,7 @@ console.log("startMoment", startMoment);
                                 <span className="timerange_holder">
                                     { startMoment.format( date )}
                                     <br />
-                                    { startMoment.format( time )} {startTZ} (GMT{startOffset})
+                                    { startMoment.format( time )} {startTZ}
                                  </span>
                                  <span className="timerange_holder">
                                          to
@@ -117,7 +95,7 @@ console.log("startMoment", startMoment);
                                 <span className="timerange_holder">
                                     { endMoment.format( date )}
                                     <br />
-                                    { endMoment.format( time ) } {endTZ} (GMT{endOffset})
+                                    { endMoment.format( time ) } {endTZ}
                                 </span> 
                                 </div>
 

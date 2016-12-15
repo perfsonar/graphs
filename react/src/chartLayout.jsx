@@ -143,6 +143,7 @@ export default React.createClass({
             end: newState.end,
             timeframe: newState.timeframe,
             ma_url: newState.ma_url,
+            agent: newState.agent,
             itemsToHide: {},
             tool: newState.tool,
             ipversion: newState.ipversion,
@@ -223,22 +224,25 @@ export default React.createClass({
                         <div className="graph-filter left">
                             <ul className=" graph-filter__list">
                                 <li className={"graph-filter__item graph-filter__item throughput-tcp " + this.getActiveClass( this.state.active["eventType_throughput_protocol_tcp_"] )}>
-                                    <a href="#" onClick={this.toggleType.bind(this, {eventType: "throughput", protocol: "tcp"})}>Throughput (TCP)</a>
+                                    <a href="#" onClick={this.toggleType.bind(this, {eventType: "throughput", protocol: "tcp"})}>Tput (TCP)</a>
                                 </li>
                                 <li className={"graph-filter__item graph-filter__item udp " + this.getActiveClass( this.state.active["eventType_throughput_protocol_udp_"] )}  >
-                                    <a href="#" onClick={this.toggleType.bind(this, {eventType: "throughput", protocol: "udp"}) }>Throughput (UDP)</a>
+                                    <a href="#" onClick={this.toggleType.bind(this, {eventType: "throughput", protocol: "udp"}) }>Tput (UDP)</a>
                                 </li>
-                                {/*
-                                <li className="graph-filter__item udp-active">
-                                    <a href="#">UDP</a>
-                                </li>
-                                */}
                                 <li className={"graph-filter__item graph-filter__item loss-throughput " + this.getActiveClass( this.state.active["eventType_packet-loss-rate_mainTestType_throughput_"] ) }>
-                                    <a href="#" onClick={this.toggleType.bind(this, {eventType: "packet-loss-rate", mainTestType: "throughput"})}>Loss (UDP tput)</a>
+                                    <a href="#" onClick={this.toggleType.bind(this, {eventType: "packet-loss-rate", mainTestType: "throughput"})}>Loss (UDP)</a>
                                 </li>
                                 <li className={"graph-filter__item graph-filter__item loss-latency " + this.getActiveClass( this.state.active["eventType_packet-loss-rate_mainTestType_latency_"] )}>
                                     <a href="#" onClick={this.toggleType.bind(this, {eventType: "packet-loss-rate", mainTestType: "latency"})}>Loss (owamp)</a>
                                 </li>
+                                {/*
+                                <li className={"graph-filter__item graph-filter__item loss-latency " + this.getActiveClass( this.state.active["eventType_packet-loss-rate-bidir_mainTestType_latency_"] )}>
+                                    <a href="#" onClick={this.toggleType.bind(this, {eventType: "packet-loss-rate-bidir", mainTestType: "latency"})}>Loss (ping)</a>
+                                </li>
+                                <li className={"graph-filter__item graph-filter__item loss-latency " + this.getActiveClass( this.state.active["eventType_packet-loss-rate-bidir_mainTestType_latency_"] )}>
+                                    <a href="#" onClick={this.toggleType.bind(this, {eventType: "packet-loss-rate-bidir", mainTestType: "latency"})}>Retrans</a>
+                                </li>
+                                */}
                                 <li className={"graph-filter__item ipv6 " + this.getActiveClass( this.state.active["eventType_histogram-owdelay_"] )}>
                                     <a href="#" onClick={this.toggleType.bind(this, {eventType: "histogram-owdelay"})}>Latency (owamp)</a>
                                 </li>
@@ -324,6 +328,7 @@ export default React.createClass({
                                         start={this.state.start}
                                         end={this.state.end}
                                         ma_url={this.state.ma_url}
+                                        agent={this.state.agent}
                                         tool={this.state.tool}
                                         ipversion={this.state.ipversion}
                                         updateHiddenItems={this.handleHiddenItemsChange}
@@ -414,6 +419,7 @@ export default React.createClass({
         let end = defaults.end;
         let timeframe = defaults.timeframe;
         let tool = qs.tool;
+        let agent = qs.agent || [];
         let ipversion;
         //let timeRange = this.getTimeVars( defaults.timeframe );
         //
@@ -444,12 +450,18 @@ export default React.createClass({
             ma_urls = [ ma_urls ];
         }
 
+        if ( !$.isArray( agent ) ) {
+            agent = [ agent ];
+        }
+
         for(let i in ma_urls ) {
             let ma_url = ma_urls[i];
             let found = ma_url.match( localhostRe );
             let host = location.host;
             if ( found !== null ) {
                 console.log("ma_url", ma_url);
+
+                // replace 'localhost' with the local hostname
                 let new_url = ma_url.replace( localhostRe,  host );
 
                 console.log('localhost URL found, rewriting to host', host, "new ma url", new_url);
@@ -463,6 +475,7 @@ export default React.createClass({
             end:    end,
             ma_url: ma_urls,
             tool: tool,
+            agent: agent,
             ipversion: ipversion,
             timeframe: timeframe,
             hashValues: hashObj,

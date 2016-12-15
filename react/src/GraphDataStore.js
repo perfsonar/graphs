@@ -109,7 +109,10 @@ module.exports = {
                             } else if ( val[i] == 6 ) {
                                 url += "&dns-match-rule=only-v6";
                             }
-
+                        } else if ( name == "agent" ) {
+                            if ( typeof val[i] != "undefined" ) {
+                                url += "&measurement-agent=" + val[i];
+                            }
                         }
 
                     }
@@ -586,7 +589,7 @@ module.exports = {
                 if ( failureValue != null ) {
                     let failureObj = {
                         errorText: failureValue.error,
-                        value: 85,
+                        value: 95,
                         type: "error"
                     };
                     let errorEvent = new Event( timestamp, failureObj );
