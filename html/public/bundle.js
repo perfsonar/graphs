@@ -65,19 +65,19 @@
 	
 	var _chart2 = _interopRequireDefault(_chart);
 	
-	var _chartLayout = __webpack_require__(/*! ./chartLayout */ 596);
+	var _chartLayout = __webpack_require__(/*! ./chartLayout */ 597);
 	
 	var _chartLayout2 = _interopRequireDefault(_chartLayout);
 	
-	var _chart1webservice = __webpack_require__(/*! ./chart1webservice */ 607);
+	var _chart1webservice = __webpack_require__(/*! ./chart1webservice */ 604);
 	
 	var _chart1webservice2 = _interopRequireDefault(_chart1webservice);
 	
-	var _createBrowserHistory = __webpack_require__(/*! history/lib/createBrowserHistory */ 608);
+	var _createBrowserHistory = __webpack_require__(/*! history/lib/createBrowserHistory */ 605);
 	
 	var _createBrowserHistory2 = _interopRequireDefault(_createBrowserHistory);
 	
-	var _useStandardScroll = __webpack_require__(/*! scroll-behavior/lib/useStandardScroll */ 609);
+	var _useStandardScroll = __webpack_require__(/*! scroll-behavior/lib/useStandardScroll */ 606);
 	
 	var _useStandardScroll2 = _interopRequireDefault(_useStandardScroll);
 	
@@ -24979,25 +24979,29 @@
 	
 	var _GraphDataStore2 = _interopRequireDefault(_GraphDataStore);
 	
-	var _reactTimeseriesCharts = __webpack_require__(/*! react-timeseries-charts */ 506);
+	var _GraphUtilities = __webpack_require__(/*! ./GraphUtilities */ 506);
+	
+	var _GraphUtilities2 = _interopRequireDefault(_GraphUtilities);
+	
+	var _reactTimeseriesCharts = __webpack_require__(/*! react-timeseries-charts */ 507);
 	
 	var _pondjs = __webpack_require__(/*! pondjs */ 345);
 	
-	var _SIValue = __webpack_require__(/*! ./SIValue */ 591);
+	var _SIValue = __webpack_require__(/*! ./SIValue */ 592);
 	
 	var _SIValue2 = _interopRequireDefault(_SIValue);
 	
-	__webpack_require__(/*! ./chart1.css */ 592);
+	__webpack_require__(/*! ./chart1.css */ 593);
 	
-	var _chartLayout = __webpack_require__(/*! ./chartLayout.jsx */ 596);
+	var _chartLayout = __webpack_require__(/*! ./chartLayout.jsx */ 597);
 	
 	var _chartLayout2 = _interopRequireDefault(_chartLayout);
 	
-	__webpack_require__(/*! ../css/graphs.css */ 600);
+	__webpack_require__(/*! ../css/graphs.css */ 598);
 	
-	__webpack_require__(/*! ../../toolkit/web-ng/root/css/app.css */ 603);
+	__webpack_require__(/*! ../../toolkit/web-ng/root/css/app.css */ 600);
 	
-	__webpack_require__(/*! ../css/spinner.css */ 605);
+	__webpack_require__(/*! ../css/spinner.css */ 602);
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
@@ -25280,6 +25284,7 @@
 	            //dst: null,
 	            start: this.props.start,
 	            end: this.props.end,
+	            agent: this.props.agent,
 	            tracker: null,
 	            chartSeries: null,
 	            timerange: timerange,
@@ -25346,8 +25351,9 @@
 	
 	    renderToolTip: function renderToolTip() {
 	        var tracker = this.state.tracker;
-	        var dateFormat = "MM/DD/YYYY HH:mm:ss ZZ";
+	        var dateFormat = "MM/DD/YYYY HH:mm:ss";
 	        var date = (0, _moment2.default)(tracker).format(dateFormat);
+	        var tz = _GraphUtilities2.default.getTimezone(tracker);
 	
 	        var display = "block";
 	
@@ -25428,7 +25434,7 @@
 	                    if (_row.properties.mainEventType == "histogram-rtt") {
 	                        _label = "ping";
 	                    } else if (_row.properties.mainEventType == "throughput") {
-	                        _label = "UDP throughput";
+	                        _label = "UDP";
 	                    } else if (_row.properties.mainEventType == "histogram-owdelay") {
 	                        _label = "owamp";
 	                    }
@@ -25448,7 +25454,7 @@
 	                            _row.lostValue,
 	                            " of ",
 	                            _row.sentValue,
-	                            " packets sent) ",
+	                            " packets) ",
 	                            "(" + _label + ")",
 	                            " "
 	                        ));
@@ -25477,7 +25483,7 @@
 	                    if (_row2.properties.direction == "reverse") {
 	                        _dir2 = "<-"; // Unicode <
 	                    }
-	                    var _label2 = "";
+	                    var _label2 = "(owamp)";
 	                    if (_row2.properties.mainEventType == "histogram-rtt") {
 	                        _label2 = "(ping)";
 	                    }
@@ -25620,7 +25626,9 @@
 	                    _react2.default.createElement(
 	                        "span",
 	                        { className: "graph-values-popover__heading" },
-	                        date
+	                        date,
+	                        " ",
+	                        tz
 	                    ),
 	                    _react2.default.createElement(
 	                        "ul",
@@ -26272,9 +26280,11 @@
 	        var end = this.state.end;
 	        var tool = this.props.tool;
 	        var ipversion = this.props.ipversion;
+	        var agent = this.props.agent;
 	        var params = {
 	            tool: tool,
-	            ipversion: ipversion
+	            ipversion: ipversion,
+	            agent: agent
 	        };
 	        this.setState({ params: params, loading: true });
 	        var ma_url = this.props.ma_url || location.origin + "/esmond/perfsonar/archive/";
@@ -49145,6 +49155,10 @@
 	                            } else if (val[i] == 6) {
 	                                url += "&dns-match-rule=only-v6";
 	                            }
+	                        } else if (name == "agent") {
+	                            if (typeof val[i] != "undefined") {
+	                                url += "&measurement-agent=" + val[i];
+	                            }
 	                        }
 	                    }
 	                }
@@ -49596,7 +49610,7 @@
 	                if (failureValue != null) {
 	                    var failureObj = {
 	                        errorText: failureValue.error,
-	                        value: 85,
+	                        value: 95,
 	                        type: "error"
 	                    };
 	                    var errorEvent = new _pondjs.Event(timestamp, failureObj);
@@ -69106,6 +69120,49 @@
 
 /***/ },
 /* 506 */
+/*!*******************************!*\
+  !*** ./src/GraphUtilities.js ***!
+  \*******************************/
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+	
+	var _moment = __webpack_require__(/*! moment */ 211);
+	
+	var _moment2 = _interopRequireDefault(_moment);
+	
+	var _pondjs = __webpack_require__(/*! pondjs */ 345);
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
+	module.exports = {
+	    getTimezone: function getTimezone(date) {
+	        var tz = void 0;
+	        var tzRe = /\(([^)]+)\)/;
+	        var out = void 0;
+	        var offset = void 0;
+	
+	        if (typeof date == "undefined" || date == null) {
+	            return;
+	        } else if (date.toString() == "Invalid Date") {
+	            tz = "";
+	            out = "";
+	        } else {
+	            tz = tzRe.exec(date.toString())[1];
+	            var dateMoment = (0, _moment2.default)(date);
+	            offset = dateMoment.utcOffset() / 60;
+	            if (offset >= 0) {
+	                offset = "+" + offset;
+	            }
+	        }
+	
+	        out = tz + " (GMT " + offset + ")";
+	        return out;
+	    }
+	};
+
+/***/ },
+/* 507 */
 /*!************************************************!*\
   !*** ./~/react-timeseries-charts/lib/entry.js ***!
   \************************************************/
@@ -69118,91 +69175,91 @@
 	});
 	exports.styler = exports.YAxis = exports.ValueList = exports.ValueAxis = exports.TimeMarker = exports.TimeRangeMarker = exports.TimeAxis = exports.ScatterChart = exports.Resizable = exports.LineChart = exports.Legend = exports.LabelAxis = exports.HorizontalBarChart = exports.EventMarker = exports.EventChart = exports.Charts = exports.ChartRow = exports.ChartContainer = exports.Brush = exports.Baseline = exports.BarChart = exports.AreaChart = undefined;
 	
-	var _AreaChart2 = __webpack_require__(/*! ./components/AreaChart */ 507);
+	var _AreaChart2 = __webpack_require__(/*! ./components/AreaChart */ 508);
 	
 	var _AreaChart3 = _interopRequireDefault(_AreaChart2);
 	
-	var _BarChart2 = __webpack_require__(/*! ./components/BarChart */ 515);
+	var _BarChart2 = __webpack_require__(/*! ./components/BarChart */ 516);
 	
 	var _BarChart3 = _interopRequireDefault(_BarChart2);
 	
-	var _Baseline2 = __webpack_require__(/*! ./components/Baseline */ 521);
+	var _Baseline2 = __webpack_require__(/*! ./components/Baseline */ 522);
 	
 	var _Baseline3 = _interopRequireDefault(_Baseline2);
 	
-	var _Brush2 = __webpack_require__(/*! ./components/Brush */ 522);
+	var _Brush2 = __webpack_require__(/*! ./components/Brush */ 523);
 	
 	var _Brush3 = _interopRequireDefault(_Brush2);
 	
-	var _ChartContainer2 = __webpack_require__(/*! ./components/ChartContainer */ 523);
+	var _ChartContainer2 = __webpack_require__(/*! ./components/ChartContainer */ 524);
 	
 	var _ChartContainer3 = _interopRequireDefault(_ChartContainer2);
 	
-	var _ChartRow2 = __webpack_require__(/*! ./components/ChartRow */ 532);
+	var _ChartRow2 = __webpack_require__(/*! ./components/ChartRow */ 533);
 	
 	var _ChartRow3 = _interopRequireDefault(_ChartRow2);
 	
-	var _Charts2 = __webpack_require__(/*! ./components/Charts */ 543);
+	var _Charts2 = __webpack_require__(/*! ./components/Charts */ 544);
 	
 	var _Charts3 = _interopRequireDefault(_Charts2);
 	
-	var _EventChart2 = __webpack_require__(/*! ./components/EventChart */ 548);
+	var _EventChart2 = __webpack_require__(/*! ./components/EventChart */ 549);
 	
 	var _EventChart3 = _interopRequireDefault(_EventChart2);
 	
-	var _EventMarker2 = __webpack_require__(/*! ./components/EventMarker */ 516);
+	var _EventMarker2 = __webpack_require__(/*! ./components/EventMarker */ 517);
 	
 	var _EventMarker3 = _interopRequireDefault(_EventMarker2);
 	
-	var _HorizontalBarChart2 = __webpack_require__(/*! ./components/HorizontalBarChart */ 549);
+	var _HorizontalBarChart2 = __webpack_require__(/*! ./components/HorizontalBarChart */ 550);
 	
 	var _HorizontalBarChart3 = _interopRequireDefault(_HorizontalBarChart2);
 	
-	var _LabelAxis2 = __webpack_require__(/*! ./components/LabelAxis */ 585);
+	var _LabelAxis2 = __webpack_require__(/*! ./components/LabelAxis */ 586);
 	
 	var _LabelAxis3 = _interopRequireDefault(_LabelAxis2);
 	
-	var _Legend2 = __webpack_require__(/*! ./components/Legend */ 586);
+	var _Legend2 = __webpack_require__(/*! ./components/Legend */ 587);
 	
 	var _Legend3 = _interopRequireDefault(_Legend2);
 	
-	var _LineChart2 = __webpack_require__(/*! ./components/LineChart */ 587);
+	var _LineChart2 = __webpack_require__(/*! ./components/LineChart */ 588);
 	
 	var _LineChart3 = _interopRequireDefault(_LineChart2);
 	
-	var _Resizable2 = __webpack_require__(/*! ./components/Resizable */ 584);
+	var _Resizable2 = __webpack_require__(/*! ./components/Resizable */ 585);
 	
 	var _Resizable3 = _interopRequireDefault(_Resizable2);
 	
-	var _ScatterChart2 = __webpack_require__(/*! ./components/ScatterChart */ 588);
+	var _ScatterChart2 = __webpack_require__(/*! ./components/ScatterChart */ 589);
 	
 	var _ScatterChart3 = _interopRequireDefault(_ScatterChart2);
 	
-	var _TimeAxis2 = __webpack_require__(/*! ./components/TimeAxis */ 547);
+	var _TimeAxis2 = __webpack_require__(/*! ./components/TimeAxis */ 548);
 	
 	var _TimeAxis3 = _interopRequireDefault(_TimeAxis2);
 	
-	var _TimeRangeMarker2 = __webpack_require__(/*! ./components/TimeRangeMarker */ 589);
+	var _TimeRangeMarker2 = __webpack_require__(/*! ./components/TimeRangeMarker */ 590);
 	
 	var _TimeRangeMarker3 = _interopRequireDefault(_TimeRangeMarker2);
 	
-	var _TimeMarker2 = __webpack_require__(/*! ./components/TimeMarker */ 544);
+	var _TimeMarker2 = __webpack_require__(/*! ./components/TimeMarker */ 545);
 	
 	var _TimeMarker3 = _interopRequireDefault(_TimeMarker2);
 	
-	var _ValueAxis2 = __webpack_require__(/*! ./components/ValueAxis */ 590);
+	var _ValueAxis2 = __webpack_require__(/*! ./components/ValueAxis */ 591);
 	
 	var _ValueAxis3 = _interopRequireDefault(_ValueAxis2);
 	
-	var _ValueList2 = __webpack_require__(/*! ./components/ValueList */ 519);
+	var _ValueList2 = __webpack_require__(/*! ./components/ValueList */ 520);
 	
 	var _ValueList3 = _interopRequireDefault(_ValueList2);
 	
-	var _YAxis2 = __webpack_require__(/*! ./components/YAxis */ 534);
+	var _YAxis2 = __webpack_require__(/*! ./components/YAxis */ 535);
 	
 	var _YAxis3 = _interopRequireDefault(_YAxis2);
 	
-	var _styler2 = __webpack_require__(/*! ./js/styler */ 511);
+	var _styler2 = __webpack_require__(/*! ./js/styler */ 512);
 	
 	var _styler3 = _interopRequireDefault(_styler2);
 	
@@ -69242,7 +69299,7 @@
 
 
 /***/ },
-/* 507 */
+/* 508 */
 /*!***************************************************************!*\
   !*** ./~/react-timeseries-charts/lib/components/AreaChart.js ***!
   \***************************************************************/
@@ -69258,7 +69315,7 @@
 	
 	var _react2 = _interopRequireDefault(_react);
 	
-	var _d3Shape = __webpack_require__(/*! d3-shape */ 508);
+	var _d3Shape = __webpack_require__(/*! d3-shape */ 509);
 	
 	var _d3Shape2 = _interopRequireDefault(_d3Shape);
 	
@@ -69266,15 +69323,15 @@
 	
 	var _underscore2 = _interopRequireDefault(_underscore);
 	
-	var _merge = __webpack_require__(/*! merge */ 510);
+	var _merge = __webpack_require__(/*! merge */ 511);
 	
 	var _merge2 = _interopRequireDefault(_merge);
 	
 	var _pondjs = __webpack_require__(/*! pondjs */ 345);
 	
-	var _styler = __webpack_require__(/*! ../js/styler */ 511);
+	var _styler = __webpack_require__(/*! ../js/styler */ 512);
 	
-	__webpack_require__(/*! array.prototype.fill */ 514);
+	__webpack_require__(/*! array.prototype.fill */ 515);
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
@@ -69642,14 +69699,14 @@
 	});
 
 /***/ },
-/* 508 */
+/* 509 */
 /*!**************************************!*\
   !*** ./~/d3-shape/build/d3-shape.js ***!
   \**************************************/
 /***/ function(module, exports, __webpack_require__) {
 
 	(function (global, factory) {
-	   true ? factory(exports, __webpack_require__(/*! d3-path */ 509)) :
+	   true ? factory(exports, __webpack_require__(/*! d3-path */ 510)) :
 	  typeof define === 'function' && define.amd ? define(['exports', 'd3-path'], factory) :
 	  (factory((global.d3_shape = global.d3_shape || {}),global.d3_path));
 	}(this, function (exports,d3Path) { 'use strict';
@@ -71435,7 +71492,7 @@
 	}));
 
 /***/ },
-/* 509 */
+/* 510 */
 /*!***********************************************!*\
   !*** ./~/d3-shape/~/d3-path/build/d3-path.js ***!
   \***********************************************/
@@ -71598,7 +71655,7 @@
 	}));
 
 /***/ },
-/* 510 */
+/* 511 */
 /*!**************************!*\
   !*** ./~/merge/merge.js ***!
   \**************************/
@@ -71782,7 +71839,7 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(/*! ./../webpack/buildin/module.js */ 212)(module)))
 
 /***/ },
-/* 511 */
+/* 512 */
 /*!****************************************************!*\
   !*** ./~/react-timeseries-charts/lib/js/styler.js ***!
   \****************************************************/
@@ -71813,7 +71870,7 @@
 	
 	var _underscore2 = _interopRequireDefault(_underscore);
 	
-	var _colorbrewer = __webpack_require__(/*! colorbrewer */ 512);
+	var _colorbrewer = __webpack_require__(/*! colorbrewer */ 513);
 	
 	var _colorbrewer2 = _interopRequireDefault(_colorbrewer);
 	
@@ -72156,17 +72213,17 @@
 	}
 
 /***/ },
-/* 512 */
+/* 513 */
 /*!**********************************************************!*\
   !*** ./~/react-timeseries-charts/~/colorbrewer/index.js ***!
   \**********************************************************/
 /***/ function(module, exports, __webpack_require__) {
 
-	module.exports = __webpack_require__(/*! ./colorbrewer.js */ 513);
+	module.exports = __webpack_require__(/*! ./colorbrewer.js */ 514);
 
 
 /***/ },
-/* 513 */
+/* 514 */
 /*!****************************************************************!*\
   !*** ./~/react-timeseries-charts/~/colorbrewer/colorbrewer.js ***!
   \****************************************************************/
@@ -72490,7 +72547,7 @@
 
 
 /***/ },
-/* 514 */
+/* 515 */
 /*!*******************************************************************!*\
   !*** ./~/react-timeseries-charts/~/array.prototype.fill/index.js ***!
   \*******************************************************************/
@@ -72557,7 +72614,7 @@
 
 
 /***/ },
-/* 515 */
+/* 516 */
 /*!**************************************************************!*\
   !*** ./~/react-timeseries-charts/lib/components/BarChart.js ***!
   \**************************************************************/
@@ -72587,17 +72644,17 @@
 	
 	var _underscore2 = _interopRequireDefault(_underscore);
 	
-	var _merge = __webpack_require__(/*! merge */ 510);
+	var _merge = __webpack_require__(/*! merge */ 511);
 	
 	var _merge2 = _interopRequireDefault(_merge);
 	
 	var _pondjs = __webpack_require__(/*! pondjs */ 345);
 	
-	var _EventMarker = __webpack_require__(/*! ./EventMarker */ 516);
+	var _EventMarker = __webpack_require__(/*! ./EventMarker */ 517);
 	
 	var _EventMarker2 = _interopRequireDefault(_EventMarker);
 	
-	var _styler = __webpack_require__(/*! ../js/styler */ 511);
+	var _styler = __webpack_require__(/*! ../js/styler */ 512);
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
@@ -73034,7 +73091,7 @@
 	});
 
 /***/ },
-/* 516 */
+/* 517 */
 /*!*****************************************************************!*\
   !*** ./~/react-timeseries-charts/lib/components/EventMarker.js ***!
   \*****************************************************************/
@@ -73064,15 +73121,15 @@
 	
 	var _underscore2 = _interopRequireDefault(_underscore);
 	
-	var _d3TimeFormat = __webpack_require__(/*! d3-time-format */ 517);
+	var _d3TimeFormat = __webpack_require__(/*! d3-time-format */ 518);
 	
 	var _pondjs = __webpack_require__(/*! pondjs */ 345);
 	
-	var _ValueList = __webpack_require__(/*! ./ValueList */ 519);
+	var _ValueList = __webpack_require__(/*! ./ValueList */ 520);
 	
 	var _ValueList2 = _interopRequireDefault(_ValueList);
 	
-	var _Label = __webpack_require__(/*! ./Label */ 520);
+	var _Label = __webpack_require__(/*! ./Label */ 521);
 	
 	var _Label2 = _interopRequireDefault(_Label);
 	
@@ -73334,14 +73391,14 @@
 	});
 
 /***/ },
-/* 517 */
+/* 518 */
 /*!**************************************************!*\
   !*** ./~/d3-time-format/build/d3-time-format.js ***!
   \**************************************************/
 /***/ function(module, exports, __webpack_require__) {
 
 	(function (global, factory) {
-	   true ? factory(exports, __webpack_require__(/*! d3-time */ 518)) :
+	   true ? factory(exports, __webpack_require__(/*! d3-time */ 519)) :
 	  typeof define === 'function' && define.amd ? define(['exports', 'd3-time'], factory) :
 	  (factory((global.d3_time_format = global.d3_time_format || {}),global.d3_time));
 	}(this, function (exports,d3Time) { 'use strict';
@@ -74175,7 +74232,7 @@
 	}));
 
 /***/ },
-/* 518 */
+/* 519 */
 /*!************************************!*\
   !*** ./~/d3-time/build/d3-time.js ***!
   \************************************/
@@ -74532,7 +74589,7 @@
 	}));
 
 /***/ },
-/* 519 */
+/* 520 */
 /*!***************************************************************!*\
   !*** ./~/react-timeseries-charts/lib/components/ValueList.js ***!
   \***************************************************************/
@@ -74680,7 +74737,7 @@
 	     */
 
 /***/ },
-/* 520 */
+/* 521 */
 /*!***********************************************************!*\
   !*** ./~/react-timeseries-charts/lib/components/Label.js ***!
   \***********************************************************/
@@ -74796,7 +74853,7 @@
 	     */
 
 /***/ },
-/* 521 */
+/* 522 */
 /*!**************************************************************!*\
   !*** ./~/react-timeseries-charts/lib/components/Baseline.js ***!
   \**************************************************************/
@@ -74812,7 +74869,7 @@
 	
 	var _react2 = _interopRequireDefault(_react);
 	
-	var _merge = __webpack_require__(/*! merge */ 510);
+	var _merge = __webpack_require__(/*! merge */ 511);
 	
 	var _merge2 = _interopRequireDefault(_merge);
 	
@@ -74954,7 +75011,7 @@
 	});
 
 /***/ },
-/* 522 */
+/* 523 */
 /*!***********************************************************!*\
   !*** ./~/react-timeseries-charts/lib/components/Brush.js ***!
   \***********************************************************/
@@ -74982,7 +75039,7 @@
 	
 	var _react2 = _interopRequireDefault(_react);
 	
-	var _merge = __webpack_require__(/*! merge */ 510);
+	var _merge = __webpack_require__(/*! merge */ 511);
 	
 	var _merge2 = _interopRequireDefault(_merge);
 	
@@ -75365,7 +75422,7 @@
 	});
 
 /***/ },
-/* 523 */
+/* 524 */
 /*!********************************************************************!*\
   !*** ./~/react-timeseries-charts/lib/components/ChartContainer.js ***!
   \********************************************************************/
@@ -75381,7 +75438,7 @@
 	
 	var _react2 = _interopRequireDefault(_react);
 	
-	var _d3Scale = __webpack_require__(/*! d3-scale */ 524);
+	var _d3Scale = __webpack_require__(/*! d3-scale */ 525);
 	
 	var _underscore = __webpack_require__(/*! underscore */ 210);
 	
@@ -75389,31 +75446,31 @@
 	
 	var _pondjs = __webpack_require__(/*! pondjs */ 345);
 	
-	var _invariant = __webpack_require__(/*! invariant */ 530);
+	var _invariant = __webpack_require__(/*! invariant */ 531);
 	
 	var _invariant2 = _interopRequireDefault(_invariant);
 	
-	var _Brush = __webpack_require__(/*! ./Brush */ 522);
+	var _Brush = __webpack_require__(/*! ./Brush */ 523);
 	
 	var _Brush2 = _interopRequireDefault(_Brush);
 	
-	var _EventHandler = __webpack_require__(/*! ./EventHandler */ 531);
+	var _EventHandler = __webpack_require__(/*! ./EventHandler */ 532);
 	
 	var _EventHandler2 = _interopRequireDefault(_EventHandler);
 	
-	var _ChartRow = __webpack_require__(/*! ./ChartRow */ 532);
+	var _ChartRow = __webpack_require__(/*! ./ChartRow */ 533);
 	
 	var _ChartRow2 = _interopRequireDefault(_ChartRow);
 	
-	var _Charts = __webpack_require__(/*! ./Charts */ 543);
+	var _Charts = __webpack_require__(/*! ./Charts */ 544);
 	
 	var _Charts2 = _interopRequireDefault(_Charts);
 	
-	var _TimeAxis = __webpack_require__(/*! ./TimeAxis */ 547);
+	var _TimeAxis = __webpack_require__(/*! ./TimeAxis */ 548);
 	
 	var _TimeAxis2 = _interopRequireDefault(_TimeAxis);
 	
-	var _TimeMarker = __webpack_require__(/*! ./TimeMarker */ 544);
+	var _TimeMarker = __webpack_require__(/*! ./TimeMarker */ 545);
 	
 	var _TimeMarker2 = _interopRequireDefault(_TimeMarker);
 	
@@ -75886,14 +75943,14 @@
 	});
 
 /***/ },
-/* 524 */
+/* 525 */
 /*!**************************************!*\
   !*** ./~/d3-scale/build/d3-scale.js ***!
   \**************************************/
 /***/ function(module, exports, __webpack_require__) {
 
 	(function (global, factory) {
-	   true ? factory(exports, __webpack_require__(/*! d3-array */ 525), __webpack_require__(/*! d3-collection */ 526), __webpack_require__(/*! d3-interpolate */ 527), __webpack_require__(/*! d3-format */ 529), __webpack_require__(/*! d3-time */ 518), __webpack_require__(/*! d3-time-format */ 517), __webpack_require__(/*! d3-color */ 528)) :
+	   true ? factory(exports, __webpack_require__(/*! d3-array */ 526), __webpack_require__(/*! d3-collection */ 527), __webpack_require__(/*! d3-interpolate */ 528), __webpack_require__(/*! d3-format */ 530), __webpack_require__(/*! d3-time */ 519), __webpack_require__(/*! d3-time-format */ 518), __webpack_require__(/*! d3-color */ 529)) :
 	  typeof define === 'function' && define.amd ? define(['exports', 'd3-array', 'd3-collection', 'd3-interpolate', 'd3-format', 'd3-time', 'd3-time-format', 'd3-color'], factory) :
 	  (factory((global.d3_scale = global.d3_scale || {}),global.d3_array,global.d3_collection,global.d3_interpolate,global.d3_format,global.d3_time,global.d3_time_format,global.d3_color));
 	}(this, function (exports,d3Array,d3Collection,d3Interpolate,d3Format,d3Time,d3TimeFormat,d3Color) { 'use strict';
@@ -76824,7 +76881,7 @@
 	}));
 
 /***/ },
-/* 525 */
+/* 526 */
 /*!*************************************************!*\
   !*** ./~/d3-scale/~/d3-array/build/d3-array.js ***!
   \*************************************************/
@@ -77301,7 +77358,7 @@
 	}));
 
 /***/ },
-/* 526 */
+/* 527 */
 /*!***********************************************************!*\
   !*** ./~/d3-scale/~/d3-collection/build/d3-collection.js ***!
   \***********************************************************/
@@ -77526,14 +77583,14 @@
 	}));
 
 /***/ },
-/* 527 */
+/* 528 */
 /*!*************************************************************!*\
   !*** ./~/d3-scale/~/d3-interpolate/build/d3-interpolate.js ***!
   \*************************************************************/
 /***/ function(module, exports, __webpack_require__) {
 
 	(function (global, factory) {
-	   true ? factory(exports, __webpack_require__(/*! d3-color */ 528)) :
+	   true ? factory(exports, __webpack_require__(/*! d3-color */ 529)) :
 	  typeof define === 'function' && define.amd ? define(['exports', 'd3-color'], factory) :
 	  (factory((global.d3_interpolate = global.d3_interpolate || {}),global.d3_color));
 	}(this, function (exports,d3Color) { 'use strict';
@@ -78074,7 +78131,7 @@
 	}));
 
 /***/ },
-/* 528 */
+/* 529 */
 /*!*************************************************!*\
   !*** ./~/d3-scale/~/d3-color/build/d3-color.js ***!
   \*************************************************/
@@ -78599,7 +78656,7 @@
 	}));
 
 /***/ },
-/* 529 */
+/* 530 */
 /*!****************************************!*\
   !*** ./~/d3-format/build/d3-format.js ***!
   \****************************************/
@@ -79109,7 +79166,7 @@
 	}));
 
 /***/ },
-/* 530 */
+/* 531 */
 /*!**********************************************************!*\
   !*** ./~/react-timeseries-charts/~/invariant/browser.js ***!
   \**********************************************************/
@@ -79170,7 +79227,7 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(/*! (webpack)/~/node-libs-browser/~/process/browser.js */ 4)))
 
 /***/ },
-/* 531 */
+/* 532 */
 /*!******************************************************************!*\
   !*** ./~/react-timeseries-charts/lib/components/EventHandler.js ***!
   \******************************************************************/
@@ -79407,7 +79464,7 @@
 	});
 
 /***/ },
-/* 532 */
+/* 533 */
 /*!**************************************************************!*\
   !*** ./~/react-timeseries-charts/lib/components/ChartRow.js ***!
   \**************************************************************/
@@ -79423,31 +79480,31 @@
 	
 	var _react2 = _interopRequireDefault(_react);
 	
-	var _d3Scale = __webpack_require__(/*! d3-scale */ 524);
+	var _d3Scale = __webpack_require__(/*! d3-scale */ 525);
 	
-	var _d3Ease = __webpack_require__(/*! d3-ease */ 533);
+	var _d3Ease = __webpack_require__(/*! d3-ease */ 534);
 	
 	var _underscore = __webpack_require__(/*! underscore */ 210);
 	
 	var _underscore2 = _interopRequireDefault(_underscore);
 	
-	var _YAxis = __webpack_require__(/*! ./YAxis */ 534);
+	var _YAxis = __webpack_require__(/*! ./YAxis */ 535);
 	
 	var _YAxis2 = _interopRequireDefault(_YAxis);
 	
-	var _Charts = __webpack_require__(/*! ./Charts */ 543);
+	var _Charts = __webpack_require__(/*! ./Charts */ 544);
 	
 	var _Charts2 = _interopRequireDefault(_Charts);
 	
-	var _Brush = __webpack_require__(/*! ./Brush */ 522);
+	var _Brush = __webpack_require__(/*! ./Brush */ 523);
 	
 	var _Brush2 = _interopRequireDefault(_Brush);
 	
-	var _TimeMarker = __webpack_require__(/*! ./TimeMarker */ 544);
+	var _TimeMarker = __webpack_require__(/*! ./TimeMarker */ 545);
 	
 	var _TimeMarker2 = _interopRequireDefault(_TimeMarker);
 	
-	var _interpolators = __webpack_require__(/*! ../js/interpolators */ 546);
+	var _interpolators = __webpack_require__(/*! ../js/interpolators */ 547);
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
@@ -79927,7 +79984,7 @@
 	});
 
 /***/ },
-/* 533 */
+/* 534 */
 /*!**************************************************************!*\
   !*** ./~/react-timeseries-charts/~/d3-ease/build/d3-ease.js ***!
   \**************************************************************/
@@ -80191,7 +80248,7 @@
 	}));
 
 /***/ },
-/* 534 */
+/* 535 */
 /*!***********************************************************!*\
   !*** ./~/react-timeseries-charts/lib/components/YAxis.js ***!
   \***********************************************************/
@@ -80211,19 +80268,19 @@
 	
 	var _reactDom2 = _interopRequireDefault(_reactDom);
 	
-	var _merge = __webpack_require__(/*! merge */ 510);
+	var _merge = __webpack_require__(/*! merge */ 511);
 	
 	var _merge2 = _interopRequireDefault(_merge);
 	
-	var _d3Axis = __webpack_require__(/*! d3-axis */ 535);
+	var _d3Axis = __webpack_require__(/*! d3-axis */ 536);
 	
-	var _d3Format = __webpack_require__(/*! d3-format */ 529);
+	var _d3Format = __webpack_require__(/*! d3-format */ 530);
 	
-	var _d3Selection = __webpack_require__(/*! d3-selection */ 536);
+	var _d3Selection = __webpack_require__(/*! d3-selection */ 537);
 	
-	__webpack_require__(/*! d3-transition */ 537);
+	__webpack_require__(/*! d3-transition */ 538);
 	
-	var _d3Ease = __webpack_require__(/*! d3-ease */ 533);
+	var _d3Ease = __webpack_require__(/*! d3-ease */ 534);
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
@@ -80493,7 +80550,7 @@
 	});
 
 /***/ },
-/* 535 */
+/* 536 */
 /*!**************************************************************!*\
   !*** ./~/react-timeseries-charts/~/d3-axis/build/d3-axis.js ***!
   \**************************************************************/
@@ -80685,7 +80742,7 @@
 	}));
 
 /***/ },
-/* 536 */
+/* 537 */
 /*!**********************************************!*\
   !*** ./~/d3-selection/build/d3-selection.js ***!
   \**********************************************/
@@ -81637,14 +81694,14 @@
 	}));
 
 /***/ },
-/* 537 */
+/* 538 */
 /*!************************************************!*\
   !*** ./~/d3-transition/build/d3-transition.js ***!
   \************************************************/
 /***/ function(module, exports, __webpack_require__) {
 
 	(function (global, factory) {
-	   true ? factory(exports, __webpack_require__(/*! d3-selection */ 536), __webpack_require__(/*! d3-dispatch */ 538), __webpack_require__(/*! d3-timer */ 539), __webpack_require__(/*! d3-interpolate */ 540), __webpack_require__(/*! d3-color */ 541), __webpack_require__(/*! d3-ease */ 542)) :
+	   true ? factory(exports, __webpack_require__(/*! d3-selection */ 537), __webpack_require__(/*! d3-dispatch */ 539), __webpack_require__(/*! d3-timer */ 540), __webpack_require__(/*! d3-interpolate */ 541), __webpack_require__(/*! d3-color */ 542), __webpack_require__(/*! d3-ease */ 543)) :
 	  typeof define === 'function' && define.amd ? define(['exports', 'd3-selection', 'd3-dispatch', 'd3-timer', 'd3-interpolate', 'd3-color', 'd3-ease'], factory) :
 	  (factory((global.d3_transition = global.d3_transition || {}),global.d3_selection,global.d3_dispatch,global.d3_timer,global.d3_interpolate,global.d3_color,global.d3_ease));
 	}(this, function (exports,d3Selection,d3Dispatch,d3Timer,d3Interpolate,d3Color,d3Ease) { 'use strict';
@@ -82419,7 +82476,7 @@
 	}));
 
 /***/ },
-/* 538 */
+/* 539 */
 /*!************************************************************!*\
   !*** ./~/d3-transition/~/d3-dispatch/build/d3-dispatch.js ***!
   \************************************************************/
@@ -82522,7 +82579,7 @@
 	}));
 
 /***/ },
-/* 539 */
+/* 540 */
 /*!******************************************************!*\
   !*** ./~/d3-transition/~/d3-timer/build/d3-timer.js ***!
   \******************************************************/
@@ -82679,14 +82736,14 @@
 	}));
 
 /***/ },
-/* 540 */
+/* 541 */
 /*!******************************************************************!*\
   !*** ./~/d3-transition/~/d3-interpolate/build/d3-interpolate.js ***!
   \******************************************************************/
 /***/ function(module, exports, __webpack_require__) {
 
 	(function (global, factory) {
-	   true ? factory(exports, __webpack_require__(/*! d3-color */ 541)) :
+	   true ? factory(exports, __webpack_require__(/*! d3-color */ 542)) :
 	  typeof define === 'function' && define.amd ? define(['exports', 'd3-color'], factory) :
 	  (factory((global.d3_interpolate = global.d3_interpolate || {}),global.d3_color));
 	}(this, function (exports,d3Color) { 'use strict';
@@ -83227,7 +83284,7 @@
 	}));
 
 /***/ },
-/* 541 */
+/* 542 */
 /*!******************************************************!*\
   !*** ./~/d3-transition/~/d3-color/build/d3-color.js ***!
   \******************************************************/
@@ -83752,7 +83809,7 @@
 	}));
 
 /***/ },
-/* 542 */
+/* 543 */
 /*!****************************************************!*\
   !*** ./~/d3-transition/~/d3-ease/build/d3-ease.js ***!
   \****************************************************/
@@ -84016,7 +84073,7 @@
 	}));
 
 /***/ },
-/* 543 */
+/* 544 */
 /*!************************************************************!*\
   !*** ./~/react-timeseries-charts/lib/components/Charts.js ***!
   \************************************************************/
@@ -84098,7 +84155,7 @@
 	     */
 
 /***/ },
-/* 544 */
+/* 545 */
 /*!****************************************************************!*\
   !*** ./~/react-timeseries-charts/lib/components/TimeMarker.js ***!
   \****************************************************************/
@@ -84128,19 +84185,19 @@
 	
 	var _underscore2 = _interopRequireDefault(_underscore);
 	
-	var _d3TimeFormat = __webpack_require__(/*! d3-time-format */ 517);
+	var _d3TimeFormat = __webpack_require__(/*! d3-time-format */ 518);
 	
 	var _moment = __webpack_require__(/*! moment */ 211);
 	
 	var _moment2 = _interopRequireDefault(_moment);
 	
-	__webpack_require__(/*! moment-duration-format */ 545);
+	__webpack_require__(/*! moment-duration-format */ 546);
 	
-	var _ValueList = __webpack_require__(/*! ./ValueList */ 519);
+	var _ValueList = __webpack_require__(/*! ./ValueList */ 520);
 	
 	var _ValueList2 = _interopRequireDefault(_ValueList);
 	
-	var _Label = __webpack_require__(/*! ./Label */ 520);
+	var _Label = __webpack_require__(/*! ./Label */ 521);
 	
 	var _Label2 = _interopRequireDefault(_Label);
 	
@@ -84327,7 +84384,7 @@
 	});
 
 /***/ },
-/* 545 */
+/* 546 */
 /*!****************************************************************!*\
   !*** ./~/moment-duration-format/lib/moment-duration-format.js ***!
   \****************************************************************/
@@ -84818,7 +84875,7 @@
 
 
 /***/ },
-/* 546 */
+/* 547 */
 /*!***********************************************************!*\
   !*** ./~/react-timeseries-charts/lib/js/interpolators.js ***!
   \***********************************************************/
@@ -84994,7 +85051,7 @@
 	}();
 
 /***/ },
-/* 547 */
+/* 548 */
 /*!**************************************************************!*\
   !*** ./~/react-timeseries-charts/lib/components/TimeAxis.js ***!
   \**************************************************************/
@@ -85014,23 +85071,23 @@
 	
 	var _reactDom2 = _interopRequireDefault(_reactDom);
 	
-	var _merge = __webpack_require__(/*! merge */ 510);
+	var _merge = __webpack_require__(/*! merge */ 511);
 	
 	var _merge2 = _interopRequireDefault(_merge);
 	
-	var _d3Axis = __webpack_require__(/*! d3-axis */ 535);
+	var _d3Axis = __webpack_require__(/*! d3-axis */ 536);
 	
-	var _d3TimeFormat = __webpack_require__(/*! d3-time-format */ 517);
+	var _d3TimeFormat = __webpack_require__(/*! d3-time-format */ 518);
 	
-	var _d3Time = __webpack_require__(/*! d3-time */ 518);
+	var _d3Time = __webpack_require__(/*! d3-time */ 519);
 	
-	var _d3Selection = __webpack_require__(/*! d3-selection */ 536);
+	var _d3Selection = __webpack_require__(/*! d3-selection */ 537);
 	
 	var _moment = __webpack_require__(/*! moment */ 211);
 	
 	var _moment2 = _interopRequireDefault(_moment);
 	
-	__webpack_require__(/*! moment-duration-format */ 545);
+	__webpack_require__(/*! moment-duration-format */ 546);
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
@@ -85133,7 +85190,7 @@
 	});
 
 /***/ },
-/* 548 */
+/* 549 */
 /*!****************************************************************!*\
   !*** ./~/react-timeseries-charts/lib/components/EventChart.js ***!
   \****************************************************************/
@@ -85163,7 +85220,7 @@
 	
 	var _underscore2 = _interopRequireDefault(_underscore);
 	
-	var _merge = __webpack_require__(/*! merge */ 510);
+	var _merge = __webpack_require__(/*! merge */ 511);
 	
 	var _merge2 = _interopRequireDefault(_merge);
 	
@@ -85367,7 +85424,7 @@
 	});
 
 /***/ },
-/* 549 */
+/* 550 */
 /*!************************************************************************!*\
   !*** ./~/react-timeseries-charts/lib/components/HorizontalBarChart.js ***!
   \************************************************************************/
@@ -85389,13 +85446,13 @@
 	
 	var _underscore2 = _interopRequireDefault(_underscore);
 	
-	var _flexboxReact = __webpack_require__(/*! flexbox-react */ 550);
+	var _flexboxReact = __webpack_require__(/*! flexbox-react */ 551);
 	
-	var _d3Scale = __webpack_require__(/*! d3-scale */ 524);
+	var _d3Scale = __webpack_require__(/*! d3-scale */ 525);
 	
 	var _pondjs = __webpack_require__(/*! pondjs */ 345);
 	
-	var _Resizable = __webpack_require__(/*! ./Resizable */ 584);
+	var _Resizable = __webpack_require__(/*! ./Resizable */ 585);
 	
 	var _Resizable2 = _interopRequireDefault(_Resizable);
 	
@@ -86149,7 +86206,7 @@
 	});
 
 /***/ },
-/* 550 */
+/* 551 */
 /*!***************************************!*\
   !*** ./~/flexbox-react/dist/index.js ***!
   \***************************************/
@@ -86162,11 +86219,11 @@
 	});
 	exports.FlexItem = exports.Flexbox = undefined;
 	
-	var _Flexbox = __webpack_require__(/*! ./Flexbox */ 551);
+	var _Flexbox = __webpack_require__(/*! ./Flexbox */ 552);
 	
 	var _Flexbox2 = _interopRequireDefault(_Flexbox);
 	
-	var _FlexItem = __webpack_require__(/*! ./FlexItem */ 583);
+	var _FlexItem = __webpack_require__(/*! ./FlexItem */ 584);
 	
 	var _FlexItem2 = _interopRequireDefault(_FlexItem);
 	
@@ -86176,7 +86233,7 @@
 	exports.FlexItem = _FlexItem2.default;
 
 /***/ },
-/* 551 */
+/* 552 */
 /*!*****************************************!*\
   !*** ./~/flexbox-react/dist/Flexbox.js ***!
   \*****************************************/
@@ -86194,7 +86251,7 @@
 	
 	var _react2 = _interopRequireDefault(_react);
 	
-	var _inlineStylePrefixer = __webpack_require__(/*! inline-style-prefixer */ 552);
+	var _inlineStylePrefixer = __webpack_require__(/*! inline-style-prefixer */ 553);
 	
 	var _inlineStylePrefixer2 = _interopRequireDefault(_inlineStylePrefixer);
 	
@@ -86295,7 +86352,7 @@
 	exports.default = Flexbox;
 
 /***/ },
-/* 552 */
+/* 553 */
 /*!*****************************************************************!*\
   !*** ./~/flexbox-react/~/inline-style-prefixer/lib/Prefixer.js ***!
   \*****************************************************************/
@@ -86311,59 +86368,59 @@
 	// special flexbox specifications
 	
 	
-	var _prefixAll2 = __webpack_require__(/*! ./static/prefixAll */ 553);
+	var _prefixAll2 = __webpack_require__(/*! ./static/prefixAll */ 554);
 	
 	var _prefixAll3 = _interopRequireDefault(_prefixAll2);
 	
-	var _getBrowserInformation = __webpack_require__(/*! ./utils/getBrowserInformation */ 567);
+	var _getBrowserInformation = __webpack_require__(/*! ./utils/getBrowserInformation */ 568);
 	
 	var _getBrowserInformation2 = _interopRequireDefault(_getBrowserInformation);
 	
-	var _getPrefixedKeyframes = __webpack_require__(/*! ./utils/getPrefixedKeyframes */ 570);
+	var _getPrefixedKeyframes = __webpack_require__(/*! ./utils/getPrefixedKeyframes */ 571);
 	
 	var _getPrefixedKeyframes2 = _interopRequireDefault(_getPrefixedKeyframes);
 	
-	var _capitalizeString = __webpack_require__(/*! ./utils/capitalizeString */ 555);
+	var _capitalizeString = __webpack_require__(/*! ./utils/capitalizeString */ 556);
 	
 	var _capitalizeString2 = _interopRequireDefault(_capitalizeString);
 	
-	var _prefixProps = __webpack_require__(/*! ./prefixProps */ 571);
+	var _prefixProps = __webpack_require__(/*! ./prefixProps */ 572);
 	
 	var _prefixProps2 = _interopRequireDefault(_prefixProps);
 	
-	var _calc = __webpack_require__(/*! ./plugins/calc */ 572);
+	var _calc = __webpack_require__(/*! ./plugins/calc */ 573);
 	
 	var _calc2 = _interopRequireDefault(_calc);
 	
-	var _zoomCursor = __webpack_require__(/*! ./plugins/zoomCursor */ 574);
+	var _zoomCursor = __webpack_require__(/*! ./plugins/zoomCursor */ 575);
 	
 	var _zoomCursor2 = _interopRequireDefault(_zoomCursor);
 	
-	var _grabCursor = __webpack_require__(/*! ./plugins/grabCursor */ 575);
+	var _grabCursor = __webpack_require__(/*! ./plugins/grabCursor */ 576);
 	
 	var _grabCursor2 = _interopRequireDefault(_grabCursor);
 	
-	var _flex = __webpack_require__(/*! ./plugins/flex */ 576);
+	var _flex = __webpack_require__(/*! ./plugins/flex */ 577);
 	
 	var _flex2 = _interopRequireDefault(_flex);
 	
-	var _sizing = __webpack_require__(/*! ./plugins/sizing */ 577);
+	var _sizing = __webpack_require__(/*! ./plugins/sizing */ 578);
 	
 	var _sizing2 = _interopRequireDefault(_sizing);
 	
-	var _gradient = __webpack_require__(/*! ./plugins/gradient */ 578);
+	var _gradient = __webpack_require__(/*! ./plugins/gradient */ 579);
 	
 	var _gradient2 = _interopRequireDefault(_gradient);
 	
-	var _transition = __webpack_require__(/*! ./plugins/transition */ 579);
+	var _transition = __webpack_require__(/*! ./plugins/transition */ 580);
 	
 	var _transition2 = _interopRequireDefault(_transition);
 	
-	var _flexboxIE = __webpack_require__(/*! ./plugins/flexboxIE */ 581);
+	var _flexboxIE = __webpack_require__(/*! ./plugins/flexboxIE */ 582);
 	
 	var _flexboxIE2 = _interopRequireDefault(_flexboxIE);
 	
-	var _flexboxOld = __webpack_require__(/*! ./plugins/flexboxOld */ 582);
+	var _flexboxOld = __webpack_require__(/*! ./plugins/flexboxOld */ 583);
 	
 	var _flexboxOld2 = _interopRequireDefault(_flexboxOld);
 	
@@ -86524,7 +86581,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 553 */
+/* 554 */
 /*!*************************************************************************!*\
   !*** ./~/flexbox-react/~/inline-style-prefixer/lib/static/prefixAll.js ***!
   \*************************************************************************/
@@ -86537,43 +86594,43 @@
 	});
 	exports.default = prefixAll;
 	
-	var _prefixProps = __webpack_require__(/*! ./prefixProps */ 554);
+	var _prefixProps = __webpack_require__(/*! ./prefixProps */ 555);
 	
 	var _prefixProps2 = _interopRequireDefault(_prefixProps);
 	
-	var _capitalizeString = __webpack_require__(/*! ../utils/capitalizeString */ 555);
+	var _capitalizeString = __webpack_require__(/*! ../utils/capitalizeString */ 556);
 	
 	var _capitalizeString2 = _interopRequireDefault(_capitalizeString);
 	
-	var _calc = __webpack_require__(/*! ./plugins/calc */ 556);
+	var _calc = __webpack_require__(/*! ./plugins/calc */ 557);
 	
 	var _calc2 = _interopRequireDefault(_calc);
 	
-	var _cursor = __webpack_require__(/*! ./plugins/cursor */ 559);
+	var _cursor = __webpack_require__(/*! ./plugins/cursor */ 560);
 	
 	var _cursor2 = _interopRequireDefault(_cursor);
 	
-	var _flex = __webpack_require__(/*! ./plugins/flex */ 560);
+	var _flex = __webpack_require__(/*! ./plugins/flex */ 561);
 	
 	var _flex2 = _interopRequireDefault(_flex);
 	
-	var _sizing = __webpack_require__(/*! ./plugins/sizing */ 561);
+	var _sizing = __webpack_require__(/*! ./plugins/sizing */ 562);
 	
 	var _sizing2 = _interopRequireDefault(_sizing);
 	
-	var _gradient = __webpack_require__(/*! ./plugins/gradient */ 562);
+	var _gradient = __webpack_require__(/*! ./plugins/gradient */ 563);
 	
 	var _gradient2 = _interopRequireDefault(_gradient);
 	
-	var _transition = __webpack_require__(/*! ./plugins/transition */ 563);
+	var _transition = __webpack_require__(/*! ./plugins/transition */ 564);
 	
 	var _transition2 = _interopRequireDefault(_transition);
 	
-	var _flexboxIE = __webpack_require__(/*! ./plugins/flexboxIE */ 565);
+	var _flexboxIE = __webpack_require__(/*! ./plugins/flexboxIE */ 566);
 	
 	var _flexboxIE2 = _interopRequireDefault(_flexboxIE);
 	
-	var _flexboxOld = __webpack_require__(/*! ./plugins/flexboxOld */ 566);
+	var _flexboxOld = __webpack_require__(/*! ./plugins/flexboxOld */ 567);
 	
 	var _flexboxOld2 = _interopRequireDefault(_flexboxOld);
 	
@@ -86639,7 +86696,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 554 */
+/* 555 */
 /*!***************************************************************************!*\
   !*** ./~/flexbox-react/~/inline-style-prefixer/lib/static/prefixProps.js ***!
   \***************************************************************************/
@@ -86654,7 +86711,7 @@
 	module.exports = exports["default"];
 
 /***/ },
-/* 555 */
+/* 556 */
 /*!*******************************************************************************!*\
   !*** ./~/flexbox-react/~/inline-style-prefixer/lib/utils/capitalizeString.js ***!
   \*******************************************************************************/
@@ -86674,7 +86731,7 @@
 	module.exports = exports["default"];
 
 /***/ },
-/* 556 */
+/* 557 */
 /*!****************************************************************************!*\
   !*** ./~/flexbox-react/~/inline-style-prefixer/lib/static/plugins/calc.js ***!
   \****************************************************************************/
@@ -86687,11 +86744,11 @@
 	});
 	exports.default = calc;
 	
-	var _joinPrefixedValue = __webpack_require__(/*! ../../utils/joinPrefixedValue */ 557);
+	var _joinPrefixedValue = __webpack_require__(/*! ../../utils/joinPrefixedValue */ 558);
 	
 	var _joinPrefixedValue2 = _interopRequireDefault(_joinPrefixedValue);
 	
-	var _isPrefixedValue = __webpack_require__(/*! ../../utils/isPrefixedValue */ 558);
+	var _isPrefixedValue = __webpack_require__(/*! ../../utils/isPrefixedValue */ 559);
 	
 	var _isPrefixedValue2 = _interopRequireDefault(_isPrefixedValue);
 	
@@ -86707,7 +86764,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 557 */
+/* 558 */
 /*!********************************************************************************!*\
   !*** ./~/flexbox-react/~/inline-style-prefixer/lib/utils/joinPrefixedValue.js ***!
   \********************************************************************************/
@@ -86735,7 +86792,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 558 */
+/* 559 */
 /*!******************************************************************************!*\
   !*** ./~/flexbox-react/~/inline-style-prefixer/lib/utils/isPrefixedValue.js ***!
   \******************************************************************************/
@@ -86756,7 +86813,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 559 */
+/* 560 */
 /*!******************************************************************************!*\
   !*** ./~/flexbox-react/~/inline-style-prefixer/lib/static/plugins/cursor.js ***!
   \******************************************************************************/
@@ -86769,7 +86826,7 @@
 	});
 	exports.default = cursor;
 	
-	var _joinPrefixedValue = __webpack_require__(/*! ../../utils/joinPrefixedValue */ 557);
+	var _joinPrefixedValue = __webpack_require__(/*! ../../utils/joinPrefixedValue */ 558);
 	
 	var _joinPrefixedValue2 = _interopRequireDefault(_joinPrefixedValue);
 	
@@ -86790,7 +86847,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 560 */
+/* 561 */
 /*!****************************************************************************!*\
   !*** ./~/flexbox-react/~/inline-style-prefixer/lib/static/plugins/flex.js ***!
   \****************************************************************************/
@@ -86814,7 +86871,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 561 */
+/* 562 */
 /*!******************************************************************************!*\
   !*** ./~/flexbox-react/~/inline-style-prefixer/lib/static/plugins/sizing.js ***!
   \******************************************************************************/
@@ -86827,7 +86884,7 @@
 	});
 	exports.default = sizing;
 	
-	var _joinPrefixedValue = __webpack_require__(/*! ../../utils/joinPrefixedValue */ 557);
+	var _joinPrefixedValue = __webpack_require__(/*! ../../utils/joinPrefixedValue */ 558);
 	
 	var _joinPrefixedValue2 = _interopRequireDefault(_joinPrefixedValue);
 	
@@ -86858,7 +86915,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 562 */
+/* 563 */
 /*!********************************************************************************!*\
   !*** ./~/flexbox-react/~/inline-style-prefixer/lib/static/plugins/gradient.js ***!
   \********************************************************************************/
@@ -86871,11 +86928,11 @@
 	});
 	exports.default = gradient;
 	
-	var _joinPrefixedValue = __webpack_require__(/*! ../../utils/joinPrefixedValue */ 557);
+	var _joinPrefixedValue = __webpack_require__(/*! ../../utils/joinPrefixedValue */ 558);
 	
 	var _joinPrefixedValue2 = _interopRequireDefault(_joinPrefixedValue);
 	
-	var _isPrefixedValue = __webpack_require__(/*! ../../utils/isPrefixedValue */ 558);
+	var _isPrefixedValue = __webpack_require__(/*! ../../utils/isPrefixedValue */ 559);
 	
 	var _isPrefixedValue2 = _interopRequireDefault(_isPrefixedValue);
 	
@@ -86891,7 +86948,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 563 */
+/* 564 */
 /*!**********************************************************************************!*\
   !*** ./~/flexbox-react/~/inline-style-prefixer/lib/static/plugins/transition.js ***!
   \**********************************************************************************/
@@ -86904,19 +86961,19 @@
 	});
 	exports.default = transition;
 	
-	var _hyphenateStyleName = __webpack_require__(/*! hyphenate-style-name */ 564);
+	var _hyphenateStyleName = __webpack_require__(/*! hyphenate-style-name */ 565);
 	
 	var _hyphenateStyleName2 = _interopRequireDefault(_hyphenateStyleName);
 	
-	var _capitalizeString = __webpack_require__(/*! ../../utils/capitalizeString */ 555);
+	var _capitalizeString = __webpack_require__(/*! ../../utils/capitalizeString */ 556);
 	
 	var _capitalizeString2 = _interopRequireDefault(_capitalizeString);
 	
-	var _isPrefixedValue = __webpack_require__(/*! ../../utils/isPrefixedValue */ 558);
+	var _isPrefixedValue = __webpack_require__(/*! ../../utils/isPrefixedValue */ 559);
 	
 	var _isPrefixedValue2 = _interopRequireDefault(_isPrefixedValue);
 	
-	var _prefixProps = __webpack_require__(/*! ../prefixProps */ 554);
+	var _prefixProps = __webpack_require__(/*! ../prefixProps */ 555);
 	
 	var _prefixProps2 = _interopRequireDefault(_prefixProps);
 	
@@ -86981,7 +87038,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 564 */
+/* 565 */
 /*!*********************************************************************************!*\
   !*** ./~/flexbox-react/~/inline-style-prefixer/~/hyphenate-style-name/index.js ***!
   \*********************************************************************************/
@@ -87006,7 +87063,7 @@
 
 
 /***/ },
-/* 565 */
+/* 566 */
 /*!*********************************************************************************!*\
   !*** ./~/flexbox-react/~/inline-style-prefixer/lib/static/plugins/flexboxIE.js ***!
   \*********************************************************************************/
@@ -87046,7 +87103,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 566 */
+/* 567 */
 /*!**********************************************************************************!*\
   !*** ./~/flexbox-react/~/inline-style-prefixer/lib/static/plugins/flexboxOld.js ***!
   \**********************************************************************************/
@@ -87090,7 +87147,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 567 */
+/* 568 */
 /*!************************************************************************************!*\
   !*** ./~/flexbox-react/~/inline-style-prefixer/lib/utils/getBrowserInformation.js ***!
   \************************************************************************************/
@@ -87102,7 +87159,7 @@
 	  value: true
 	});
 	
-	var _bowser = __webpack_require__(/*! bowser */ 568);
+	var _bowser = __webpack_require__(/*! bowser */ 569);
 	
 	var _bowser2 = _interopRequireDefault(_bowser);
 	
@@ -87206,7 +87263,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 568 */
+/* 569 */
 /*!************************************************************************!*\
   !*** ./~/flexbox-react/~/inline-style-prefixer/~/bowser/src/bowser.js ***!
   \************************************************************************/
@@ -87220,7 +87277,7 @@
 	
 	!function (name, definition) {
 	  if (typeof module != 'undefined' && module.exports) module.exports = definition()
-	  else if (true) __webpack_require__(/*! !webpack amd define */ 569)(name, definition)
+	  else if (true) __webpack_require__(/*! !webpack amd define */ 570)(name, definition)
 	  else this[name] = definition()
 	}('bowser', function () {
 	  /**
@@ -87795,7 +87852,7 @@
 
 
 /***/ },
-/* 569 */
+/* 570 */
 /*!***************************************!*\
   !*** (webpack)/buildin/amd-define.js ***!
   \***************************************/
@@ -87805,7 +87862,7 @@
 
 
 /***/ },
-/* 570 */
+/* 571 */
 /*!***********************************************************************************!*\
   !*** ./~/flexbox-react/~/inline-style-prefixer/lib/utils/getPrefixedKeyframes.js ***!
   \***********************************************************************************/
@@ -87833,7 +87890,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 571 */
+/* 572 */
 /*!********************************************************************!*\
   !*** ./~/flexbox-react/~/inline-style-prefixer/lib/prefixProps.js ***!
   \********************************************************************/
@@ -87848,7 +87905,7 @@
 	module.exports = exports["default"];
 
 /***/ },
-/* 572 */
+/* 573 */
 /*!*********************************************************************!*\
   !*** ./~/flexbox-react/~/inline-style-prefixer/lib/plugins/calc.js ***!
   \*********************************************************************/
@@ -87861,7 +87918,7 @@
 	});
 	exports.default = calc;
 	
-	var _getPrefixedValue = __webpack_require__(/*! ../utils/getPrefixedValue */ 573);
+	var _getPrefixedValue = __webpack_require__(/*! ../utils/getPrefixedValue */ 574);
 	
 	var _getPrefixedValue2 = _interopRequireDefault(_getPrefixedValue);
 	
@@ -87885,7 +87942,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 573 */
+/* 574 */
 /*!*******************************************************************************!*\
   !*** ./~/flexbox-react/~/inline-style-prefixer/lib/utils/getPrefixedValue.js ***!
   \*******************************************************************************/
@@ -87904,7 +87961,7 @@
 	module.exports = exports["default"];
 
 /***/ },
-/* 574 */
+/* 575 */
 /*!***************************************************************************!*\
   !*** ./~/flexbox-react/~/inline-style-prefixer/lib/plugins/zoomCursor.js ***!
   \***************************************************************************/
@@ -87917,7 +87974,7 @@
 	});
 	exports.default = zoomCursor;
 	
-	var _getPrefixedValue = __webpack_require__(/*! ../utils/getPrefixedValue */ 573);
+	var _getPrefixedValue = __webpack_require__(/*! ../utils/getPrefixedValue */ 574);
 	
 	var _getPrefixedValue2 = _interopRequireDefault(_getPrefixedValue);
 	
@@ -87943,7 +88000,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 575 */
+/* 576 */
 /*!***************************************************************************!*\
   !*** ./~/flexbox-react/~/inline-style-prefixer/lib/plugins/grabCursor.js ***!
   \***************************************************************************/
@@ -87956,7 +88013,7 @@
 	});
 	exports.default = grabCursor;
 	
-	var _getPrefixedValue = __webpack_require__(/*! ../utils/getPrefixedValue */ 573);
+	var _getPrefixedValue = __webpack_require__(/*! ../utils/getPrefixedValue */ 574);
 	
 	var _getPrefixedValue2 = _interopRequireDefault(_getPrefixedValue);
 	
@@ -87981,7 +88038,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 576 */
+/* 577 */
 /*!*********************************************************************!*\
   !*** ./~/flexbox-react/~/inline-style-prefixer/lib/plugins/flex.js ***!
   \*********************************************************************/
@@ -87994,7 +88051,7 @@
 	});
 	exports.default = flex;
 	
-	var _getPrefixedValue = __webpack_require__(/*! ../utils/getPrefixedValue */ 573);
+	var _getPrefixedValue = __webpack_require__(/*! ../utils/getPrefixedValue */ 574);
 	
 	var _getPrefixedValue2 = _interopRequireDefault(_getPrefixedValue);
 	
@@ -88020,7 +88077,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 577 */
+/* 578 */
 /*!***********************************************************************!*\
   !*** ./~/flexbox-react/~/inline-style-prefixer/lib/plugins/sizing.js ***!
   \***********************************************************************/
@@ -88033,7 +88090,7 @@
 	});
 	exports.default = sizing;
 	
-	var _getPrefixedValue = __webpack_require__(/*! ../utils/getPrefixedValue */ 573);
+	var _getPrefixedValue = __webpack_require__(/*! ../utils/getPrefixedValue */ 574);
 	
 	var _getPrefixedValue2 = _interopRequireDefault(_getPrefixedValue);
 	
@@ -88073,7 +88130,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 578 */
+/* 579 */
 /*!*************************************************************************!*\
   !*** ./~/flexbox-react/~/inline-style-prefixer/lib/plugins/gradient.js ***!
   \*************************************************************************/
@@ -88086,7 +88143,7 @@
 	});
 	exports.default = gradient;
 	
-	var _getPrefixedValue = __webpack_require__(/*! ../utils/getPrefixedValue */ 573);
+	var _getPrefixedValue = __webpack_require__(/*! ../utils/getPrefixedValue */ 574);
 	
 	var _getPrefixedValue2 = _interopRequireDefault(_getPrefixedValue);
 	
@@ -88112,7 +88169,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 579 */
+/* 580 */
 /*!***************************************************************************!*\
   !*** ./~/flexbox-react/~/inline-style-prefixer/lib/plugins/transition.js ***!
   \***************************************************************************/
@@ -88128,11 +88185,11 @@
 	
 	exports.default = transition;
 	
-	var _hyphenateStyleName = __webpack_require__(/*! hyphenate-style-name */ 564);
+	var _hyphenateStyleName = __webpack_require__(/*! hyphenate-style-name */ 565);
 	
 	var _hyphenateStyleName2 = _interopRequireDefault(_hyphenateStyleName);
 	
-	var _unprefixProperty = __webpack_require__(/*! ../utils/unprefixProperty */ 580);
+	var _unprefixProperty = __webpack_require__(/*! ../utils/unprefixProperty */ 581);
 	
 	var _unprefixProperty2 = _interopRequireDefault(_unprefixProperty);
 	
@@ -88181,7 +88238,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 580 */
+/* 581 */
 /*!*******************************************************************************!*\
   !*** ./~/flexbox-react/~/inline-style-prefixer/lib/utils/unprefixProperty.js ***!
   \*******************************************************************************/
@@ -88201,7 +88258,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 581 */
+/* 582 */
 /*!**************************************************************************!*\
   !*** ./~/flexbox-react/~/inline-style-prefixer/lib/plugins/flexboxIE.js ***!
   \**************************************************************************/
@@ -88214,7 +88271,7 @@
 	});
 	exports.default = flexboxIE;
 	
-	var _getPrefixedValue = __webpack_require__(/*! ../utils/getPrefixedValue */ 573);
+	var _getPrefixedValue = __webpack_require__(/*! ../utils/getPrefixedValue */ 574);
 	
 	var _getPrefixedValue2 = _interopRequireDefault(_getPrefixedValue);
 	
@@ -88268,7 +88325,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 582 */
+/* 583 */
 /*!***************************************************************************!*\
   !*** ./~/flexbox-react/~/inline-style-prefixer/lib/plugins/flexboxOld.js ***!
   \***************************************************************************/
@@ -88281,7 +88338,7 @@
 	});
 	exports.default = flexboxOld;
 	
-	var _getPrefixedValue = __webpack_require__(/*! ../utils/getPrefixedValue */ 573);
+	var _getPrefixedValue = __webpack_require__(/*! ../utils/getPrefixedValue */ 574);
 	
 	var _getPrefixedValue2 = _interopRequireDefault(_getPrefixedValue);
 	
@@ -88342,7 +88399,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 583 */
+/* 584 */
 /*!******************************************!*\
   !*** ./~/flexbox-react/dist/FlexItem.js ***!
   \******************************************/
@@ -88360,7 +88417,7 @@
 	
 	var _react2 = _interopRequireDefault(_react);
 	
-	var _inlineStylePrefixer = __webpack_require__(/*! inline-style-prefixer */ 552);
+	var _inlineStylePrefixer = __webpack_require__(/*! inline-style-prefixer */ 553);
 	
 	var _inlineStylePrefixer2 = _interopRequireDefault(_inlineStylePrefixer);
 	
@@ -88459,7 +88516,7 @@
 	exports.default = FlexItem;
 
 /***/ },
-/* 584 */
+/* 585 */
 /*!***************************************************************!*\
   !*** ./~/react-timeseries-charts/lib/components/Resizable.js ***!
   \***************************************************************/
@@ -88518,7 +88575,7 @@
 	     */
 
 /***/ },
-/* 585 */
+/* 586 */
 /*!***************************************************************!*\
   !*** ./~/react-timeseries-charts/lib/components/LabelAxis.js ***!
   \***************************************************************/
@@ -88534,9 +88591,9 @@
 	
 	var _react2 = _interopRequireDefault(_react);
 	
-	var _d3Format = __webpack_require__(/*! d3-format */ 529);
+	var _d3Format = __webpack_require__(/*! d3-format */ 530);
 	
-	var _ValueList = __webpack_require__(/*! ./ValueList */ 519);
+	var _ValueList = __webpack_require__(/*! ./ValueList */ 520);
 	
 	var _ValueList2 = _interopRequireDefault(_ValueList);
 	
@@ -88710,7 +88767,7 @@
 	     */
 
 /***/ },
-/* 586 */
+/* 587 */
 /*!************************************************************!*\
   !*** ./~/react-timeseries-charts/lib/components/Legend.js ***!
   \************************************************************/
@@ -88730,13 +88787,13 @@
 	
 	var _underscore2 = _interopRequireDefault(_underscore);
 	
-	var _flexboxReact = __webpack_require__(/*! flexbox-react */ 550);
+	var _flexboxReact = __webpack_require__(/*! flexbox-react */ 551);
 	
-	var _merge = __webpack_require__(/*! merge */ 510);
+	var _merge = __webpack_require__(/*! merge */ 511);
 	
 	var _merge2 = _interopRequireDefault(_merge);
 	
-	var _styler = __webpack_require__(/*! ../js/styler */ 511);
+	var _styler = __webpack_require__(/*! ../js/styler */ 512);
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
@@ -89118,7 +89175,7 @@
 	});
 
 /***/ },
-/* 587 */
+/* 588 */
 /*!***************************************************************!*\
   !*** ./~/react-timeseries-charts/lib/components/LineChart.js ***!
   \***************************************************************/
@@ -89138,17 +89195,17 @@
 	
 	var _underscore2 = _interopRequireDefault(_underscore);
 	
-	var _d3Shape = __webpack_require__(/*! d3-shape */ 508);
+	var _d3Shape = __webpack_require__(/*! d3-shape */ 509);
 	
 	var _d3Shape2 = _interopRequireDefault(_d3Shape);
 	
-	var _merge = __webpack_require__(/*! merge */ 510);
+	var _merge = __webpack_require__(/*! merge */ 511);
 	
 	var _merge2 = _interopRequireDefault(_merge);
 	
 	var _pondjs = __webpack_require__(/*! pondjs */ 345);
 	
-	var _styler = __webpack_require__(/*! ../js/styler */ 511);
+	var _styler = __webpack_require__(/*! ../js/styler */ 512);
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
@@ -89534,7 +89591,7 @@
 	});
 
 /***/ },
-/* 588 */
+/* 589 */
 /*!******************************************************************!*\
   !*** ./~/react-timeseries-charts/lib/components/ScatterChart.js ***!
   \******************************************************************/
@@ -89570,17 +89627,17 @@
 	
 	var _underscore2 = _interopRequireDefault(_underscore);
 	
-	var _merge = __webpack_require__(/*! merge */ 510);
+	var _merge = __webpack_require__(/*! merge */ 511);
 	
 	var _merge2 = _interopRequireDefault(_merge);
 	
 	var _pondjs = __webpack_require__(/*! pondjs */ 345);
 	
-	var _EventMarker = __webpack_require__(/*! ./EventMarker */ 516);
+	var _EventMarker = __webpack_require__(/*! ./EventMarker */ 517);
 	
 	var _EventMarker2 = _interopRequireDefault(_EventMarker);
 	
-	var _styler = __webpack_require__(/*! ../js/styler */ 511);
+	var _styler = __webpack_require__(/*! ../js/styler */ 512);
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
@@ -90030,7 +90087,7 @@
 	});
 
 /***/ },
-/* 589 */
+/* 590 */
 /*!*********************************************************************!*\
   !*** ./~/react-timeseries-charts/lib/components/TimeRangeMarker.js ***!
   \*********************************************************************/
@@ -90127,7 +90184,7 @@
 	});
 
 /***/ },
-/* 590 */
+/* 591 */
 /*!***************************************************************!*\
   !*** ./~/react-timeseries-charts/lib/components/ValueAxis.js ***!
   \***************************************************************/
@@ -90211,7 +90268,7 @@
 	     */
 
 /***/ },
-/* 591 */
+/* 592 */
 /*!*************************!*\
   !*** ./src/SIValue.jsx ***!
   \*************************/
@@ -90262,7 +90319,7 @@
 	});
 
 /***/ },
-/* 592 */
+/* 593 */
 /*!************************!*\
   !*** ./src/chart1.css ***!
   \************************/
@@ -90271,10 +90328,10 @@
 	// style-loader: Adds some css to the DOM by adding a <style> tag
 	
 	// load the styles
-	var content = __webpack_require__(/*! !./../~/css-loader!./chart1.css */ 593);
+	var content = __webpack_require__(/*! !./../~/css-loader!./chart1.css */ 594);
 	if(typeof content === 'string') content = [[module.id, content, '']];
 	// add the styles to the DOM
-	var update = __webpack_require__(/*! ./../~/style-loader/addStyles.js */ 595)(content, {});
+	var update = __webpack_require__(/*! ./../~/style-loader/addStyles.js */ 596)(content, {});
 	if(content.locals) module.exports = content.locals;
 	// Hot Module Replacement
 	if(false) {
@@ -90291,17 +90348,17 @@
 	}
 
 /***/ },
-/* 593 */
+/* 594 */
 /*!***************************************!*\
   !*** ./~/css-loader!./src/chart1.css ***!
   \***************************************/
 /***/ function(module, exports, __webpack_require__) {
 
-	exports = module.exports = __webpack_require__(/*! ./~/css-loader/cssToString.js */ 594)();
+	exports = module.exports = __webpack_require__(/*! ./~/css-loader/cssToString.js */ 595)();
 	exports.push([module.id, "rect.extent {\n    fill: steelblue;\n    opacity: 0.25;\n}\n#graphContainer { \n    padding: 0 1em;\n}\n#brushContainer .yaxis > .tick {\n    display: none;\n}\n\n#brushContainer .yaxis > .tick:first-child {\n    display: block;\n}\n\n#brushContainer .yaxis > .tick:last-of-type {\n    display: block;\n}\n\n.yaxis text.yaxis-label, .yaxis > text {\n    text-anchor: middle;\n    transform: rotate(-90deg) \n        translate(-75px, -80px);\n    font-size:14px;\n}\n\n#brushContainer .yaxis text.yaxis-label {\n    transform: rotate(0deg) \n        translate(-10px, 9px);\n    font-size:10px;\n}\n\n#graphContainer .overview {\n    padding:0.5em 0.5em 0.5em 1em;\n}\n\n.overview--pad {\n    padding:2em 0;\n}\n\nbody {\n    padding: 0;\n}\n\n#graphContainer .button-reportrange {\n    \n    margin:0 0.7em 0 0.7em; \n    padding:0 0.7em 0 0.7em;\n}\n\n#graphContainer .button-timechange {\n    min-width:37px;\n\n}\n\n", ""]);
 
 /***/ },
-/* 594 */
+/* 595 */
 /*!*************************************!*\
   !*** ./~/css-loader/cssToString.js ***!
   \*************************************/
@@ -90325,7 +90382,7 @@
 	}
 
 /***/ },
-/* 595 */
+/* 596 */
 /*!*************************************!*\
   !*** ./~/style-loader/addStyles.js ***!
   \*************************************/
@@ -90580,7 +90637,7 @@
 
 
 /***/ },
-/* 596 */
+/* 597 */
 /*!*****************************!*\
   !*** ./src/chartLayout.jsx ***!
   \*****************************/
@@ -90604,17 +90661,17 @@
 	
 	var _chart2 = _interopRequireDefault(_chart);
 	
-	var _ChartHeader = __webpack_require__(/*! ./ChartHeader */ 597);
+	var _ChartHeader = __webpack_require__(/*! ./ChartHeader */ 616);
 	
 	var _ChartHeader2 = _interopRequireDefault(_ChartHeader);
 	
-	var _HostInfoStore = __webpack_require__(/*! ./HostInfoStore */ 598);
+	var _HostInfoStore = __webpack_require__(/*! ./HostInfoStore */ 617);
 	
 	var _HostInfoStore2 = _interopRequireDefault(_HostInfoStore);
 	
-	__webpack_require__(/*! ../css/graphs.css */ 600);
+	__webpack_require__(/*! ../css/graphs.css */ 598);
 	
-	__webpack_require__(/*! ../../toolkit/web-ng/root/js/app.js */ 602);
+	__webpack_require__(/*! ../../toolkit/web-ng/root/js/app.js */ 622);
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
@@ -90754,6 +90811,7 @@
 	            end: newState.end,
 	            timeframe: newState.timeframe,
 	            ma_url: newState.ma_url,
+	            agent: newState.agent,
 	            itemsToHide: {},
 	            tool: newState.tool,
 	            ipversion: newState.ipversion,
@@ -90840,7 +90898,7 @@
 	                            _react2.default.createElement(
 	                                "a",
 	                                { href: "#", onClick: this.toggleType.bind(this, { eventType: "throughput", protocol: "tcp" }) },
-	                                "Throughput (TCP)"
+	                                "Tput (TCP)"
 	                            )
 	                        ),
 	                        _react2.default.createElement(
@@ -90849,7 +90907,7 @@
 	                            _react2.default.createElement(
 	                                "a",
 	                                { href: "#", onClick: this.toggleType.bind(this, { eventType: "throughput", protocol: "udp" }) },
-	                                "Throughput (UDP)"
+	                                "Tput (UDP)"
 	                            )
 	                        ),
 	                        _react2.default.createElement(
@@ -90858,7 +90916,7 @@
 	                            _react2.default.createElement(
 	                                "a",
 	                                { href: "#", onClick: this.toggleType.bind(this, { eventType: "packet-loss-rate", mainTestType: "throughput" }) },
-	                                "Loss (UDP tput)"
+	                                "Loss (UDP)"
 	                            )
 	                        ),
 	                        _react2.default.createElement(
@@ -91101,6 +91159,7 @@
 	                        start: this.state.start,
 	                        end: this.state.end,
 	                        ma_url: this.state.ma_url,
+	                        agent: this.state.agent,
 	                        tool: this.state.tool,
 	                        ipversion: this.state.ipversion,
 	                        updateHiddenItems: this.handleHiddenItemsChange,
@@ -91181,6 +91240,7 @@
 	        var end = defaults.end;
 	        var timeframe = defaults.timeframe;
 	        var tool = qs.tool;
+	        var agent = qs.agent || [];
 	        var ipversion = void 0;
 	        //let timeRange = this.getTimeVars( defaults.timeframe );
 	        //
@@ -91209,12 +91269,18 @@
 	            ma_urls = [ma_urls];
 	        }
 	
+	        if (!$.isArray(agent)) {
+	            agent = [agent];
+	        }
+	
 	        for (var _i in ma_urls) {
 	            var ma_url = ma_urls[_i];
 	            var found = ma_url.match(localhostRe);
 	            var host = location.host;
 	            if (found !== null) {
 	                console.log("ma_url", ma_url);
+	
+	                // replace 'localhost' with the local hostname
 	                var new_url = ma_url.replace(localhostRe, host);
 	
 	                console.log('localhost URL found, rewriting to host', host, "new ma url", new_url);
@@ -91228,6 +91294,7 @@
 	            end: end,
 	            ma_url: ma_urls,
 	            tool: tool,
+	            agent: agent,
 	            ipversion: ipversion,
 	            timeframe: timeframe,
 	            hashValues: hashObj
@@ -91244,907 +91311,7 @@
 	});
 
 /***/ },
-/* 597 */
-/*!*****************************!*\
-  !*** ./src/ChartHeader.jsx ***!
-  \*****************************/
-/***/ function(module, exports, __webpack_require__) {
-
-	"use strict";
-	
-	Object.defineProperty(exports, "__esModule", {
-	    value: true
-	});
-	
-	var _react = __webpack_require__(/*! react */ 1);
-	
-	var _react2 = _interopRequireDefault(_react);
-	
-	var _HostInfoStore = __webpack_require__(/*! ./HostInfoStore */ 598);
-	
-	var _HostInfoStore2 = _interopRequireDefault(_HostInfoStore);
-	
-	var _InterfaceInfoStore = __webpack_require__(/*! ./InterfaceInfoStore */ 599);
-	
-	var _InterfaceInfoStore2 = _interopRequireDefault(_InterfaceInfoStore);
-	
-	var _SIValue = __webpack_require__(/*! ./SIValue */ 591);
-	
-	var _SIValue2 = _interopRequireDefault(_SIValue);
-	
-	__webpack_require__(/*! ../css/graphs.css */ 600);
-	
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-	
-	var EventEmitter = __webpack_require__(/*! events */ 505).EventEmitter;
-	
-	var emitter = new EventEmitter();
-	
-	var moment = __webpack_require__(/*! moment-timezone */ 619);
-	
-	exports.default = _react2.default.createClass({
-	    displayName: "ChartHeader",
-	
-	    hostInfo: [],
-	    getInitialState: function getInitialState() {
-	        return {
-	            showHostSelectors: false,
-	            start: this.props.start,
-	            end: this.props.end,
-	            timeframe: this.props.timeframe,
-	            interfaceInfo: null,
-	            traceInfo: []
-	        };
-	    },
-	    getTime: function getTime() {
-	        var obj = {
-	            "start": this.state.start,
-	            "end": this.state.end,
-	            "timeframe": this.state.timeframe
-	        };
-	        return obj;
-	    },
-	    render: function render() {
-	        var startDate = new Date(this.state.start * 1000);
-	        var endDate = new Date(this.state.end * 1000);
-	
-	        var tzRe = /\(([^)]+)\)/;
-	        var startTZ = void 0;
-	        var endTZ = void 0;
-	        if (startDate.toString() == "Invalid Date") {
-	            //startTZ = "";
-	            //endTZ = "";
-	
-	        } else {
-	            startTZ = tzRe.exec(startDate.toString())[1];
-	            endTZ = tzRe.exec(endDate.toString())[1];
-	        }
-	
-	        var date = "ddd MM/DD/YYYY";
-	        var time = "HH:mm:ss";
-	        //let time = "HH:mm:ss [GMT-]ZZ";
-	
-	        var startMoment = moment(startDate);
-	        var endMoment = moment(endDate);
-	
-	        var startOffset = startMoment.utcOffset() / 60;
-	        if (startOffset >= 0) {
-	            startOffset = "+" + startOffset;
-	        }
-	        var endOffset = endMoment.utcOffset() / 60;
-	        if (endOffset >= 0) {
-	            endOffset = "+" + endOffset;
-	        }
-	
-	        console.log("startMoment", startMoment);
-	        //let startOut = startMoment.format( format );
-	        var endOut = endMoment.format(date);
-	
-	        return _react2.default.createElement(
-	            "div",
-	            { className: "chartHeader" },
-	            _react2.default.createElement(
-	                "div",
-	                { className: "overview overview--pad" },
-	                _react2.default.createElement(
-	                    "div",
-	                    { className: "row" },
-	                    _react2.default.createElement(
-	                        "div",
-	                        { className: "medium-4 columns" },
-	                        this.renderHostList("source", "Source")
-	                    ),
-	                    _react2.default.createElement(
-	                        "div",
-	                        { className: "medium-4 columns" },
-	                        this.renderHostList("dest", "Destination")
-	                    ),
-	                    _react2.default.createElement(
-	                        "div",
-	                        { className: "medium-4 columns" },
-	                        _react2.default.createElement(
-	                            "label",
-	                            { className: "hostLabel" },
-	                            "Report range"
-	                        ),
-	                        _react2.default.createElement(
-	                            "button",
-	                            { id: "headerTimePrevious", className: "button-quiet button-timechange", onClick: this.handlePageChange.bind(this, "previous") },
-	                            _react2.default.createElement("i", { className: "fa fa-arrow-left", "aria-hidden": "true" })
-	                        ),
-	                        _react2.default.createElement(
-	                            "select",
-	                            { className: "no-margin", name: "timeperiod", id: "timeperiod", onChange: this.changeTimePeriod, value: this.state.timeframe },
-	                            _react2.default.createElement(
-	                                "option",
-	                                { value: "1d" },
-	                                "1 day"
-	                            ),
-	                            _react2.default.createElement(
-	                                "option",
-	                                { value: "3d" },
-	                                "3 days"
-	                            ),
-	                            _react2.default.createElement(
-	                                "option",
-	                                { value: "1w" },
-	                                "1 week"
-	                            ),
-	                            _react2.default.createElement(
-	                                "option",
-	                                { value: "1m" },
-	                                "1 month"
-	                            ),
-	                            _react2.default.createElement(
-	                                "option",
-	                                { value: "1y" },
-	                                "1 year"
-	                            )
-	                        ),
-	                        _react2.default.createElement(
-	                            "button",
-	                            { className: "button-quiet button-timechange", onClick: this.handlePageChange.bind(this, "next") },
-	                            _react2.default.createElement("i", { className: "fa fa-arrow-right", "aria-hidden": "true" })
-	                        ),
-	                        _react2.default.createElement(
-	                            "div",
-	                            null,
-	                            _react2.default.createElement(
-	                                "span",
-	                                { className: "timerange_holder" },
-	                                startMoment.format(date),
-	                                _react2.default.createElement("br", null),
-	                                startMoment.format(time),
-	                                " ",
-	                                startTZ,
-	                                " (GMT",
-	                                startOffset,
-	                                ")"
-	                            ),
-	                            _react2.default.createElement(
-	                                "span",
-	                                { className: "timerange_holder" },
-	                                "to"
-	                            ),
-	                            _react2.default.createElement(
-	                                "span",
-	                                { className: "timerange_holder" },
-	                                endMoment.format(date),
-	                                _react2.default.createElement("br", null),
-	                                endMoment.format(time),
-	                                " ",
-	                                endTZ,
-	                                " (GMT",
-	                                endOffset,
-	                                ")"
-	                            )
-	                        )
-	                    )
-	                ),
-	                " "
-	            ),
-	            " "
-	        ); // End render()
-	    },
-	
-	    changeTimePeriod: function changeTimePeriod(event) {
-	        var period = event.target.value;
-	        var vars = this.getTimeVars(period);
-	        var timeDiff = vars.timeDiff;
-	        var half = timeDiff / 2;
-	        var start = this.state.start;
-	        var end = this.state.end;
-	        var middle = (start + end) / 2;
-	        var now = Math.floor(new Date().getTime() / 1000);
-	        //let newEnd = Math.floor( new Date().getTime() / 1000 );
-	        var newEnd = middle + half;
-	        if (newEnd > now) {
-	            newEnd = now;
-	        }
-	        // convert ms to s
-	        //newEnd = Math.floor( newEnd / 1000 ); 
-	
-	        var newStart = newEnd - timeDiff;
-	
-	        var options = {
-	            timeframe: period,
-	            start: newStart,
-	            end: newEnd
-	        };
-	        this.handleTimerangeChange(options);
-	    },
-	    getTraceURL: function getTraceURL(i) {
-	        // URL from old graphs
-	        //
-	        var trace_data = this.state.traceInfo[i];
-	        if (typeof trace_data == "undefined") {
-	            return;
-	        }
-	        var trace_url = '/perfsonar-traceroute-viewer/index.cgi?';
-	        trace_url += 'mahost=' + trace_data.ma_url;
-	        trace_url += '&stime=yesterday';
-	        trace_url += '&etime=now';
-	        //trace_url += '&tzselect='; // Commented out (allow default to be used)
-	        trace_url += '&epselect=' + trace_data.traceroute_uri;
-	        return trace_url;
-	    },
-	    renderHostList: function renderHostList(type, label) {
-	        if (this.state.showHostSelectors) {
-	            return _react2.default.createElement(
-	                "div",
-	                null,
-	                _react2.default.createElement(
-	                    "label",
-	                    { htmlFor: "source" },
-	                    "Source:"
-	                ),
-	                _react2.default.createElement(
-	                    "select",
-	                    { className: "no-margin", name: "source", id: "source" },
-	                    _react2.default.createElement(
-	                        "option",
-	                        null,
-	                        "Source One"
-	                    ),
-	                    _react2.default.createElement(
-	                        "option",
-	                        null,
-	                        "Source Two"
-	                    ),
-	                    _react2.default.createElement(
-	                        "option",
-	                        null,
-	                        "Source Three"
-	                    )
-	                )
-	            );
-	        } else {
-	            var hostInfo = this.hostInfo;
-	            var hosts = [];
-	            if (hostInfo.length > 0) {
-	                for (var i in hostInfo) {
-	                    var row = hostInfo[i];
-	                    hosts.push(_react2.default.createElement(
-	                        "div",
-	                        { className: "hostname", key: "hostname" + label + i },
-	                        row[type + "_host"]
-	                    ), _react2.default.createElement(
-	                        "div",
-	                        { className: "address", key: "ip" + label + i },
-	                        row[type + "_ip"]
-	                    ), _react2.default.createElement(
-	                        "div",
-	                        { key: "detailedInfo" + label + i },
-	                        this.showDetailedHostInfo(row[type + "_ip"], i)
-	                    ));
-	                }
-	            } else {
-	                hosts.push(_react2.default.createElement("div", { className: "hostname", key: "nohostname" + label }), _react2.default.createElement("div", { className: "address", key: "noaddress" + label }));
-	            }
-	            if (hostInfo.length > 1) {
-	                label += "s";
-	            }
-	            return _react2.default.createElement(
-	                "div",
-	                null,
-	                _react2.default.createElement(
-	                    "div",
-	                    { className: "hostLabel", key: "hostLabel" + label },
-	                    label
-	                ),
-	                hosts
-	            );
-	        }
-	    },
-	    showDetailedHostInfo: function showDetailedHostInfo(host, i) {
-	        var trace = this.state.traceInfo;
-	        var display = "hiddenTrace";
-	        var traceURL = this.getTraceURL(i);
-	        if (i in trace && traceURL != "") {
-	            if (trace[i].has_traceroute == 1) {
-	                display = "blockTrace";
-	            }
-	        }
-	        var details = _InterfaceInfoStore2.default.getInterfaceDetails(host);
-	        var addresses = [];
-	        if ($.isArray(details.addresses)) {
-	            for (var i in details.addresses) {
-	                var address = details.addresses[i];
-	                addresses.push(_react2.default.createElement(
-	                    "div",
-	                    null,
-	                    address
-	                ));
-	            }
-	        } else {
-	            addresses.push(details.addresses);
-	        }
-	        {/* GRAPH: Detailed Host Info*/}
-	        return _react2.default.createElement(
-	            "div",
-	            null,
-	            _react2.default.createElement(
-	                "a",
-	                { className: "js-sidebar-popover-toggle", href: "#" },
-	                "Host info ",
-	                _react2.default.createElement("i", { className: "fa fa-angle-down" })
-	            ),
-	            _react2.default.createElement(
-	                "div",
-	                { className: "sidebar-popover sidebar-popover--overview" },
-	                _react2.default.createElement(
-	                    "a",
-	                    { className: "sidebar-popover__close js-sidebar-popover-close" },
-	                    "Close \xA0",
-	                    _react2.default.createElement("i", { className: "fa fa-close" })
-	                ),
-	                _react2.default.createElement(
-	                    "h4",
-	                    { className: "sidebar-popover__heading" },
-	                    "Host details"
-	                ),
-	                _react2.default.createElement(
-	                    "ul",
-	                    { className: "sidebar-popover__list" },
-	                    _react2.default.createElement(
-	                        "li",
-	                        { className: "sidebar-popover__item" },
-	                        _react2.default.createElement(
-	                            "span",
-	                            { className: "sidebar-popover__param" },
-	                            "Addresses:"
-	                        ),
-	                        _react2.default.createElement(
-	                            "span",
-	                            { className: "sidebar-popover__value" },
-	                            addresses
-	                        )
-	                    ),
-	                    _react2.default.createElement(
-	                        "li",
-	                        { className: "sidebar-popover__item" },
-	                        _react2.default.createElement(
-	                            "span",
-	                            { className: "sidebar-popover__param" },
-	                            "Capacity:"
-	                        ),
-	                        _react2.default.createElement(
-	                            "span",
-	                            { className: "sidebar-popover__value" },
-	                            _react2.default.createElement(_SIValue2.default, { value: details.capacity })
-	                        )
-	                    ),
-	                    _react2.default.createElement(
-	                        "li",
-	                        { className: "sidebar-popover__item" },
-	                        _react2.default.createElement(
-	                            "span",
-	                            { className: "sidebar-popover__param" },
-	                            "MTU:"
-	                        ),
-	                        _react2.default.createElement(
-	                            "span",
-	                            { className: "sidebar-popover__value" },
-	                            details.mtu
-	                        )
-	                    ),
-	                    _react2.default.createElement(
-	                        "li",
-	                        { className: "sidebar-popover__item " + display },
-	                        _react2.default.createElement(
-	                            "span",
-	                            { className: "sidebar-popover__param" },
-	                            _react2.default.createElement(
-	                                "a",
-	                                { href: traceURL, target: "_blank" },
-	                                "View traceroute graph"
-	                            )
-	                        )
-	                    )
-	                )
-	            )
-	        );
-	    },
-	    componentDidMount: function componentDidMount() {
-	        this.setInitialTime();
-	        _HostInfoStore2.default.subscribe(this.updateChartHeader);
-	        _HostInfoStore2.default.subscribeTrace(this.updateTrace);
-	        _HostInfoStore2.default.retrieveTracerouteData(this.props.sources, this.props.dests, this.props.ma_url);
-	        _InterfaceInfoStore2.default.subscribe(this.handleInterfaceData);
-	        _InterfaceInfoStore2.default.retrieveInterfaceInfo(this.props.sources, this.props.dests);
-	    },
-	    handleInterfaceData: function handleInterfaceData() {
-	        var interfaceInfo = _InterfaceInfoStore2.default.getInterfaceInfo();
-	        this.setState({ interfaceInfo: interfaceInfo });
-	
-	        this.updateChartHeader();
-	    },
-	    componentWillUnmount: function componentWillUnmount() {
-	        //this.serverRequest.abort();
-	        _HostInfoStore2.default.unsubscribe(this.updateChartHeader);
-	        _HostInfoStore2.default.unsubscribeTrace(this.updateTrace);
-	        _InterfaceInfoStore2.default.unsubscribe(this.updateChartHeader);
-	    },
-	    updateTrace: function updateTrace() {
-	        var traceInfo = _HostInfoStore2.default.getTraceInfo();
-	        this.setState({ traceInfo: traceInfo });
-	    },
-	    updateChartHeader: function updateChartHeader() {
-	        var hostInfo = _HostInfoStore2.default.getHostInfoData();
-	        this.hostInfo = hostInfo;
-	        this.forceUpdate();
-	    },
-	    handlePageChange: function handlePageChange(direction) {
-	        var timeVars = this.getTimeVars(this.state.timeframe);
-	        var diff = timeVars.timeDiff;
-	        var newStart = void 0;
-	        var newEnd = void 0;
-	        var now = Math.floor(new Date().getTime() / 1000);
-	        if (direction == "next") {
-	            newEnd = this.state.end + diff;
-	            newStart = newEnd - diff;
-	        } else if (direction == "previous") {
-	            newEnd = this.state.end - diff;
-	            newStart = newEnd - diff;
-	        }
-	        if (newStart >= now || newEnd >= now) {
-	            newEnd = now;
-	            newStart = now - diff;
-	        }
-	        var timeframe = this.state.timeframe;
-	        this.handleTimerangeChange({ "start": newStart, "end": newEnd, timeframe: timeframe });
-	    },
-	    handleTimerangeChange: function handleTimerangeChange(options, noupdateURL) {
-	        if (!"timeframe" in options) {
-	            options.timeframe = this.state.timeframe;
-	        }
-	        this.setState(options);
-	        this.props.updateTimerange(options, noupdateURL);
-	        emitter.emit("timerangeChange");
-	        this.forceUpdate();
-	    },
-	    subscribe: function subscribe(callback) {
-	        emitter.on("timerangeChange", callback);
-	    },
-	    unsubscribe: function unsubscribe(callback) {
-	        emitter.off("timerangeChange", callback);
-	    },
-	
-	    setInitialTime: function setInitialTime() {
-	        var options = {};
-	
-	        var timeframe = this.state.timeframe || "1w";
-	        var timeVars = this.getTimeVars(timeframe);
-	        var diff = timeVars.timeDiff;
-	
-	        var now = Math.floor(new Date().getTime() / 1000);
-	        var newEnd = now;
-	        var newStart = newEnd - diff;
-	
-	        if (typeof this.props.start != "undefined") {
-	            newStart = this.props.start;
-	        }
-	        if (typeof this.props.end != "undefined") {
-	            newEnd = this.props.end;
-	        }
-	
-	        //console.log("setting initial time; state: ", this.state);
-	
-	        options.start = newStart;
-	        options.end = newEnd;
-	        options.timeframe = timeframe;
-	
-	        this.handleTimerangeChange(options, true);
-	    },
-	
-	    getTimeVars: function getTimeVars(period) {
-	        var timeDiff = void 0;
-	        var summaryWindow = void 0;
-	        if (period == '4h') {
-	            timeDiff = 60 * 60 * 4;
-	            summaryWindow = 0;
-	        } else if (period == '1d') {
-	            timeDiff = 86400;
-	            summaryWindow = 0;
-	        } else if (period == '3d') {
-	            timeDiff = 86400 * 3;
-	            summaryWindow = 300;
-	        } else if (period == '1w') {
-	            timeDiff = 86400 * 7;
-	            summaryWindow = 3600;
-	        } else if (period == '1m') {
-	            timeDiff = 86400 * 31;
-	            summaryWindow = 86400;
-	        } else if (period == '1y') {
-	            timeDiff = 86400 * 365;
-	            summaryWindow = 86400;
-	        }
-	        var timeRange = {
-	            timeDiff: timeDiff,
-	            summaryWindow: summaryWindow,
-	            timeframe: period
-	
-	        };
-	        return timeRange;
-	    }
-	
-	});
-
-/***/ },
 /* 598 */
-/*!******************************!*\
-  !*** ./src/HostInfoStore.js ***!
-  \******************************/
-/***/ function(module, exports, __webpack_require__) {
-
-	"use strict";
-	
-	var EventEmitter = __webpack_require__(/*! events */ 505).EventEmitter;
-	
-	var emitter = new EventEmitter();
-	
-	module.exports = {
-	
-	    /* Expects an object of hosts like this (keys must be src, dst (can be multiple -- number of sources and dests must match) ): 
-	     * {
-	     *   src: "1.2.3.4,"
-	     *   dst: "2.3.4.5",
-	     * }
-	     * returns host info as
-	     * { 
-	     *   src_ip: "1.2.3.4", 
-	     *   src_host: "hostname.domain"
-	     *   ...
-	     *  }
-	     */
-	    hostInfo: [],
-	    tracerouteReqs: 0,
-	    tracerouteReqsCompleted: 0,
-	    tracerouteInfo: [],
-	    /*
-	    getInitialState() {
-	        return {
-	        };
-	     },
-	    */
-	
-	    retrieveTracerouteData: function retrieveTracerouteData(sources, dests, ma_url) {
-	        var _this = this;
-	
-	        var baseUrl = "cgi-bin/graphData.cgi?action=has_traceroute_data";
-	        baseUrl += "&url=" + ma_url;
-	        if (!$.isArray(sources)) {
-	            sources = [sources];
-	        }
-	        if (!$.isArray(dests)) {
-	            dests = [dests];
-	        }
-	
-	        var _loop = function _loop(i) {
-	            var src = sources[i];
-	            var dst = dests[i];
-	
-	            var url = baseUrl + "&source=" + src;
-	            url += "&dest=" + dst;
-	            console.log("tracerout url");
-	
-	            _this.tracerouteReqs = sources.length;
-	
-	            _this.serverRequest = $.get(url, function (data) {
-	                this.handleTracerouteResponse(data, i);
-	            }.bind(_this));
-	        };
-	
-	        for (var i in sources) {
-	            _loop(i);
-	        }
-	    },
-	    retrieveHostInfo: function retrieveHostInfo(source_input, dest_input) {
-	        var url = "cgi-bin/graphData.cgi?action=hosts";
-	        var sources = void 0;
-	        var dests = void 0;
-	        if (Array.isArray(source_input)) {
-	            sources = source_input;
-	        } else {
-	            sources = [source_input];
-	        }
-	        if (Array.isArray(dest_input)) {
-	            dests = dest_input;
-	        } else {
-	            dests = [dest_input];
-	        }
-	        console.log("sources", sources);
-	        console.log("dests", dests);
-	        for (var i = 0; i < sources.length; i++) {
-	            url += "&src=" + sources[i];
-	            url += "&dest=" + dests[i];
-	        }
-	        console.log("url", url);
-	        this.serverRequest = $.get(url, function (data) {
-	            this.handleHostInfoResponse(data);
-	        }.bind(this));
-	    },
-	    getHostInfoData: function getHostInfoData() {
-	        return this.hostInfo;
-	    },
-	    handleHostInfoResponse: function handleHostInfoResponse(data) {
-	        this.hostInfo = data;
-	        emitter.emit("get");
-	    },
-	    handleTracerouteResponse: function handleTracerouteResponse(data, i) {
-	        //this.tracerouteInfo = data;
-	        console.log("trace data", data, "i", i);
-	        this.tracerouteReqsCompleted++;
-	        this.tracerouteInfo.push(data);
-	        if (this.tracerouteReqsCompleted == this.tracerouteReqs) {
-	            this.mergeTracerouteData();
-	        }
-	    },
-	    mergeTracerouteData: function mergeTracerouteData() {
-	        console.log("trace completed", this.tracerouteInfo);
-	        emitter.emit("getTrace");
-	    },
-	    getTraceInfo: function getTraceInfo() {
-	        return this.tracerouteInfo;
-	    },
-	    subscribeTrace: function subscribeTrace(callback) {
-	        emitter.on("getTrace", callback);
-	    },
-	    unsubscribeTrace: function unsubscribeTrace(callback) {
-	        emitter.off("getTrace", callback);
-	    },
-	    subscribe: function subscribe(callback) {
-	        emitter.on("get", callback);
-	    },
-	    unsubscribe: function unsubscribe(callback) {
-	        emitter.off("get", callback);
-	    }
-	
-	};
-
-/***/ },
-/* 599 */
-/*!***********************************!*\
-  !*** ./src/InterfaceInfoStore.js ***!
-  \***********************************/
-/***/ function(module, exports, __webpack_require__) {
-
-	"use strict";
-	
-	var EventEmitter = __webpack_require__(/*! events */ 505).EventEmitter;
-	
-	var emitter = new EventEmitter();
-	
-	var lsListURL = "cgi-bin/graphData.cgi?action=ls_hosts";
-	var lsQueryURL = "cgi-bin/graphData.cgi?action=interfaces";
-	
-	module.exports = {
-	
-	    /* Expects an object of hosts like this (keys must be src, dst (can be multiple -- number of sources and dests must match) ): 
-	     * {
-	     *   src: "1.2.3.4,"
-	     *   dst: "2.3.4.5",
-	     * }
-	     * Createes a cache keyed on ip addressas
-	     * { 
-	     *   {"ip"}: { addresses, mtu, capacity}
-	     *   ...
-	     *  }
-	     */
-	    interfaceInfo: [],
-	    interfaceObj: {},
-	    lsInterfaceResults: [],
-	    lsURLs: [],
-	    sources: [],
-	    dests: [],
-	    lsRequestCount: 0,
-	    /*
-	    getInitialState() {
-	        return {
-	        };
-	     },
-	    */
-	
-	    retrieveLSList: function retrieveLSList() {
-	        this.serverRequest = $.get(lsListURL, function (data) {
-	            this.handleLSListResponse(data);
-	        }.bind(this));
-	    },
-	    handleLSListResponse: function handleLSListResponse(data) {
-	        this.lsURLs = data;
-	        this.performLSCalls();
-	    },
-	    performLSCalls: function performLSCalls() {
-	        var lsURLs = this.lsURLs;
-	        var sources = this.sources;
-	        var dests = this.dests;
-	        for (var i in lsURLs) {
-	            var lsURL = lsURLs[i];
-	            var url = lsQueryURL;
-	            url += "&ls_url=" + encodeURI(lsURL);
-	            url += this.array2param("source", sources);
-	            url += this.array2param("dest", dests);
-	            this.serverRequest = $.get(url, function (data) {
-	                this.lsRequestCount++;
-	                this.handleInterfaceInfoResponse(data);
-	            }.bind(this)).fail(function (jqXHR, textStatus, errorThrown) {
-	                console.log('fail jqXHR, textStatus, errorThrown', jqXHR, textStatus, errorThrown);
-	            }.bind(this));
-	        }
-	    },
-	    retrieveInterfaceInfo: function retrieveInterfaceInfo(source_input, dest_input) {
-	
-	        var url = "cgi-bin/graphData.cgi?action=hosts";
-	        var sources = void 0;
-	        var dests = void 0;
-	        if (Array.isArray(source_input)) {
-	            sources = source_input;
-	        } else {
-	            sources = [source_input];
-	        }
-	        if (Array.isArray(dest_input)) {
-	            dests = dest_input;
-	        } else {
-	            dests = [dest_input];
-	        }
-	        this.sources = sources;
-	        this.dests = dests;
-	
-	        this.retrieveLSList();
-	    },
-	    getInterfaceInfo: function getInterfaceInfo() {
-	        return this.interfaceObj;
-	    },
-	    handleInterfaceInfoResponse: function handleInterfaceInfoResponse(data) {
-	        this.addData(data);
-	        this.interfaceInfo = data;
-	    },
-	    subscribe: function subscribe(callback) {
-	        emitter.on("get", callback);
-	    },
-	    unsubscribe: function unsubscribe(callback) {
-	        emitter.off("get", callback);
-	    },
-	
-	    array2param: function array2param(name, array) {
-	        var joiner = "&" + name + "=";
-	        return joiner + array.join(joiner);
-	    },
-	    addData: function addData(data) {
-	        this.lsInterfaceResults.push(data);
-	        if (this.lsInterfaceResults.length == this.lsRequestCount) {
-	            this.combineData();
-	        }
-	    },
-	
-	    combineData: function combineData() {
-	        var sources = this.sources;
-	        var dests = this.dests;
-	        var rows = this.lsInterfaceResults;
-	
-	        var src_capacity = "Unknown";
-	        var src_mtu = "Unknown";
-	        var dest_capacity = "Unknown";
-	        var dest_mtu = "Unknown";
-	        var src_addresses = void 0;
-	        var dest_addresses = void 0;
-	
-	        var newObj = {};
-	        for (var i in rows) {
-	            var results = rows[i];
-	
-	            var newRow = {};
-	            for (var j in results) {
-	                var row = rows[i][j];
-	
-	                for (var k in sources) {
-	                    if (sources[k] == row.source_ip) {
-	                        if (!(row.source_ip in newObj)) {
-	                            newObj[row.source_ip] = {};
-	                        }
-	
-	                        if (row.source_mtu) {
-	                            src_mtu = row.source_mtu;
-	                            newRow.src_mtu = src_mtu;
-	                            newObj[row.source_ip].mtu = src_mtu;
-	                        }
-	                        if (row.source_addresses) {
-	                            src_addresses = row.source_addresses;
-	                            newRow.src_addresses = src_addresses;
-	                            newObj[row.source_ip].addresses = src_addresses;
-	                        }
-	
-	                        if (row.source_capacity) {
-	                            src_capacity = row.source_capacity;
-	                            newRow.src_capacity = src_capacity;
-	                            newObj[row.source_ip].capacity = src_capacity;
-	                        }
-	                    }
-	
-	                    if (dests[k] == row.dest_ip) {
-	
-	                        if (row.dest_mtu) {
-	                            dest_mtu = row.dest_mtu;
-	                        }
-	                        if (row.dest_addresses) {
-	                            dest_addresses = row.dest_addresses;
-	                        }
-	                        if (row.dest_capacity) {
-	                            dest_capacity = row.dest_capacity;
-	                        }
-	                        newRow.dest_mtu = dest_mtu;
-	                        newRow.dest_addresses = dest_addresses;
-	                        newRow.dest_capacity = dest_capacity;
-	
-	                        newObj[row.dest_ip] = {};
-	                        newObj[row.dest_ip].mtu = dest_mtu;
-	                        newObj[row.dest_ip].addresses = dest_addresses;
-	                        newObj[row.dest_ip].capacity = dest_capacity;
-	                    }
-	                }
-	            }
-	            if (!$.isEmptyObject(newRow)) {
-	                this.interfaceInfo.push(newRow);
-	            }
-	        }
-	        this.interfaceObj = newObj;
-	        emitter.emit("get");
-	    },
-	    // Retrieves interface details for a specific ip and returns them
-	    // Currently keys on ip; could extend to search all addresses later if needed
-	    getInterfaceDetails: function getInterfaceDetails(host) {
-	        var details = this.interfaceObj || {};
-	        if (host in details) {
-	            return details[host];
-	        } else {
-	            for (var i in details) {
-	                var row = details[i];
-	
-	                for (var j in row.addresses) {
-	                    var address = row.addresses[j];
-	                    if (address == host) {
-	                        return details[i];
-	                    } else {
-	                        var addrs = host.split(",");
-	                        if (addrs.length > 1) {
-	                            // handle case where addresses have comma(s)
-	                            for (var k in addrs) {
-	                                if (addrs[k] == address) {
-	                                    return details[i];
-	                                }
-	                            }
-	                        }
-	                    }
-	                }
-	            }
-	        }
-	        // host not found in the cache, return empty object
-	        return {};
-	    }
-	};
-
-/***/ },
-/* 600 */
 /*!************************!*\
   !*** ./css/graphs.css ***!
   \************************/
@@ -92153,10 +91320,10 @@
 	// style-loader: Adds some css to the DOM by adding a <style> tag
 	
 	// load the styles
-	var content = __webpack_require__(/*! !./../~/css-loader!./graphs.css */ 601);
+	var content = __webpack_require__(/*! !./../~/css-loader!./graphs.css */ 599);
 	if(typeof content === 'string') content = [[module.id, content, '']];
 	// add the styles to the DOM
-	var update = __webpack_require__(/*! ./../~/style-loader/addStyles.js */ 595)(content, {});
+	var update = __webpack_require__(/*! ./../~/style-loader/addStyles.js */ 596)(content, {});
 	if(content.locals) module.exports = content.locals;
 	// Hot Module Replacement
 	if(false) {
@@ -92173,128 +91340,17 @@
 	}
 
 /***/ },
-/* 601 */
+/* 599 */
 /*!***************************************!*\
   !*** ./~/css-loader!./css/graphs.css ***!
   \***************************************/
 /***/ function(module, exports, __webpack_require__) {
 
-	exports = module.exports = __webpack_require__(/*! ./~/css-loader/cssToString.js */ 594)();
+	exports = module.exports = __webpack_require__(/*! ./~/css-loader/cssToString.js */ 595)();
 	exports.push([module.id, "/*----------------------------------------------------------\n\n    Graphs\n\n----------------------------------------------------------*/\n\n.graph-filter {\n    padding: 0.25em 0;\n}\n\n.graph-label {\n    display: block;\n    float: left;\n    padding-top: .7em;\n    margin-right: .5em;\n}\n\n.graph-filter__list {\n    display: block;\n    list-style: none;\n    padding: 0;\n    margin: 0;\n    border: 1px solid #ccc;\n    border-radius: 4px;\n    display: inline-block;\n}\n\n.blockTrace {\n    display:block; \n}\n\n.hiddenTrace {\n    display:none;\n}\n\n/*\n * Clear fix\n*/\n.graph:after,\n.graph-filters:after,\n.graph-filter:after,\n.graph-filter__list:after {\n    content: \"\";\n    clear: both;\n    display: block;\n}\n\n.graph-filter__item {\n    float: left;\n    border-right: 1px solid #ccc;\n    margin: 0;\n}\n\n/*\n * Filter active states\n*/\n\n.graph-filter__item.graph-filter__item a {\n    color: #fff;\n    background-color: #ccc;\n}\n\n.graph-filter__item.graph-filter__item--blue-active a {\n    background-color: #0076b4;\n}\n\n.graph-filter__item.graph-filter__item--forward.active a, .graph-filter__item.graph-filter__item--reverse.active a, .graph-filter__item.graph-filter__item--failures.active a\n{\n    background-color: #0076b4;\n}\n\n\n.graph-filter__item.graph-filter__item.throughput-tcp.active a {\n    background-color: #0076b4;\n}\n\n.graph-filter__item.graph-filter__item.udp.active a {\n    background-color: #d6641e;\n    /*background-color: #cc7dbe;*/ /*pink */\n}\n\n.graph-filter__item.graph-filter__item.ipv4.active a {\n    background-color: #e5a11c;\n}\n\n.graph-filter__item.graph-filter__item.ipv6.active a {\n    background-color: #633;\n}\n\n.graph-filter__item.graph-filter__item.loss-throughput.active a {\n    background-color: #cc7dbe;\n}\n\n.graph-filter__item.graph-filter__item.loss-latency.active a {\n    background-color: #2b9f78;\n}\n\n\n.graph-filter__item svg.direction-label {\n    margin-left: 1em;\n    vertical-align: middle;\n}\n\n.graph-filter__item:last-child {\n    border-right: none;\n}\n\n.graph-filter__item a {\n    color: #383f44;\n    display: inline-block;\n    padding: .75em 1em;\n}\n\n.graph-filter__item a:hover {\n    background-color: #ccc;\n    color: #383f44;\n}\n\n.graph-settings {\n    border: 1px solid #383f44;\n    border-radius: 4px;\n    color: #383f44;\n    display: inline-block;\n    margin-left: 1em;\n    /*\n     * This is a magic number to make this thing look right.\n    */\n    padding: .71em;\n}\n\n.graph-settings i {\n    font-size: 1.5em;\n}\n\n.graph-wrapper {\n\n}\n\n.graph-header {\n    border-bottom: 1px solid #ccc;\n    margin-top: 1em;\n    padding-bottom: .5em;\n}\n\n.graph-module,\n.graph-holder {\n    min-height: 400px;\n}\n\n.graph-module {\n    display: flex;\n    flex-direction: column;\n    justify-content: space-around;\n}\n\n.graph-module--small,\n.graph-holder--small {\n    min-height: 150px;\n}\n\n.graph-holder {\n    background-color: #ddd;\n}\n\n.graph-module__cell {\n    /*\n     * This is sort of brittle because it relies on a\n     * specific amount of padding to veritcally center\n     * the label\n    */\n    padding-top: 4em;\n    text-align: center;\n    border-bottom: 1px solid #ccc;\n    flex-grow: 1;\n    align-content: center;\n}\n\n.graph-module__cell--small {\n    padding-top: 1em;\n}\n\n.graph-module__cell--left {\n    padding-top: 1em;\n    padding-left: 1em;\n    text-align: left;\n}\n\n.graph-module__stat {\n    display: block;\n    line-height: 1.8;\n}\n\n.graph-module__stat i {\n    margin-right: 1em;\n}\n\n.graph-module__controls {\n    color: #383f44;\n}\n\n.graph-small {\n    margin-top: 1em;\n}\n\n.graph .hostLabel {\n    font-weight:700;\n}\n\n.sidebar-popover__close span {\n    float:left;\n}\n\n/* Graph-Values popover */\n\n.sidebar-popover span:after {\n    display:inline;\n}\n\n.sidebar-popover.graph-values-popover {\n  position: absolute;\n  top: -33px;\n  right: 0;\n  font-size: 80%;\n  padding: 1em 1em 0 1em;\n  display:block;\n  opacity:0.9;\n}\n\n.graph-values-popover .graph-type {\n  margin: 0;\n  padding: 0;\n  font-weight: 700;\n}\n\n.graph-values-popover__heading {\n  border-bottom: 1px solid rgba(255, 255, 255, .5);\n  font-size: 1.1em;\n  color: #fff;\n  padding: .5em 0;\n}\n\n.graph-values-popover__list {\n  list-style: none;\n  padding: 0;\n  margin: 2px 0 0 0;\n}\n\n.graph-values-popover__item {\n  padding: 1em 0;\n  border-top: 1px dashed rgba(255, 255, 255, .5);\n}\n\n.graph-values-popover__item:first-child {\n  border-top: none;\n  padding-top: 1.5em;\n}\n\n.graph-values-popover__item ul {\n  list-style: none;\n  margin: 0;\n}\n\n.graph-values-popover__item li:first-child {\n  font-size: 1.1em;\n  font-weight: 700;\n}\n\ndiv.graphholder div.small-2.columns {\n    float:right;\n    display:block;\n    width:23%;\n}\n\ndiv.graphholder #loading {\n    margin-top:4em;\n}\n", ""]);
 
 /***/ },
-/* 602 */
-/*!****************************************!*\
-  !*** ../toolkit/web-ng/root/js/app.js ***!
-  \****************************************/
-/***/ function(module, exports) {
-
-	$(document).ready(function () {
-	    $(".nav-dropdown-toggle").click(function (e) {
-	        e.preventDefault();
-	        $(".nav-dropdown-menu").toggle();
-	    });
-	
-	    //Hide the dropdown when anything outside is clicked
-	    $(document).click(function () {
-	        $(".nav-dropdown-menu").hide();
-	    });
-	
-	    // Don't hide the dropdown if items inside are clicked
-	    // and exclude nav-dropdown-toggle from the click outside thing above.
-	    $(".nav-dropdown-toggle, .nav-dropdown-menu").click(function (e) {
-	        e.stopPropagation();
-	    });
-	
-	    // Show/hide the services. use the on() event to allow DOM elements 
-	    // created later to still trigger the event
-	    $("div#host_services").on("click", ".services--title-link", function (e) {
-	        e.preventDefault();
-	        $(this).next(".services--list").toggleClass("visible-inline");
-	    });
-	    $(".alert--dismiss").click(function (e) {
-	        e.preventDefault();
-	        $(this).parent().fadeOut();
-	    });
-	
-	    $(".communities__add, .servers__add").click(function (e) {
-	        e.preventDefault();
-	        $(".communities__popular, .servers__popular").toggle();
-	    });
-	
-	    $("body").on("click", ".add_panel_heading", function (e) {
-	        e.preventDefault();
-	        $(".add_panel_heading").next(".add_panel").toggle();
-	    });
-	
-	    /*
-	    $(".config__input").change(function(e) {
-	        $(".js-unsaved-message").fadeIn("fast");
-	    });
-	    */
-	
-	    /*
-	    $(".js-save-button").click(function(e) {
-	        e.preventDefault();
-	        $(".js-unsaved-message").fadeOut("fast");
-	        $(".sticky-bar--saved").fadeIn("fast").delay(1500).fadeOut("slow");
-	    });
-	    */
-	    /*
-	    $(".js-cancel-button").click(function(e) {
-	        e.preventDefault();
-	        $(".sticky-bar--failure").fadeIn("fast");
-	    });
-	     $(".js-sticky-dismiss").click(function(e) {
-	        e.preventDefault();
-	        $(".js-unsaved-message").hide();
-	        $(".sticky-bar--failure").fadeOut("fast");
-	    });
-	    */
-	
-	    // Sidebar popover menu used to exand on larger sets of sidebar info
-	    // For example, "Interfaces"
-	    //$(document).on('click', '.btn_test', function() { alert('test'); });
-	    $(document).on("click", ".js-sidebar-popover-toggle", function (e) {
-	        e.preventDefault();
-	        $(this).next(".sidebar-popover").fadeToggle("fast");
-	    });
-	
-	    $(document).on("click", ".js-sidebar-popover-close", function (e) {
-	        e.preventDefault();
-	        $(this).parent(".sidebar-popover").fadeOut("fast");
-	    });
-	
-	    // Hide the popover when the user clicks outside of it
-	    $(document).click(function (e) {
-	        $(".sidebar-popover").fadeOut("fast");
-	    });
-	
-	    // Stop clicking inside the popover from hiding it
-	    $(document).on("click", ".js-sidebar-popover-toggle, .sidebar-popover", function (e) {
-	        e.stopPropagation();
-	    });
-	
-	    $(document).on('open.fndtn.reveal', '[data-reveal]', function () {
-	        $('body').addClass('modal-open');
-	    });
-	    $(document).on('close.fndtn.reveal', '[data-reveal]', function () {
-	        $('body').removeClass('modal-open');
-	    });
-	
-	    // Select2 plugin - https://select2.github.io/
-	    /*
-	    $(".js-select-multiple").select2({
-	        placeholder: "Add a new server"
-	    });
-	      $(".select2-search__field").keypress(function() {
-	        $(".sticky-bar--unsaved").fadeIn("fast");    
-	    });
-	    */
-	});
-
-/***/ },
-/* 603 */
+/* 600 */
 /*!******************************************!*\
   !*** ../toolkit/web-ng/root/css/app.css ***!
   \******************************************/
@@ -92303,10 +91359,10 @@
 	// style-loader: Adds some css to the DOM by adding a <style> tag
 	
 	// load the styles
-	var content = __webpack_require__(/*! !./../../../../react/~/css-loader!./app.css */ 604);
+	var content = __webpack_require__(/*! !./../../../../react/~/css-loader!./app.css */ 601);
 	if(typeof content === 'string') content = [[module.id, content, '']];
 	// add the styles to the DOM
-	var update = __webpack_require__(/*! ./../../../../react/~/style-loader/addStyles.js */ 595)(content, {});
+	var update = __webpack_require__(/*! ./../../../../react/~/style-loader/addStyles.js */ 596)(content, {});
 	if(content.locals) module.exports = content.locals;
 	// Hot Module Replacement
 	if(false) {
@@ -92323,17 +91379,17 @@
 	}
 
 /***/ },
-/* 604 */
+/* 601 */
 /*!*********************************************************!*\
   !*** ./~/css-loader!../toolkit/web-ng/root/css/app.css ***!
   \*********************************************************/
 /***/ function(module, exports, __webpack_require__) {
 
-	exports = module.exports = __webpack_require__(/*! ./~/css-loader/cssToString.js */ 594)();
+	exports = module.exports = __webpack_require__(/*! ./~/css-loader/cssToString.js */ 595)();
 	exports.push([module.id, "/*------------------------------------------------------------------------------\n\n    Utilities\n\n------------------------------------------------------------------------------*/\n/* Color classes */\n.color-primary {\n  color: #0089ff !important;\n}\n\n.color-bg-accent {\n  color: #f7f7f7 !important;\n}\n\n.color-light, .test_results .host_ip {\n  color: #919ca1 !important;\n}\n\n.color-medium {\n  color: #4d565b !important;\n}\n\n.color-black {\n  color: #383f44 !important;\n}\n\n.color-success {\n  color: #a2d4ba !important;\n}\n\n.color-message {\n  color: #f3dda8 !important;\n}\n\n.color-failure {\n  color: #f7a9a1 !important;\n}\n\n.color-disabled {\n  color: #919ca1 !important;\n}\n\n.color-red, #host_services .off {\n  color: #ef402f !important;\n}\n\n.color-yellow {\n  color: #e5b53e !important;\n}\n\n.color-green, #host_services .running {\n  color: #32a066 !important;\n}\n\n#host_services .disabled {\n  color: #A9B1B5;\n}\n\n/* Typography classes */\n.font-light {\n  font-weight: 300;\n}\n\n.font-regular {\n  font-weight: 400;\n}\n\n.font-bold {\n  font-weight: 700;\n}\n\n.font-size--small {\n  font-size: 0.8em;\n}\n\n/* Float classes */\n.left {\n  float: left;\n}\n\n.right {\n  float: right;\n}\n\n/* Lists add to ul and ol */\n\n.no-list {\n  list-style: none;\n  padding-left: 0;\n}\n\n/* Visibility classes */\n.hidden {\n  display: none;\n}\n\n.visible-inline {\n  display: inline-block;\n}\n\n.display-inline {\n  display: inline-block !important;\n}\n\n/* Margin utilities */\n\n.no-margin {\n    margin: 0;\n}\n\n.no-margin-top {\n    margin-top: 0;\n}\n\n.no-margin-bottom {\n    margin-bottom: 0;\n}\n\n/*! normalize.css v3.0.2 | MIT License | git.io/normalize */\n/**\n * 1. Set default font family to sans-serif.\n * 2. Prevent iOS text size adjust after orientation change, without disabling\n *    user zoom.\n */\nhtml {\n  font-family: sans-serif;\n  /* 1 */\n  -ms-text-size-adjust: 100%;\n  /* 2 */\n  -webkit-text-size-adjust: 100%;\n  /* 2 */\n}\n\n/**\n * Remove default margin.\n */\nbody {\n  margin: 0;\n}\n\n/* HTML5 display definitions\n   ========================================================================== */\n/**\n * Correct `block` display not defined for any HTML5 element in IE 8/9.\n * Correct `block` display not defined for `details` or `summary` in IE 10/11\n * and Firefox.\n * Correct `block` display not defined for `main` in IE 11.\n */\narticle,\naside,\ndetails,\nfigcaption,\nfigure,\nfooter,\nheader,\nhgroup,\nmain,\nmenu,\nnav,\nsection,\nsummary {\n  display: block;\n}\n\n/**\n * 1. Correct `inline-block` display not defined in IE 8/9.\n * 2. Normalize vertical alignment of `progress` in Chrome, Firefox, and Opera.\n */\naudio,\ncanvas,\nprogress,\nvideo {\n  display: inline-block;\n  /* 1 */\n  vertical-align: baseline;\n  /* 2 */\n}\n\n/**\n * Prevent modern browsers from displaying `audio` without controls.\n * Remove excess height in iOS 5 devices.\n */\naudio:not([controls]) {\n  display: none;\n  height: 0;\n}\n\n/**\n * Address `[hidden]` styling not present in IE 8/9/10.\n * Hide the `template` element in IE 8/9/11, Safari, and Firefox < 22.\n */\n[hidden],\ntemplate {\n  display: none;\n}\n\n/* Links\n   ========================================================================== */\n/**\n * Remove the gray background color from active links in IE 10.\n */\na {\n  background-color: transparent;\n}\n\n/**\n * Improve readability when focused and also mouse hovered in all browsers.\n */\na:active,\na:hover {\n  outline: 0;\n}\n\n/* Text-level semantics\n   ========================================================================== */\n/**\n * Address styling not present in IE 8/9/10/11, Safari, and Chrome.\n */\nabbr[title] {\n  border-bottom: 1px dotted;\n}\n\n/**\n * Address style set to `bolder` in Firefox 4+, Safari, and Chrome.\n */\nb,\nstrong {\n  font-weight: bold;\n}\n\n/**\n * Address styling not present in Safari and Chrome.\n */\ndfn {\n  font-style: italic;\n}\n\n/**\n * Address variable `h1` font-size and margin within `section` and `article`\n * contexts in Firefox 4+, Safari, and Chrome.\n */\nh1 {\n  font-size: 2em;\n  margin: 0.67em 0;\n}\n\n/**\n * Address styling not present in IE 8/9.\n */\nmark {\n  background: #ff0;\n  color: #000;\n}\n\n/**\n * Address inconsistent and variable font size in all browsers.\n */\nsmall {\n  font-size: 80%;\n}\n\n/**\n * Prevent `sub` and `sup` affecting `line-height` in all browsers.\n */\nsub,\nsup {\n  font-size: 75%;\n  line-height: 0;\n  position: relative;\n  vertical-align: baseline;\n}\n\nsup {\n  top: -0.5em;\n}\n\nsub {\n  bottom: -0.25em;\n}\n\n/* Embedded content\n   ========================================================================== */\n/**\n * Remove border when inside `a` element in IE 8/9/10.\n */\nimg {\n  border: 0;\n}\n\n/**\n * Correct overflow not hidden in IE 9/10/11.\n */\nsvg:not(:root) {\n  overflow: hidden;\n}\n\n/* Grouping content\n   ========================================================================== */\n/**\n * Address margin not present in IE 8/9 and Safari.\n */\nfigure {\n  margin: 1em 40px;\n}\n\n/**\n * Address differences between Firefox and other browsers.\n */\nhr {\n  -moz-box-sizing: content-box;\n  box-sizing: content-box;\n  height: 0;\n}\n\n/**\n * Contain overflow in all browsers.\n */\npre {\n  overflow: auto;\n}\n\n/**\n * Address odd `em`-unit font size rendering in all browsers.\n */\ncode,\nkbd,\npre,\nsamp {\n  font-family: monospace, monospace;\n  font-size: 1em;\n}\n\n/* Forms\n   ========================================================================== */\n/**\n * Known limitation: by default, Chrome and Safari on OS X allow very limited\n * styling of `select`, unless a `border` property is set.\n */\n/**\n * 1. Correct color not being inherited.\n *    Known issue: affects color of disabled elements.\n * 2. Correct font properties not being inherited.\n * 3. Address margins set differently in Firefox 4+, Safari, and Chrome.\n */\nbutton,\ninput,\noptgroup,\nselect,\ntextarea {\n  color: inherit;\n  /* 1 */\n  font: inherit;\n  /* 2 */\n  margin: 0;\n  /* 3 */\n}\n\n/**\n * Address `overflow` set to `hidden` in IE 8/9/10/11.\n */\nbutton {\n  overflow: visible;\n}\n\n/**\n * Address inconsistent `text-transform` inheritance for `button` and `select`.\n * All other form control elements do not inherit `text-transform` values.\n * Correct `button` style inheritance in Firefox, IE 8/9/10/11, and Opera.\n * Correct `select` style inheritance in Firefox.\n */\nbutton,\nselect {\n  text-transform: none;\n}\n\n/**\n * 1. Avoid the WebKit bug in Android 4.0.* where (2) destroys native `audio`\n *    and `video` controls.\n * 2. Correct inability to style clickable `input` types in iOS.\n * 3. Improve usability and consistency of cursor style between image-type\n *    `input` and others.\n */\nbutton,\nhtml input[type=\"button\"],\ninput[type=\"reset\"],\ninput[type=\"submit\"] {\n  -webkit-appearance: button;\n  /* 2 */\n  cursor: pointer;\n  /* 3 */\n}\n\n/**\n * Re-set default cursor for disabled elements.\n */\nbutton[disabled],\nhtml input[disabled] {\n  cursor: default;\n}\n\n/**\n * Remove inner padding and border in Firefox 4+.\n */\nbutton::-moz-focus-inner,\ninput::-moz-focus-inner {\n  border: 0;\n  padding: 0;\n}\n\n/**\n * Address Firefox 4+ setting `line-height` on `input` using `!important` in\n * the UA stylesheet.\n */\ninput {\n  line-height: normal;\n}\n\n/**\n * It's recommended that you don't attempt to style these elements.\n * Firefox's implementation doesn't respect box-sizing, padding, or width.\n *\n * 1. Address box sizing set to `content-box` in IE 8/9/10.\n * 2. Remove excess padding in IE 8/9/10.\n */\ninput[type=\"checkbox\"],\ninput[type=\"radio\"] {\n  box-sizing: border-box;\n  /* 1 */\n  padding: 0;\n  /* 2 */\n}\n\n/**\n * Fix the cursor style for Chrome's increment/decrement buttons. For certain\n * `font-size` values of the `input`, it causes the cursor style of the\n * decrement button to change from `default` to `text`.\n */\ninput[type=\"number\"]::-webkit-inner-spin-button,\ninput[type=\"number\"]::-webkit-outer-spin-button {\n  height: auto;\n}\n\n/**\n * 1. Address `appearance` set to `searchfield` in Safari and Chrome.\n * 2. Address `box-sizing` set to `border-box` in Safari and Chrome\n *    (include `-moz` to future-proof).\n */\ninput[type=\"search\"] {\n  -webkit-appearance: textfield;\n  /* 1 */\n  -moz-box-sizing: content-box;\n  -webkit-box-sizing: content-box;\n  /* 2 */\n  box-sizing: content-box;\n}\n\n/**\n * Remove inner padding and search cancel button in Safari and Chrome on OS X.\n * Safari (but not Chrome) clips the cancel button when the search input has\n * padding (and `textfield` appearance).\n */\ninput[type=\"search\"]::-webkit-search-cancel-button,\ninput[type=\"search\"]::-webkit-search-decoration {\n  -webkit-appearance: none;\n}\n\n/**\n * Define consistent border, margin, and padding.\n */\nfieldset {\n  border: 1px solid #c0c0c0;\n  margin: 0 2px;\n  padding: 0.35em 0.625em 0.75em;\n}\n\n/**\n * 1. Correct `color` not being inherited in IE 8/9/10/11.\n * 2. Remove padding so people aren't caught out if they zero out fieldsets.\n */\nlegend {\n  border: 0;\n  /* 1 */\n  padding: 0;\n  /* 2 */\n}\n\n/**\n * Remove default vertical scrollbar in IE 8/9/10/11.\n */\ntextarea {\n  overflow: auto;\n}\n\n/**\n * Don't inherit the `font-weight` (applied by a rule above).\n * NOTE: the default cannot safely be changed in Chrome and Safari on OS X.\n */\noptgroup {\n  font-weight: bold;\n}\n\n/* Tables\n   ========================================================================== */\n/**\n * Remove most spacing between table cells.\n */\ntable {\n  border-collapse: collapse;\n  border-spacing: 0;\n}\n\ntd,\nth {\n  padding: 0;\n}\n\n/*------------------------------------------------------------------------------\n\n    Base styles\n\n------------------------------------------------------------------------------*/\nbody {\n  font-family: \"Open Sans\", \"Helvetica Neue\", \"Helvetica\", Arial, sans-serif;\n  font-weight: 400;\n  color: #383f44;\n  /* Set base font-size to 14px to start out with due to how much text is on\n  ** the screen at one time\n  */\n  font-size: 87.5%;\n}\n\nhtml,\nbody {\n  font-family: \"Open Sans\", \"Helvetica Neue\", \"Helvetica\", Arial, sans-serif;\n  height: 100%;\n}\n\nh1,\nh2,\nh3,\nh4,\nh5,\nh6 {\n  font-family: \"Open Sans\", \"Helvetica Neue\", \"Helvetica\", Arial, sans-serif;\n  font-weight: 400;\n  color: #383f44;\n}\n\na {\n  color: #0089ff;\n  /* text-decoration: underline; */\n}\na:hover {\n  color: #a5d5ff;\n}\n\na:focus {\n  color: #006dcc;\n}\n\n/*\n** These rules overide Foundation's more specific styles for lists\n** Switching these to em make the relational to the base font size\n** that we can adjust if we want to scale up the font on bigger screens.\n*/\nol,\nul,\ndl {\n  font-size: 1em;\n}\n\np {\n  font-size: 1em;\n}\n\n/* End text-level Foundation overides */\nstrong {\n  font-weight: 700;\n}\n\nselect {\n  margin-bottom: 1em;\n}\n\n/* Hide only visually, but have it available for screenreaders: h5bp.com/v */\n.visuallyhidden {\n  border: 0;\n  clip: rect(0 0 0 0);\n  height: 1px;\n  margin: -1px;\n  overflow: hidden;\n  padding: 0;\n  position: absolute;\n  width: 1px;\n}\n\n/* Extends the .visuallyhidden class to allow the element to be focusable when navigated to via the keyboard: h5bp.com/p */\n.visuallyhidden.focusable:active, .visuallyhidden.focusable:focus {\n  clip: auto;\n  height: auto;\n  margin: 0;\n  overflow: visible;\n  position: static;\n  width: auto;\n}\n\n/*\n** Foundation overrides\n** We need these rules to override some of the Foundation grid functionality\n** to make it match the fluid nature of the app.\n*/\n.row {\n  max-width: 100%;\n}\n\n.row--fixed {\n  max-width: 1080px;\n}\n\n/*------------------------------------------------------------------------------\n\n    Utitilities\n\n------------------------------------------------------------------------------*/\n/*\n** Make an unordered list display inline, remove list style, and margins\n*/\n.u-list-nav {\n  list-style-type: none;\n  margin: 0;\n}\n.u-list-nav li {\n  display: inline-block;\n}\n\n/*------------------------------------------------------------------------------\n\n    Grid\n\n------------------------------------------------------------------------------*/\n.container {\n  max-width: 100%;\n  margin: 0 auto;\n}\n.container:after {\n  content: \"\";\n  display: block;\n  clear: both;\n}\n.container:before {\n  content: \"\";\n  display: block;\n  clear: both;\n}\n\n.collapse .unit:first-child {\n  padding-left: 0;\n}\n.collapse .unit:last-child {\n  padding-right: 0;\n}\n\n.unit {\n  padding-left: 24px;\n  padding-right: 24px;\n  padding-top: 24px;\n  padding-bottom: 24px;\n  float: left;\n  -webkit-box-sizing: border-box;\n  -moz-box-sizing: border-box;\n  box-sizing: border-box;\n}\n.unit:after {\n  content: \"\";\n  display: block;\n  clear: both;\n}\n\n.container.kill-vertical .unit {\n  padding-top: 0;\n  padding-bottom: 0;\n}\n\n/* Get rid of container padding when grids are nested */\n.container .container .unit {\n  padding-top: 0;\n}\n.container .container .unit:first-child {\n  padding-left: 0;\n}\n.container .container .unit:last-child {\n  padding-right: 0;\n}\n\n.centered {\n  margin: 0 auto;\n  float: none !important;\n}\n\n.last {\n  float: right;\n}\n\n.whole {\n  width: 100%;\n}\n\n.half {\n  width: 50%;\n}\n\n.one-third {\n  width: 33.33333%;\n}\n\n.two-thirds {\n  width: 66.666666666667%;\n}\n\n.one-fourth {\n  width: 25%;\n}\n\n.three-fourths {\n  width: 75%;\n}\n\n.one-fifth {\n  width: 20%;\n}\n\n.two-fifths {\n  width: 40%;\n}\n\n.three-fifths {\n  width: 60%;\n}\n\n.four-fifths {\n  width: 80%;\n}\n\n/* Push and pull classes */\n.push {\n  float: right;\n}\n\n.pull {\n  float: left;\n}\n\n.container > .unit.pull {\n  padding-left: 0;\n  padding-right: 24px !important;\n}\n\n.container > .unit.push {\n  padding-right: 0;\n  padding-left: 24px !important;\n}\n\n/* List grid */\nul.list-grid-fourths {\n  display: block;\n  list-style-type: none;\n  margin: -24px;\n}\nul.list-grid-fourths:after {\n  content: \"\";\n  display: block;\n  clear: both;\n}\nul.list-grid-fourths li {\n  display: block;\n  float: left;\n  width: 25%;\n  padding: 24px;\n  -webkit-box-sizing: border-box;\n  -moz-box-sizing: border-box;\n  box-sizing: border-box;\n}\n\nul.list-grid-thirds {\n  display: block;\n  list-style-type: none;\n  margin: -24px;\n}\nul.list-grid-thirds:after {\n  content: \"\";\n  display: block;\n  clear: both;\n}\nul.list-grid-thirds li {\n  display: block;\n  float: left;\n  width: 33.333333333333%;\n  padding: 24px;\n  -webkit-box-sizing: border-box;\n  -moz-box-sizing: border-box;\n  box-sizing: border-box;\n}\n\n@media screen and (max-width: 768px) {\n  .unit {\n    float: none;\n    padding-top: 12px;\n    padding-bottom: 12px;\n    padding-right: 12px;\n    padding-left: 12px;\n  }\n\n  .unit .container .unit:first-child {\n    padding-top: 0;\n  }\n\n  .container .container .unit {\n    padding: 24px 0;\n  }\n\n  /* Small grid - This will keep the proportions of the grid even on small devices */\n  .container.small-grid .unit.half {\n    width: 50%;\n    float: left;\n  }\n\n  .container.small-grid .unit.one-third {\n    width: 33.333333333333%;\n    float: left;\n  }\n\n  .container.small-grid .unit.two-thirds {\n    width: 66.666666666667%;\n    float: left;\n  }\n\n  .container.small-grid .unit.one-fourth {\n    width: 25%;\n    float: left;\n  }\n\n  .container.small-grid .unit.three-fourths {\n    width: 75%;\n    float: left;\n  }\n\n  .container.small-grid .unit.one-fifth {\n    width: 20%;\n    float: left;\n  }\n\n  .container.small-grid .unit.two-fifths {\n    width: 40%;\n    float: left;\n  }\n\n  .container.small-grid .unit.three-fifths {\n    width: 60%;\n    float: left;\n  }\n\n  .container.small-grid .unit.four-fifths {\n    width: 80%;\n    float: left;\n  }\n\n  .whole,\n  .half,\n  .one-third,\n  .two-thirds,\n  .one-fourth,\n  .three-fourths,\n  .one-fifth,\n  .two-fifths,\n  .three-fifths,\n  .four-fifths {\n    width: 100% !important;\n  }\n\n  .push,\n  .pull {\n    float: none;\n  }\n\n  .container > .unit.pull {\n    padding-left: 0;\n    padding-right: 0 !important;\n  }\n\n  .container > .unit.push {\n    padding-right: 0;\n    padding-left: 0 !important;\n  }\n\n  ul.list-grid-fourths li {\n    width: 100%;\n    float: none;\n  }\n\n  ul.list-grid-thirds li {\n    width: 100%;\n    float: none;\n  }\n}\n/*------------------------------------------------------------------------------\n\n    Main app header\n\n------------------------------------------------------------------------------*/\n.app-header {\n  padding: 1em 2em;\n  background-color: #383f44;\n  color: white;\n}\n.app-header:after {\n  content: \"\";\n  clear: both;\n  display: block;\n}\n.app-header h1 {\n  margin: 0;\n  color: white;\n  font-size: 1em;\n  padding-top: .15em;\n}\n.app-header h1 a {\n  text-decoration: none;\n  color: white;\n}\n\n@media screen and (max-width: 580px) {\n  .app-header {\n    padding: 1em 12px;\n  }\n}\n.app-logo {\n  float: left;\n}\n.app-logo h1 {\n  font-size: 1.35em;\n  float:right;\n  margin-top: 0;\n}\n\n.app-header img.logo {\n  height: auto;\n  max-width: 150px;\n  margin-right: 1em;\n}\n\n@media screen and (max-width: 580px) {\n  .app-logo h1 {\n    font-size: .9em;\n  }\n}\n.app-nav {\n  float: right;\n  text-align: right;\n}\n.app-nav ul {\n  margin: 0;\n  padding: 0;\n  list-style-type: none;\n}\n.app-nav ul li {\n  display: inline-block;\n  margin-right: 1.25em;\n}\n.app-nav ul li:last-child {\n  margin-right: 0;\n}\n.app-nav ul li a {\n  color: white;\n  display: inline-block;\n  padding: .25em .5em;\n  border: 1px solid rgba(255, 255, 255, 0.5);\n  -webkit-border-radius: 4px;\n  -moz-border-radius: 4px;\n  -ms-border-radius: 4px;\n  -o-border-radius: 4px;\n  border-radius: 4px;\n  text-decoration: none;\n}\n.app-nav ul li a:hover {\n  background-color: #0089ff;\n  border-color: #0089ff;\n  color: white;\n}\n.app-nav ul li a:hover i {\n  color: white;\n}\n.app-nav ul li a i {\n  display: inline-block;\n  margin: 0 .25em;\n  color: white;\n}\n\n@media screen and (max-width: 580px) {\n  .app-nav ul li {\n    margin-right: .8em;\n  }\n\n  .app-nav ul li a {\n    font-size: .8em;\n  }\n}\n/* Dropdowns */\n\n/* These selectors are very specific makes them less reusable\n * with any kind of variation in the markup (on the graphs\n * for instance). I added a less specific versio of each\n * selector, just in case, but I would say the super specific\n * ones could be removed.\n*/\nli.nav-dropdown,\n.nav-dropdown {\n  position: relative;\n}\n\nli.nav-dropdown ul.nav-dropdown-menu,\n.nav-dropdown-menu {\n  display: none;\n  position: absolute;\n  min-width: 250px;\n  top: 42px;\n  right: 0px;\n  z-index: 10;\n  background-color: rgba(255, 255, 255, 0.95);\n  -webkit-border-radius: 4px;\n  -moz-border-radius: 4px;\n  -ms-border-radius: 4px;\n  -o-border-radius: 4px;\n  border-radius: 4px;\n  -webkit-box-shadow: 0px 0px 5px rgba(0, 0, 0, .13);\n  -moz-box-shadow: 0px 0px 5px rgba(0, 0, 0, .13);\n  -o-box-shadow: 0px 0px 5px rgba(0, 0, 0, .13);\n  box-shadow: 0px 0px 5px rgba(0, 0, 0, .13);\n}\nli.nav-dropdown ul.nav-dropdown-menu:before,\n.nav-dropdown-menu:before {\n  content: \"\";\n  display: block;\n  width: 0;\n  height: 0;\n  border: inset 6px;\n  border-color: transparent transparent white;\n  border-bottom-style: solid;\n  position: absolute;\n  top: -12px;\n  right: 25px;\n  z-index: 99;\n}\nli.nav-dropdown ul.nav-dropdown-menu li,\n.nav-dropdown .nav-dropdown-menu li {\n  display: block;\n  margin: 0;\n  text-align: left;\n}\nli.nav-dropdown ul.nav-dropdown-menu li a,\n.nav-dropdown .nav-dropdown-menu li a {\n  display: block;\n  margin: 0;\n  padding: 8px 10px;\n  border: none;\n  border-radius: 0;\n  color: #4d565b;\n}\nli.nav-dropdown ul.nav-dropdown-menu li a:hover,\n.nav-dropdown .nav-dropdown-menu li a:hover {\n  background-color: #ddd;\n  color: #0089ff;\n  border-top-right-radius: 4px;\n  border-top-left-radius: 4px;\n}\n\n.nav-dropdown-menu.visible {\n  display: block !important;\n}\n\n.nav-dropdown-menu__heading {\n    font-weight: 700;\n    padding: 8px 10px;\n    border-bottom: 1px solid #ccc;\n}\n\n/*------------------------------------------------------------------------------\n\n    Footer\n\n------------------------------------------------------------------------------*/\n.site-footer {\n  display: block;\n  padding: 2em;\n  margin-top: 5em;\n  text-align: right;\n  color: #919ca1;\n  border-top: 1px solid #ddd;\n}\n\n/*------------------------------------------------------------------------------\n\n    Main sidebar nav\n\n------------------------------------------------------------------------------*/\n.sidebar {\n  width: 25%;\n  float: left;\n  min-height: 100%;\n  background-color: #f7f7f7;\n  border-left: 1px solid #ddd;\n  float: right;\n  position: relative;\n}\n\n.sidebar:after {\n  content: \"\";\n  display: block;\n  position: absolute;\n  left: -1px;\n  bottom: -99em;\n  height: 99em;\n  width: 100%;\n  background: #f7f7f7;\n  border-left: 1px solid #ddd;\n}\n\n@media screen and (max-width: 850px) {\n  .sidebar {\n    width: 100%;\n    float: none;\n    padding: 0 1em;\n  }\n}\n.sidebar__heading {\n  font-size: 1em;\n  font-weight: 700;\n  background-color: #eaeaea;\n  margin: 1em 0 0 0;\n  padding: 1em 1.5em;\n}\n.sidebar__heading i {\n  color: #4d565b;\n}\n.sidebar__heading:first-of-type {\n  margin-top: 0;\n}\n\n.sidebar-list {\n  display: block;\n  list-style-type: none;\n  margin: 0;\n}\n\n.sidebar-list__item {\n  padding: .5em 1em .5em 1.5em;\n  border-bottom: 1px solid #ddd;\n  position: relative;\n}\n.sidebar-list__item:after {\n  content: \"\";\n  clear: both;\n  display: block;\n}\n.sidebar-list__item:last-child {\n  border-bottom: none;\n}\n\n.sidebar-list__item a {\n  text-decoration: none;\n}\n\n.sidebar-list__parameter {\n  width: 50%;\n  float: left;\n  overflow-wrap: break-word;\n  color:#919ca1;\n}\n.sidebar-list__parameter.communities {\n  width: 100%;\n  padding: 0 0 .3em 0;\n}\n\n.sidebar-list__value {\n  float: left;\n  width: 50%;\n  overflow-wrap: break-word;\n}\n.sidebar-list__value.communities {\n  width: 100%;\n  padding: 0;\n}\n\n/* \n  Graph Options popover\n*/\n.sidebar-popover.options-popover {\n  position: absolute;\n  top: 17em;\n  right: 2.5%;\n  background-color: white;\n  color: #383f44;\n  z-index: 105;\n  padding: 2em;\n  border-radius: 4px;\n  border: 1px solid #383f44;\n  min-width: 55%;\n}\n\n.options-popover .sidebar-popover__close, .sidebar-popover i.fa {\n  color: #a9b1b5;\n}\n\n.options-popover__heading {\n  border-bottom: 1px solid rgba(255, 255, 255, .2);\n  font-size: 1.2em;\n  color: #383f44;\n  padding: 0 0 .2em 0;\n}\n\n.options-popover__list {\n  list-style: none;\n  margin: 0em 0;\n}\n\n.options-popover__list>li {\n  padding: 0.1em 0;\n  white-space: nowrap;\n}\n\n.options-popover__list .options-popover__row {\n  margin: 0;\n}\n\n.options-popover__row>li {\n  list-style: none;\n  display: inline-block;\n}\n\n.options-popover__row li:first-child {\n    width: 16%;\n    margin-right: 8px;\n    color: black:\n}\n\n.options-popover__row input[type=\"checkbox\"] {\n   margin: 0;\n}\n.options-popover__row input[type=\"checkbox\"]+label {\n    margin-left: .1em;\n}\n\n#timeperiod {\n    width:60%;\n    margin: 0 .75em 0 .75em;\n    border: 1px solid #919ca1;\n    padding: 0 0.5rem;\n}\n\nspan.timerange_holder {\n    float:left;\n    margin:0.1rem 0.4rem;\n}\n\n/*\n  Sidebar popover\n*/\n\n.sidebar-popover {\n  display: none;\n  position: absolute;\n  top: 2.65em;\n  right: 2.5%;\n  background-color: rgba(56, 63, 68, .95);\n  color: #fff;\n  z-index: 205;\n  padding: .75em;\n  border-radius: 4px;\n  min-width: 95%;\n}\n\n.sidebar-popover.double {\n  width: 180%;\n}\n\n.sidebar-popover--overview {\n    top: 5.75em;\n}\n\n.sidebar-popover :after {\n  content: \"\";\n  clear: both;\n  display: block;\n}\n\n.sidebar-popover__heading {\n  border-bottom: 1px solid rgba(255, 255, 255, .2);\n  font-size: 1.2em;\n  color: #fff;\n  padding: 1em 0 .5em 0;\n}\n\n.sidebar-popover__heading:first-of-type {\n  /*padding-top: 0;*/\n}\n\n.sidebar-popover__list,\n.sidebar-popover-double__list {\n  list-style: none;\n  margin: 0;\n}\n\n.sidebar-popover-double__list {\n  width: 50%;\n  float: left;\n  padding: 0 .75em;\n}\n\n.sidebar-popover-double__list.onright {\n  border-left: 1px solid rgba(255, 255, 255, .2);\n}\n\n.sidebar-popover__item {\n  padding: .2em 0;\n}\n\n.sidebar-popover__param,\n.sidebar-popover__value,\n.sidebar-popover__param-3col,\n.sidebar-popover__value-3col,\n.sidebar-popover__subvalue_wide {\n  display: block;\n}\n\n.sidebar-popover__param {\n  float: left;\n  color: #ccc;\n  width: 45%;\n}\n\n.sidebar-popover__param-3col {\n  float: left;\n  color: #ccc;\n  width: 33%;\n}\n.sidebar-popover__param-3col.right {\n  text-align: right;\n}\n\n.sidebar-popover__value {\n  float: right;\n  text-align: right;\n  width: 55%;\n}\n\n.sidebar-popover__value-3col {\n  float: left;\n  text-align: right;\n  width: 33%;\n}\n\n.sidebar-popover__subvalue_wide {\n  float: right;\n  width: 90%;\n  text-align: right;\n  font-size: 85%;\n  color: #ccc;\n  margin: -3px 0 5px 0;\n}\n\n.sidebar-popover-toggle:focus {\n  color: #0089ff;\n}\n\n.sidebar-popover__close {\n  color: #ccc;\n  display: block;\n  position: absolute;\n  top: .9em;\n  right: .7em;\n}\n\n.sidebar-popover__close:hover i {\n  color: #a5d5ff;\n}\n\n.sidebar-popover__close i {\n  color: #fff;\n}\n\n/*------------------------------------------------------------------------------\n\n    Breadcrumbs\n\n------------------------------------------------------------------------------*/\n.nav--breadcrumbs {\n  padding: 0;\n  margin-bottom: 2em;\n}\n.nav--breadcrumbs li:after {\n  content: \"/\";\n  display: inline-block;\n  margin: 0 10px;\n  color: #919ca1;\n}\n.nav--breadcrumbs li:last-child:after {\n  content: \"\";\n}\n\n.nav--breadcrumbs li a,\n.nav--breadcrumbs li a i {\n  color: #919ca1;\n}\n\n.nav--breadcrumbs li a:hover,\n.nav--breadcrumbs li a:hover i {\n  color: #0089ff;\n}\n\n.nav--breadcrumbs li.active a,\n.nav--breadcrumbs li.active a i {\n  color: #0089ff;\n  cursor: default;\n}\n\n/*------------------------------------------------------------------------------\n\n    Tables\n\n------------------------------------------------------------------------------*/\ntable {\n  border: none;\n  font-size: 1em !important;\n  width: 100%;\n  overflow: auto;\n}\n\ntable tr td {\n  font-size: 1em;\n  padding: .75em .5em;\n}\n\ntable thead {\n  background-color: transparent;\n}\n\ntable thead tr th,\n.sub-heading {\n  font-weight: 400;\n  color: #919ca1;\n  text-transform: uppercase;\n  letter-spacing: .07em;\n  background-color:#eee;\n}\n\n/*\n**  Override: make zebra stripes on tables a bit darker\n*/\n\ntable tr.even, table tr.alt, table tr:nth-of-type(even) {\n    background-color:#eee;\n}\n\ntable tr.odd, table tr:nth-of-type(odd) { \n    background-color: #fff;\n}\n\n.services {\n  -webkit-box-sizing: border-box;\n  -moz-box-sizing: border-box;\n  box-sizing: border-box;\n}\n\n.services--title {\n  /*color: #919ca1;*/\n  /* color:##383F44; */\n  color: #0089FF;\n  display: block;\n  font-weight: 700;\n  text-decoration: none;\n}\n\n.services--title-link, .services--title a {\n  display: block;\n  font-weight: 700;\n  text-decoration: none;\n}\n.services--title-link i {\n  color: #919ca1;\n}\n\n.services--list {\n  display: none;\n  list-style-type: none;\n  margin-top: .75em;\n  /* This (-999px) is a hack to fix some weirdness caused by the jQuery toggle we are using */\n  padding-left: 1em;\n  border-left: 5px solid #ddd;\n}\n.services--list li {\n  padding: .35em 0;\n}\n\n.visible-inline {\n  display: inline-block;\n}\n\n/* Test results */\n.test-results:after {\n  content: \"\";\n  clear: both;\n  display: block;\n}\ntable.test_results tr {\n  vertical-align: top;\n}\n.test-results table tr td span,\n.test-results table tr td a {\n  display: block;\n  line-height: 1.5;\n}\n.test_results .traceroute_link_container.has_traceroute {\n    display:inline;\n}\n.test_results .traceroute_link_container {\n    display:none;\n}\n\n/* Pay special attention here. For some reason, this fontawesome override doesn't work with .test-results, only .test_results. */\n.test_results i.fa {\n  font-size: 10px;\n  color: #919ca1;\n}\n\n.test_results i.fa-external-link {\n    color:inherit;\n}\n\ni.fa.disabled, tr.disabled td, tr.disabled td i.fa {\n    color:#aaa;\n}\n\n\ntd.test-values {\n  font-weight:bold;\n}\ntd.test-values.loss {\n    white-space: nowrap;\n}\n\n.test-results--warnings {\n  list-style-type: none;\n  margin: 0;\n}\n\n.timeperiod-div {\n    width: 170px;\n    float: right;\n    position: relative;\n    z-index: 101;\n    }\n#testResultsTable_filter label input {\n    height: 19px;\n    margin-left: 0px;\n    display: block !important;\n}\n#testResultsTable_length label {\n    color: #999;\n}\n#testResultsTable_length select {\n    padding: 0 8 1 8;\n    height: 30;\n}\n#testResultsTable_info {\n    margin: 0 30px 0 30px;\n}\n#testResultsTable thead .sorting, #testResultsTable thead .sorting_asc, #testResultsTable thead .sorting_desc, #testResultsTable thead .sorting_asc_disabled, #testResultsTable thead .sorting_desc_disabled {\n    background-position: center left;\n}\n#testResultsTable thead > tr > th.sorting_asc, #testResultsTable thead > tr > th.sorting_desc, #testResultsTable thead > tr > th.sorting, #testResultsTable thead > tr > td.sorting_asc, #testResultsTable thead > tr > td.sorting_desc, #testResultsTable thead > tr > td.sorting {\n    padding-left: 1.5em;\n}\n\n@media screen and (max-width: 580px) {\n  .test-results, .services {\n    overflow-x: scroll;\n    border: 1px solid #ddd;\n    -webkit-border-radius: 4px;\n    -moz-border-radius: 4px;\n    -ms-border-radius: 4px;\n    -o-border-radius: 4px;\n    border-radius: 4px;\n    padding: 1em;\n  }\n}\n/*------------------------------------------------------------------------------\n\n    Forms\n\n------------------------------------------------------------------------------*/\nlabel {\n  color: #4d565b;\n}\n\n.inline-label {\n  display: inline;\n}\n\nfieldset {\n  border-color: #ddd;\n  background-color: #f7f7f7;\n  padding-top: 1em;\n  padding-bottom: 1em;\n  margin-bottom: 1.5em;\n  -webkit-border-radius: 4px;\n  -moz-border-radius: 4px;\n  -ms-border-radius: 4px;\n  -o-border-radius: 4px;\n  border-radius: 4px;\n}\n\ninput[type=\"text\"],\ninput[type=\"password\"],\ninput[type=\"date\"],\ninput[type=\"datetime\"],\ninput[type=\"datetime-local\"],\ninput[type=\"month\"],\ninput[type=\"week\"],\ninput[type=\"email\"],\ninput[type=\"number\"],\ninput[type=\"search\"],\ninput[type=\"tel\"],\ninput[type=\"time\"],\ninput[type=\"url\"],\ninput[type=\"color\"],\ntextarea,\nselect {\n  -webkit-border-radius: 4px;\n  -moz-border-radius: 4px;\n  -ms-border-radius: 4px;\n  -o-border-radius: 4px;\n  border-radius: 4px;\n}\n\n.inline-input {\n  display: inline !important;\n  width: auto;\n}\n\n.advanced_params { \n  padding-top: 4px;\n  display: none;\n}\n\n/*------------------------------------------------------------------------------\n\n    Alerts\n\n------------------------------------------------------------------------------*/\n/* Altert colors */\n.alert-success {\n  color: #a2d4ba;\n}\n\n.alert-message {\n  color: #f3dda8;\n}\n\n.alert-failure {\n  color: #f7a9a1;\n}\n\n.alert-disabled {\n  color: #919ca1;\n}\n\n.alert-message--bg {\n  background-color: #f3dda8;\n}\n\n.alert-failure--bg {\n  background-color: #f7a9a1;\n}\n\n/* Block alerts - these will fill the full width of the parent container */\n.alert-small-success, .alert-small-success--inline {\n  position: relative;\n  display: block;\n  margin: 1em 0;\n  padding: .2em .45em;\n  background-color: #a2d4ba;\n  color: #698978;\n  -webkit-border-radius: 4px;\n  -moz-border-radius: 4px;\n  -ms-border-radius: 4px;\n  -o-border-radius: 4px;\n  border-radius: 4px;\n}\n.alert-small-success i, .alert-small-success--inline i {\n  color: #698978;\n}\n\n.alert-small-message, .alert-small-message--inline {\n  position: relative;\n  display: block;\n  margin: 1em 0;\n  padding: .2em .45em;\n  background-color: #f3dda8;\n  color: #9d8f6d;\n  -webkit-border-radius: 4px;\n  -moz-border-radius: 4px;\n  -ms-border-radius: 4px;\n  -o-border-radius: 4px;\n  border-radius: 4px;\n}\n.alert-small-message i, .alert-small-message--inline i {\n  color: #9d8f6d;\n}\n\n.alert-small-failure, .alert-small-failure--inline {\n  position: relative;\n  display: block;\n  margin: 1em 0;\n  padding: .2em .45em;\n  background-color: #f7a9a1;\n  color: #a06d68;\n  -webkit-border-radius: 4px;\n  -moz-border-radius: 4px;\n  -ms-border-radius: 4px;\n  -o-border-radius: 4px;\n  border-radius: 4px;\n}\n.alert-small-failure i, .alert-small-failure--inline i {\n  color: #a06d68;\n}\n\n/* Inline Alerts - these will display inline and will only be the width of the content inside */\n.alert-small-success--inline {\n  display: inline-block;\n}\n\n.alert-small-message--inline {\n  display: inline-block;\n}\n\n.alert-small-failure--inline {\n  display: inline-block;\n}\n\n.alert-small-failure a, .alert-small-failure--inline a,\n.alert-small-message a,\n.alert-small-message--inline a,\n.alert-small-success a,\n.alert-small-success--inline a {\n  color: #383f44;\n}\n.alert-small-failure a:hover, .alert-small-failure--inline a:hover,\n.alert-small-message a:hover,\n.alert-small-message--inline a:hover,\n.alert-small-success a:hover,\n.alert-small-success--inline a:hover {\n  color: #9b9fa1;\n}\n\n.alert--dismiss {\n  display: inline-block;\n  position: absolute;\n  top: 0;\n  right: .65em;\n}\n\n/*------------------------------------------------------------------------------\n\n    Buttons\n\n------------------------------------------------------------------------------*/\n\nbutton:hover, button:focus {\n  background-color: #8f9699;\n}\n\nbutton,\ninput[type=\"submit\"],\ninput[type=\"button\"],\n.button-primary,\n.button-primary--small,\n.button-secondary,\n.button-secondary:hover,\n.button-secondary--small,\n.button-secondary--small:hover,\n.button-alternate,\n.button-alternate:hover,\n.button-alternate--small,\n.button-alternate--small:hover,\ninput.button-primary,\ninput.button-primary--small,\ninput.button-secondary,\ninput.button-secondary--small,\ninput.button-alternate,\ninput.button-alternate--small {\n  display: inline-block;\n  padding: .25em .45em;\n  line-height: 1.65;\n  min-width: 120px;\n  min-height: 37px;\n  color: white;\n  background-color: #0089ff;\n  -webkit-appearance: none;\n  -moz-appearance: none;\n  appearance: none;\n  border: none;\n  font-family: \"Open Sans\", \"Helvetica Neue\", \"Helvetica\", Arial, sans-serif;\n  text-decoration: none;\n  text-align: center;\n  border-radius: 4px;\n}\n\n.button-primary,\n.button-primary--small,\ninput.button-primary,\ninput.button-primary--small {\n  background-color: #0089ff;\n}\n.button-primary:hover,\n.button-primary--small:hover,\ninput.button-primary:hover,\ninput.button-primary--small:hover {\n  background-color: #0074d8;\n}\n\ninput[type='button']:disabled, input[type='button']:disabled.cancel, input[type='submit']:disabled {\n    color:#ddd;\n    border-color:#ddd;\n}\n\ninput[type='button']:disabled.button-primary,\ninput[type='submit']:disabled.button-primary  {\n    background-color: rgba(0, 137, 255, 0.81);\n}\n\ninput[type='button']:disabled.button-primary.cancel, input[type='button']:disabled.button-primary.cancel:hover {\n    background-color: rgba(0, 0, 0, 0.1);\n}\n\n.button-secondary,\n.button-secondary--small,\ninput.button-secondary,\ninput.button-secondary--small {\n  background-color: #32a066;\n}\n.button-secondary:hover,\n.button-secondary--small:hover,\ninput.button-secondary:hover,\ninput.button-secondary--small:hover {\n  background-color: #2a8856;\n}\n\n.button-alternate,\n.button-alternate--small,\ninput.button-alternate,\ninput.button-alternate--small {\n  background-color: #ef402f;\n}\n.button-alternate:hover,\n.button-alternate--small:hover,\ninput.button-alternate:hover,\ninput.button-alternate--small:hover {\n  background-color: #cb3627;\n}\n\n.button-quiet,\n.button-quiet--small,\ninput.button-quiet,\ninput.button-quiet--small {\n  background-color: transparent;\n  border: 1px solid #919ca1;\n  color: #4d565b;\n}\n.button-quiet:hover,\n.button-quiet--small:hover,\ninput.button-quiet:hover,\ninput.button-quiet--small:hover {\n  background-color: #8f9699;\n}\n\n.button-primary--small,\n.button-secondary--small,\n.button-alternate--small,\ninput.button-primary--small,\ninput.button-secondary--small,\ninput.button-alternate--small {\n  padding: .25em .45em;\n  line-height: 1.65;\n}\n\n.button-primary.hollow, input[type='button'].cancel {\n  display: inline-block;\n  background-color: transparent;\n  border: 1px solid #fff;\n  color: #fff;\n  text-decoration: none;\n  padding: .25em .5em;\n  border-radius: 4px;\n  margin: 0;\n}\n.button-primary.hollow:hover, input[type='button']:enabled.cancel:hover {\n  background-color: #f7f7f7;\n  border-color: #f7f7f7;\n  color: #383f44;\n}\n\n.button-secondary--form-align,\n.button-primary--form-align,\n.button-quiet--form-align {\n  margin-top: 1.5em;\n  width: 100%;\n}\n\n/*\n * Button modifiers\n*/\n\n\n/*\n * This class will make a button take up the full width\n * of it's parent container.\n*/\n.button--full-width {\n    display: block;\n    width: 100%\n}\n\n/*\n**  Overide Foundation dropdown buttons\n*/\n\n.dropdown.button::after, button.dropdown::after {\n  border-color: #444 transparent transparent transparent;\n}\n\n.f-dropdown {\n  background-color: rgba(255, 255, 255, 0.95);\n  border: none;\n  -webkit-border-radius: 4px;\n  -moz-border-radius: 4px;\n  -ms-border-radius: 4px;\n  -o-border-radius: 4px;\n  border-radius: 4px;\n  -webkit-box-shadow: 0px 2px 2px #ccc;\n  -moz-box-shadow: 0px 2px 2px #ccc;\n  -o-box-shadow: 0px 2px 2px #ccc;\n  box-shadow: 0px 2px 2px #ccc;\n}\n\n.f-dropdown a {\n  text-decoration: none;\n}\n\n/*\n** Disabled states for Config buttons\n*/\n\ninput[type='button']:disabled.button-primary, input[type='submit']:disabled.button-primary {\n  background-color: #999;\n  color: #666;\n  border: none;\n}\n\ninput[type='button']:disabled.button-primary:hover, input[type='submit']:disabled.button-primary:hover {\n  background-color: #999;\n  border-color: #999;\n  color: #666;\n  cursor: default;\n}\n\ninput[type='button']:disabled.button-primary--hollow {\n  border: 1px solid #999;\n  color: #888;\n  background-color:transparent;\n}\n\ninput[type='button']:disabled.button-primary--hollow:hover {\n  background-color: transparent;\n  border-color: #999;\n  color: #888;\n  cursor: default;\n}\n\n.button-dropdown {\n\n}\n\n/*\n**  Button group\n*/\n\n.button-group {\n  padding: 1em 0;\n}\n\n.button-group-testing {\n    float:right;\n}\n\n.button-group button, .button-group-testing button {\n  margin-right: 1em;\n}\n\n.overview {\n  background-color: #f7f7f7;\n  position: relative;\n  padding: 1em 1em 1em 2em;\n  margin: 1em 0;\n  -webkit-border-radius: 4px;\n  -moz-border-radius: 4px;\n  -ms-border-radius: 4px;\n  -o-border-radius: 4px;\n  border-radius: 4px;\n  border: 1px solid #dedede;\n}\n\n.overview--no-pad {\n    padding-left: 0;\n    padding-right: 0;\n}\n\n.overview--list {\n  margin-bottom: 0;\n}\n.overview--list dt, .overview--list dd {\n  float: left;\n  margin-bottom: 0;\n}\n.overview--list dt {\n  clear: both;\n  margin-right: .65em;\n}\n\n.overview--list:after {\n  content: \"\";\n  clear: both;\n  display: block;\n}\n\n.overview--title {\n  font-size: 1.75em;\n  line-height: 1.2;\n  font-weight: 700;\n  margin-bottom: .65em;\n}\n.overview--title i {\n  margin-left: -20px;\n  color: #ef402f;\n}\n\n.overview--edit {\n  position: absolute;\n  display: inline-block;\n  top: 0;\n  right: 0;\n  padding: .75em 1em;\n  color: #0089ff;\n  text-decoration: none;\n}\n.overview--edit i {\n  color: #0089ff;\n}\n.overview--edit:hover {\n  text-decoration: underline;\n  color: #a5d5ff;\n}\n.overview--edit:hover i {\n  text-decoration: underline;\n  color: #a5d5ff;\n}\n\n/* Module header block */\n.module-header {\n  position: relative;\n  padding: .5em;\n  background-color: #4d565b;\n}\n\n.module-header__title {\n  font-size: 1.25em;\n}\n\n.module-header .module-header__title {\n  margin: 0;\n}\n\n.module-header__action {\n  position: absolute;\n  display: inline-block;\n  top: 0;\n  right: 0;\n  padding: .6em .75em;\n  border-left: 1px solid #353b40;\n  color: #f7f7f7;\n  text-decoration: none;\n}\n.module-header__action:hover i {\n  color: #a5d5ff;\n}\n.module-header__action i {\n  color: #f7f7f7;\n}\n\n@media screen and (max-width: 580px) {\n  .module-header .module-header__action {\n    display: block;\n    position: relative;\n    top: 0;\n    border-left: none;\n    padding: 0;\n  }\n\n  .module-header .module-header__title {\n    display: block;\n  }\n}\n/*------------------------------------------------------------------------------\n\n    Aside - Components/modules use in sidebars, etc. for secondary\n    or subordinate information.\n\n------------------------------------------------------------------------------*/\n.aside {\n  position: relative;\n  margin: 2em 0;\n  background-color: #f7f7f7;\n  border: 1px solid #DDDDDD;\n  -webkit-border-radius: 4px;\n  -moz-border-radius: 4px;\n  -ms-border-radius: 4px;\n  -o-border-radius: 4px;\n  border-radius: 4px;\n}\n.aside a:hover {\n  color: #a5d5ff;\n}\n\n.aside__heading {\n  font-size: 1em;\n  font-weight: 700;\n  padding: .825em;\n  margin-top: 0;\n  background-color: #ddd;\n}\n\n.aside__list {\n  display: block;\n  list-style-type: none;\n  margin: 0;\n  padding: .825em;\n}\n\n.aside__list li {\n  padding: .35em 0;\n}\n.aside__list li:after {\n  content: \"\";\n  clear: both;\n  display: block;\n}\n.aside__list li:first-child {\n  padding-top: 0;\n}\n\n.aside__list li a {\n  text-decoration: none;\n}\n\n.aside--nav-list {\n  list-style-type: none;\n  margin: 0 0 1em 0;\n}\n.aside--nav-list li {\n  border-bottom: 1px solid #3d4448;\n  padding: .35em 0;\n}\n.aside--nav-list li:last-child {\n  border-bottom: none;\n}\n.aside--nav-list li a {\n  text-decoration: none;\n  color: #919ca1;\n}\n.aside--nav-list li a:hover {\n  text-decoration: underline;\n}\n.aside--nav-list li a i {\n  color: #919ca1;\n}\n\n/*------------------------------------------------------------------------------\n\n    Sticky bar\n\n------------------------------------------------------------------------------*/\n.sticky-bar {\n  position: fixed;\n  bottom: 0;\n  right: 0;\n  /*text-align: center;*/\n  width: 100%;\n  height: 70px;\n  font-size: 1.15em;\n}\n\n.sticky-bar__message {\n  display: inline-block;\n}\n\n.js-unsaved-message {\n  display: none;\n}\n\n.sticky-bar--unsaved {\n  background: rgba(56, 63, 68, 0.85);\n  /*display: none;*/\n  color: #ffffff;\n  padding-top: 1.15em;\n}\n\n.sticky-bar--saved {\n  background-color: #32a066;\n  color: #fff;\n  display: none;\n  padding-top: 1.5em;\n}\n\n.sticky-bar--failure {\n  /*background-color: #ef402f;*/\n  background-color: #f7a9a1;\n  color: #a06d68;\n  display: none;\n  padding-top: 1.5em;\n}\n\n.sticky-bar--failure a {\n  color: #383f44;\n}\n\n.sticky-bar--failure a:hover {\n  text-decoration: none;\n}\n\n.sticky-bar__message {\n  margin-right: 1em;\n  padding-left: 2.35em;\n}\n\n.sticky-bar__dismiss {\n  position: absolute;\n  right: 1.4em;\n  top: 1.4em;\n}\n\n.sticky-bar__dismiss a {\n  text-decoration: none;\n}\n\n.sticky-bar__dismiss i:hover {\n  color: #a06d68;\n}\n\n/* ** Get rid of this thing once you figure out a better place\nto put the stuff inside. */\n.module {\n  margin: 2em 0 1em 0;\n}\n\n.module--config-table {\n  margin-top: 1em;\n}\n\n.dashboard-main {\n  width: 75%;\n  padding: 1em 3em 0 2em;\n  float: left;\n}\n\n.config-panel-wrapper {\n  max-width: 1080px;\n  padding: 2em 1em;\n  margin: 0 auto;\n}\n\n.config-panel-wrapper div.actions {\n    text-align:center;\n}\n\n.config-panel-wrapper div.actions a {\n    margin:1em;\n}\n\n.config-panel-wrapper .config__form label {\n    /* width:70px; */\n}\n\n.config-panel-wrapper .config__form dl dt input[type=checkbox] {\n    margin:0;\n}\n\n.uninstalled {\n    color:#999;\n}\n\n.config-panel-wrapper .config__form dl dt {\n    float:left;\n    clear:left;\n    width:7em;\n}\n\n.config-panel-wrapper .config__form dl dd {\n}\n\n.config-panel-wrapper span.label-description {\n    /*position:absolute;\n    left:10em;*/\n    /* margin-right:0.5em; */\n}\n\n@media screen and (max-width: 850px) {\n  .dashboard-main {\n    float: none;\n    width: 100%;\n    padding: 1em;\n  }\n}\n/* Key for icons */\n.key {\n  color: #919ca1;\n  margin-top: 1.5em;\n}\n\n.key__items {\n  list-style-type: none;\n  margin: 0;\n}\n\n.key__item {\n  display: inline-block;\n  margin-right: 1em;\n  font-size: .875em;\n}\n\n.key__item:last-child {\n  margin-right: 0;\n}\n\n.key__item--normal i {\n  color: #ef402f;\n}\n\n.key__item--vm i {\n  color: #e5b53e;\n}\n\n.key__item--small i {\n  color: #32a066;\n}\n\n/*------------------------------------------------------------------------------\n\n    Tab navigation\n\n------------------------------------------------------------------------------*/\n.nav-tabs {\n  display: block;\n  margin-top: 1em;\n  border-bottom: 1px solid #ddd;\n}\n\n.nav-tabs__panel {\n  border: 1px solid #ddd;\n  border-right: none;\n  border-bottom: none;\n  margin-right: -4px;\n}\n.nav-tabs__panel:first-child {\n  border-top-left-radius: 4px;\n}\n.nav-tabs__panel:last-child {\n  border-right: 1px solid #ddd;\n  border-top-right-radius: 4px;\n}\n.nav-tabs__panel a {\n  background-color: #f7f7f7;\n  display: inline-block;\n  text-decoration: none;\n  padding: .5em 1em;\n  color: #0089ff;\n}\n.nav-tabs__panel a:hover {\n  background-color: #f1f1f1;\n  color: #a5d5ff;\n}\n\n.nav-tabs__panel--active a, .nav-tabs__panel.active a {\n  background-color: #ddd;\n  cursor: default;\n  color: #999;\n  border-color: #0089ff;\n}\n.nav-tabs__panel--active, .nav-tabs__panel.active a:hover {\n  background-color: #ddd;\n  color: #999;\n}\n\n/*------------------------------------------------------------------------------\n\n    Config forms\n\n------------------------------------------------------------------------------*/\n.config__form {\n  padding: 2em 0;\n  margin-bottom: 6em;\n}\n\n.config__breadcrumbs {\n    /*background-color: #f7f7f7;*/\n    padding: .85em;\n    text-align: right;\n}\n\n.config__breadcrumbs a {\n    text-decoration: none;\n}\n\n/*\n  Select2 add servers - Adding a bunch of rules to override conflicts between\n  Foundation and Select2 plugin\n*/\n\n.select2-search__field {\n  box-shadow: none !important;\n  transition: none !important;\n}\n\n.servers input,\n.servers select,\n.servers li {\n  margin: 0;\n}\n\n.select2-container .select2-search--inline .select2-search__field {\n  margin: 0 !important;\n}\n\n/*------------------------------------------------------------------------------\n\n    Communities module\n\n------------------------------------------------------------------------------*/\n.communities,\n.servers {\n  padding: 1em 0;\n}\n.communities:after,\n.servers:after {\n  content: \"\";\n  clear: both;\n  display: block;\n}\n\n.communities__popular,\n.servers__popular, .add_panel {\n  display: none;\n  padding: 1em 0 0 0;\n}\n\n.communities__popular a:hover,\n.servers__popular a:hover {\n  background-color: #32a066;\n}\n\n.communities__popular input,\n.servers__popular input {\n  /*margin: 0;*/\n}\n\n@media screen and (max-width: 850px) {\n  .servers__popular input {\n    margin-bottom: 1em;\n  }\n}\n.communities__node,\n.servers__node {\n  position: relative;\n  border: 1px solid #ddd;\n  -webkit-border-radius: 4px;\n  -moz-border-radius: 4px;\n  -ms-border-radius: 4px;\n  -o-border-radius: 4px;\n  border-radius: 4px;\n  margin: 0 .875em .875em 0;\n  padding-left: .75em;\n  background-color: #f7f7f7;\n  overflow: hidden;\n}\n\n.communities__node a,\n.servers__node a {\n  text-decoration: none;\n  display: inline-block;\n  padding: .25em .5em;\n  margin-left: .5em;\n  font-size: .875em;\n  color: #ef402f;\n  border-left: 1px solid #ddd;\n}\n.communities__node a:hover,\n.servers__node a:hover {\n  background-color: #ef402f;\n  color: white;\n}\n\n/*\n.communities__add,\n.servers__add {\n  display: inline-block;\n  margin: 1em 0;\n}\n*/\n\n.servers__options-list {\n  list-style: none;\n  padding: 0;\n  margin: 1.5em 0;\n}\n\n.servers__options-item {\n  padding: .5em 0;\n}\n\n/* Override Foundation's switch color */\n.switch input:checked + label {\n  background-color: #32a066;\n}\n\n.switch-wrapper {\n  margin-bottom: 3em;\n}\n\n/*------------------------------------------------------------------------------\n\n    Manage NTP servers modal\n\n------------------------------------------------------------------------------*/\n\n.ntp-servers {\n  text-align: left;\n}\n\n.ntp-list {\n  list-style: none;\n  padding: 0;\n  margin: 0;\n  border: 1px solid #ddd;\n  border-radius: 4px;\n  max-height: 500px;\n  overflow: scroll;\n}\n\n.ntp-list__item {\n  border-bottom: 1px solid #ddd;\n  padding: .5em 1em;\n  position: relative;\n}\n\n.ntp-list__item:nth-of-type(2n +1) {\n  background-color: #f7f7f7;\n}\n\n.ntp-list__item:last-child {\n  border-bottom: none;\n}\n\n.ntp-list__title {\n  margin-right: 1em;\n  font-weight: 700;\n}\n\n.ntp-list__description {\n  font-style: italic;\n  color: #919ca1;\n}\n\n.ntp-list__delete {\n  color: #ef402f;\n  position: absolute;\n  top: .7em;\n  right: 1em;\n  text-decoration: none;\n}\n\n.ntp-list__delete:hover {\n  color: #ef402f;\n  text-decoration: underline;\n}\n\n/*------------------------------------------------------------------------------\n\n    Austin's shame\n\n------------------------------------------------------------------------------*/\n.wrapper {\n  overflow: hidden;\n  min-height: 100%;\n  position: relative;\n}\n\n/* Modals */\n\n/*\n * Getting rid of this centered text rule because it is cause weird issues\n * inside the modals on some stuff (like graphs) where elements are set to\n * display: inline-block but the text should not be centere.\n *\n * Use Foundation's .text-center utility class instead on the modals that\n * need to have the text centered.\n\n .reveal-modal {\n   text-align: center;\n }\n\n\n*/\n\n.reveal-modal.loading {\n  position: fixed;\n  overflow: hidden;\n  /* top: 50px !important; */\n  top:30% !important;  /* previous value */\n  left:20% !important;\n  height:150px;\n  width:300px;\n  /*bottom: 50% !important; */\n  transform:translate(-40%, 0);\n\n}\n\n.reveal-modal.large {\n  position: fixed;\n  overflow: scroll;\n  top: 50px !important;\n  /* top:50% !important; */ /* previous value */\n  left:50% !important;\n  bottom: 50px !important;\n  transform:translate(-50%, 0);\n\n}\n\n.reveal-modal.xlarge {\n  /*width: 95%;*/\n  position: fixed;\n  overflow: scroll;\n  top: 30px !important;\n/*  left:95% !important;\n  transform:translate(-97%, 0);\n\n  bottom: 50px !important;\n*/\n}\n\n.reveal-modal-bg { position: fixed; }\n\n.reveal-modal__heading {\n  font-weight: 700;\n  font-size: 1.15em;\n  margin-top: 1.5em;\n}\n\n.reveal-modal__heading:first-child {\n  margin-top: 0;\n  margin-bottom: 1em;\n}\n\n.reveal-modal__heading--large {\n    font-size: 2em;\n    border-bottom: 1px solid #ddd;\n}\n\n.reveal-modal .close-reveal-modal {\n  font-size: 1.5em;\n}\n\n/*\n**  Test config table styling\n*/\n\n.subrow td {\n  /*padding-left: 3.5em;*/\n  /*background-color: #eee;*/\n  line-height: 1.25em;\n}\n\n.subrow input {\n  margin: 0;\n}\n\n.subrow--heading td {\n  background-color: #ddd;\n  border-top: 1px solid #ccc;\n  color: #888;\n  text-transform: uppercase;\n  letter-spacing: 2px;\n  padding: .25em .5em;\n}\n\n.subrow--content {\n  border-top: 1px solid #ddd;\n}\n\n.subrow--indent td:first-child {\n  padding-left: 3em;\n}\n\n/*.subrow--content td:first-child {\n  padding-left: 3em;\n}*/\n\n.subrow--content td a {\n  display: inline-block;\n  margin-right: 1em;\n  color: #383f44;\n}\n\n.subrow--content td a:hover {\n  color: #999;\n}\n\n.subrow--content td:first-child {\n  font-weight: 700;\n}\n\n.new-host-save {\n  display: none;\n}\n\ntable .has-tip {\n    border-bottom:none;\n    font-weight:inherit;\n    color:inherit;\n}\n\ntable .has-tip:hover {\n    border-bottom:none;\n}\n", ""]);
 
 /***/ },
-/* 605 */
+/* 602 */
 /*!*******************************!*\
   !*** ../html/css/spinner.css ***!
   \*******************************/
@@ -92342,10 +91398,10 @@
 	// style-loader: Adds some css to the DOM by adding a <style> tag
 	
 	// load the styles
-	var content = __webpack_require__(/*! !./../../react/~/css-loader!./spinner.css */ 606);
+	var content = __webpack_require__(/*! !./../../react/~/css-loader!./spinner.css */ 603);
 	if(typeof content === 'string') content = [[module.id, content, '']];
 	// add the styles to the DOM
-	var update = __webpack_require__(/*! ./../../react/~/style-loader/addStyles.js */ 595)(content, {});
+	var update = __webpack_require__(/*! ./../../react/~/style-loader/addStyles.js */ 596)(content, {});
 	if(content.locals) module.exports = content.locals;
 	// Hot Module Replacement
 	if(false) {
@@ -92362,17 +91418,17 @@
 	}
 
 /***/ },
-/* 606 */
+/* 603 */
 /*!**********************************************!*\
   !*** ./~/css-loader!../html/css/spinner.css ***!
   \**********************************************/
 /***/ function(module, exports, __webpack_require__) {
 
-	exports = module.exports = __webpack_require__(/*! ./~/css-loader/cssToString.js */ 594)();
+	exports = module.exports = __webpack_require__(/*! ./~/css-loader/cssToString.js */ 595)();
 	exports.push([module.id, "#loading {\n    /*position:relative;*/\n    /*top:150px;*/\n    /*left:300px;*/\n    width:200px;\n    margin-left:auto;\n    margin-right:auto;\n    background-color:#ffffff;\n}\n#loading h4 {\n    margin-left:80px;\n    padding-top:20px;\n}\n#circularG{\n    position:relative;\n    float:left;\n    width:64px;\n    height:64px}\n.circularG{\n    position:absolute;\n    background-color:#405E9A;\n    width:15px;\n    height:15px;\n    -moz-border-radius:10px;\n    -moz-animation-name:bounce_circularG;\n    -moz-animation-duration:1.04s;\n    -moz-animation-iteration-count:infinite;\n    -moz-animation-direction:linear;\n    -webkit-border-radius:10px;\n    -webkit-animation-name:bounce_circularG;\n    -webkit-animation-duration:1.04s;\n    -webkit-animation-iteration-count:infinite;\n    -webkit-animation-direction:linear;\n    -ms-border-radius:10px;\n    -ms-animation-name:bounce_circularG;\n    -ms-animation-duration:1.04s;\n    -ms-animation-iteration-count:infinite;\n    -ms-animation-direction:linear;\n    -o-border-radius:10px;\n    -o-animation-name:bounce_circularG;\n    -o-animation-duration:1.04s;\n    -o-animation-iteration-count:infinite;\n    -o-animation-direction:linear;\n    border-radius:10px;\n    animation-name:bounce_circularG;\n    animation-duration:1.04s;\n    animation-iteration-count:infinite;\n    animation-direction:linear;\n}\n\n#circularG_1{\n    left:0;\n    top:25px;\n    -moz-animation-delay:0.39s;\n    -webkit-animation-delay:0.39s;\n    -ms-animation-delay:0.39s;\n    -o-animation-delay:0.39s;\n    animation-delay:0.39s;\n}\n\n#circularG_2{\n    left:7px;\n    top:7px;\n    -moz-animation-delay:0.52s;\n    -webkit-animation-delay:0.52s;\n    -ms-animation-delay:0.52s;\n    -o-animation-delay:0.52s;\n    animation-delay:0.52s;\n}\n\n#circularG_3{\n    top:0;\n    left:25px;\n    -moz-animation-delay:0.65s;\n    -webkit-animation-delay:0.65s;\n    -ms-animation-delay:0.65s;\n    -o-animation-delay:0.65s;\n    animation-delay:0.65s;\n}\n\n#circularG_4{\n    right:7px;\n    top:7px;\n    -moz-animation-delay:0.78s;\n    -webkit-animation-delay:0.78s;\n    -ms-animation-delay:0.78s;\n    -o-animation-delay:0.78s;\n    animation-delay:0.78s;\n}\n\n#circularG_5{\n    right:0;\n    top:25px;\n    -moz-animation-delay:0.91s;\n    -webkit-animation-delay:0.91s;\n    -ms-animation-delay:0.91s;\n    -o-animation-delay:0.91s;\n    animation-delay:0.91s;\n}\n\n#circularG_6{\n    right:7px;\n    bottom:7px;\n    -moz-animation-delay:1.04s;\n    -webkit-animation-delay:1.04s;\n    -ms-animation-delay:1.04s;\n    -o-animation-delay:1.04s;\n    animation-delay:1.04s;\n}\n\n#circularG_7{\n    left:25px;\n    bottom:0;\n    -moz-animation-delay:1.17s;\n    -webkit-animation-delay:1.17s;\n    -ms-animation-delay:1.17s;\n    -o-animation-delay:1.17s;\n    animation-delay:1.17s;\n}\n\n#circularG_8{\n    left:7px;\n    bottom:7px;\n    -moz-animation-delay:1.3s;\n    -webkit-animation-delay:1.3s;\n    -ms-animation-delay:1.3s;\n    -o-animation-delay:1.3s;\n    animation-delay:1.3s;\n}\n\n@-moz-keyframes bounce_circularG{\n    0%{\n        -moz-transform:scale(1)}\n\n    100%{\n        -moz-transform:scale(.3)}\n\n}\n\n@-webkit-keyframes bounce_circularG{\n    0%{\n        -webkit-transform:scale(1)}\n\n    100%{\n        -webkit-transform:scale(.3)}\n\n}\n\n@-ms-keyframes bounce_circularG{\n    0%{\n        -ms-transform:scale(1)}\n\n    100%{\n        -ms-transform:scale(.3)}\n\n}\n\n@-o-keyframes bounce_circularG{\n    0%{\n        -o-transform:scale(1)}\n\n    100%{\n        -o-transform:scale(.3)}\n\n}\n\n@keyframes bounce_circularG{\n    0%{\n        transform:scale(1)}\n\n    100%{\n        transform:scale(.3)}\n\n}\n\n", ""]);
 
 /***/ },
-/* 607 */
+/* 604 */
 /*!**********************************!*\
   !*** ./src/chart1webservice.jsx ***!
   \**********************************/
@@ -92400,11 +91456,11 @@
 	
 	var _reactMarkdown2 = _interopRequireDefault(_reactMarkdown);
 	
-	var _reactTimeseriesCharts = __webpack_require__(/*! react-timeseries-charts */ 506);
+	var _reactTimeseriesCharts = __webpack_require__(/*! react-timeseries-charts */ 507);
 	
 	var _pondjs = __webpack_require__(/*! pondjs */ 345);
 	
-	__webpack_require__(/*! ./chart1.css */ 592);
+	__webpack_require__(/*! ./chart1.css */ 593);
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
@@ -92928,7 +91984,7 @@
 	});
 
 /***/ },
-/* 608 */
+/* 605 */
 /*!***********************************************!*\
   !*** ./~/history/lib/createBrowserHistory.js ***!
   \***********************************************/
@@ -93115,7 +92171,7 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(/*! (webpack)/~/node-libs-browser/~/process/browser.js */ 4)))
 
 /***/ },
-/* 609 */
+/* 606 */
 /*!****************************************************!*\
   !*** ./~/scroll-behavior/lib/useStandardScroll.js ***!
   \****************************************************/
@@ -93131,33 +92187,33 @@
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 	
-	var _domHelpersEventsOff = __webpack_require__(/*! dom-helpers/events/off */ 610);
+	var _domHelpersEventsOff = __webpack_require__(/*! dom-helpers/events/off */ 607);
 	
 	var _domHelpersEventsOff2 = _interopRequireDefault(_domHelpersEventsOff);
 	
-	var _domHelpersEventsOn = __webpack_require__(/*! dom-helpers/events/on */ 612);
+	var _domHelpersEventsOn = __webpack_require__(/*! dom-helpers/events/on */ 609);
 	
 	var _domHelpersEventsOn2 = _interopRequireDefault(_domHelpersEventsOn);
 	
-	var _domHelpersQueryScrollLeft = __webpack_require__(/*! dom-helpers/query/scrollLeft */ 613);
+	var _domHelpersQueryScrollLeft = __webpack_require__(/*! dom-helpers/query/scrollLeft */ 610);
 	
 	var _domHelpersQueryScrollLeft2 = _interopRequireDefault(_domHelpersQueryScrollLeft);
 	
-	var _domHelpersQueryScrollTop = __webpack_require__(/*! dom-helpers/query/scrollTop */ 615);
+	var _domHelpersQueryScrollTop = __webpack_require__(/*! dom-helpers/query/scrollTop */ 612);
 	
 	var _domHelpersQueryScrollTop2 = _interopRequireDefault(_domHelpersQueryScrollTop);
 	
-	var _domHelpersUtilRequestAnimationFrame = __webpack_require__(/*! dom-helpers/util/requestAnimationFrame */ 616);
+	var _domHelpersUtilRequestAnimationFrame = __webpack_require__(/*! dom-helpers/util/requestAnimationFrame */ 613);
 	
 	var _domHelpersUtilRequestAnimationFrame2 = _interopRequireDefault(_domHelpersUtilRequestAnimationFrame);
 	
 	var _historyLibDOMStateStorage = __webpack_require__(/*! history/lib/DOMStateStorage */ 168);
 	
-	var _utilsCreateUseScroll = __webpack_require__(/*! ./utils/createUseScroll */ 617);
+	var _utilsCreateUseScroll = __webpack_require__(/*! ./utils/createUseScroll */ 614);
 	
 	var _utilsCreateUseScroll2 = _interopRequireDefault(_utilsCreateUseScroll);
 	
-	var _utilsSetScrollRestoration = __webpack_require__(/*! ./utils/setScrollRestoration */ 618);
+	var _utilsSetScrollRestoration = __webpack_require__(/*! ./utils/setScrollRestoration */ 615);
 	
 	var _utilsSetScrollRestoration2 = _interopRequireDefault(_utilsSetScrollRestoration);
 	
@@ -93261,14 +92317,14 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 610 */
+/* 607 */
 /*!*******************************************************!*\
   !*** ./~/scroll-behavior/~/dom-helpers/events/off.js ***!
   \*******************************************************/
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
-	var canUseDOM = __webpack_require__(/*! ../util/inDOM */ 611);
+	var canUseDOM = __webpack_require__(/*! ../util/inDOM */ 608);
 	var off = function off() {};
 	
 	if (canUseDOM) {
@@ -93286,7 +92342,7 @@
 	module.exports = off;
 
 /***/ },
-/* 611 */
+/* 608 */
 /*!*******************************************************!*\
   !*** ./~/scroll-behavior/~/dom-helpers/util/inDOM.js ***!
   \*******************************************************/
@@ -93296,14 +92352,14 @@
 	module.exports = !!(typeof window !== 'undefined' && window.document && window.document.createElement);
 
 /***/ },
-/* 612 */
+/* 609 */
 /*!******************************************************!*\
   !*** ./~/scroll-behavior/~/dom-helpers/events/on.js ***!
   \******************************************************/
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
-	var canUseDOM = __webpack_require__(/*! ../util/inDOM */ 611);
+	var canUseDOM = __webpack_require__(/*! ../util/inDOM */ 608);
 	var on = function on() {};
 	
 	if (canUseDOM) {
@@ -93320,14 +92376,14 @@
 	module.exports = on;
 
 /***/ },
-/* 613 */
+/* 610 */
 /*!*************************************************************!*\
   !*** ./~/scroll-behavior/~/dom-helpers/query/scrollLeft.js ***!
   \*************************************************************/
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
-	var getWindow = __webpack_require__(/*! ./isWindow */ 614);
+	var getWindow = __webpack_require__(/*! ./isWindow */ 611);
 	
 	module.exports = function scrollTop(node, val) {
 	  var win = getWindow(node);
@@ -93338,7 +92394,7 @@
 	};
 
 /***/ },
-/* 614 */
+/* 611 */
 /*!***********************************************************!*\
   !*** ./~/scroll-behavior/~/dom-helpers/query/isWindow.js ***!
   \***********************************************************/
@@ -93351,14 +92407,14 @@
 	};
 
 /***/ },
-/* 615 */
+/* 612 */
 /*!************************************************************!*\
   !*** ./~/scroll-behavior/~/dom-helpers/query/scrollTop.js ***!
   \************************************************************/
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
-	var getWindow = __webpack_require__(/*! ./isWindow */ 614);
+	var getWindow = __webpack_require__(/*! ./isWindow */ 611);
 	
 	module.exports = function scrollTop(node, val) {
 	  var win = getWindow(node);
@@ -93369,7 +92425,7 @@
 	};
 
 /***/ },
-/* 616 */
+/* 613 */
 /*!***********************************************************************!*\
   !*** ./~/scroll-behavior/~/dom-helpers/util/requestAnimationFrame.js ***!
   \***********************************************************************/
@@ -93377,7 +92433,7 @@
 
 	'use strict';
 	
-	var canUseDOM = __webpack_require__(/*! ./inDOM */ 611);
+	var canUseDOM = __webpack_require__(/*! ./inDOM */ 608);
 	
 	var vendors = ['', 'webkit', 'moz', 'o', 'ms'],
 	    cancel = 'clearTimeout',
@@ -93423,7 +92479,7 @@
 	module.exports = compatRaf;
 
 /***/ },
-/* 617 */
+/* 614 */
 /*!********************************************************!*\
   !*** ./~/scroll-behavior/lib/utils/createUseScroll.js ***!
   \********************************************************/
@@ -93532,7 +92588,7 @@
 	module.exports = exports["default"];
 
 /***/ },
-/* 618 */
+/* 615 */
 /*!*************************************************************!*\
   !*** ./~/scroll-behavior/lib/utils/setScrollRestoration.js ***!
   \*************************************************************/
@@ -93564,6 +92620,880 @@
 	}
 	
 	module.exports = exports['default'];
+
+/***/ },
+/* 616 */
+/*!*****************************!*\
+  !*** ./src/ChartHeader.jsx ***!
+  \*****************************/
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+	
+	Object.defineProperty(exports, "__esModule", {
+	    value: true
+	});
+	
+	var _react = __webpack_require__(/*! react */ 1);
+	
+	var _react2 = _interopRequireDefault(_react);
+	
+	var _HostInfoStore = __webpack_require__(/*! ./HostInfoStore */ 617);
+	
+	var _HostInfoStore2 = _interopRequireDefault(_HostInfoStore);
+	
+	var _InterfaceInfoStore = __webpack_require__(/*! ./InterfaceInfoStore */ 618);
+	
+	var _InterfaceInfoStore2 = _interopRequireDefault(_InterfaceInfoStore);
+	
+	var _GraphUtilities = __webpack_require__(/*! ./GraphUtilities */ 506);
+	
+	var _GraphUtilities2 = _interopRequireDefault(_GraphUtilities);
+	
+	var _SIValue = __webpack_require__(/*! ./SIValue */ 592);
+	
+	var _SIValue2 = _interopRequireDefault(_SIValue);
+	
+	__webpack_require__(/*! ../css/graphs.css */ 598);
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
+	var EventEmitter = __webpack_require__(/*! events */ 505).EventEmitter;
+	
+	var emitter = new EventEmitter();
+	
+	var moment = __webpack_require__(/*! moment-timezone */ 619);
+	
+	exports.default = _react2.default.createClass({
+	    displayName: "ChartHeader",
+	
+	    hostInfo: [],
+	    getInitialState: function getInitialState() {
+	        return {
+	            showHostSelectors: false,
+	            start: this.props.start,
+	            end: this.props.end,
+	            timeframe: this.props.timeframe,
+	            interfaceInfo: null,
+	            traceInfo: []
+	        };
+	    },
+	    getTime: function getTime() {
+	        var obj = {
+	            "start": this.state.start,
+	            "end": this.state.end,
+	            "timeframe": this.state.timeframe
+	        };
+	        return obj;
+	    },
+	    render: function render() {
+	        var startDate = new Date(this.state.start * 1000);
+	        var endDate = new Date(this.state.end * 1000);
+	        var startMoment = moment(startDate);
+	        var endMoment = moment(endDate);
+	
+	        var startTZ = _GraphUtilities2.default.getTimezone(startDate);
+	        var endTZ = _GraphUtilities2.default.getTimezone(endDate);
+	
+	        var date = "ddd MM/DD/YYYY";
+	        var time = "HH:mm:ss";
+	
+	        return _react2.default.createElement(
+	            "div",
+	            { className: "chartHeader" },
+	            _react2.default.createElement(
+	                "div",
+	                { className: "overview overview--pad" },
+	                _react2.default.createElement(
+	                    "div",
+	                    { className: "row" },
+	                    _react2.default.createElement(
+	                        "div",
+	                        { className: "medium-4 columns" },
+	                        this.renderHostList("source", "Source")
+	                    ),
+	                    _react2.default.createElement(
+	                        "div",
+	                        { className: "medium-4 columns" },
+	                        this.renderHostList("dest", "Destination")
+	                    ),
+	                    _react2.default.createElement(
+	                        "div",
+	                        { className: "medium-4 columns" },
+	                        _react2.default.createElement(
+	                            "label",
+	                            { className: "hostLabel" },
+	                            "Report range"
+	                        ),
+	                        _react2.default.createElement(
+	                            "button",
+	                            { id: "headerTimePrevious", className: "button-quiet button-timechange", onClick: this.handlePageChange.bind(this, "previous") },
+	                            _react2.default.createElement("i", { className: "fa fa-arrow-left", "aria-hidden": "true" })
+	                        ),
+	                        _react2.default.createElement(
+	                            "select",
+	                            { className: "no-margin", name: "timeperiod", id: "timeperiod", onChange: this.changeTimePeriod, value: this.state.timeframe },
+	                            _react2.default.createElement(
+	                                "option",
+	                                { value: "1d" },
+	                                "1 day"
+	                            ),
+	                            _react2.default.createElement(
+	                                "option",
+	                                { value: "3d" },
+	                                "3 days"
+	                            ),
+	                            _react2.default.createElement(
+	                                "option",
+	                                { value: "1w" },
+	                                "1 week"
+	                            ),
+	                            _react2.default.createElement(
+	                                "option",
+	                                { value: "1m" },
+	                                "1 month"
+	                            ),
+	                            _react2.default.createElement(
+	                                "option",
+	                                { value: "1y" },
+	                                "1 year"
+	                            )
+	                        ),
+	                        _react2.default.createElement(
+	                            "button",
+	                            { className: "button-quiet button-timechange", onClick: this.handlePageChange.bind(this, "next") },
+	                            _react2.default.createElement("i", { className: "fa fa-arrow-right", "aria-hidden": "true" })
+	                        ),
+	                        _react2.default.createElement(
+	                            "div",
+	                            null,
+	                            _react2.default.createElement(
+	                                "span",
+	                                { className: "timerange_holder" },
+	                                startMoment.format(date),
+	                                _react2.default.createElement("br", null),
+	                                startMoment.format(time),
+	                                " ",
+	                                startTZ
+	                            ),
+	                            _react2.default.createElement(
+	                                "span",
+	                                { className: "timerange_holder" },
+	                                "to"
+	                            ),
+	                            _react2.default.createElement(
+	                                "span",
+	                                { className: "timerange_holder" },
+	                                endMoment.format(date),
+	                                _react2.default.createElement("br", null),
+	                                endMoment.format(time),
+	                                " ",
+	                                endTZ
+	                            )
+	                        )
+	                    )
+	                ),
+	                " "
+	            ),
+	            " "
+	        ); // End render()
+	    },
+	
+	    changeTimePeriod: function changeTimePeriod(event) {
+	        var period = event.target.value;
+	        var vars = this.getTimeVars(period);
+	        var timeDiff = vars.timeDiff;
+	        var half = timeDiff / 2;
+	        var start = this.state.start;
+	        var end = this.state.end;
+	        var middle = (start + end) / 2;
+	        var now = Math.floor(new Date().getTime() / 1000);
+	        //let newEnd = Math.floor( new Date().getTime() / 1000 );
+	        var newEnd = middle + half;
+	        if (newEnd > now) {
+	            newEnd = now;
+	        }
+	        // convert ms to s
+	        //newEnd = Math.floor( newEnd / 1000 ); 
+	
+	        var newStart = newEnd - timeDiff;
+	
+	        var options = {
+	            timeframe: period,
+	            start: newStart,
+	            end: newEnd
+	        };
+	        this.handleTimerangeChange(options);
+	    },
+	    getTraceURL: function getTraceURL(i) {
+	        // URL from old graphs
+	        //
+	        var trace_data = this.state.traceInfo[i];
+	        if (typeof trace_data == "undefined") {
+	            return;
+	        }
+	        var trace_url = '/perfsonar-traceroute-viewer/index.cgi?';
+	        trace_url += 'mahost=' + trace_data.ma_url;
+	        trace_url += '&stime=yesterday';
+	        trace_url += '&etime=now';
+	        //trace_url += '&tzselect='; // Commented out (allow default to be used)
+	        trace_url += '&epselect=' + trace_data.traceroute_uri;
+	        return trace_url;
+	    },
+	    renderHostList: function renderHostList(type, label) {
+	        if (this.state.showHostSelectors) {
+	            return _react2.default.createElement(
+	                "div",
+	                null,
+	                _react2.default.createElement(
+	                    "label",
+	                    { htmlFor: "source" },
+	                    "Source:"
+	                ),
+	                _react2.default.createElement(
+	                    "select",
+	                    { className: "no-margin", name: "source", id: "source" },
+	                    _react2.default.createElement(
+	                        "option",
+	                        null,
+	                        "Source One"
+	                    ),
+	                    _react2.default.createElement(
+	                        "option",
+	                        null,
+	                        "Source Two"
+	                    ),
+	                    _react2.default.createElement(
+	                        "option",
+	                        null,
+	                        "Source Three"
+	                    )
+	                )
+	            );
+	        } else {
+	            var hostInfo = this.hostInfo;
+	            var hosts = [];
+	            if (hostInfo.length > 0) {
+	                for (var i in hostInfo) {
+	                    var row = hostInfo[i];
+	                    hosts.push(_react2.default.createElement(
+	                        "div",
+	                        { className: "hostname", key: "hostname" + label + i },
+	                        row[type + "_host"]
+	                    ), _react2.default.createElement(
+	                        "div",
+	                        { className: "address", key: "ip" + label + i },
+	                        row[type + "_ip"]
+	                    ), _react2.default.createElement(
+	                        "div",
+	                        { key: "detailedInfo" + label + i },
+	                        this.showDetailedHostInfo(row[type + "_ip"], i)
+	                    ));
+	                }
+	            } else {
+	                hosts.push(_react2.default.createElement("div", { className: "hostname", key: "nohostname" + label }), _react2.default.createElement("div", { className: "address", key: "noaddress" + label }));
+	            }
+	            if (hostInfo.length > 1) {
+	                label += "s";
+	            }
+	            return _react2.default.createElement(
+	                "div",
+	                null,
+	                _react2.default.createElement(
+	                    "div",
+	                    { className: "hostLabel", key: "hostLabel" + label },
+	                    label
+	                ),
+	                hosts
+	            );
+	        }
+	    },
+	    showDetailedHostInfo: function showDetailedHostInfo(host, i) {
+	        var trace = this.state.traceInfo;
+	        var display = "hiddenTrace";
+	        var traceURL = this.getTraceURL(i);
+	        if (i in trace && traceURL != "") {
+	            if (trace[i].has_traceroute == 1) {
+	                display = "blockTrace";
+	            }
+	        }
+	        var details = _InterfaceInfoStore2.default.getInterfaceDetails(host);
+	        var addresses = [];
+	        if ($.isArray(details.addresses)) {
+	            for (var i in details.addresses) {
+	                var address = details.addresses[i];
+	                addresses.push(_react2.default.createElement(
+	                    "div",
+	                    null,
+	                    address
+	                ));
+	            }
+	        } else {
+	            addresses.push(details.addresses);
+	        }
+	        {/* GRAPH: Detailed Host Info*/}
+	        return _react2.default.createElement(
+	            "div",
+	            null,
+	            _react2.default.createElement(
+	                "a",
+	                { className: "js-sidebar-popover-toggle", href: "#" },
+	                "Host info ",
+	                _react2.default.createElement("i", { className: "fa fa-angle-down" })
+	            ),
+	            _react2.default.createElement(
+	                "div",
+	                { className: "sidebar-popover sidebar-popover--overview" },
+	                _react2.default.createElement(
+	                    "a",
+	                    { className: "sidebar-popover__close js-sidebar-popover-close" },
+	                    "Close \xA0",
+	                    _react2.default.createElement("i", { className: "fa fa-close" })
+	                ),
+	                _react2.default.createElement(
+	                    "h4",
+	                    { className: "sidebar-popover__heading" },
+	                    "Host details"
+	                ),
+	                _react2.default.createElement(
+	                    "ul",
+	                    { className: "sidebar-popover__list" },
+	                    _react2.default.createElement(
+	                        "li",
+	                        { className: "sidebar-popover__item" },
+	                        _react2.default.createElement(
+	                            "span",
+	                            { className: "sidebar-popover__param" },
+	                            "Addresses:"
+	                        ),
+	                        _react2.default.createElement(
+	                            "span",
+	                            { className: "sidebar-popover__value" },
+	                            addresses
+	                        )
+	                    ),
+	                    _react2.default.createElement(
+	                        "li",
+	                        { className: "sidebar-popover__item" },
+	                        _react2.default.createElement(
+	                            "span",
+	                            { className: "sidebar-popover__param" },
+	                            "Capacity:"
+	                        ),
+	                        _react2.default.createElement(
+	                            "span",
+	                            { className: "sidebar-popover__value" },
+	                            _react2.default.createElement(_SIValue2.default, { value: details.capacity })
+	                        )
+	                    ),
+	                    _react2.default.createElement(
+	                        "li",
+	                        { className: "sidebar-popover__item" },
+	                        _react2.default.createElement(
+	                            "span",
+	                            { className: "sidebar-popover__param" },
+	                            "MTU:"
+	                        ),
+	                        _react2.default.createElement(
+	                            "span",
+	                            { className: "sidebar-popover__value" },
+	                            details.mtu
+	                        )
+	                    ),
+	                    _react2.default.createElement(
+	                        "li",
+	                        { className: "sidebar-popover__item " + display },
+	                        _react2.default.createElement(
+	                            "span",
+	                            { className: "sidebar-popover__param" },
+	                            _react2.default.createElement(
+	                                "a",
+	                                { href: traceURL, target: "_blank" },
+	                                "View traceroute graph"
+	                            )
+	                        )
+	                    )
+	                )
+	            )
+	        );
+	    },
+	    componentDidMount: function componentDidMount() {
+	        this.setInitialTime();
+	        _HostInfoStore2.default.subscribe(this.updateChartHeader);
+	        _HostInfoStore2.default.subscribeTrace(this.updateTrace);
+	        _HostInfoStore2.default.retrieveTracerouteData(this.props.sources, this.props.dests, this.props.ma_url);
+	        _InterfaceInfoStore2.default.subscribe(this.handleInterfaceData);
+	        _InterfaceInfoStore2.default.retrieveInterfaceInfo(this.props.sources, this.props.dests);
+	    },
+	    handleInterfaceData: function handleInterfaceData() {
+	        var interfaceInfo = _InterfaceInfoStore2.default.getInterfaceInfo();
+	        this.setState({ interfaceInfo: interfaceInfo });
+	
+	        this.updateChartHeader();
+	    },
+	    componentWillUnmount: function componentWillUnmount() {
+	        //this.serverRequest.abort();
+	        _HostInfoStore2.default.unsubscribe(this.updateChartHeader);
+	        _HostInfoStore2.default.unsubscribeTrace(this.updateTrace);
+	        _InterfaceInfoStore2.default.unsubscribe(this.updateChartHeader);
+	    },
+	    updateTrace: function updateTrace() {
+	        var traceInfo = _HostInfoStore2.default.getTraceInfo();
+	        this.setState({ traceInfo: traceInfo });
+	    },
+	    updateChartHeader: function updateChartHeader() {
+	        var hostInfo = _HostInfoStore2.default.getHostInfoData();
+	        this.hostInfo = hostInfo;
+	        this.forceUpdate();
+	    },
+	    handlePageChange: function handlePageChange(direction) {
+	        var timeVars = this.getTimeVars(this.state.timeframe);
+	        var diff = timeVars.timeDiff;
+	        var newStart = void 0;
+	        var newEnd = void 0;
+	        var now = Math.floor(new Date().getTime() / 1000);
+	        if (direction == "next") {
+	            newEnd = this.state.end + diff;
+	            newStart = newEnd - diff;
+	        } else if (direction == "previous") {
+	            newEnd = this.state.end - diff;
+	            newStart = newEnd - diff;
+	        }
+	        if (newStart >= now || newEnd >= now) {
+	            newEnd = now;
+	            newStart = now - diff;
+	        }
+	        var timeframe = this.state.timeframe;
+	        this.handleTimerangeChange({ "start": newStart, "end": newEnd, timeframe: timeframe });
+	    },
+	    handleTimerangeChange: function handleTimerangeChange(options, noupdateURL) {
+	        if (!"timeframe" in options) {
+	            options.timeframe = this.state.timeframe;
+	        }
+	        this.setState(options);
+	        this.props.updateTimerange(options, noupdateURL);
+	        emitter.emit("timerangeChange");
+	        this.forceUpdate();
+	    },
+	    subscribe: function subscribe(callback) {
+	        emitter.on("timerangeChange", callback);
+	    },
+	    unsubscribe: function unsubscribe(callback) {
+	        emitter.off("timerangeChange", callback);
+	    },
+	
+	    setInitialTime: function setInitialTime() {
+	        var options = {};
+	
+	        var timeframe = this.state.timeframe || "1w";
+	        var timeVars = this.getTimeVars(timeframe);
+	        var diff = timeVars.timeDiff;
+	
+	        var now = Math.floor(new Date().getTime() / 1000);
+	        var newEnd = now;
+	        var newStart = newEnd - diff;
+	
+	        if (typeof this.props.start != "undefined") {
+	            newStart = this.props.start;
+	        }
+	        if (typeof this.props.end != "undefined") {
+	            newEnd = this.props.end;
+	        }
+	
+	        //console.log("setting initial time; state: ", this.state);
+	
+	        options.start = newStart;
+	        options.end = newEnd;
+	        options.timeframe = timeframe;
+	
+	        this.handleTimerangeChange(options, true);
+	    },
+	
+	    getTimeVars: function getTimeVars(period) {
+	        var timeDiff = void 0;
+	        var summaryWindow = void 0;
+	        if (period == '4h') {
+	            timeDiff = 60 * 60 * 4;
+	            summaryWindow = 0;
+	        } else if (period == '1d') {
+	            timeDiff = 86400;
+	            summaryWindow = 0;
+	        } else if (period == '3d') {
+	            timeDiff = 86400 * 3;
+	            summaryWindow = 300;
+	        } else if (period == '1w') {
+	            timeDiff = 86400 * 7;
+	            summaryWindow = 3600;
+	        } else if (period == '1m') {
+	            timeDiff = 86400 * 31;
+	            summaryWindow = 86400;
+	        } else if (period == '1y') {
+	            timeDiff = 86400 * 365;
+	            summaryWindow = 86400;
+	        }
+	        var timeRange = {
+	            timeDiff: timeDiff,
+	            summaryWindow: summaryWindow,
+	            timeframe: period
+	
+	        };
+	        return timeRange;
+	    }
+	
+	});
+
+/***/ },
+/* 617 */
+/*!******************************!*\
+  !*** ./src/HostInfoStore.js ***!
+  \******************************/
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+	
+	var EventEmitter = __webpack_require__(/*! events */ 505).EventEmitter;
+	
+	var emitter = new EventEmitter();
+	
+	module.exports = {
+	
+	    /* Expects an object of hosts like this (keys must be src, dst (can be multiple -- number of sources and dests must match) ): 
+	     * {
+	     *   src: "1.2.3.4,"
+	     *   dst: "2.3.4.5",
+	     * }
+	     * returns host info as
+	     * { 
+	     *   src_ip: "1.2.3.4", 
+	     *   src_host: "hostname.domain"
+	     *   ...
+	     *  }
+	     */
+	    hostInfo: [],
+	    tracerouteReqs: 0,
+	    tracerouteReqsCompleted: 0,
+	    tracerouteInfo: [],
+	    /*
+	    getInitialState() {
+	        return {
+	        };
+	     },
+	    */
+	
+	    retrieveTracerouteData: function retrieveTracerouteData(sources, dests, ma_url) {
+	        var _this = this;
+	
+	        var baseUrl = "cgi-bin/graphData.cgi?action=has_traceroute_data";
+	        baseUrl += "&url=" + ma_url;
+	        if (!$.isArray(sources)) {
+	            sources = [sources];
+	        }
+	        if (!$.isArray(dests)) {
+	            dests = [dests];
+	        }
+	
+	        var _loop = function _loop(i) {
+	            var src = sources[i];
+	            var dst = dests[i];
+	
+	            var url = baseUrl + "&source=" + src;
+	            url += "&dest=" + dst;
+	            console.log("tracerout url");
+	
+	            _this.tracerouteReqs = sources.length;
+	
+	            _this.serverRequest = $.get(url, function (data) {
+	                this.handleTracerouteResponse(data, i);
+	            }.bind(_this));
+	        };
+	
+	        for (var i in sources) {
+	            _loop(i);
+	        }
+	    },
+	    retrieveHostInfo: function retrieveHostInfo(source_input, dest_input) {
+	        var url = "cgi-bin/graphData.cgi?action=hosts";
+	        var sources = void 0;
+	        var dests = void 0;
+	        if (Array.isArray(source_input)) {
+	            sources = source_input;
+	        } else {
+	            sources = [source_input];
+	        }
+	        if (Array.isArray(dest_input)) {
+	            dests = dest_input;
+	        } else {
+	            dests = [dest_input];
+	        }
+	        console.log("sources", sources);
+	        console.log("dests", dests);
+	        for (var i = 0; i < sources.length; i++) {
+	            url += "&src=" + sources[i];
+	            url += "&dest=" + dests[i];
+	        }
+	        console.log("url", url);
+	        this.serverRequest = $.get(url, function (data) {
+	            this.handleHostInfoResponse(data);
+	        }.bind(this));
+	    },
+	    getHostInfoData: function getHostInfoData() {
+	        return this.hostInfo;
+	    },
+	    handleHostInfoResponse: function handleHostInfoResponse(data) {
+	        this.hostInfo = data;
+	        emitter.emit("get");
+	    },
+	    handleTracerouteResponse: function handleTracerouteResponse(data, i) {
+	        //this.tracerouteInfo = data;
+	        console.log("trace data", data, "i", i);
+	        this.tracerouteReqsCompleted++;
+	        this.tracerouteInfo.push(data);
+	        if (this.tracerouteReqsCompleted == this.tracerouteReqs) {
+	            this.mergeTracerouteData();
+	        }
+	    },
+	    mergeTracerouteData: function mergeTracerouteData() {
+	        console.log("trace completed", this.tracerouteInfo);
+	        emitter.emit("getTrace");
+	    },
+	    getTraceInfo: function getTraceInfo() {
+	        return this.tracerouteInfo;
+	    },
+	    subscribeTrace: function subscribeTrace(callback) {
+	        emitter.on("getTrace", callback);
+	    },
+	    unsubscribeTrace: function unsubscribeTrace(callback) {
+	        emitter.off("getTrace", callback);
+	    },
+	    subscribe: function subscribe(callback) {
+	        emitter.on("get", callback);
+	    },
+	    unsubscribe: function unsubscribe(callback) {
+	        emitter.off("get", callback);
+	    }
+	
+	};
+
+/***/ },
+/* 618 */
+/*!***********************************!*\
+  !*** ./src/InterfaceInfoStore.js ***!
+  \***********************************/
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+	
+	var EventEmitter = __webpack_require__(/*! events */ 505).EventEmitter;
+	
+	var emitter = new EventEmitter();
+	
+	var lsListURL = "cgi-bin/graphData.cgi?action=ls_hosts";
+	var lsQueryURL = "cgi-bin/graphData.cgi?action=interfaces";
+	
+	module.exports = {
+	
+	    /* Expects an object of hosts like this (keys must be src, dst (can be multiple -- number of sources and dests must match) ): 
+	     * {
+	     *   src: "1.2.3.4,"
+	     *   dst: "2.3.4.5",
+	     * }
+	     * Createes a cache keyed on ip addressas
+	     * { 
+	     *   {"ip"}: { addresses, mtu, capacity}
+	     *   ...
+	     *  }
+	     */
+	    interfaceInfo: [],
+	    interfaceObj: {},
+	    lsInterfaceResults: [],
+	    lsURLs: [],
+	    sources: [],
+	    dests: [],
+	    lsRequestCount: 0,
+	    /*
+	    getInitialState() {
+	        return {
+	        };
+	     },
+	    */
+	
+	    retrieveLSList: function retrieveLSList() {
+	        this.serverRequest = $.get(lsListURL, function (data) {
+	            this.handleLSListResponse(data);
+	        }.bind(this));
+	    },
+	    handleLSListResponse: function handleLSListResponse(data) {
+	        this.lsURLs = data;
+	        this.performLSCalls();
+	    },
+	    performLSCalls: function performLSCalls() {
+	        var lsURLs = this.lsURLs;
+	        var sources = this.sources;
+	        var dests = this.dests;
+	        for (var i in lsURLs) {
+	            var lsURL = lsURLs[i];
+	            var url = lsQueryURL;
+	            url += "&ls_url=" + encodeURI(lsURL);
+	            url += this.array2param("source", sources);
+	            url += this.array2param("dest", dests);
+	            this.serverRequest = $.get(url, function (data) {
+	                this.lsRequestCount++;
+	                this.handleInterfaceInfoResponse(data);
+	            }.bind(this)).fail(function (jqXHR, textStatus, errorThrown) {
+	                console.log('fail jqXHR, textStatus, errorThrown', jqXHR, textStatus, errorThrown);
+	            }.bind(this));
+	        }
+	    },
+	    retrieveInterfaceInfo: function retrieveInterfaceInfo(source_input, dest_input) {
+	
+	        var url = "cgi-bin/graphData.cgi?action=hosts";
+	        var sources = void 0;
+	        var dests = void 0;
+	        if (Array.isArray(source_input)) {
+	            sources = source_input;
+	        } else {
+	            sources = [source_input];
+	        }
+	        if (Array.isArray(dest_input)) {
+	            dests = dest_input;
+	        } else {
+	            dests = [dest_input];
+	        }
+	        this.sources = sources;
+	        this.dests = dests;
+	
+	        this.retrieveLSList();
+	    },
+	    getInterfaceInfo: function getInterfaceInfo() {
+	        return this.interfaceObj;
+	    },
+	    handleInterfaceInfoResponse: function handleInterfaceInfoResponse(data) {
+	        this.addData(data);
+	        this.interfaceInfo = data;
+	    },
+	    subscribe: function subscribe(callback) {
+	        emitter.on("get", callback);
+	    },
+	    unsubscribe: function unsubscribe(callback) {
+	        emitter.off("get", callback);
+	    },
+	
+	    array2param: function array2param(name, array) {
+	        var joiner = "&" + name + "=";
+	        return joiner + array.join(joiner);
+	    },
+	    addData: function addData(data) {
+	        this.lsInterfaceResults.push(data);
+	        if (this.lsInterfaceResults.length == this.lsRequestCount) {
+	            this.combineData();
+	        }
+	    },
+	
+	    combineData: function combineData() {
+	        var sources = this.sources;
+	        var dests = this.dests;
+	        var rows = this.lsInterfaceResults;
+	
+	        var src_capacity = "Unknown";
+	        var src_mtu = "Unknown";
+	        var dest_capacity = "Unknown";
+	        var dest_mtu = "Unknown";
+	        var src_addresses = void 0;
+	        var dest_addresses = void 0;
+	
+	        var newObj = {};
+	        for (var i in rows) {
+	            var results = rows[i];
+	
+	            var newRow = {};
+	            for (var j in results) {
+	                var row = rows[i][j];
+	
+	                for (var k in sources) {
+	                    if (sources[k] == row.source_ip) {
+	                        if (!(row.source_ip in newObj)) {
+	                            newObj[row.source_ip] = {};
+	                        }
+	
+	                        if (row.source_mtu) {
+	                            src_mtu = row.source_mtu;
+	                            newRow.src_mtu = src_mtu;
+	                            newObj[row.source_ip].mtu = src_mtu;
+	                        }
+	                        if (row.source_addresses) {
+	                            src_addresses = row.source_addresses;
+	                            newRow.src_addresses = src_addresses;
+	                            newObj[row.source_ip].addresses = src_addresses;
+	                        }
+	
+	                        if (row.source_capacity) {
+	                            src_capacity = row.source_capacity;
+	                            newRow.src_capacity = src_capacity;
+	                            newObj[row.source_ip].capacity = src_capacity;
+	                        }
+	                    }
+	
+	                    if (dests[k] == row.dest_ip) {
+	
+	                        if (row.dest_mtu) {
+	                            dest_mtu = row.dest_mtu;
+	                        }
+	                        if (row.dest_addresses) {
+	                            dest_addresses = row.dest_addresses;
+	                        }
+	                        if (row.dest_capacity) {
+	                            dest_capacity = row.dest_capacity;
+	                        }
+	                        newRow.dest_mtu = dest_mtu;
+	                        newRow.dest_addresses = dest_addresses;
+	                        newRow.dest_capacity = dest_capacity;
+	
+	                        newObj[row.dest_ip] = {};
+	                        newObj[row.dest_ip].mtu = dest_mtu;
+	                        newObj[row.dest_ip].addresses = dest_addresses;
+	                        newObj[row.dest_ip].capacity = dest_capacity;
+	                    }
+	                }
+	            }
+	            if (!$.isEmptyObject(newRow)) {
+	                this.interfaceInfo.push(newRow);
+	            }
+	        }
+	        this.interfaceObj = newObj;
+	        emitter.emit("get");
+	    },
+	    // Retrieves interface details for a specific ip and returns them
+	    // Currently keys on ip; could extend to search all addresses later if needed
+	    getInterfaceDetails: function getInterfaceDetails(host) {
+	        var details = this.interfaceObj || {};
+	        if (host in details) {
+	            return details[host];
+	        } else {
+	            for (var i in details) {
+	                var row = details[i];
+	
+	                for (var j in row.addresses) {
+	                    var address = row.addresses[j];
+	                    if (address == host) {
+	                        return details[i];
+	                    } else {
+	                        var addrs = host.split(",");
+	                        if (addrs.length > 1) {
+	                            // handle case where addresses have comma(s)
+	                            for (var k in addrs) {
+	                                if (addrs[k] == address) {
+	                                    return details[i];
+	                                }
+	                            }
+	                        }
+	                    }
+	                }
+	            }
+	        }
+	        // host not found in the cache, return empty object
+	        return {};
+	    }
+	};
 
 /***/ },
 /* 619 */
@@ -94792,6 +94722,117 @@
 			"Pacific/Pohnpei|Pacific/Ponape"
 		]
 	};
+
+/***/ },
+/* 622 */
+/*!****************************************!*\
+  !*** ../toolkit/web-ng/root/js/app.js ***!
+  \****************************************/
+/***/ function(module, exports) {
+
+	$(document).ready(function () {
+	    $(".nav-dropdown-toggle").click(function (e) {
+	        e.preventDefault();
+	        $(".nav-dropdown-menu").toggle();
+	    });
+	
+	    //Hide the dropdown when anything outside is clicked
+	    $(document).click(function () {
+	        $(".nav-dropdown-menu").hide();
+	    });
+	
+	    // Don't hide the dropdown if items inside are clicked
+	    // and exclude nav-dropdown-toggle from the click outside thing above.
+	    $(".nav-dropdown-toggle, .nav-dropdown-menu").click(function (e) {
+	        e.stopPropagation();
+	    });
+	
+	    // Show/hide the services. use the on() event to allow DOM elements 
+	    // created later to still trigger the event
+	    $("div#host_services").on("click", ".services--title-link", function (e) {
+	        e.preventDefault();
+	        $(this).next(".services--list").toggleClass("visible-inline");
+	    });
+	    $(".alert--dismiss").click(function (e) {
+	        e.preventDefault();
+	        $(this).parent().fadeOut();
+	    });
+	
+	    $(".communities__add, .servers__add").click(function (e) {
+	        e.preventDefault();
+	        $(".communities__popular, .servers__popular").toggle();
+	    });
+	
+	    $("body").on("click", ".add_panel_heading", function (e) {
+	        e.preventDefault();
+	        $(".add_panel_heading").next(".add_panel").toggle();
+	    });
+	
+	    /*
+	    $(".config__input").change(function(e) {
+	        $(".js-unsaved-message").fadeIn("fast");
+	    });
+	    */
+	
+	    /*
+	    $(".js-save-button").click(function(e) {
+	        e.preventDefault();
+	        $(".js-unsaved-message").fadeOut("fast");
+	        $(".sticky-bar--saved").fadeIn("fast").delay(1500).fadeOut("slow");
+	    });
+	    */
+	    /*
+	    $(".js-cancel-button").click(function(e) {
+	        e.preventDefault();
+	        $(".sticky-bar--failure").fadeIn("fast");
+	    });
+	     $(".js-sticky-dismiss").click(function(e) {
+	        e.preventDefault();
+	        $(".js-unsaved-message").hide();
+	        $(".sticky-bar--failure").fadeOut("fast");
+	    });
+	    */
+	
+	    // Sidebar popover menu used to exand on larger sets of sidebar info
+	    // For example, "Interfaces"
+	    //$(document).on('click', '.btn_test', function() { alert('test'); });
+	    $(document).on("click", ".js-sidebar-popover-toggle", function (e) {
+	        e.preventDefault();
+	        $(this).next(".sidebar-popover").fadeToggle("fast");
+	    });
+	
+	    $(document).on("click", ".js-sidebar-popover-close", function (e) {
+	        e.preventDefault();
+	        $(this).parent(".sidebar-popover").fadeOut("fast");
+	    });
+	
+	    // Hide the popover when the user clicks outside of it
+	    $(document).click(function (e) {
+	        $(".sidebar-popover").fadeOut("fast");
+	    });
+	
+	    // Stop clicking inside the popover from hiding it
+	    $(document).on("click", ".js-sidebar-popover-toggle, .sidebar-popover", function (e) {
+	        e.stopPropagation();
+	    });
+	
+	    $(document).on('open.fndtn.reveal', '[data-reveal]', function () {
+	        $('body').addClass('modal-open');
+	    });
+	    $(document).on('close.fndtn.reveal', '[data-reveal]', function () {
+	        $('body').removeClass('modal-open');
+	    });
+	
+	    // Select2 plugin - https://select2.github.io/
+	    /*
+	    $(".js-select-multiple").select2({
+	        placeholder: "Add a new server"
+	    });
+	      $(".select2-search__field").keypress(function() {
+	        $(".sticky-bar--unsaved").fadeIn("fast");    
+	    });
+	    */
+	});
 
 /***/ }
 /******/ ]);

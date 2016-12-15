@@ -3,6 +3,7 @@ import _ from "underscore";
 import moment from "moment";
 import Markdown from "react-markdown";
 import GraphDataStore from "./GraphDataStore";
+import GraphUtilities from "./GraphUtilities";
 //import Highlighter from "./highlighter";
 
 
@@ -303,6 +304,7 @@ export default React.createClass({
             //dst: null,
             start: this.props.start,
             end: this.props.end,
+            agent: this.props.agent,
             tracker: null,
             chartSeries: null,
             timerange: timerange,
@@ -358,15 +360,16 @@ export default React.createClass({
             highlight: point
         });
     },
- 
+
     contextTypes: {
         router: React.PropTypes.func
     },
 
     renderToolTip() {
         let tracker = this.state.tracker;
-        let dateFormat = "MM/DD/YYYY HH:mm:ss ZZ";
+        let dateFormat = "MM/DD/YYYY HH:mm:ss";
         let date =  moment( tracker ).format(dateFormat);
+        let tz = GraphUtilities.getTimezone( tracker );
 
         let display = "block";
 
@@ -446,7 +449,7 @@ export default React.createClass({
                     if ( row.properties.mainEventType == "histogram-rtt" ) {
                         label = "ping";
                     } else if ( row.properties.mainEventType == "throughput" ) {
-                        label = "UDP throughput"
+                        label = "UDP"
                     } else if ( row.properties.mainEventType == "histogram-owdelay" ) {
                         label = "owamp";
                     }
@@ -459,7 +462,7 @@ export default React.createClass({
                     if ( row.lostValue != null
                             && row.sentValue != null ) {
                     lossItems.push(
-                            <li>{dir} {row.value}% lost ({row.lostValue} of {row.sentValue} packets sent) {"(" + label + ")"} </li>
+                            <li>{dir} {row.value}% lost ({row.lostValue} of {row.sentValue} packets) {"(" + label + ")"} </li>
                             );
                     } else {
                         lossItems.push(
@@ -482,7 +485,7 @@ export default React.createClass({
                         dir = "\u003c-"; // Unicode <
 
                     }
-                    let label = "";
+                    let label = "(owamp)";
                     if ( row.properties.mainEventType == "histogram-rtt" ) {
                         label = "(ping)";
                     }
@@ -593,7 +596,7 @@ export default React.createClass({
             return (
             <div className="small-2 columns">
                 <div className="sidebar-popover graph-values-popover" display={display} style={toolTipStyle} ref="tooltip">
-                                    <span className="graph-values-popover__heading">{date}</span>
+                                    <span className="graph-values-popover__heading">{date} {tz}</span>
                                     <ul className="graph-values-popover__list">
                                         {tooltipItems}
                                     </ul>
@@ -1276,9 +1279,11 @@ export default React.createClass({
         let end = this.state.end;
         let tool = this.props.tool;
         let ipversion = this.props.ipversion;
+        let agent = this.props.agent;
         let params = {
             tool: tool,
-            ipversion: ipversion
+            ipversion: ipversion,
+            agent: agent
         };
         this.setState({params: params, loading: true});
         let ma_url = this.props.ma_url || location.origin + "/esmond/perfsonar/archive/";
