@@ -24,7 +24,7 @@ let maURLs = [];
 let metadataURLs = {};
 let dataURLs = {};
 
-let lossTypes = [ 'packet-loss-rate', 'packet-count-lost', 'packet-count-sent', 'packet-count-lost-bidir' ];
+let lossTypes = [ 'packet-loss-rate', 'packet-count-lost', 'packet-count-sent', 'packet-count-lost-bidir', 'packet-loss-rate-bidir' ]; // 'packet-retransmits' ];
 
 module.exports = {
 
@@ -42,6 +42,7 @@ module.exports = {
         completedDataReqs = 0;
 
         this.eventTypes = ['throughput', 'histogram-owdelay', 'packet-loss-rate',
+                    'packet-loss-rate-bidir',
                     'packet-count-lost', 'packet-count-sent', 'packet-count-lost-bidir',
                     'packet-retransmits', 'histogram-rtt', 'failures'];
         this.dataFilters = [];
@@ -729,10 +730,6 @@ module.exports = {
             // corresponding packet-count-lost type and delete this
 
             if ( eventType == "packet-loss-rate" || eventType == "packet-loss-rate-bidir"  ) {
-                if ( eventType == "packet-loss-rate-bidir" ) {
-                    console.log("BIDIR", eventType);
-
-                }
                 let indices = $.map( data, function( item, index ) {
                     // If the value has the same "metadata-key", it's from the same test
                     if ( item.properties["metadata-key"] == key ) {
@@ -743,7 +740,6 @@ module.exports = {
                             row.lostValue = data[index].value;
                             return index;
                         } else if ( item.properties.eventType == "packet-count-lost-bidir" ) {
-                            console.log("bidir lost", data[index].value);
                             row.lostValue = data[index].value;
                             return index;
                         }

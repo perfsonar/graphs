@@ -54,6 +54,19 @@ const typesToChart = [
         unit: "fractional",
     },
     {
+        name: "loss",
+        esmondName: "packet-loss-rate-bidir",
+        label: "Packet Loss",
+        unit: "fractional",
+    },
+    {
+        name: "loss",
+        esmondName: "packet-retransmits",
+        label: "Retransmits",
+        unit: "packet",
+    },
+
+    {
         name: "latency",
         esmondName: "histogram-owdelay",
         label: "Latency",
@@ -82,11 +95,14 @@ const scheme = {
     ipv6: "#633", // brown
     throughput: "#0076b4", // blue
     throughputTCP: "#0076b4", // blue
+    "packet-retransmits": "#56B4DF", // light blue
     "packet-loss-rateLatency": "#2b9f78", // green
-    "histogram-rtt": "#e5a11c", // yellow
+    "histogram-rtt": "#e5a11c", // yellow/orange
     "histogram-owdelay": "#633", // brown
     "packet-loss-rate": "#cc7dbe", // purple
     "packet-loss-rateThroughput": "#cc7dbe", // purple
+    "packet-loss-ratePing": "#e5801c", // browny orangey
+    //"packet-loss-ratePing": "#f0e442", // yellow
     //"packet-loss-rateThroughput": "#f0e54b" // yellos
     throughputUDP: "#d6641e" // vermillion
 };
@@ -162,7 +178,7 @@ function getChartStyle( options, column ) {
             break;
     }
 
-        //console.log("style options", options);
+       //console.log("style options", options);
     switch ( options.eventType ) {
         case "throughput":
             if ( options.protocol == "tcp" ) {
@@ -188,6 +204,9 @@ function getChartStyle( options, column ) {
 
             //color = scheme[options.mainEventType];
 
+            break;
+        case "packet-loss-rate-bidir":
+            color = scheme["packet-loss-ratePing"];
             break;
 
     }
@@ -448,25 +467,32 @@ export default React.createClass({
                     let label = "latency";
                     if ( row.properties.mainEventType == "histogram-rtt" ) {
                         label = "ping";
+                    } else if ( row.properties.eventType == "packet-count-lost-bidir" ) {
+                        label = "ping count";
+                    } else if ( row.properties.eventType == "packet-retransmits" ) {
+                        label = "retransmits";
                     } else if ( row.properties.mainEventType == "throughput" ) {
                         label = "UDP"
                     } else if ( row.properties.mainEventType == "histogram-owdelay" ) {
                         label = "owamp";
                     }
 
-
-                    row.value = this._formatToolTipLossValue( row.value, "percent" );
+                if ( row.properties.eventType != "packet-retransmits" ) {
+                    row.value = this._formatToolTipLossValue( row.value, "percent" ) + "%";
                     row.lostValue = this._formatToolTipLossValue( row.lostValue, "integer" );
                     row.sentValue = this._formatToolTipLossValue( row.sentValue, "integer" );
+                } else {
+                    row.value = this._formatToolTipLossValue( row.value, "integer" );
+                }
 
                     if ( row.lostValue != null
                             && row.sentValue != null ) {
                     lossItems.push(
-                            <li>{dir} {row.value}% lost ({row.lostValue} of {row.sentValue} packets) {"(" + label + ")"} </li>
+                            <li>{dir} {row.value} lost ({row.lostValue} of {row.sentValue} packets) {"(" + label + ")"} </li>
                             );
                     } else {
                         lossItems.push(
-                                <li>{dir} {row.value}% ({label})</li>
+                                <li>{dir} {row.value} ({label})</li>
                                 );
 
                     }
@@ -652,9 +678,14 @@ export default React.createClass({
     },
 
     compareToolTipData( a, b ) {
-        if (a.sortKey < b.sortKey)
+        a = a.sortKey;
+        b = b.sortKey;
+        // Hack to show ping loss after owamp loss
+        a = a.replace(/-bidir/, "z-bidir");
+        b = b.replace(/-bidir/, "z-bidir");
+        if (a < b)
             return -1;
-        if (a.sortKey > b.sortKey)
+        if (a > b)
             return 1;
         return 0;
     },

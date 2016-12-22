@@ -158,6 +158,7 @@ export default React.createClass({
                 "direction_forward_": true,
                 "direction_reverse_": true,
                 "eventType_failures_": true,
+                "eventType_packet-loss-rate-bidir_": true
             },
         };
     },
@@ -233,12 +234,12 @@ export default React.createClass({
                                     <a href="#" onClick={this.toggleType.bind(this, {eventType: "packet-loss-rate", mainTestType: "throughput"})}>Loss (UDP)</a>
                                 </li>
                                 <li className={"graph-filter__item graph-filter__item loss-latency " + this.getActiveClass( this.state.active["eventType_packet-loss-rate_mainTestType_latency_"] )}>
-                                    <a href="#" onClick={this.toggleType.bind(this, {eventType: "packet-loss-rate", mainTestType: "latency"})}>Loss (owamp)</a>
+                                    <a href="#" onClick={this.toggleType.bind(this, {eventType: "packet-loss-rate", mainEventType: "histogram-owdelay"})}>Loss (owamp)</a>
+                                </li>
+                                <li className={"graph-filter__item graph-filter__item loss-ping " + this.getActiveClass( this.state.active["eventType_packet-loss-rate-bidir_"] )}>
+                                    <a href="#" onClick={this.toggleType.bind(this, {eventType: "packet-loss-rate-bidir"})}>Loss (ping)</a>
                                 </li>
                                 {/*
-                                <li className={"graph-filter__item graph-filter__item loss-latency " + this.getActiveClass( this.state.active["eventType_packet-loss-rate-bidir_mainTestType_latency_"] )}>
-                                    <a href="#" onClick={this.toggleType.bind(this, {eventType: "packet-loss-rate-bidir", mainTestType: "latency"})}>Loss (ping)</a>
-                                </li>
                                 <li className={"graph-filter__item graph-filter__item loss-latency " + this.getActiveClass( this.state.active["eventType_packet-loss-rate-bidir_mainTestType_latency_"] )}>
                                     <a href="#" onClick={this.toggleType.bind(this, {eventType: "packet-loss-rate-bidir", mainTestType: "latency"})}>Retrans</a>
                                 </li>
