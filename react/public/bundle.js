@@ -91594,8 +91594,13 @@
 	        if (newEnd > now) {
 	            newEnd = now;
 	        }
-	        // convert ms to s
-	        //newEnd = Math.floor( newEnd / 1000 ); 
+	
+	        // If newEnd is greater than now minus timeDiff, set newEnd to now
+	        // because in this case we are "close enought" to "now" that we
+	        // should go to current time
+	        if (newEnd > now - timeDiff) {
+	            newEnd = now;
+	        }
 	
 	        var newStart = newEnd - timeDiff;
 	
@@ -91604,6 +91609,7 @@
 	            start: newStart,
 	            end: newEnd
 	        };
+	        console.log("options", options);
 	        this.handleTimerangeChange(options);
 	    },
 	    getTraceURL: function getTraceURL(i) {

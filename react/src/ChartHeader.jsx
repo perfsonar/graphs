@@ -121,8 +121,15 @@ export default React.createClass({
         if ( newEnd > now ) {
             newEnd = now;
         }
-        // convert ms to s
-        //newEnd = Math.floor( newEnd / 1000 ); 
+
+        // If newEnd is greater than now minus timeDiff, set newEnd to now
+        // because in this case we are "close enought" to "now" that we
+        // should go to current time
+        if ( newEnd > now - timeDiff ) {
+            newEnd = now;
+        }
+
+
 
         let newStart = newEnd - timeDiff;
 
@@ -131,6 +138,7 @@ export default React.createClass({
             start: newStart,
             end: newEnd
         };
+        console.log("options", options);
         this.handleTimerangeChange( options );
     },
     getTraceURL: function(i) {
