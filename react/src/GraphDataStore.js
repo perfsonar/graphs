@@ -24,7 +24,7 @@ let maURLs = [];
 let metadataURLs = {};
 let dataURLs = {};
 
-let lossTypes = [ 'packet-loss-rate', 'packet-count-lost', 'packet-count-sent', 'packet-count-lost-bidir', 'packet-loss-rate-bidir' ]; // 'packet-retransmits' ];
+let lossTypes = [ 'packet-loss-rate', 'packet-count-lost', 'packet-count-sent', 'packet-count-lost-bidir', 'packet-loss-rate-bidir', 'packet-retransmits' ];
 
 module.exports = {
 
@@ -40,6 +40,7 @@ module.exports = {
         dataReqCount = 0;
         completedReqs = 0;
         completedDataReqs = 0;
+        this.eventTypeStats = {};
 
         this.eventTypes = ['throughput', 'histogram-owdelay', 'packet-loss-rate',
                     'packet-loss-rate-bidir',
@@ -285,7 +286,6 @@ module.exports = {
                     }
 
                     if ( uri === null ) {
-                        console.log("uri not found, setting ... ");
                         uri = eventTypeObj["base-uri"];
                     }
                     uri += "?time-start=" + start + "&time-end=" + end;
@@ -575,7 +575,9 @@ module.exports = {
                 } else if ( eventType == 'packet-count-sent' ) {
                     //console.log('packet count sent', val);
 
+                } else if ( eventType == 'packet-retransmits' ) {
                 }
+
                 if (value <= 0 ) {
                     //console.log("VALUE IS ZERO OR LESS", Date());
                     value = 0.000000001;
@@ -636,6 +638,7 @@ module.exports = {
         });
 
         console.log("outputData", outputData);
+        this.eventTypeStats = outputData;
 
         // Create failure series
 
@@ -705,6 +708,26 @@ module.exports = {
             output.push(row);
         });
         return output;
+    },
+    scaleValues: function( series, maxVal ) {
+        var seriesMax = series.max();
+        if ( typeof maxVal == "undefined" ) {
+            maxVal = seriesMax;
+        }
+        var scaled = series.map( function( e ) {
+            let time = e.timestamp();
+            let value = e.value();
+            if ( maxVal == 0 || seriesMax == 0 || value == 1e-9 ) {
+                value = 1e-9;
+            } else {
+                value = e.value() * maxVal / seriesMax;
+            }
+            let newEvent = new Event( time, {"value": value});
+            return newEvent;
+        });
+        return scaled;
+
+
     },
     eventTypeToTestType: function( eventType ) {
         let testType;

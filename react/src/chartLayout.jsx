@@ -151,13 +151,14 @@ export default React.createClass({
             active: {
                 "eventType_throughput_protocol_tcp_": true,
                 "eventType_throughput_protocol_udp_": true,
-                "eventType_packet-loss-rate_mainTestType_latency_": true,
+                "eventType_packet-loss-rate_mainEventType_histogram-owdelay_": true,
                 "eventType_packet-loss-rate_mainTestType_throughput_": true,
                 "eventType_histogram-owdelay_": true,
                 "eventType_histogram-rtt_": true,
                 "direction_forward_": true,
                 "direction_reverse_": true,
                 "eventType_failures_": true,
+                "eventType_packet-retransmits_": true,
                 "eventType_packet-loss-rate-bidir_": true
             },
         };
@@ -233,17 +234,17 @@ export default React.createClass({
                                 <li className={"graph-filter__item graph-filter__item loss-throughput " + this.getActiveClass( this.state.active["eventType_packet-loss-rate_mainTestType_throughput_"] ) }>
                                     <a href="#" onClick={this.toggleType.bind(this, {eventType: "packet-loss-rate", mainTestType: "throughput"})}>Loss (UDP)</a>
                                 </li>
-                                <li className={"graph-filter__item graph-filter__item loss-latency " + this.getActiveClass( this.state.active["eventType_packet-loss-rate_mainTestType_latency_"] )}>
+                                <li className={"graph-filter__item graph-filter__item loss-latency " + this.getActiveClass( this.state.active["eventType_packet-loss-rate_mainEventType_histogram-owdelay_"] )}>
                                     <a href="#" onClick={this.toggleType.bind(this, {eventType: "packet-loss-rate", mainEventType: "histogram-owdelay"})}>Loss (owamp)</a>
                                 </li>
                                 <li className={"graph-filter__item graph-filter__item loss-ping " + this.getActiveClass( this.state.active["eventType_packet-loss-rate-bidir_"] )}>
                                     <a href="#" onClick={this.toggleType.bind(this, {eventType: "packet-loss-rate-bidir"})}>Loss (ping)</a>
                                 </li>
-                                {/*
-                                <li className={"graph-filter__item graph-filter__item loss-latency " + this.getActiveClass( this.state.active["eventType_packet-loss-rate-bidir_mainTestType_latency_"] )}>
-                                    <a href="#" onClick={this.toggleType.bind(this, {eventType: "packet-loss-rate-bidir", mainTestType: "latency"})}>Retrans</a>
+
+                                <li className={"graph-filter__item graph-filter__item packet-retransmits " + this.getActiveClass( this.state.active["eventType_packet-retransmits_"] )}>
+                                    <a href="#" onClick={this.toggleType.bind(this, {eventType: "packet-retransmits"})}>Retrans</a>
                                 </li>
-                                */}
+
                                 <li className={"graph-filter__item ipv6 " + this.getActiveClass( this.state.active["eventType_histogram-owdelay_"] )}>
                                     <a href="#" onClick={this.toggleType.bind(this, {eventType: "histogram-owdelay"})}>Latency (owamp)</a>
                                 </li>

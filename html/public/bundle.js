@@ -25071,7 +25071,7 @@
 	    ipv6: "#633", // brown
 	    throughput: "#0076b4", // blue
 	    throughputTCP: "#0076b4", // blue
-	    "packet-retransmits": "#56B4DF", // light blue
+	    "packet-retransmits": "#56b4e9", // light blue
 	    "packet-loss-rateLatency": "#2b9f78", // green
 	    "histogram-rtt": "#e5a11c", // yellow/orange
 	    "histogram-owdelay": "#633", // brown
@@ -25184,6 +25184,9 @@
 	        case "packet-loss-rate-bidir":
 	            color = scheme["packet-loss-ratePing"];
 	            break;
+	        case "packet-retransmits":
+	            color = scheme["packet-retransmits"];
+	            break;
 	
 	    }
 	    if (options.direction == "reverse") {
@@ -25292,9 +25295,12 @@
 	                throughput: true,
 	                forward: true,
 	                reverse: true,
-	                "loss": true,
+	                loss: true,
 	                latency: true,
-	                failures: true
+	                failures: true,
+	                "packet-retransmits": true,
+	                "loss-latency": true
+	
 	            },
 	            //src: null,
 	            //dst: null,
@@ -25889,6 +25895,8 @@
 	                    */
 	                    if (this.props.tool) {}
 	                    data = _GraphDataStore2.default.getChartData(filter, this.state.itemsToHide);
+	                    var eventTypeStats = _GraphDataStore2.default.eventTypeStats;
+	
 	                    if (this.state.active[type] && data.results.length > 0) {
 	                        for (var j in data.results) {
 	                            var result = data.results[j];
@@ -25898,12 +25906,32 @@
 	                            charts[type].data.push(result);
 	
 	                            // skip packet-count-lost and packet-count-sent
-	                            if (esmondName != "packet-count-sent" && esmondName != "packet-count-lost" && esmondName != "packet-count-lost-bidir") {
+	                            if (esmondName != "packet-count-sent" && esmondName != "packet-count-lost" && esmondName != "packet-count-lost-bidir" && esmondName != "packet-retransmits") {
 	
 	                                stats.min = _GraphDataStore2.default.getMin(data.stats.min, stats.min);
 	                                stats.max = _GraphDataStore2.default.getMax(data.stats.max, stats.max);
 	                            } else {
-	                                continue;
+	                                if (esmondName != "packet-retransmits") {
+	                                    continue;
+	                                } else {
+	                                    if (typeof stats.max == "undefined" && typeof eventTypeStats["packet-retransmits"].max != "undefined") {
+	                                        stats.max = eventTypeStats["packet-retransmits"].max;
+	                                        if (stats.max = 1e-9) {
+	                                            stats.max = 0.1;
+	                                        }
+	                                        stats.min = 1e-9;
+	                                    }
+	                                    var scaledSeries = _GraphDataStore2.default.scaleValues(series, stats.max);
+	                                    series = scaledSeries;
+	                                    /* 
+	                                     series.map( function( e ) { 
+	                                     let time = e.timestamp();
+	                                     let value = e.value() * stats.max / data.stats.max;
+	                                     let newEvent = new Event( time, {"value": value});
+	                                     return newEvent; 
+	                                    });
+	                                    */
+	                                }
 	                            }
 	                            // TODO: Try changing stats
 	                            //stats.min = data.stats.min;
@@ -26337,7 +26365,6 @@
 	        this.setState({ dataError: data, loading: false });
 	    },
 	    componentWillReceiveProps: function componentWillReceiveProps(nextProps) {
-	        console.log("nextProps", nextProps);
 	        var timerange = new _pondjs.TimeRange([nextProps.start * 1000, nextProps.end * 1000]);
 	        this.setState({ itemsToHide: nextProps.itemsToHide });
 	        if (nextProps.start != this.state.start || nextProps.end != this.state.end) {
@@ -49103,7 +49130,7 @@
 	var metadataURLs = {};
 	var dataURLs = {};
 	
-	var lossTypes = ['packet-loss-rate', 'packet-count-lost', 'packet-count-sent', 'packet-count-lost-bidir', 'packet-loss-rate-bidir']; // 'packet-retransmits' ];
+	var lossTypes = ['packet-loss-rate', 'packet-count-lost', 'packet-count-sent', 'packet-count-lost-bidir', 'packet-loss-rate-bidir', 'packet-retransmits'];
 	
 	module.exports = {
 	
@@ -49119,6 +49146,7 @@
 	        dataReqCount = 0;
 	        completedReqs = 0;
 	        completedDataReqs = 0;
+	        this.eventTypeStats = {};
 	
 	        this.eventTypes = ['throughput', 'histogram-owdelay', 'packet-loss-rate', 'packet-loss-rate-bidir', 'packet-count-lost', 'packet-count-sent', 'packet-count-lost-bidir', 'packet-retransmits', 'histogram-rtt', 'failures'];
 	        this.dataFilters = [];
@@ -49348,7 +49376,6 @@
 	                    }
 	
 	                    if (uri === null) {
-	                        console.log("uri not found, setting ... ");
 	                        uri = eventTypeObj["base-uri"];
 	                    }
 	                    uri += "?time-start=" + start + "&time-end=" + end;
@@ -49625,7 +49652,8 @@
 	                } else if (eventType == 'packet-count-sent') {
 	                    //console.log('packet count sent', val);
 	
-	                }
+	                } else if (eventType == 'packet-retransmits') {}
+	
 	                if (value <= 0) {
 	                    //console.log("VALUE IS ZERO OR LESS", Date());
 	                    value = 0.000000001;
@@ -49682,6 +49710,7 @@
 	        });
 	
 	        console.log("outputData", outputData);
+	        this.eventTypeStats = outputData;
 	
 	        // Create failure series
 	
@@ -49747,6 +49776,24 @@
 	            output.push(row);
 	        });
 	        return output;
+	    },
+	    scaleValues: function scaleValues(series, maxVal) {
+	        var seriesMax = series.max();
+	        if (typeof maxVal == "undefined") {
+	            maxVal = seriesMax;
+	        }
+	        var scaled = series.map(function (e) {
+	            var time = e.timestamp();
+	            var value = e.value();
+	            if (maxVal == 0 || seriesMax == 0 || value == 1e-9) {
+	                value = 1e-9;
+	            } else {
+	                value = e.value() * maxVal / seriesMax;
+	            }
+	            var newEvent = new _pondjs.Event(time, { "value": value });
+	            return newEvent;
+	        });
+	        return scaled;
 	    },
 	    eventTypeToTestType: function eventTypeToTestType(eventType) {
 	        var testType = void 0;
@@ -90844,13 +90891,14 @@
 	            active: {
 	                "eventType_throughput_protocol_tcp_": true,
 	                "eventType_throughput_protocol_udp_": true,
-	                "eventType_packet-loss-rate_mainTestType_latency_": true,
+	                "eventType_packet-loss-rate_mainEventType_histogram-owdelay_": true,
 	                "eventType_packet-loss-rate_mainTestType_throughput_": true,
 	                "eventType_histogram-owdelay_": true,
 	                "eventType_histogram-rtt_": true,
 	                "direction_forward_": true,
 	                "direction_reverse_": true,
 	                "eventType_failures_": true,
+	                "eventType_packet-retransmits_": true,
 	                "eventType_packet-loss-rate-bidir_": true
 	            }
 	        };
@@ -90947,7 +90995,7 @@
 	                        ),
 	                        _react2.default.createElement(
 	                            "li",
-	                            { className: "graph-filter__item graph-filter__item loss-latency " + this.getActiveClass(this.state.active["eventType_packet-loss-rate_mainTestType_latency_"]) },
+	                            { className: "graph-filter__item graph-filter__item loss-latency " + this.getActiveClass(this.state.active["eventType_packet-loss-rate_mainEventType_histogram-owdelay_"]) },
 	                            _react2.default.createElement(
 	                                "a",
 	                                { href: "#", onClick: this.toggleType.bind(this, { eventType: "packet-loss-rate", mainEventType: "histogram-owdelay" }) },
@@ -90961,6 +91009,15 @@
 	                                "a",
 	                                { href: "#", onClick: this.toggleType.bind(this, { eventType: "packet-loss-rate-bidir" }) },
 	                                "Loss (ping)"
+	                            )
+	                        ),
+	                        _react2.default.createElement(
+	                            "li",
+	                            { className: "graph-filter__item graph-filter__item packet-retransmits " + this.getActiveClass(this.state.active["eventType_packet-retransmits_"]) },
+	                            _react2.default.createElement(
+	                                "a",
+	                                { href: "#", onClick: this.toggleType.bind(this, { eventType: "packet-retransmits" }) },
+	                                "Retrans"
 	                            )
 	                        ),
 	                        _react2.default.createElement(
@@ -92256,7 +92313,7 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	exports = module.exports = __webpack_require__(/*! ./~/css-loader/cssToString.js */ 595)();
-	exports.push([module.id, "/*----------------------------------------------------------\n\n    Graphs\n\n----------------------------------------------------------*/\n\n.graph-filter {\n    padding: 0.25em 0;\n}\n\n.graph-label {\n    display: block;\n    float: left;\n    padding-top: .7em;\n    margin-right: .5em;\n}\n\n.graph-filter__list {\n    display: block;\n    list-style: none;\n    padding: 0;\n    margin: 0;\n    border: 1px solid #ccc;\n    border-radius: 4px;\n    display: inline-block;\n}\n\n.blockTrace {\n    display:block; \n}\n\n.hiddenTrace {\n    display:none;\n}\n\n/*\n * Clear fix\n*/\n.graph:after,\n.graph-filters:after,\n.graph-filter:after,\n.graph-filter__list:after {\n    content: \"\";\n    clear: both;\n    display: block;\n}\n\n.graph-filter__item {\n    float: left;\n    border-right: 1px solid #ccc;\n    margin: 0;\n}\n\n/*\n * Filter active states\n*/\n\n.graph-filter__item.graph-filter__item a {\n    color: #fff;\n    background-color: #ccc;\n}\n\n.graph-filter__item.graph-filter__item--blue-active a {\n    background-color: #0076b4;\n}\n\n.graph-filter__item.graph-filter__item--forward.active a, .graph-filter__item.graph-filter__item--reverse.active a, .graph-filter__item.graph-filter__item--failures.active a\n{\n    background-color: #0076b4;\n}\n\n\n.graph-filter__item.graph-filter__item.throughput-tcp.active a {\n    background-color: #0076b4;\n}\n\n.graph-filter__item.graph-filter__item.udp.active a {\n    background-color: #d6641e;\n    /*background-color: #cc7dbe;*/ /*pink */\n}\n\n.graph-filter__item.graph-filter__item.ipv4.active a {\n    background-color: #e5a11c;\n}\n\n.graph-filter__item.graph-filter__item.ipv6.active a {\n    background-color: #633;\n}\n\n.graph-filter__item.graph-filter__item.loss-throughput.active a {\n    background-color: #cc7dbe;\n}\n\n.graph-filter__item.graph-filter__item.loss-latency.active a {\n    background-color: #2b9f78;\n}\n\n.graph-filter__item.graph-filter__item.loss-ping.active a {\n    /*background-color: #f0e442; */  /* light yellow */\n    /* background-color: #d55e00; */ /* vermillion */\n    background-color: #e5801c; /* slightly browner orange */\n}\n\n\n.graph-filter__item svg.direction-label {\n    margin-left: 1em;\n    vertical-align: middle;\n}\n\n.graph-filter__item:last-child {\n    border-right: none;\n}\n\n.graph-filter__item a {\n    color: #383f44;\n    display: inline-block;\n    padding: .75em 1em;\n}\n\n.graph-filter__item a:hover {\n    background-color: #ccc;\n    color: #383f44;\n}\n\n.graph-settings {\n    border: 1px solid #383f44;\n    border-radius: 4px;\n    color: #383f44;\n    display: inline-block;\n    margin-left: 1em;\n    /*\n     * This is a magic number to make this thing look right.\n    */\n    padding: .71em;\n}\n\n.graph-settings i {\n    font-size: 1.5em;\n}\n\n.graph-wrapper {\n\n}\n\n.graph-header {\n    border-bottom: 1px solid #ccc;\n    margin-top: 1em;\n    padding-bottom: .5em;\n}\n\n.graph-module,\n.graph-holder {\n    min-height: 400px;\n}\n\n.graph-module {\n    display: flex;\n    flex-direction: column;\n    justify-content: space-around;\n}\n\n.graph-module--small,\n.graph-holder--small {\n    min-height: 150px;\n}\n\n.graph-holder {\n    background-color: #ddd;\n}\n\n.graph-module__cell {\n    /*\n     * This is sort of brittle because it relies on a\n     * specific amount of padding to veritcally center\n     * the label\n    */\n    padding-top: 4em;\n    text-align: center;\n    border-bottom: 1px solid #ccc;\n    flex-grow: 1;\n    align-content: center;\n}\n\n.graph-module__cell--small {\n    padding-top: 1em;\n}\n\n.graph-module__cell--left {\n    padding-top: 1em;\n    padding-left: 1em;\n    text-align: left;\n}\n\n.graph-module__stat {\n    display: block;\n    line-height: 1.8;\n}\n\n.graph-module__stat i {\n    margin-right: 1em;\n}\n\n.graph-module__controls {\n    color: #383f44;\n}\n\n.graph-small {\n    margin-top: 1em;\n}\n\n.graph .hostLabel {\n    font-weight:700;\n}\n\n.sidebar-popover__close span {\n    float:left;\n}\n\n/* Graph-Values popover */\n\n.sidebar-popover span:after {\n    display:inline;\n}\n\n.sidebar-popover.graph-values-popover {\n  position: absolute;\n  top: -33px;\n  right: 0;\n  font-size: 80%;\n  padding: 1em 1em 0 1em;\n  display:block;\n  opacity:0.9;\n}\n\n.graph-values-popover .graph-type {\n  margin: 0;\n  padding: 0;\n  font-weight: 700;\n}\n\n.graph-values-popover__heading {\n  border-bottom: 1px solid rgba(255, 255, 255, .5);\n  font-size: 1.1em;\n  color: #fff;\n  padding: .5em 0;\n}\n\n.graph-values-popover__list {\n  list-style: none;\n  padding: 0;\n  margin: 2px 0 0 0;\n}\n\n.graph-values-popover__item {\n  padding: 1em 0;\n  border-top: 1px dashed rgba(255, 255, 255, .5);\n}\n\n.graph-values-popover__item:first-child {\n  border-top: none;\n  padding-top: 1.5em;\n}\n\n.graph-values-popover__item ul {\n  list-style: none;\n  margin: 0;\n}\n\n.graph-values-popover__item li:first-child {\n  font-size: 1.1em;\n  font-weight: 700;\n}\n\ndiv.graphholder div.small-2.columns {\n    float:right;\n    display:block;\n    width:23%;\n}\n\ndiv.graphholder #loading {\n    margin-top:4em;\n}\n", ""]);
+	exports.push([module.id, "/*----------------------------------------------------------\n\n    Graphs\n\n----------------------------------------------------------*/\n\n.graph-filter {\n    padding: 0.25em 0;\n}\n\n.graph-label {\n    display: block;\n    float: left;\n    padding-top: .7em;\n    margin-right: .5em;\n}\n\n.graph-filter__list {\n    display: block;\n    list-style: none;\n    padding: 0;\n    margin: 0;\n    border: 1px solid #ccc;\n    border-radius: 4px;\n    display: inline-block;\n}\n\n.blockTrace {\n    display:block; \n}\n\n.hiddenTrace {\n    display:none;\n}\n\n/*\n * Clear fix\n*/\n.graph:after,\n.graph-filters:after,\n.graph-filter:after,\n.graph-filter__list:after {\n    content: \"\";\n    clear: both;\n    display: block;\n}\n\n.graph-filter__item {\n    float: left;\n    border-right: 1px solid #ccc;\n    margin: 0;\n}\n\n/*\n * Filter active states\n*/\n\n.graph-filter__item.graph-filter__item a {\n    color: #fff;\n    background-color: #ccc;\n}\n\n.graph-filter__item.graph-filter__item--blue-active a {\n    background-color: #0076b4;\n}\n\n.graph-filter__item.graph-filter__item--forward.active a, .graph-filter__item.graph-filter__item--reverse.active a, .graph-filter__item.graph-filter__item--failures.active a\n{\n    background-color: #0076b4;\n}\n\n\n.graph-filter__item.graph-filter__item.throughput-tcp.active a {\n    background-color: #0076b4;\n}\n\n.graph-filter__item.graph-filter__item.udp.active a {\n    background-color: #d6641e;\n    /*background-color: #cc7dbe;*/ /*pink */\n}\n\n.graph-filter__item.graph-filter__item.ipv4.active a {\n    background-color: #e5a11c;\n}\n\n.graph-filter__item.graph-filter__item.ipv6.active a {\n    background-color: #633;\n}\n\n.graph-filter__item.graph-filter__item.loss-throughput.active a {\n    background-color: #cc7dbe;\n}\n\n.graph-filter__item.graph-filter__item.loss-latency.active a {\n    background-color: #2b9f78;\n}\n\n.graph-filter__item.graph-filter__item.loss-ping.active.active a {\n    /*background-color: #f0e442; */  /* light yellow */\n    /* background-color: #d55e00; */ /* vermillion */\n    background-color: #e5801c; /* slightly browner orange */\n}\n\n.graph-filter__item.graph-filter__item.packet-retransmits.active a {\n    background-color: #56b4e9;\n}\n\n.graph-filter__item svg.direction-label {\n    margin-left: 1em;\n    vertical-align: middle;\n}\n\n.graph-filter__item:last-child {\n    border-right: none;\n}\n\n.graph-filter__item a {\n    color: #383f44;\n    display: inline-block;\n    padding: .75em 1em;\n}\n\n.graph-filter__item a:hover {\n    background-color: #ccc;\n    color: #383f44;\n}\n\n.graph-settings {\n    border: 1px solid #383f44;\n    border-radius: 4px;\n    color: #383f44;\n    display: inline-block;\n    margin-left: 1em;\n    /*\n     * This is a magic number to make this thing look right.\n    */\n    padding: .71em;\n}\n\n.graph-settings i {\n    font-size: 1.5em;\n}\n\n.graph-wrapper {\n\n}\n\n.graph-header {\n    border-bottom: 1px solid #ccc;\n    margin-top: 1em;\n    padding-bottom: .5em;\n}\n\n.graph-module,\n.graph-holder {\n    min-height: 400px;\n}\n\n.graph-module {\n    display: flex;\n    flex-direction: column;\n    justify-content: space-around;\n}\n\n.graph-module--small,\n.graph-holder--small {\n    min-height: 150px;\n}\n\n.graph-holder {\n    background-color: #ddd;\n}\n\n.graph-module__cell {\n    /*\n     * This is sort of brittle because it relies on a\n     * specific amount of padding to veritcally center\n     * the label\n    */\n    padding-top: 4em;\n    text-align: center;\n    border-bottom: 1px solid #ccc;\n    flex-grow: 1;\n    align-content: center;\n}\n\n.graph-module__cell--small {\n    padding-top: 1em;\n}\n\n.graph-module__cell--left {\n    padding-top: 1em;\n    padding-left: 1em;\n    text-align: left;\n}\n\n.graph-module__stat {\n    display: block;\n    line-height: 1.8;\n}\n\n.graph-module__stat i {\n    margin-right: 1em;\n}\n\n.graph-module__controls {\n    color: #383f44;\n}\n\n.graph-small {\n    margin-top: 1em;\n}\n\n.graph .hostLabel {\n    font-weight:700;\n}\n\n.sidebar-popover__close span {\n    float:left;\n}\n\n/* Graph-Values popover */\n\n.sidebar-popover span:after {\n    display:inline;\n}\n\n.sidebar-popover.graph-values-popover {\n  position: absolute;\n  top: -33px;\n  right: 0;\n  font-size: 80%;\n  padding: 1em 1em 0 1em;\n  display:block;\n  opacity:0.9;\n}\n\n.graph-values-popover .graph-type {\n  margin: 0;\n  padding: 0;\n  font-weight: 700;\n}\n\n.graph-values-popover__heading {\n  border-bottom: 1px solid rgba(255, 255, 255, .5);\n  font-size: 1.1em;\n  color: #fff;\n  padding: .5em 0;\n}\n\n.graph-values-popover__list {\n  list-style: none;\n  padding: 0;\n  margin: 2px 0 0 0;\n}\n\n.graph-values-popover__item {\n  padding: 1em 0;\n  border-top: 1px dashed rgba(255, 255, 255, .5);\n}\n\n.graph-values-popover__item:first-child {\n  border-top: none;\n  padding-top: 1.5em;\n}\n\n.graph-values-popover__item ul {\n  list-style: none;\n  margin: 0;\n}\n\n.graph-values-popover__item li:first-child {\n  font-size: 1.1em;\n  font-weight: 700;\n}\n\ndiv.graphholder div.small-2.columns {\n    float:right;\n    display:block;\n    width:23%;\n}\n\ndiv.graphholder #loading {\n    margin-top:4em;\n}\n", ""]);
 
 /***/ },
 /* 603 */

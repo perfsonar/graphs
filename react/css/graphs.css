@@ -95,12 +95,15 @@
     background-color: #2b9f78;
 }
 
-.graph-filter__item.graph-filter__item.loss-ping.active a {
+.graph-filter__item.graph-filter__item.loss-ping.active.active a {
     /*background-color: #f0e442; */  /* light yellow */
     /* background-color: #d55e00; */ /* vermillion */
     background-color: #e5801c; /* slightly browner orange */
 }
 
+.graph-filter__item.graph-filter__item.packet-retransmits.active a {
+    background-color: #56b4e9;
+}
 
 .graph-filter__item svg.direction-label {
     margin-left: 1em;

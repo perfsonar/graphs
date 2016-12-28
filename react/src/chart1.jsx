@@ -9,7 +9,7 @@ import GraphUtilities from "./GraphUtilities";
 
 import { AreaChart, Brush, Charts, ChartContainer, ChartRow, YAxis, LineChart, ScatterChart, Highlighter, Resizable, Legend, styler } from "react-timeseries-charts";
 
-import { TimeSeries, TimeRange } from "pondjs";
+import { TimeSeries, TimeRange, Event } from "pondjs";
 
 import SIValue from "./SIValue";
 import "./chart1.css";
@@ -95,7 +95,7 @@ const scheme = {
     ipv6: "#633", // brown
     throughput: "#0076b4", // blue
     throughputTCP: "#0076b4", // blue
-    "packet-retransmits": "#56B4DF", // light blue
+    "packet-retransmits": "#56b4e9", // light blue
     "packet-loss-rateLatency": "#2b9f78", // green
     "histogram-rtt": "#e5a11c", // yellow/orange
     "histogram-owdelay": "#633", // brown
@@ -208,6 +208,9 @@ function getChartStyle( options, column ) {
         case "packet-loss-rate-bidir":
             color = scheme["packet-loss-ratePing"];
             break;
+        case "packet-retransmits":
+            color = scheme["packet-retransmits"];
+            break;
 
     }
     if ( options.direction == "reverse" ) {
@@ -315,9 +318,12 @@ export default React.createClass({
                 throughput: true,
                 forward: true,
                 reverse: true,
-                "loss": true,
+                loss: true,
                 latency: true,
-                failures: true
+                failures: true,
+                "packet-retransmits": true,
+                "loss-latency": true
+
             },
             //src: null,
             //dst: null,
@@ -882,6 +888,8 @@ export default React.createClass({
 
                     }
                     data = GraphDataStore.getChartData( filter, this.state.itemsToHide );
+                    let eventTypeStats = GraphDataStore.eventTypeStats;
+
                     if ( this.state.active[type] && ( data.results.length > 0 ) ) {
                         for(let j in data.results) {
                             let result = data.results[j];
@@ -894,12 +902,36 @@ export default React.createClass({
                             if ( esmondName != "packet-count-sent"
                                     && esmondName != "packet-count-lost"
                                     && esmondName != "packet-count-lost-bidir"
+                                    && esmondName != "packet-retransmits"
                                     ) {
 
                                 stats.min = GraphDataStore.getMin( data.stats.min, stats.min );
                                 stats.max = GraphDataStore.getMax( data.stats.max, stats.max );
                             }  else {
-                                continue;
+                                if ( esmondName != "packet-retransmits" ) {
+                                    continue;
+                                } else {
+                                    if ( (typeof stats.max == "undefined") 
+                                            && (typeof eventTypeStats["packet-retransmits"].max != "undefined" ) ) {
+                                        stats.max = eventTypeStats["packet-retransmits"].max;
+                                        if ( stats.max = 1e-9 ) {
+                                            stats.max = 0.1;
+                                        }
+                                        stats.min = 1e-9;
+                                    }
+                                    var scaledSeries = GraphDataStore.scaleValues( series, stats.max );
+                                    series = scaledSeries;
+                                       /* 
+                                        series.map( function( e ) { 
+                                        let time = e.timestamp();
+                                        let value = e.value() * stats.max / data.stats.max;
+                                        let newEvent = new Event( time, {"value": value});
+                                        return newEvent; 
+                                    });
+                                    */
+
+
+                                }
 
                             }
                             // TODO: Try changing stats
@@ -1342,7 +1374,6 @@ export default React.createClass({
 
     },
     componentWillReceiveProps( nextProps ) {
-        console.log("nextProps", nextProps);
         let timerange = new TimeRange([nextProps.start * 1000, nextProps.end * 1000 ]);
         this.setState({itemsToHide: nextProps.itemsToHide});
         if ( nextProps.start != this.state.start
