@@ -90908,7 +90908,7 @@
 	        router: _react2.default.PropTypes.func
 	    },
 	    toggleType: function toggleType(options, event) {
-	        //console.log("toggleType options: ", options); //, "event", event);
+	        console.log("toggleType options: ", options); //, "event", event);
 	        var newItems = this.state.itemsToHide;
 	        //newItems.push( options );
 	        var sorted = Object.keys(options).sort();
@@ -90925,16 +90925,22 @@
 	            //let newItems = {};
 	            newItems[id] = options;
 	        }
+	        console.log("newItems", newItems);
 	        var active = this.state.active;
 	        active[id] = !active[id];
-	        this.setState({ active: active });
-	
-	        this.setState({ itemsToHide: newItems });
+	        this.setState({ active: active, itemsToHide: newItems });
+	        //this.setHashVals( newItems );
+	        //this.setHashVals( this.state.hashValues );
+	        //this.updateURLHash();
+	        /*
+	        this.handleTimerangeChange({
+	            "start": this.state.start,
+	            "end": this.state.end,
+	            "timeframe": timeframe
+	        });
+	        */
 	        //this.forceUpdate();
-	
-	
 	        //event.preventDefault();
-	
 	    },
 	
 	    getActiveClass: function getActiveClass(value) {
@@ -91026,7 +91032,7 @@
 	                            _react2.default.createElement(
 	                                "a",
 	                                { href: "#", onClick: this.toggleType.bind(this, { eventType: "histogram-owdelay" }) },
-	                                "Latency (owamp)"
+	                                "Latency"
 	                            )
 	                        ),
 	                        _react2.default.createElement(
@@ -91285,6 +91291,7 @@
 	        this.setHashVals(newTime);
 	        //}
 	        //this.forceUpdate();
+	        this.updateURLHash();
 	    },
 	
 	    setHashVals: function setHashVals(options) {
@@ -91292,18 +91299,21 @@
 	        for (var key in options) {
 	            hashVals[key] = options[key];
 	        }
+	        console.log("hashVals", hashVals);
 	        this.setState({ hashValues: hashVals });
 	        this.updateURLHash();
 	    },
 	    updateURLHash: function updateURLHash() {
 	        var hash = "#";
 	        var hashVals = this.state.hashValues;
+	        console.log("updateURLHash hashVals", hashVals);
 	        var arr = [];
 	        for (var key in hashVals) {
 	            var val = encodeURIComponent(hashVals[key]);
 	            arr.push(key + "=" + val);
 	        }
 	        hash += arr.join("&");
+	        console.log("hash", hash);
 	        window.location.hash = hash;
 	    },
 	
@@ -91339,6 +91349,7 @@
 	        if ("timeframe" in hashObj && hashObj.timeframe != "") {
 	            timeframe = hashObj.timeframe;
 	        }
+	
 	        if (typeof hashObj.start != "undefined") {
 	            start = hashObj.start || defaults.start;
 	        } else if (typeof hashObj.start_ts != "undefined") {
@@ -91350,6 +91361,7 @@
 	        } else if (typeof hashObj.end_ts != "undefined") {
 	            end = hashObj.end_ts || defaults.end;
 	        }
+	
 	        if (typeof qs.ipversion != "undefined") {
 	            ipversion = qs.ipversion;
 	        }
@@ -91456,7 +91468,8 @@
 	            end: this.props.end,
 	            timeframe: this.props.timeframe,
 	            interfaceInfo: null,
-	            traceInfo: []
+	            traceInfo: [],
+	            pageURL: window.location.href
 	        };
 	    },
 	    getTime: function getTime() {
@@ -91466,6 +91479,12 @@
 	            "timeframe": this.state.timeframe
 	        };
 	        return obj;
+	    },
+	    getCurrentURL: function getCurrentURL() {
+	        var url = window.location.href;
+	        console.log("Current page URL", url);
+	        this.setState({ pageURL: url });
+	        return url;
 	    },
 	    render: function render() {
 	        var startDate = new Date(this.state.start * 1000);
@@ -91481,105 +91500,143 @@
 	
 	        return _react2.default.createElement(
 	            "div",
-	            { className: "chartHeader" },
+	            null,
 	            _react2.default.createElement(
 	                "div",
-	                { className: "overview overview--pad" },
+	                { className: "chartTitleBar" },
+	                _react2.default.createElement(
+	                    "span",
+	                    null,
+	                    "perfSONAR test results"
+	                ),
+	                _react2.default.createElement(
+	                    "span",
+	                    { className: "chartShareLinkContainer" },
+	                    _react2.default.createElement(
+	                        "a",
+	                        { href: this.state.pageURL, target: "_blank" },
+	                        _react2.default.createElement("i", { className: "fa fa-share-square-o", "aria-hidden": "true" }),
+	                        " Share/open in new window"
+	                    )
+	                )
+	            ),
+	            _react2.default.createElement(
+	                "div",
+	                { className: "chartHeader" },
 	                _react2.default.createElement(
 	                    "div",
-	                    { className: "row" },
+	                    { className: "overview overview--pad" },
 	                    _react2.default.createElement(
 	                        "div",
-	                        { className: "medium-4 columns" },
-	                        this.renderHostList("source", "Source")
-	                    ),
-	                    _react2.default.createElement(
-	                        "div",
-	                        { className: "medium-4 columns" },
-	                        this.renderHostList("dest", "Destination")
-	                    ),
-	                    _react2.default.createElement(
-	                        "div",
-	                        { className: "medium-4 columns" },
+	                        { className: "row" },
 	                        _react2.default.createElement(
-	                            "label",
-	                            { className: "hostLabel" },
-	                            "Report range"
-	                        ),
-	                        _react2.default.createElement(
-	                            "button",
-	                            { id: "headerTimePrevious", className: "button-quiet button-timechange", onClick: this.handlePageChange.bind(this, "previous") },
-	                            _react2.default.createElement("i", { className: "fa fa-arrow-left", "aria-hidden": "true" })
-	                        ),
-	                        _react2.default.createElement(
-	                            "select",
-	                            { className: "no-margin", name: "timeperiod", id: "timeperiod", onChange: this.changeTimePeriod, value: this.state.timeframe },
-	                            _react2.default.createElement(
-	                                "option",
-	                                { value: "1d" },
-	                                "1 day"
-	                            ),
-	                            _react2.default.createElement(
-	                                "option",
-	                                { value: "3d" },
-	                                "3 days"
-	                            ),
-	                            _react2.default.createElement(
-	                                "option",
-	                                { value: "1w" },
-	                                "1 week"
-	                            ),
-	                            _react2.default.createElement(
-	                                "option",
-	                                { value: "1m" },
-	                                "1 month"
-	                            ),
-	                            _react2.default.createElement(
-	                                "option",
-	                                { value: "1y" },
-	                                "1 year"
-	                            )
-	                        ),
-	                        _react2.default.createElement(
-	                            "button",
-	                            { className: "button-quiet button-timechange", onClick: this.handlePageChange.bind(this, "next") },
-	                            _react2.default.createElement("i", { className: "fa fa-arrow-right", "aria-hidden": "true" })
+	                            "div",
+	                            { className: "medium-4 columns" },
+	                            this.renderHostList("source", "Source")
 	                        ),
 	                        _react2.default.createElement(
 	                            "div",
-	                            null,
+	                            { className: "medium-4 columns" },
+	                            this.renderHostList("dest", "Destination")
+	                        ),
+	                        _react2.default.createElement(
+	                            "div",
+	                            { className: "medium-4 columns" },
 	                            _react2.default.createElement(
-	                                "span",
-	                                { className: "timerange_holder" },
-	                                startMoment.format(date),
-	                                _react2.default.createElement("br", null),
-	                                startMoment.format(time),
-	                                " ",
-	                                startTZ
+	                                "label",
+	                                { className: "hostLabel" },
+	                                "Report range"
 	                            ),
 	                            _react2.default.createElement(
-	                                "span",
-	                                { className: "timerange_holder" },
-	                                "to"
+	                                "button",
+	                                { id: "headerTimePrevious", className: "button-quiet button-timechange", onClick: this.handlePageChange.bind(this, "previous") },
+	                                _react2.default.createElement("i", { className: "fa fa-arrow-left", "aria-hidden": "true" })
 	                            ),
 	                            _react2.default.createElement(
-	                                "span",
-	                                { className: "timerange_holder" },
-	                                endMoment.format(date),
-	                                _react2.default.createElement("br", null),
-	                                endMoment.format(time),
-	                                " ",
-	                                endTZ
+	                                "select",
+	                                { className: "no-margin", name: "timeperiod", id: "timeperiod", onChange: this.changeTimePeriod, value: this.state.timeframe },
+	                                _react2.default.createElement(
+	                                    "option",
+	                                    { value: "1d" },
+	                                    "1 day"
+	                                ),
+	                                _react2.default.createElement(
+	                                    "option",
+	                                    { value: "3d" },
+	                                    "3 days"
+	                                ),
+	                                _react2.default.createElement(
+	                                    "option",
+	                                    { value: "1w" },
+	                                    "1 week"
+	                                ),
+	                                _react2.default.createElement(
+	                                    "option",
+	                                    { value: "1m" },
+	                                    "1 month"
+	                                ),
+	                                _react2.default.createElement(
+	                                    "option",
+	                                    { value: "1y" },
+	                                    "1 year"
+	                                )
+	                            ),
+	                            _react2.default.createElement(
+	                                "button",
+	                                { className: "button-quiet button-timechange", onClick: this.handlePageChange.bind(this, "next") },
+	                                _react2.default.createElement("i", { className: "fa fa-arrow-right", "aria-hidden": "true" })
+	                            ),
+	                            _react2.default.createElement(
+	                                "div",
+	                                null,
+	                                _react2.default.createElement(
+	                                    "span",
+	                                    { className: "timerange_holder" },
+	                                    startMoment.format(date),
+	                                    _react2.default.createElement("br", null),
+	                                    startMoment.format(time),
+	                                    " ",
+	                                    startTZ
+	                                ),
+	                                _react2.default.createElement(
+	                                    "span",
+	                                    { className: "timerange_holder" },
+	                                    "to"
+	                                ),
+	                                _react2.default.createElement(
+	                                    "span",
+	                                    { className: "timerange_holder" },
+	                                    endMoment.format(date),
+	                                    _react2.default.createElement("br", null),
+	                                    endMoment.format(time),
+	                                    " ",
+	                                    endTZ
+	                                )
 	                            )
 	                        )
-	                    )
+	                    ),
+	                    " "
 	                ),
 	                " "
-	            ),
-	            " "
+	            )
 	        ); // End render()
 	    },
 	
+	    componentWillReceiveProps: function componentWillReceiveProps(nextProps) {
+	        console.log("nextProps", nextProps);
+	        this.getCurrentURL();
+	
+	        /*
+	        let start = this.state.start;
+	        let end = this.state.end;
+	        let timeframe = this.state.timeframe;
+	        if ( nextProps.start != start &&
+	             nextProps.end != end &&
+	             nextProps.timeframe != timeframe ) {
+	                 this.getCurrentURL();
+	         }
+	        */
+	    },
 	    changeTimePeriod: function changeTimePeriod(event) {
 	        var period = event.target.value;
 	        var vars = this.getTimeVars(period);
@@ -92319,7 +92376,7 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	exports = module.exports = __webpack_require__(/*! ./~/css-loader/cssToString.js */ 595)();
-	exports.push([module.id, "/*----------------------------------------------------------\n\n    Graphs\n\n----------------------------------------------------------*/\n\n.graph-filter {\n    padding: 0.25em 0;\n}\n\n.graph-label {\n    display: block;\n    float: left;\n    padding-top: .7em;\n    margin-right: .5em;\n}\n\n.graph-filter__list {\n    display: block;\n    list-style: none;\n    padding: 0;\n    margin: 0;\n    border: 1px solid #ccc;\n    border-radius: 4px;\n    display: inline-block;\n}\n\n.blockTrace {\n    display:block; \n}\n\n.hiddenTrace {\n    display:none;\n}\n\n/*\n * Clear fix\n*/\n.graph:after,\n.graph-filters:after,\n.graph-filter:after,\n.graph-filter__list:after {\n    content: \"\";\n    clear: both;\n    display: block;\n}\n\n.graph-filter__item {\n    float: left;\n    border-right: 1px solid #ccc;\n    margin: 0;\n}\n\n/*\n * Filter active states\n*/\n\n.graph-filter__item.graph-filter__item a {\n    color: #fff;\n    background-color: #ccc;\n}\n\n.graph-filter__item.graph-filter__item--blue-active a {\n    background-color: #0076b4;\n}\n\n.graph-filter__item.graph-filter__item--forward.active a, .graph-filter__item.graph-filter__item--reverse.active a, .graph-filter__item.graph-filter__item--failures.active a\n{\n    background-color: #0076b4;\n}\n\n\n.graph-filter__item.graph-filter__item.throughput-tcp.active a {\n    background-color: #0076b4;\n}\n\n.graph-filter__item.graph-filter__item.udp.active a {\n    background-color: #d6641e;\n    /*background-color: #cc7dbe;*/ /*pink */\n}\n\n.graph-filter__item.graph-filter__item.ipv4.active a {\n    background-color: #e5a11c;\n}\n\n.graph-filter__item.graph-filter__item.ipv6.active a {\n    background-color: #633;\n}\n\n.graph-filter__item.graph-filter__item.loss-throughput.active a {\n    background-color: #cc7dbe;\n}\n\n.graph-filter__item.graph-filter__item.loss-latency.active a {\n    background-color: #2b9f78;\n}\n\n.graph-filter__item.graph-filter__item.loss-ping.active.active a {\n    /*background-color: #f0e442; */  /* light yellow */\n    /* background-color: #d55e00; */ /* vermillion */\n    background-color: #e5801c; /* slightly browner orange */\n}\n\n.graph-filter__item.graph-filter__item.packet-retransmits.active a {\n    background-color: #56b4e9;\n}\n\n.graph-filter__item svg.direction-label {\n    margin-left: 1em;\n    vertical-align: middle;\n}\n\n.graph-filter__item:last-child {\n    border-right: none;\n}\n\n.graph-filter__item a {\n    color: #383f44;\n    display: inline-block;\n    padding: .75em 1em;\n}\n\n.graph-filter__item a:hover {\n    background-color: #ccc;\n    color: #383f44;\n}\n\n.graph-settings {\n    border: 1px solid #383f44;\n    border-radius: 4px;\n    color: #383f44;\n    display: inline-block;\n    margin-left: 1em;\n    /*\n     * This is a magic number to make this thing look right.\n    */\n    padding: .71em;\n}\n\n.graph-settings i {\n    font-size: 1.5em;\n}\n\n.graph-wrapper {\n\n}\n\n.graph-header {\n    border-bottom: 1px solid #ccc;\n    margin-top: 1em;\n    padding-bottom: .5em;\n}\n\n.graph-module,\n.graph-holder {\n    min-height: 400px;\n}\n\n.graph-module {\n    display: flex;\n    flex-direction: column;\n    justify-content: space-around;\n}\n\n.graph-module--small,\n.graph-holder--small {\n    min-height: 150px;\n}\n\n.graph-holder {\n    background-color: #ddd;\n}\n\n.graph-module__cell {\n    /*\n     * This is sort of brittle because it relies on a\n     * specific amount of padding to veritcally center\n     * the label\n    */\n    padding-top: 4em;\n    text-align: center;\n    border-bottom: 1px solid #ccc;\n    flex-grow: 1;\n    align-content: center;\n}\n\n.graph-module__cell--small {\n    padding-top: 1em;\n}\n\n.graph-module__cell--left {\n    padding-top: 1em;\n    padding-left: 1em;\n    text-align: left;\n}\n\n.graph-module__stat {\n    display: block;\n    line-height: 1.8;\n}\n\n.graph-module__stat i {\n    margin-right: 1em;\n}\n\n.graph-module__controls {\n    color: #383f44;\n}\n\n.graph-small {\n    margin-top: 1em;\n}\n\n.graph .hostLabel {\n    font-weight:700;\n}\n\n.sidebar-popover__close span {\n    float:left;\n}\n\n/* Graph-Values popover */\n\n.sidebar-popover span:after {\n    display:inline;\n}\n\n.sidebar-popover.graph-values-popover {\n  position: absolute;\n  top: -33px;\n  right: 0;\n  font-size: 80%;\n  padding: 1em 1em 0 1em;\n  display:block;\n  opacity:0.9;\n}\n\n.graph-values-popover .graph-type {\n  margin: 0;\n  padding: 0;\n  font-weight: 700;\n}\n\n.graph-values-popover__heading {\n  border-bottom: 1px solid rgba(255, 255, 255, .5);\n  font-size: 1.1em;\n  color: #fff;\n  padding: .5em 0;\n}\n\n.graph-values-popover__list {\n  list-style: none;\n  padding: 0;\n  margin: 2px 0 0 0;\n}\n\n.graph-values-popover__item {\n  padding: 1em 0;\n  border-top: 1px dashed rgba(255, 255, 255, .5);\n}\n\n.graph-values-popover__item:first-child {\n  border-top: none;\n  padding-top: 1.5em;\n}\n\n.graph-values-popover__item ul {\n  list-style: none;\n  margin: 0;\n}\n\n.graph-values-popover__item li:first-child {\n  font-size: 1.1em;\n  font-weight: 700;\n}\n\ndiv.graphholder div.small-2.columns {\n    float:right;\n    display:block;\n    width:23%;\n}\n\ndiv.graphholder #loading {\n    margin-top:4em;\n}\n", ""]);
+	exports.push([module.id, "/*----------------------------------------------------------\n\n    Graphs\n\n----------------------------------------------------------*/\n\n.graph-filter {\n    padding: 0.25em 0;\n}\n\n.graph-label {\n    display: block;\n    float: left;\n    padding-top: .7em;\n    margin-right: .5em;\n}\n\n.graph-filter__list {\n    display: block;\n    list-style: none;\n    padding: 0;\n    margin: 0;\n    border: 1px solid #ccc;\n    border-radius: 4px;\n    display: inline-block;\n}\n\n.blockTrace {\n    display:block; \n}\n\n.hiddenTrace {\n    display:none;\n}\n\n/*\n * Clear fix\n*/\n.graph:after,\n.graph-filters:after,\n.graph-filter:after,\n.graph-filter__list:after {\n    content: \"\";\n    clear: both;\n    display: block;\n}\n\n.graph-filter__item {\n    float: left;\n    border-right: 1px solid #ccc;\n    margin: 0;\n}\n\n/*\n * Filter active states\n*/\n\n.graph-filter__item.graph-filter__item a {\n    color: #fff;\n    background-color: #ccc;\n}\n\n.graph-filter__item.graph-filter__item--blue-active a {\n    background-color: #0076b4;\n}\n\n.graph-filter__item.graph-filter__item--forward.active a, .graph-filter__item.graph-filter__item--reverse.active a, .graph-filter__item.graph-filter__item--failures.active a\n{\n    background-color: #0076b4;\n}\n\n\n.graph-filter__item.graph-filter__item.throughput-tcp.active a {\n    background-color: #0076b4;\n}\n\n.graph-filter__item.graph-filter__item.udp.active a {\n    background-color: #d6641e;\n    /*background-color: #cc7dbe;*/ /*pink */\n}\n\n.graph-filter__item.graph-filter__item.ipv4.active a {\n    background-color: #e5a11c;\n}\n\n.graph-filter__item.graph-filter__item.ipv6.active a {\n    background-color: #633;\n}\n\n.graph-filter__item.graph-filter__item.loss-throughput.active a {\n    background-color: #cc7dbe;\n}\n\n.graph-filter__item.graph-filter__item.loss-latency.active a {\n    background-color: #2b9f78;\n}\n\n.graph-filter__item.graph-filter__item.loss-ping.active.active a {\n    /*background-color: #f0e442; */  /* light yellow */\n    /* background-color: #d55e00; */ /* vermillion */\n    background-color: #e5801c; /* slightly browner orange */\n}\n\n.graph-filter__item.graph-filter__item.packet-retransmits.active a {\n    background-color: #56b4e9;\n}\n\n.graph-filter__item svg.direction-label {\n    margin-left: 1em;\n    vertical-align: middle;\n}\n\n.graph-filter__item:last-child {\n    border-right: none;\n}\n\n.graph-filter__item a {\n    color: #383f44;\n    display: inline-block;\n    padding: .75em 1em;\n}\n\n.graph-filter__item a:hover {\n    background-color: #ccc;\n    color: #383f44;\n}\n\n.graph-settings {\n    border: 1px solid #383f44;\n    border-radius: 4px;\n    color: #383f44;\n    display: inline-block;\n    margin-left: 1em;\n    /*\n     * This is a magic number to make this thing look right.\n    */\n    padding: .71em;\n}\n\n.graph-settings i {\n    font-size: 1.5em;\n}\n\n.graph-wrapper {\n\n}\n\n.graph-header {\n    border-bottom: 1px solid #ccc;\n    margin-top: 1em;\n    padding-bottom: .5em;\n}\n\n.graph-module,\n.graph-holder {\n    min-height: 400px;\n}\n\n.graph-module {\n    display: flex;\n    flex-direction: column;\n    justify-content: space-around;\n}\n\n.graph-module--small,\n.graph-holder--small {\n    min-height: 150px;\n}\n\n.graph-holder {\n    background-color: #ddd;\n}\n\n.graph-module__cell {\n    /*\n     * This is sort of brittle because it relies on a\n     * specific amount of padding to veritcally center\n     * the label\n    */\n    padding-top: 4em;\n    text-align: center;\n    border-bottom: 1px solid #ccc;\n    flex-grow: 1;\n    align-content: center;\n}\n\n.graph-module__cell--small {\n    padding-top: 1em;\n}\n\n.graph-module__cell--left {\n    padding-top: 1em;\n    padding-left: 1em;\n    text-align: left;\n}\n\n.graph-module__stat {\n    display: block;\n    line-height: 1.8;\n}\n\n.graph-module__stat i {\n    margin-right: 1em;\n}\n\n.graph-module__controls {\n    color: #383f44;\n}\n\n.graph-small {\n    margin-top: 1em;\n}\n\n.graph .hostLabel {\n    font-weight:700;\n}\n\n.sidebar-popover__close span {\n    float:left;\n}\n\n/* Graph-Values popover */\n\n.sidebar-popover span:after {\n    display:inline;\n}\n\n.sidebar-popover.graph-values-popover {\n  position: absolute;\n  top: -33px;\n  right: 0;\n  font-size: 80%;\n  padding: 1em 1em 0 1em;\n  display:block;\n  opacity:0.9;\n}\n\n.graph-values-popover .graph-type {\n  margin: 0;\n  padding: 0;\n  font-weight: 700;\n}\n\n.graph-values-popover__heading {\n  border-bottom: 1px solid rgba(255, 255, 255, .5);\n  font-size: 1.1em;\n  color: #fff;\n  padding: .5em 0;\n}\n\n.graph-values-popover__list {\n  list-style: none;\n  padding: 0;\n  margin: 2px 0 0 0;\n}\n\n.graph-values-popover__item {\n  padding: 1em 0;\n  border-top: 1px dashed rgba(255, 255, 255, .5);\n}\n\n.graph-values-popover__item:first-child {\n  border-top: none;\n  padding-top: 1.5em;\n}\n\n.graph-values-popover__item ul {\n  list-style: none;\n  margin: 0;\n}\n\n.graph-values-popover__item li:first-child {\n  font-size: 1.1em;\n  font-weight: 700;\n}\n\ndiv.graphholder div.small-2.columns {\n    float:right;\n    display:block;\n    width:23%;\n}\n\ndiv.graphholder #loading {\n    margin-top:4em;\n}\n\ndiv.chartTitleBar {\n    margin-top:5px;\n    margin-bottom:-5px;\n    padding-left: 0.9375rem;\n    padding-right: 0.9375rem;\n}\nspan.chartShareLinkContainer {\n    float:right;\n}\n", ""]);
 
 /***/ },
 /* 603 */

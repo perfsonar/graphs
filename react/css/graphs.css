@@ -283,3 +283,13 @@ div.graphholder div.small-2.columns {
 div.graphholder #loading {
     margin-top:4em;
 }
+
+div.chartTitleBar {
+    margin-top:5px;
+    margin-bottom:-5px;
+    padding-left: 0.9375rem;
+    padding-right: 0.9375rem;
+}
+span.chartShareLinkContainer {
+    float:right;
+}

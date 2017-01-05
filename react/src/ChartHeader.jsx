@@ -26,6 +26,7 @@ export default React.createClass({
             timeframe: this.props.timeframe,
             interfaceInfo: null,
             traceInfo: [],
+            pageURL: window.location.href
         };
     },
     getTime() {
@@ -36,6 +37,13 @@ export default React.createClass({
         };
         return obj;
 
+
+    },
+    getCurrentURL() {
+        let url = window.location.href;
+        console.log("Current page URL", url);
+        this.setState({pageURL: url});
+        return url;
 
     },
     render() {
@@ -51,6 +59,16 @@ export default React.createClass({
         let time = "HH:mm:ss";
 
         return (
+
+    <div>
+        <div className="chartTitleBar">
+            <span>perfSONAR test results</span>
+            <span className="chartShareLinkContainer">
+                <a href={this.state.pageURL} target="_blank">
+                    <i className="fa fa-share-square-o" aria-hidden="true"></i> Share/open in new window
+                </a>
+            </span>
+        </div>
 
         <div className="chartHeader">
                     <div className="overview overview--pad">
@@ -105,7 +123,26 @@ export default React.createClass({
 
         {/* End chartHeader */}
         </div>
+    </div>
         ); // End render()
+    },
+    componentWillReceiveProps: function( nextProps ) {
+        console.log("nextProps", nextProps);
+        this.getCurrentURL();
+
+        /*
+        let start = this.state.start;
+        let end = this.state.end;
+        let timeframe = this.state.timeframe;
+        if ( nextProps.start != start &&
+             nextProps.end != end &&
+             nextProps.timeframe != timeframe ) {
+
+                this.getCurrentURL();
+
+        }
+        */
+
     },
     changeTimePeriod: function( event ) {
         let period = event.target.value;

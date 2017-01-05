@@ -167,7 +167,7 @@ export default React.createClass({
         router: React.PropTypes.func
     },
     toggleType: function( options, event ) {
-        //console.log("toggleType options: ", options); //, "event", event);
+        console.log("toggleType options: ", options); //, "event", event);
         let newItems = this.state.itemsToHide;
         //newItems.push( options );
         let sorted = Object.keys( options ).sort();
@@ -184,17 +184,22 @@ export default React.createClass({
             //let newItems = {};
             newItems[id] = options;
         }
+        console.log("newItems", newItems);
         let active = this.state.active;
         active[id] = !active[id];
-        this.setState({ active: active } );
-
-        this.setState({ itemsToHide: newItems } );
+        this.setState({ active: active, itemsToHide: newItems } );
+        //this.setHashVals( newItems );
+         //this.setHashVals( this.state.hashValues );
+         //this.updateURLHash();
+         /*
+         this.handleTimerangeChange({
+             "start": this.state.start,
+             "end": this.state.end,
+             "timeframe": timeframe
+         });
+        */
         //this.forceUpdate();
-
-
-
         //event.preventDefault();
-
 
     },
 
@@ -246,7 +251,7 @@ export default React.createClass({
                                 </li>
 
                                 <li className={"graph-filter__item ipv6 " + this.getActiveClass( this.state.active["eventType_histogram-owdelay_"] )}>
-                                    <a href="#" onClick={this.toggleType.bind(this, {eventType: "histogram-owdelay"})}>Latency (owamp)</a>
+                                    <a href="#" onClick={this.toggleType.bind(this, {eventType: "histogram-owdelay"})}>Latency</a>
                                 </li>
                                 <li className={"graph-filter__item ipv4 " + this.getActiveClass( this.state.active["eventType_histogram-rtt_"])} >
                                     <a href="#" onClick={this.toggleType.bind(this, {eventType: "histogram-rtt"})}>Latency (ping)</a>
@@ -370,7 +375,7 @@ export default React.createClass({
             this.setHashVals( newTime );
         //}
         //this.forceUpdate();
-
+        this.updateURLHash();
     },
 
     setHashVals: function( options ) {
@@ -378,6 +383,7 @@ export default React.createClass({
         for(let key in options) {
             hashVals[key] = options[key];
         }
+        console.log("hashVals", hashVals);
         this.setState({hashValues: hashVals});
         this.updateURLHash();
 
@@ -385,12 +391,14 @@ export default React.createClass({
     updateURLHash: function() {
         let hash = "#";
         let hashVals = this.state.hashValues;
+        console.log("updateURLHash hashVals", hashVals);
         let arr = [];
         for(let key in hashVals ) {
             let val = encodeURIComponent( hashVals[key] );
             arr.push( key + "=" + val );
         }
         hash += arr.join("&");
+        console.log("hash", hash);
         window.location.hash = hash;
 
     },
@@ -429,6 +437,7 @@ export default React.createClass({
             timeframe = hashObj.timeframe;
 
         }
+
         if ( typeof hashObj.start != "undefined" ) {
             start = hashObj.start || defaults.start;
         } else if ( typeof hashObj.start_ts != "undefined" ) {
@@ -441,6 +450,7 @@ export default React.createClass({
         } else if ( typeof hashObj.end_ts != "undefined" ) {
             end = hashObj.end_ts || defaults.end;
         }
+
         if ( typeof qs.ipversion != "undefined" ) {
             ipversion = qs.ipversion;
         }
