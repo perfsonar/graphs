@@ -1,4 +1,4 @@
-import moment from "moment";
+import moment from "moment-timezone";
 
 import { TimeSeries, TimeRange, Event } from "pondjs";
 
@@ -24,7 +24,8 @@ module.exports = {
             }
         }
 
-        out = tz + " (GMT " + offset + ")";
+        //out = tz + " (GMT " + offset + ")";
+        out = " (GMT" + offset + ")";
         return out;
 
     },
