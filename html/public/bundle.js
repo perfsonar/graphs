@@ -69199,9 +69199,9 @@
 
 	"use strict";
 	
-	var _moment = __webpack_require__(/*! moment */ 211);
+	var _momentTimezone = __webpack_require__(/*! moment-timezone */ 603);
 	
-	var _moment2 = _interopRequireDefault(_moment);
+	var _momentTimezone2 = _interopRequireDefault(_momentTimezone);
 	
 	var _pondjs = __webpack_require__(/*! pondjs */ 345);
 	
@@ -69221,14 +69221,15 @@
 	            out = "";
 	        } else {
 	            tz = tzRe.exec(date.toString())[1];
-	            var dateMoment = (0, _moment2.default)(date);
+	            var dateMoment = (0, _momentTimezone2.default)(date);
 	            offset = dateMoment.utcOffset() / 60;
 	            if (offset >= 0) {
 	                offset = "+" + offset;
 	            }
 	        }
 	
-	        out = tz + " (GMT " + offset + ")";
+	        //out = tz + " (GMT " + offset + ")";
+	        out = " (GMT" + offset + ")";
 	        return out;
 	    }
 	};
