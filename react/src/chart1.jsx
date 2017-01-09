@@ -246,19 +246,7 @@ const lineStyles = {
  * blue: #004987
  * purple: #750075
  * orange: #ff8e01
-/*
-    node: {
-        normal: {stroke: "#737373", strokeWidth: 4, fill: "none"},
-        highlighted: {stroke: "#b1b1b1", strokeWidth: 4, fill: "#b1b1b1"}
-    },
-    line: {
-        normal: {stroke: "#1f77b4", strokeWidth: 3, fill: "none"},
-        highlighted: {stroke: "#4EC1E0",strokeWidth: 4,fill: "none"}
-    },
-    label: {
-        normal: {fill: "#9D9D9D",fontFamily: "verdana, sans-serif",fontSize: 10}
-    }
-    */
+*/
 };
 
 const reverseStyles = {
@@ -325,10 +313,9 @@ export default React.createClass({
                 "loss-latency": true
 
             },
-            //src: null,
-            //dst: null,
             start: this.props.start,
             end: this.props.end,
+            summaryWindow: this.props.summaryWindow,
             agent: this.props.agent,
             tracker: null,
             chartSeries: null,
@@ -1343,6 +1330,9 @@ export default React.createClass({
         let tool = this.props.tool;
         let ipversion = this.props.ipversion;
         let agent = this.props.agent;
+
+        let summaryWindow = this.props.summaryWindow;
+
         let params = {
             tool: tool,
             ipversion: ipversion,
@@ -1350,7 +1340,7 @@ export default React.createClass({
         };
         this.setState({params: params, loading: true});
         let ma_url = this.props.ma_url || location.origin + "/esmond/perfsonar/archive/";
-        this.getDataFromMA(src, dst, start, end, ma_url, params);
+        this.getDataFromMA(src, dst, start, end, ma_url, params, summaryWindow);
 
     },
 
@@ -1358,7 +1348,7 @@ export default React.createClass({
 
     },
 
-    getDataFromMA: function(src, dst, start, end, ma_url, params ) {
+    getDataFromMA: function(src, dst, start, end, ma_url, params, summaryWindow ) {
         this.setState({loading: true, dataloaded: false});
         //let ma_url = this.props.ma_url || location.origin + "/esmond/perfsonar/archive/";
 
@@ -1366,7 +1356,7 @@ export default React.createClass({
 
         GraphDataStore.subscribeError(this.dataError);
 
-        GraphDataStore.getHostPairMetadata( src, dst, start, end, ma_url, params );
+        GraphDataStore.getHostPairMetadata( src, dst, start, end, ma_url, params, summaryWindow );
     },
     dataError: function() {
         let data = GraphDataStore.getErrorData();
@@ -1374,12 +1364,13 @@ export default React.createClass({
 
     },
     componentWillReceiveProps( nextProps ) {
+        console.log("chart1 nextProps", nextProps);
         let timerange = new TimeRange([nextProps.start * 1000, nextProps.end * 1000 ]);
         this.setState({itemsToHide: nextProps.itemsToHide});
         if ( nextProps.start != this.state.start
                 || nextProps.end != this.state.end ) {
-            this.setState({start: nextProps.start, end: nextProps.end, chartSeries: null, timerange: timerange, brushrange: null, initialTimerange: timerange });
-            this.getDataFromMA(nextProps.src, nextProps.dst, nextProps.start, nextProps.end, nextProps.ma_url, this.state.params);
+            this.setState({start: nextProps.start, end: nextProps.end, chartSeries: null, timerange: timerange, brushrange: null, initialTimerange: timerange, summaryWindow: nextProps.summaryWindow });
+            this.getDataFromMA(nextProps.src, nextProps.dst, nextProps.start, nextProps.end, nextProps.ma_url, this.state.params, nextProps.summaryWindow);
         } else {
             GraphDataStore.toggleType( nextProps.itemsToHide) ;
 

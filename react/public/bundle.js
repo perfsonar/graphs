@@ -25221,19 +25221,7 @@
 	     * blue: #004987
 	     * purple: #750075
 	     * orange: #ff8e01
-	    /*
-	        node: {
-	            normal: {stroke: "#737373", strokeWidth: 4, fill: "none"},
-	            highlighted: {stroke: "#b1b1b1", strokeWidth: 4, fill: "#b1b1b1"}
-	        },
-	        line: {
-	            normal: {stroke: "#1f77b4", strokeWidth: 3, fill: "none"},
-	            highlighted: {stroke: "#4EC1E0",strokeWidth: 4,fill: "none"}
-	        },
-	        label: {
-	            normal: {fill: "#9D9D9D",fontFamily: "verdana, sans-serif",fontSize: 10}
-	        }
-	        */
+	    */
 	};
 	
 	var reverseStyles = {
@@ -25302,10 +25290,9 @@
 	                "loss-latency": true
 	
 	            },
-	            //src: null,
-	            //dst: null,
 	            start: this.props.start,
 	            end: this.props.end,
+	            summaryWindow: this.props.summaryWindow,
 	            agent: this.props.agent,
 	            tracker: null,
 	            chartSeries: null,
@@ -26338,6 +26325,9 @@
 	        var tool = this.props.tool;
 	        var ipversion = this.props.ipversion;
 	        var agent = this.props.agent;
+	
+	        var summaryWindow = this.props.summaryWindow;
+	
 	        var params = {
 	            tool: tool,
 	            ipversion: ipversion,
@@ -26345,12 +26335,12 @@
 	        };
 	        this.setState({ params: params, loading: true });
 	        var ma_url = this.props.ma_url || location.origin + "/esmond/perfsonar/archive/";
-	        this.getDataFromMA(src, dst, start, end, ma_url, params);
+	        this.getDataFromMA(src, dst, start, end, ma_url, params, summaryWindow);
 	    },
 	
 	    getMetaDataFromMA: function getMetaDataFromMA() {},
 	
-	    getDataFromMA: function getDataFromMA(src, dst, start, end, ma_url, params) {
+	    getDataFromMA: function getDataFromMA(src, dst, start, end, ma_url, params, summaryWindow) {
 	        this.setState({ loading: true, dataloaded: false });
 	        //let ma_url = this.props.ma_url || location.origin + "/esmond/perfsonar/archive/";
 	
@@ -26358,18 +26348,19 @@
 	
 	        _GraphDataStore2.default.subscribeError(this.dataError);
 	
-	        _GraphDataStore2.default.getHostPairMetadata(src, dst, start, end, ma_url, params);
+	        _GraphDataStore2.default.getHostPairMetadata(src, dst, start, end, ma_url, params, summaryWindow);
 	    },
 	    dataError: function dataError() {
 	        var data = _GraphDataStore2.default.getErrorData();
 	        this.setState({ dataError: data, loading: false });
 	    },
 	    componentWillReceiveProps: function componentWillReceiveProps(nextProps) {
+	        console.log("chart1 nextProps", nextProps);
 	        var timerange = new _pondjs.TimeRange([nextProps.start * 1000, nextProps.end * 1000]);
 	        this.setState({ itemsToHide: nextProps.itemsToHide });
 	        if (nextProps.start != this.state.start || nextProps.end != this.state.end) {
-	            this.setState({ start: nextProps.start, end: nextProps.end, chartSeries: null, timerange: timerange, brushrange: null, initialTimerange: timerange });
-	            this.getDataFromMA(nextProps.src, nextProps.dst, nextProps.start, nextProps.end, nextProps.ma_url, this.state.params);
+	            this.setState({ start: nextProps.start, end: nextProps.end, chartSeries: null, timerange: timerange, brushrange: null, initialTimerange: timerange, summaryWindow: nextProps.summaryWindow });
+	            this.getDataFromMA(nextProps.src, nextProps.dst, nextProps.start, nextProps.end, nextProps.ma_url, this.state.params, nextProps.summaryWindow);
 	        } else {
 	            _GraphDataStore2.default.toggleType(nextProps.itemsToHide);
 	        }
@@ -49146,6 +49137,7 @@
 	        dataReqCount = 0;
 	        completedReqs = 0;
 	        completedDataReqs = 0;
+	        this.summaryWindow = 3600;
 	        this.eventTypeStats = {};
 	
 	        this.eventTypes = ['throughput', 'histogram-owdelay', 'packet-loss-rate', 'packet-loss-rate-bidir', 'packet-count-lost', 'packet-count-sent', 'packet-count-lost-bidir', 'packet-retransmits', 'histogram-rtt', 'failures'];
@@ -49154,13 +49146,15 @@
 	        this.errorData = null;
 	    },
 	
-	    getHostPairMetadata: function getHostPairMetadata(sources, dests, startInput, endInput, ma_url, params) {
+	    getHostPairMetadata: function getHostPairMetadata(sources, dests, startInput, endInput, ma_url, params, summaryWindow) {
 	        var _this = this;
 	
 	        start = startInput;
 	        end = endInput;
 	
 	        this.initVars();
+	
+	        this.summaryWindow = summaryWindow;
 	
 	        if (!$.isArray(sources)) {
 	            sources = [sources];
@@ -49234,8 +49228,12 @@
 	                _this.serverRequest = $.get(url, function (data) {
 	                    this.handleMetadataResponse(data, direction[j]);
 	                }.bind(_this)).fail(function (data) {
+	                    //.fail(function( jqXHR, textStatus, errorThrown ) {
 	                    console.log("get metadata failed");
 	                    this.handleMetadataError(data);
+	                    // if we get an error, try the cgi instead 
+	                    // and set a new flag, useProxy  and make
+	                    // all requests through the proxy CGI
 	                }.bind(_this));
 	
 	                reqCount++;
@@ -49312,10 +49310,10 @@
 	        }
 	        return eventTypes;
 	    },
-	    getData: function getData(metaData, window) {
+	    getData: function getData(metaData) {
 	        var _this2 = this;
 	
-	        window = 3600; // todo: this should be dynamic
+	        var window = this.summaryWindow; // || 3600; // todo: this should be dynamic
 	        //window = 86400; // todo: this should be dynamic
 	        var defaultSummaryType = "aggregation"; // TODO: allow other aggregate types
 	        var multipleTypes = ["histogram-rtt", "histogram-owdelay"];
@@ -49349,8 +49347,10 @@
 	
 	                    if ($.inArray(eventType, multipleTypes) >= 0) {
 	                        summaryType = "statistics";
+	                        that = _this2;
+	
 	                        var win = $.grep(summaries, function (summary, k) {
-	                            return summary["summary-type"] == summaryType && summary["summary-window"] == window;
+	                            return summary["summary-type"] == summaryType && summary["summary-window"] == that.summaryWindow;
 	                        });
 	                        if (win.length > 1) {
 	                            console.log("WEIRD: multiple summary windows found. This should not happen.");
@@ -49361,9 +49361,15 @@
 	                            console.log("no summary windows found");
 	                        }
 	                    } else {
+	                        that = _this2;
+	
 	                        var _win = $.grep(summaries, function (summary, k) {
-	                            return summary["summary-type"] == summaryType && summary["summary-window"] == window;
+	                            return summary["summary-type"] == summaryType && summary["summary-window"] == that.summaryWindow;
 	                        });
+	
+	                        // TODO: add ability to use aggregates
+	                        // HERE NOW!
+	
 	                        // TODO: allow lower summary windows
 	                        if (_win.length > 1) {
 	                            console.log("WEIRD: multiple summary windows found. This should not happen.");
@@ -49414,6 +49420,9 @@
 	                };
 	
 	                for (var j in datum["event-types"]) {
+	                    var that;
+	                    var that;
+	
 	                    _loop3(j);
 	                }
 	            }
@@ -69231,7 +69240,38 @@
 	        //out = tz + " (GMT " + offset + ")";
 	        out = " (GMT" + offset + ")";
 	        return out;
+	    },
+	
+	    getTimeVars: function getTimeVars(period) {
+	        var timeDiff = void 0;
+	        var summaryWindow = void 0;
+	        if (period == '4h') {
+	            timeDiff = 60 * 60 * 4;
+	            summaryWindow = 0;
+	        } else if (period == '1d') {
+	            timeDiff = 86400;
+	            summaryWindow = 300;
+	        } else if (period == '3d') {
+	            timeDiff = 86400 * 3;
+	            summaryWindow = 300;
+	        } else if (period == '1w') {
+	            timeDiff = 86400 * 7;
+	            summaryWindow = 3600;
+	        } else if (period == '1m') {
+	            timeDiff = 86400 * 31;
+	            summaryWindow = 3600;
+	        } else if (period == '1y') {
+	            timeDiff = 86400 * 365;
+	            summaryWindow = 86400;
+	        }
+	        var timeRange = {
+	            timeDiff: timeDiff,
+	            summaryWindow: summaryWindow,
+	            timeframe: period
+	        };
+	        return timeRange;
 	    }
+	
 	};
 
 /***/ },
@@ -90742,6 +90782,10 @@
 	
 	var _HostInfoStore2 = _interopRequireDefault(_HostInfoStore);
 	
+	var _GraphUtilities = __webpack_require__(/*! ./GraphUtilities */ 506);
+	
+	var _GraphUtilities2 = _interopRequireDefault(_GraphUtilities);
+	
 	__webpack_require__(/*! ../css/graphs.css */ 601);
 	
 	__webpack_require__(/*! ../../toolkit/web-ng/root/js/app.js */ 606);
@@ -90757,6 +90801,7 @@
 	var now = Math.floor(new Date().getTime() / 1000);
 	
 	var defaults = {
+	    summaryWindow: 3600
 	    //start: now - 86400*7,
 	    //end: now,
 	    //timeframe: "1w",
@@ -90885,6 +90930,7 @@
 	            timeframe: newState.timeframe,
 	            ma_url: newState.ma_url,
 	            agent: newState.agent,
+	            summaryWindow: newState.summaryWindow,
 	            itemsToHide: {},
 	            tool: newState.tool,
 	            ipversion: newState.ipversion,
@@ -91257,6 +91303,7 @@
 	                        dst: this.state.dst,
 	                        start: this.state.start,
 	                        end: this.state.end,
+	                        summaryWindow: this.state.summaryWindow,
 	                        ma_url: this.state.ma_url,
 	                        agent: this.state.agent,
 	                        tool: this.state.tool,
@@ -91344,12 +91391,16 @@
 	        var timeframe = defaults.timeframe;
 	        var tool = qs.tool;
 	        var agent = qs.agent || [];
+	        var summaryWindow = qs.summaryWindow;
+	
 	        var ipversion = void 0;
 	        //let timeRange = this.getTimeVars( defaults.timeframe );
 	        //
 	        if ("timeframe" in hashObj && hashObj.timeframe != "") {
 	            timeframe = hashObj.timeframe;
 	        }
+	
+	        var timeVars = _GraphUtilities2.default.getTimeVars(timeframe);
 	
 	        if (typeof hashObj.start != "undefined") {
 	            start = hashObj.start || defaults.start;
@@ -91365,6 +91416,15 @@
 	
 	        if (typeof qs.ipversion != "undefined") {
 	            ipversion = qs.ipversion;
+	        }
+	
+	        if (typeof hashObj.summaryWindow != "undefined") {
+	            summaryWindow = hashObj.summaryWindow;
+	        }
+	
+	        if (typeof summaryWindow == "undefined") {
+	            //summaryWindow = 3600;
+	            summaryWindow = timeVars.summaryWindow;
 	        }
 	
 	        var ma_urls = qs.url || location.origin + "/esmond/perfsonar/archive/";
@@ -91398,6 +91458,7 @@
 	            start: start,
 	            end: end,
 	            ma_url: ma_urls,
+	            summaryWindow: summaryWindow,
 	            tool: tool,
 	            agent: agent,
 	            ipversion: ipversion,
@@ -91468,6 +91529,7 @@
 	            start: this.props.start,
 	            end: this.props.end,
 	            timeframe: this.props.timeframe,
+	            summaryWindow: 3600,
 	            interfaceInfo: null,
 	            traceInfo: [],
 	            pageURL: window.location.href
@@ -91640,8 +91702,9 @@
 	    },
 	    changeTimePeriod: function changeTimePeriod(event) {
 	        var period = event.target.value;
-	        var vars = this.getTimeVars(period);
+	        var vars = _GraphUtilities2.default.getTimeVars(period);
 	        var timeDiff = vars.timeDiff;
+	        var summaryWindow = vars.summaryWindow;
 	        var half = timeDiff / 2;
 	        var start = this.state.start;
 	        var end = this.state.end;
@@ -91665,7 +91728,8 @@
 	        var options = {
 	            timeframe: period,
 	            start: newStart,
-	            end: newEnd
+	            end: newEnd,
+	            summaryWindow: summaryWindow
 	        };
 	        console.log("options", options);
 	        this.handleTimerangeChange(options);
@@ -91892,7 +91956,7 @@
 	        this.forceUpdate();
 	    },
 	    handlePageChange: function handlePageChange(direction) {
-	        var timeVars = this.getTimeVars(this.state.timeframe);
+	        var timeVars = _GraphUtilities2.default.getTimeVars(this.state.timeframe);
 	        var diff = timeVars.timeDiff;
 	        var newStart = void 0;
 	        var newEnd = void 0;
@@ -91931,8 +91995,9 @@
 	        var options = {};
 	
 	        var timeframe = this.state.timeframe || "1w";
-	        var timeVars = this.getTimeVars(timeframe);
+	        var timeVars = _GraphUtilities2.default.getTimeVars(timeframe);
 	        var diff = timeVars.timeDiff;
+	        var summaryWindow = timeVars.summaryWindow;
 	
 	        var now = Math.floor(new Date().getTime() / 1000);
 	        var newEnd = now;
@@ -91950,39 +92015,9 @@
 	        options.start = newStart;
 	        options.end = newEnd;
 	        options.timeframe = timeframe;
+	        options.summaryWindow = summaryWindow;
 	
 	        this.handleTimerangeChange(options, true);
-	    },
-	
-	    getTimeVars: function getTimeVars(period) {
-	        var timeDiff = void 0;
-	        var summaryWindow = void 0;
-	        if (period == '4h') {
-	            timeDiff = 60 * 60 * 4;
-	            summaryWindow = 0;
-	        } else if (period == '1d') {
-	            timeDiff = 86400;
-	            summaryWindow = 0;
-	        } else if (period == '3d') {
-	            timeDiff = 86400 * 3;
-	            summaryWindow = 300;
-	        } else if (period == '1w') {
-	            timeDiff = 86400 * 7;
-	            summaryWindow = 3600;
-	        } else if (period == '1m') {
-	            timeDiff = 86400 * 31;
-	            summaryWindow = 86400;
-	        } else if (period == '1y') {
-	            timeDiff = 86400 * 365;
-	            summaryWindow = 86400;
-	        }
-	        var timeRange = {
-	            timeDiff: timeDiff,
-	            summaryWindow: summaryWindow,
-	            timeframe: period
-	
-	        };
-	        return timeRange;
 	    }
 	
 	});

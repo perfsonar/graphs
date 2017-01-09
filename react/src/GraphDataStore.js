@@ -40,6 +40,7 @@ module.exports = {
         dataReqCount = 0;
         completedReqs = 0;
         completedDataReqs = 0;
+        this.summaryWindow = 3600;
         this.eventTypeStats = {};
 
         this.eventTypes = ['throughput', 'histogram-owdelay', 'packet-loss-rate',
@@ -52,11 +53,13 @@ module.exports = {
 
     },
 
-    getHostPairMetadata: function ( sources, dests, startInput, endInput, ma_url, params ) {
+    getHostPairMetadata: function ( sources, dests, startInput, endInput, ma_url, params, summaryWindow ) {
         start = startInput;
         end = endInput;
 
         this.initVars();
+
+        this.summaryWindow = summaryWindow;
 
         if ( !$.isArray( sources ) ) {
             sources = [ sources ];
@@ -137,8 +140,12 @@ module.exports = {
                     this.handleMetadataResponse(data, direction[j]);
                 }.bind(this))
                 .fail(function( data ) {
+                //.fail(function( jqXHR, textStatus, errorThrown ) {
                     console.log("get metadata failed");
                     this.handleMetadataError( data );
+                    // if we get an error, try the cgi instead 
+                    // and set a new flag, useProxy  and make
+                    // all requests through the proxy CGI
                 }.bind(this)
                 );
 
@@ -220,8 +227,8 @@ module.exports = {
         return eventTypes;
 
     },
-    getData: function( metaData, window ) {
-        window = 3600; // todo: this should be dynamic
+    getData: function( metaData ) {
+        let window = this.summaryWindow; // || 3600; // todo: this should be dynamic
         //window = 86400; // todo: this should be dynamic
         let defaultSummaryType = "aggregation"; // TODO: allow other aggregate types
         let multipleTypes = [ "histogram-rtt", "histogram-owdelay" ];
@@ -256,8 +263,9 @@ module.exports = {
 
                     if ( $.inArray( eventType, multipleTypes ) >= 0 ) {
                         summaryType = "statistics";
+                        var that = this;
                         let win = $.grep( summaries, function( summary, k ) {
-                            return summary["summary-type"] == summaryType && summary["summary-window"] == window;
+                            return summary["summary-type"] == summaryType && summary["summary-window"] == that.summaryWindow;
                         });
                         if ( win.length > 1 ) {
                             console.log("WEIRD: multiple summary windows found. This should not happen.");
@@ -269,9 +277,14 @@ module.exports = {
                         }
 
                     } else {
+                        var that = this;
                         let win = $.grep( summaries, function( summary, k ) {
-                            return summary["summary-type"] == summaryType && summary["summary-window"] == window;
+                            return summary["summary-type"] == summaryType && summary["summary-window"] == that.summaryWindow;
                         });
+
+                        // TODO: add ability to use aggregates
+                        // HERE NOW!
+
                         // TODO: allow lower summary windows
                         if ( win.length > 1 ) {
                             console.log("WEIRD: multiple summary windows found. This should not happen.");

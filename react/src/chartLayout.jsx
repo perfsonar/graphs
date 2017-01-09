@@ -4,6 +4,7 @@ import _ from "underscore";
 import Chart1 from "./chart1.jsx";
 import ChartHeader from "./ChartHeader";
 import HostInfoStore from "./HostInfoStore";
+import GraphUtilities from "./GraphUtilities";
 //import GraphDataStore from "./GraphDataStore";
 
 import "../css/graphs.css";
@@ -15,6 +16,7 @@ const text = 'perfSONAR chart';
 const now = Math.floor( new Date().getTime() / 1000 );
 
 const defaults = {
+    summaryWindow: 3600
     //start: now - 86400*7,
     //end: now,
     //timeframe: "1w",
@@ -144,6 +146,7 @@ export default React.createClass({
             timeframe: newState.timeframe,
             ma_url: newState.ma_url,
             agent: newState.agent,
+            summaryWindow: newState.summaryWindow,
             itemsToHide: {},
             tool: newState.tool,
             ipversion: newState.ipversion,
@@ -334,6 +337,7 @@ export default React.createClass({
                                         dst={this.state.dst}
                                         start={this.state.start}
                                         end={this.state.end}
+                                        summaryWindow={this.state.summaryWindow}
                                         ma_url={this.state.ma_url}
                                         agent={this.state.agent}
                                         tool={this.state.tool}
@@ -430,6 +434,8 @@ export default React.createClass({
         let timeframe = defaults.timeframe;
         let tool = qs.tool;
         let agent = qs.agent || [];
+        let summaryWindow = qs.summaryWindow;
+
         let ipversion;
         //let timeRange = this.getTimeVars( defaults.timeframe );
         //
@@ -437,6 +443,8 @@ export default React.createClass({
             timeframe = hashObj.timeframe;
 
         }
+
+        let timeVars = GraphUtilities.getTimeVars( timeframe );
 
         if ( typeof hashObj.start != "undefined" ) {
             start = hashObj.start || defaults.start;
@@ -453,6 +461,16 @@ export default React.createClass({
 
         if ( typeof qs.ipversion != "undefined" ) {
             ipversion = qs.ipversion;
+        }
+
+        if ( typeof hashObj.summaryWindow != "undefined" ) {
+            summaryWindow = hashObj.summaryWindow;
+        }
+
+        if ( typeof summaryWindow == "undefined" ) {
+            //summaryWindow = 3600;
+            summaryWindow = timeVars.summaryWindow;
+
         }
 
         let ma_urls = qs.url || location.origin + "/esmond/perfsonar/archive/";
@@ -486,6 +504,7 @@ export default React.createClass({
             start:  start,
             end:    end,
             ma_url: ma_urls,
+            summaryWindow: summaryWindow,
             tool: tool,
             agent: agent,
             ipversion: ipversion,

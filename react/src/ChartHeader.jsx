@@ -24,6 +24,7 @@ export default React.createClass({
             start: this.props.start,
             end: this.props.end,
             timeframe: this.props.timeframe,
+            summaryWindow: 3600,
             interfaceInfo: null,
             traceInfo: [],
             pageURL: window.location.href
@@ -146,8 +147,9 @@ export default React.createClass({
     },
     changeTimePeriod: function( event ) {
         let period = event.target.value;
-        let vars = this.getTimeVars(period);
+        let vars = GraphUtilities.getTimeVars(period);
         let timeDiff = vars.timeDiff;
+        let summaryWindow = vars.summaryWindow;
         let half = timeDiff / 2;
         let start = this.state.start;
         let end = this.state.end;
@@ -167,13 +169,13 @@ export default React.createClass({
         }
 
 
-
         let newStart = newEnd - timeDiff;
 
         let options = {
             timeframe: period,
             start: newStart,
-            end: newEnd
+            end: newEnd,
+            summaryWindow: summaryWindow
         };
         console.log("options", options);
         this.handleTimerangeChange( options );
@@ -318,7 +320,7 @@ export default React.createClass({
 
     },
     handlePageChange: function( direction ) {
-        let timeVars = this.getTimeVars( this.state.timeframe );
+        let timeVars = GraphUtilities.getTimeVars( this.state.timeframe );
         let diff = timeVars.timeDiff;
         let newStart;
         let newEnd;
@@ -359,8 +361,9 @@ export default React.createClass({
         let options = {};
 
         let timeframe = this.state.timeframe || "1w";
-        let timeVars = this.getTimeVars( timeframe );
+        let timeVars = GraphUtilities.getTimeVars( timeframe );
         let diff = timeVars.timeDiff;
+        let summaryWindow = timeVars.summaryWindow;
 
         let now = Math.floor( new Date().getTime() / 1000 );
         let newEnd = now;
@@ -378,42 +381,10 @@ export default React.createClass({
         options.start = newStart;
         options.end = newEnd;
         options.timeframe = timeframe;
+        options.summaryWindow = summaryWindow;
 
         this.handleTimerangeChange( options, true );
 
     },
-
-    getTimeVars: function (period) {
-        let timeDiff;
-        let summaryWindow;
-        if (period == '4h') {
-            timeDiff = 60*60 * 4;
-            summaryWindow = 0;
-        } else if (period == '1d') {
-            timeDiff = 86400;
-            summaryWindow = 0;
-        } else if (period == '3d') {
-            timeDiff = 86400 * 3;
-            summaryWindow = 300;
-        } else if (period == '1w') {
-            timeDiff = 86400*7;
-            summaryWindow = 3600;
-        } else if (period == '1m') {
-            timeDiff = 86400*31;
-            summaryWindow = 86400;
-        } else if (period == '1y') {
-            timeDiff = 86400*365;
-            summaryWindow = 86400;
-        }
-        let timeRange = {
-            timeDiff: timeDiff,
-            summaryWindow: summaryWindow,
-            timeframe: period
-
-        };
-        return timeRange;
-
-    },
-
 
 });
