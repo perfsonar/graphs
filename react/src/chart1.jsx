@@ -26,6 +26,7 @@ const text = 'perfSONAR chart';
 const typesToChart = [
     {
         name: "throughput",
+        esmondName: "throughput",
         label: "Throughput",
         unit: "bps",
     },
@@ -645,7 +646,7 @@ export default React.createClass({
             if ( format == "integer" ) {
                 value = Math.floor( value );
             } else if ( format == "percent" ) {
-                value = parseFloat( (value / 100).toPrecision(6) );
+                value = parseFloat( (value * 100).toPrecision(5) );
             } else {
                 value = parseFloat( value.toPrecision(6) );
 
@@ -814,6 +815,12 @@ export default React.createClass({
                         charts[type].stats = {};
                     } else {
                         stats = charts[type].stats;
+                        if ( esmondName == "packet-loss-rate" ) {
+                            /*
+                            stats.min *= 100;
+                            stats.max *= 100;
+*/
+                        }
                     }
 
                     if ( ! ( type in brushCharts) ) {
@@ -894,7 +901,8 @@ export default React.createClass({
 
                                 stats.min = GraphDataStore.getMin( data.stats.min, stats.min );
                                 stats.max = GraphDataStore.getMax( data.stats.max, stats.max );
-                            }  else {
+
+                            } else {
                                 if ( esmondName != "packet-retransmits" ) {
                                     continue;
                                 } else {
@@ -908,22 +916,10 @@ export default React.createClass({
                                     }
                                     var scaledSeries = GraphDataStore.scaleValues( series, stats.max );
                                     series = scaledSeries;
-                                       /* 
-                                        series.map( function( e ) { 
-                                        let time = e.timestamp();
-                                        let value = e.value() * stats.max / data.stats.max;
-                                        let newEvent = new Event( time, {"value": value});
-                                        return newEvent; 
-                                    });
-                                    */
-
 
                                 }
 
                             }
-                            // TODO: Try changing stats
-                            //stats.min = data.stats.min;
-                            //stats.max = data.stats.max;
 
                             // push the charts for the main charts
                             charts[type][ipv].push(
@@ -931,7 +927,7 @@ export default React.createClass({
                                         axis={"axis" + type} series={series}
                                         style={getChartStyle( properties )} smooth={false} breakLine={true}
                                         min={0}
-                                        max={stats.max}
+                                        //max={stats.max}
                                         columns={[ "value" ]} />
                                     );
                             //for(let result in data.results ) {
@@ -1049,27 +1045,30 @@ export default React.createClass({
 
             // create a cache object, mostly so we can avoid displaying
             // latency twice, since it's in typesToChart twice
-            let chartRowsShown = {};
-            for (let h in typesToChart) {
-                let eventType = typesToChart[h];
-                let type = eventType.name;
-                let label = eventType.label;
-                let unit = eventType.unit;
-                let esmondName = eventType.esmondName;
+            var chartRowsShown = {};
+            for (var m in typesToChart) {
+                var eventType = typesToChart[m];
+                var type = eventType.name;
+                var label = eventType.label;
+                var unit = eventType.unit;
+                var esmondName = eventType.esmondName;
                 for( var i in ipversions ) {
-                    let ipversion = ipversions[i];
-                    let ipv = "ipv" + ipversion;
+                    var ipversion = ipversions[i];
+                    var ipv = "ipv" + ipversion;
 
                     if ( chartRowsShown[type + ipv] === true ) {
                         continue;
                     }
 
-                    let chartArr = charts[type][ipv];
+                    var chartArr = charts[type][ipv];
 
-                    let format = ".2s";
+                    var format = ".2s";
 
                     if ( type == "latency" ) {
                         //format = ".1f";
+                    } else if ( type == "loss" ) {
+                        format = ".0%";
+
                     }
 
                     // push the chartrows for the main charts

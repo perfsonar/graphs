@@ -123,8 +123,8 @@ module.exports = {
                     }
                 }
 
-                url += "&time-start=" + start;
-                url += "&time-end=" + end;
+                //url += "&time-start=" + start;
+                //url += "&time-end=" + end;
 
                 // Make sure we don't retrieve the same URL twice
 

@@ -25015,6 +25015,7 @@
 	
 	var typesToChart = [{
 	    name: "throughput",
+	    esmondName: "throughput",
 	    label: "Throughput",
 	    unit: "bps"
 	}, {
@@ -25674,7 +25675,7 @@
 	            if (format == "integer") {
 	                value = Math.floor(value);
 	            } else if (format == "percent") {
-	                value = parseFloat((value / 100).toPrecision(6));
+	                value = parseFloat((value * 100).toPrecision(5));
 	            } else {
 	                value = parseFloat(value.toPrecision(6));
 	            }
@@ -25809,27 +25810,33 @@
 	        //let self = this;
 	        if (typeof ipversions != "undefined") {
 	            for (var h in typesToChart) {
-	                var eventType = typesToChart[h];
-	                var type = eventType.name;
-	                var label = eventType.label;
-	                var esmondName = eventType.esmondName || type;
+	                var _eventType = typesToChart[h];
+	                var _type = _eventType.name;
+	                var _label3 = _eventType.label;
+	                var _esmondName = _eventType.esmondName || _type;
 	                var stats = {};
 	                var brushStats = {};
 	
 	                for (var i in ipversions) {
-	                    var ipversion = ipversions[i];
-	                    var ipv = "ipv" + ipversion;
+	                    var _ipversion2 = ipversions[i];
+	                    var _ipv = "ipv" + _ipversion2;
 	
 	                    // Get throughput data and build charts
-	                    if (!(type in charts)) {
-	                        charts[type] = {};
-	                        charts[type].stats = {};
+	                    if (!(_type in charts)) {
+	                        charts[_type] = {};
+	                        charts[_type].stats = {};
 	                    } else {
-	                        stats = charts[type].stats;
+	                        stats = charts[_type].stats;
+	                        if (_esmondName == "packet-loss-rate") {
+	                            /*
+	                            stats.min *= 100;
+	                            stats.max *= 100;
+	                            */
+	                        }
 	                    }
 	
-	                    if (!(type in brushCharts)) {
-	                        brushCharts[type] = {};
+	                    if (!(_type in brushCharts)) {
+	                        brushCharts[_type] = {};
 	                        //brushCharts[type].stats = {};
 	                    } else {}
 	                        //brushStats = brushCharts[type].stats;
@@ -25838,38 +25845,38 @@
 	                        // should be the same
 	                    brushStats = stats;
 	
-	                    charts[type].chartRows = [];
-	                    if (typeof charts[type].data == "undefined") {
-	                        charts[type].data = [];
+	                    charts[_type].chartRows = [];
+	                    if (typeof charts[_type].data == "undefined") {
+	                        charts[_type].data = [];
 	                    }
-	                    brushCharts[type].chartRows = [];
+	                    brushCharts[_type].chartRows = [];
 	
 	                    // Initialize ipv and axes for main charts
-	                    if (!(ipv in charts[type])) {
-	                        charts[type][ipv] = [];
+	                    if (!(_ipv in charts[_type])) {
+	                        charts[_type][_ipv] = [];
 	                    }
-	                    if (!("axes" in charts[type][ipv])) {
-	                        charts[type][ipv].axes = [];
+	                    if (!("axes" in charts[_type][_ipv])) {
+	                        charts[_type][_ipv].axes = [];
 	                    }
 	
 	                    // Initialize ipv and axes for brush charts
-	                    if (!(ipv in brushCharts[type])) {
-	                        brushCharts[type][ipv] = [];
+	                    if (!(_ipv in brushCharts[_type])) {
+	                        brushCharts[_type][_ipv] = [];
 	                    }
-	                    if (!("axes" in brushCharts[type][ipv])) {
-	                        brushCharts[type][ipv].axes = [];
+	                    if (!("axes" in brushCharts[_type][_ipv])) {
+	                        brushCharts[_type][_ipv].axes = [];
 	                    }
 	
 	                    var filter = {
-	                        eventType: esmondName,
+	                        eventType: _esmondName,
 	                        //testType: type,
-	                        ipversion: ipversion
+	                        ipversion: _ipversion2
 	                    };
 	
 	                    var failuresFilter = {
 	                        eventType: "failures",
-	                        mainEventType: esmondName,
-	                        ipversion: ipversion
+	                        mainEventType: _esmondName,
+	                        ipversion: _ipversion2
 	                    };
 	
 	                    /*
@@ -25884,21 +25891,21 @@
 	                    data = _GraphDataStore2.default.getChartData(filter, this.state.itemsToHide);
 	                    var eventTypeStats = _GraphDataStore2.default.eventTypeStats;
 	
-	                    if (this.state.active[type] && data.results.length > 0) {
+	                    if (this.state.active[_type] && data.results.length > 0) {
 	                        for (var j in data.results) {
 	                            var result = data.results[j];
 	                            var series = result.values;
 	                            var properties = result.properties;
 	
-	                            charts[type].data.push(result);
+	                            charts[_type].data.push(result);
 	
 	                            // skip packet-count-lost and packet-count-sent
-	                            if (esmondName != "packet-count-sent" && esmondName != "packet-count-lost" && esmondName != "packet-count-lost-bidir" && esmondName != "packet-retransmits") {
+	                            if (_esmondName != "packet-count-sent" && _esmondName != "packet-count-lost" && _esmondName != "packet-count-lost-bidir" && _esmondName != "packet-retransmits") {
 	
 	                                stats.min = _GraphDataStore2.default.getMin(data.stats.min, stats.min);
 	                                stats.max = _GraphDataStore2.default.getMax(data.stats.max, stats.max);
 	                            } else {
-	                                if (esmondName != "packet-retransmits") {
+	                                if (_esmondName != "packet-retransmits") {
 	                                    continue;
 	                                } else {
 	                                    if (typeof stats.max == "undefined" && typeof eventTypeStats["packet-retransmits"].max != "undefined") {
@@ -25910,27 +25917,16 @@
 	                                    }
 	                                    var scaledSeries = _GraphDataStore2.default.scaleValues(series, stats.max);
 	                                    series = scaledSeries;
-	                                    /* 
-	                                     series.map( function( e ) { 
-	                                     let time = e.timestamp();
-	                                     let value = e.value() * stats.max / data.stats.max;
-	                                     let newEvent = new Event( time, {"value": value});
-	                                     return newEvent; 
-	                                    });
-	                                    */
 	                                }
 	                            }
-	                            // TODO: Try changing stats
-	                            //stats.min = data.stats.min;
-	                            //stats.max = data.stats.max;
 	
 	                            // push the charts for the main charts
-	                            charts[type][ipv].push(_react2.default.createElement(_reactTimeseriesCharts.LineChart, { key: type + Math.floor(Math.random()),
-	                                axis: "axis" + type, series: series,
+	                            charts[_type][_ipv].push(_react2.default.createElement(_reactTimeseriesCharts.LineChart, { key: _type + Math.floor(Math.random()),
+	                                axis: "axis" + _type, series: series,
 	                                style: getChartStyle(properties), smooth: false, breakLine: true,
-	                                min: 0,
-	                                max: stats.max,
-	                                columns: ["value"] }));
+	                                min: 0
+	                                //max={stats.max}
+	                                , columns: ["value"] }));
 	                            //for(let result in data.results ) {
 	                            //}
 	
@@ -25949,7 +25945,7 @@
 	                            }
 	                            */
 	                        }
-	                        charts[type].stats = stats;
+	                        charts[_type].stats = stats;
 	                    }
 	
 	                    failureData = _GraphDataStore2.default.getChartData(failuresFilter, this.state.itemsToHide);
@@ -25966,9 +25962,9 @@
 	                            //stats.max = failureData.stats.max, stats.max;
 	
 	                            // push the charts for the main charts
-	                            charts[type][ipv].push(_react2.default.createElement(_reactTimeseriesCharts.ScatterChart, {
-	                                key: type + "failures + Math.Floor( Math.random() )",
-	                                axis: "axis" + type,
+	                            charts[_type][_ipv].push(_react2.default.createElement(_reactTimeseriesCharts.ScatterChart, {
+	                                key: _type + "failures + Math.Floor( Math.random() )",
+	                                axis: "axis" + _type,
 	                                series: failureSeries,
 	                                style: failureStyle,
 	                                radius: 4.0,
@@ -26038,58 +26034,60 @@
 	            // create a cache object, mostly so we can avoid displaying
 	            // latency twice, since it's in typesToChart twice
 	            var chartRowsShown = {};
-	            for (var _h in typesToChart) {
-	                var _eventType = typesToChart[_h];
-	                var _type = _eventType.name;
-	                var _label3 = _eventType.label;
-	                var unit = _eventType.unit;
-	                var _esmondName = _eventType.esmondName;
+	            for (var m in typesToChart) {
+	                var eventType = typesToChart[m];
+	                var type = eventType.name;
+	                var label = eventType.label;
+	                var unit = eventType.unit;
+	                var esmondName = eventType.esmondName;
 	                for (var i in ipversions) {
-	                    var _ipversion2 = ipversions[i];
-	                    var _ipv = "ipv" + _ipversion2;
+	                    var ipversion = ipversions[i];
+	                    var ipv = "ipv" + ipversion;
 	
-	                    if (chartRowsShown[_type + _ipv] === true) {
+	                    if (chartRowsShown[type + ipv] === true) {
 	                        continue;
 	                    }
 	
-	                    var chartArr = charts[_type][_ipv];
+	                    var chartArr = charts[type][ipv];
 	
 	                    var format = ".2s";
 	
-	                    if (_type == "latency") {}
-	                    //format = ".1f";
-	
+	                    if (type == "latency") {
+	                        //format = ".1f";
+	                    } else if (type == "loss") {
+	                        format = ".0%";
+	                    }
 	
 	                    // push the chartrows for the main charts
-	                    charts[_type].chartRows.push(_react2.default.createElement(
+	                    charts[type].chartRows.push(_react2.default.createElement(
 	                        _reactTimeseriesCharts.ChartRow,
 	                        { height: chartRow.height, debug: false },
 	                        _react2.default.createElement(_reactTimeseriesCharts.YAxis, {
-	                            key: "axis" + _type,
-	                            id: "axis" + _type,
-	                            label: _label3 + " (" + _ipv + ")",
+	                            key: "axis" + type,
+	                            id: "axis" + type,
+	                            label: label + " (" + ipv + ")",
 	                            style: axisLabelStyle,
 	                            labelOffset: offsets.label,
 	                            className: "yaxis-label",
 	                            format: format,
 	                            min: 0,
-	                            max: charts[_type].stats.max,
+	                            max: charts[type].stats.max,
 	                            width: 80, type: "linear", align: "left" }),
 	                        _react2.default.createElement(
 	                            _reactTimeseriesCharts.Charts,
 	                            null,
-	                            charts[_type][_ipv]
+	                            charts[type][ipv]
 	                        )
 	                    ));
 	
 	                    if (this.state.showBrush === true) {
 	                        // push the chartrows for the brush charts
-	                        brushCharts[_type].chartRows.push(_react2.default.createElement(
+	                        brushCharts[type].chartRows.push(_react2.default.createElement(
 	                            _reactTimeseriesCharts.ChartRow,
 	                            {
 	                                height: chartRow.brushHeight,
 	                                debug: false,
-	                                key: "brush" + _type
+	                                key: "brush" + type
 	                            },
 	                            _react2.default.createElement(_reactTimeseriesCharts.Brush, {
 	                                timeRange: this.state.brushrange,
@@ -26097,23 +26095,23 @@
 	                                allowSelectionClear: true
 	                            }),
 	                            _react2.default.createElement(_reactTimeseriesCharts.YAxis, {
-	                                key: "brush_axis" + _type,
-	                                id: "brush_axis" + _type,
-	                                label: _label3 + " " + unit + " (" + _ipv + ")",
+	                                key: "brush_axis" + type,
+	                                id: "brush_axis" + type,
+	                                label: label + " " + unit + " (" + ipv + ")",
 	                                style: axisLabelStyle,
 	                                labelOffset: offsets.label,
 	                                format: ".2s",
-	                                min: brushCharts[_type].stats.min,
-	                                max: brushCharts[_type].stats.max,
+	                                min: brushCharts[type].stats.min,
+	                                max: brushCharts[type].stats.max,
 	                                width: 80, type: "linear", align: "left" }),
 	                            _react2.default.createElement(
 	                                _reactTimeseriesCharts.Charts,
 	                                null,
-	                                brushCharts[_type][_ipv]
+	                                brushCharts[type][ipv]
 	                            )
 	                        ));
 	                    }
-	                    chartRowsShown[_type + _ipv] = true;
+	                    chartRowsShown[type + ipv] = true;
 	                }
 	            }
 	        }
@@ -49214,8 +49212,8 @@
 	                    }
 	                }
 	
-	                url += "&time-start=" + start;
-	                url += "&time-end=" + end;
+	                //url += "&time-start=" + start;
+	                //url += "&time-end=" + end;
 	
 	                // Make sure we don't retrieve the same URL twice
 	
