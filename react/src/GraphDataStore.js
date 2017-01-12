@@ -123,6 +123,9 @@ module.exports = {
                     }
                 }
 
+                url += "&time-start=" + start;
+                url += "&time-end=" + end;
+
                 // Make sure we don't retrieve the same URL twice
 
                 if ( metadataURLs[url] ) {
@@ -228,8 +231,8 @@ module.exports = {
 
     },
     getData: function( metaData ) {
-        let window = this.summaryWindow; // || 3600; // todo: this should be dynamic
-        //window = 86400; // todo: this should be dynamic
+        let summaryWindow = this.summaryWindow; // || 3600; // todo: this should be dynamic
+        //summaryWindow = 86400; // todo: this should be dynamic
         let defaultSummaryType = "aggregation"; // TODO: allow other aggregate types
         let multipleTypes = [ "histogram-rtt", "histogram-owdelay" ];
 
@@ -277,6 +280,7 @@ module.exports = {
                         }
 
                     } else {
+                        summaryType = "aggregation"
                         var that = this;
                         let win = $.grep( summaries, function( summary, k ) {
                             return summary["summary-type"] == summaryType && summary["summary-window"] == that.summaryWindow;
@@ -287,12 +291,12 @@ module.exports = {
 
                         // TODO: allow lower summary windows
                         if ( win.length > 1 ) {
-                            console.log("WEIRD: multiple summary windows found. This should not happen.");
+                            console.log("WEIRD: multiple summary windows found. This should not happen.", win);
                         } else if ( win.length == 1 ) {
-                            console.log("one summary window found");
+                            console.log("one summary window found", summaryWindow, eventType, win);
                             uri = win[0].uri;
                         } else {
-                            console.log("no summary windows found");
+                            console.log("no summary windows found", summaryWindow, eventType, win);
                         }
 
 
@@ -354,6 +358,7 @@ module.exports = {
             row.data = data;
             if (data.length > 0) {
                 chartData.push( row );
+                console.log("got datapoints", data.length, "eventType", eventType);
             }
         }
         completedDataReqs++;
