@@ -472,17 +472,22 @@ export default React.createClass({
                     }
 
                 if ( row.properties.eventType != "packet-retransmits" ) {
-                    row.value = this._formatToolTipLossValue( row.value, "percent" ) + "%";
+                    row.value = this._formatToolTipLossValue( row.value, "float" ) + "%";
                     row.lostValue = this._formatToolTipLossValue( row.lostValue, "integer" );
                     row.sentValue = this._formatToolTipLossValue( row.sentValue, "integer" );
                 } else {
                     row.value = this._formatToolTipLossValue( row.value, "integer" );
                 }
 
+                let key = row.properties["metadata-key"];
+
                     if ( row.lostValue != null
                             && row.sentValue != null ) {
                     lossItems.push(
                             <li>{dir} {row.value} lost ({row.lostValue} of {row.sentValue} packets) {"(" + label + ")"} </li>
+                            /*
+                            <li>{dir} {row.value} lost ({row.lostValue} of {row.sentValue} packets) {"(" + label + ")"}; key: {key} </li>
+                            */
                             );
                     } else {
                         lossItems.push(
@@ -815,12 +820,6 @@ export default React.createClass({
                         charts[type].stats = {};
                     } else {
                         stats = charts[type].stats;
-                        if ( esmondName == "packet-loss-rate" ) {
-                            /*
-                            stats.min *= 100;
-                            stats.max *= 100;
-*/
-                        }
                     }
 
                     if ( ! ( type in brushCharts) ) {
@@ -1067,9 +1066,16 @@ export default React.createClass({
                     if ( type == "latency" ) {
                         //format = ".1f";
                     } else if ( type == "loss" ) {
-                        format = ".0%";
+                        format = ".1f";
+                            //charts[type].stats.max = this._formatToolTipLossValue ( charts[type].stats.max, "float" );
+                        if ( charts[type].stats.max < 10 ) {
+                            //charts[type].stats.max = this._formatToolTipLossValue ( charts[type].stats.max, "float" );
+                            format = ".2f";
+                        }
+                        //console.log("loss max",  charts[type].stats.max );
 
                     }
+
 
                     // push the chartrows for the main charts
                     charts[type].chartRows.push(

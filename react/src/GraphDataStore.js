@@ -594,6 +594,10 @@ module.exports = {
                     //console.log('packet count sent', val);
 
                 } else if ( eventType == 'packet-retransmits' ) {
+                } else if ( eventType == "packet-loss-rate" || eventType == "packet-loss-rate-bidir" ) {
+                    // convert to %
+                    value *= 100;
+
                 }
 
                 if (value <= 0 ) {

@@ -25454,12 +25454,14 @@
 	                    }
 	
 	                    if (_row.properties.eventType != "packet-retransmits") {
-	                        _row.value = this._formatToolTipLossValue(_row.value, "percent") + "%";
+	                        _row.value = this._formatToolTipLossValue(_row.value, "float") + "%";
 	                        _row.lostValue = this._formatToolTipLossValue(_row.lostValue, "integer");
 	                        _row.sentValue = this._formatToolTipLossValue(_row.sentValue, "integer");
 	                    } else {
 	                        _row.value = this._formatToolTipLossValue(_row.value, "integer");
 	                    }
+	
+	                    var key = _row.properties["metadata-key"];
 	
 	                    if (_row.lostValue != null && _row.sentValue != null) {
 	                        lossItems.push(_react2.default.createElement(
@@ -25475,7 +25477,11 @@
 	                            " packets) ",
 	                            "(" + _label + ")",
 	                            " "
-	                        ));
+	                        )
+	                        /*
+	                        <li>{dir} {row.value} lost ({row.lostValue} of {row.sentValue} packets) {"(" + label + ")"}; key: {key} </li>
+	                        */
+	                        );
 	                    } else {
 	                        lossItems.push(_react2.default.createElement(
 	                            "li",
@@ -25827,12 +25833,6 @@
 	                        charts[_type].stats = {};
 	                    } else {
 	                        stats = charts[_type].stats;
-	                        if (_esmondName == "packet-loss-rate") {
-	                            /*
-	                            stats.min *= 100;
-	                            stats.max *= 100;
-	                            */
-	                        }
 	                    }
 	
 	                    if (!(_type in brushCharts)) {
@@ -26055,7 +26055,13 @@
 	                    if (type == "latency") {
 	                        //format = ".1f";
 	                    } else if (type == "loss") {
-	                        format = ".0%";
+	                        format = ".1f";
+	                        //charts[type].stats.max = this._formatToolTipLossValue ( charts[type].stats.max, "float" );
+	                        if (charts[type].stats.max < 10) {
+	                            //charts[type].stats.max = this._formatToolTipLossValue ( charts[type].stats.max, "float" );
+	                            format = ".2f";
+	                        }
+	                        //console.log("loss max",  charts[type].stats.max );
 	                    }
 	
 	                    // push the chartrows for the main charts
@@ -49664,7 +49670,10 @@
 	                } else if (eventType == 'packet-count-sent') {
 	                    //console.log('packet count sent', val);
 	
-	                } else if (eventType == 'packet-retransmits') {}
+	                } else if (eventType == 'packet-retransmits') {} else if (eventType == "packet-loss-rate" || eventType == "packet-loss-rate-bidir") {
+	                    // convert to %
+	                    value *= 100;
+	                }
 	
 	                if (value <= 0) {
 	                    //console.log("VALUE IS ZERO OR LESS", Date());
