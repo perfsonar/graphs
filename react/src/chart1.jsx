@@ -60,13 +60,14 @@ const typesToChart = [
         label: "Packet Loss",
         unit: "fractional",
     },
+    /*
     {
-        name: "loss",
+        name: "throughput",
         esmondName: "packet-retransmits",
         label: "Retransmits",
         unit: "packet",
     },
-
+*/
     {
         name: "latency",
         esmondName: "histogram-owdelay",
@@ -463,20 +464,20 @@ export default React.createClass({
                         label = "ping";
                     } else if ( row.properties.eventType == "packet-count-lost-bidir" ) {
                         label = "ping count";
-                    } else if ( row.properties.eventType == "packet-retransmits" ) {
-                        label = "retransmits";
                     } else if ( row.properties.mainEventType == "throughput" ) {
                         label = "UDP"
                     } else if ( row.properties.mainEventType == "histogram-owdelay" ) {
                         label = "owamp";
                     }
 
-                if ( row.properties.eventType != "packet-retransmits" ) {
+                //let packetCountRe = /packet-count/;
+                //if ( row.properties.eventType != "packet-retransmits" && !packetCountRe.test( row.properties.eventType ) ) {
+                if ( row.properties.eventType == "packet-loss-rate") {
                     row.value = this._formatToolTipLossValue( row.value, "float" ) + "%";
                     row.lostValue = this._formatToolTipLossValue( row.lostValue, "integer" );
                     row.sentValue = this._formatToolTipLossValue( row.sentValue, "integer" );
-                } else {
-                    row.value = this._formatToolTipLossValue( row.value, "integer" );
+                }  else {
+                    continue;
                 }
 
                 let key = row.properties["metadata-key"];

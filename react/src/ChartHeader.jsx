@@ -128,21 +128,7 @@ export default React.createClass({
         ); // End render()
     },
     componentWillReceiveProps: function( nextProps ) {
-        console.log("nextProps", nextProps);
         this.getCurrentURL();
-
-        /*
-        let start = this.state.start;
-        let end = this.state.end;
-        let timeframe = this.state.timeframe;
-        if ( nextProps.start != start &&
-             nextProps.end != end &&
-             nextProps.timeframe != timeframe ) {
-
-                this.getCurrentURL();
-
-        }
-        */
 
     },
     changeTimePeriod: function( event ) {

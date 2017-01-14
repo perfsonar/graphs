@@ -24,7 +24,7 @@ let maURLs = [];
 let metadataURLs = {};
 let dataURLs = {};
 
-let lossTypes = [ 'packet-loss-rate', 'packet-count-lost', 'packet-count-sent', 'packet-count-lost-bidir', 'packet-loss-rate-bidir', 'packet-retransmits' ];
+let lossTypes = [ 'packet-loss-rate', 'packet-count-lost', 'packet-count-sent', 'packet-count-lost-bidir', 'packet-loss-rate-bidir' ];
 
 module.exports = {
 
@@ -426,6 +426,10 @@ module.exports = {
                         let val = item[key];
                         if ( ( key in e.properties ) && e.properties[key] == val ) {
                             show  = false || show;
+                            if ( e.properties.eventType == "packet-loss-rate" && e.properties.mainTestType == "throughput" ) {
+                                console.log("packet-loss throughput");
+
+                            }
                             found++;
                         } else {
                             show = true || show;

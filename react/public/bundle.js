@@ -25043,12 +25043,16 @@
 	    esmondName: "packet-loss-rate-bidir",
 	    label: "Packet Loss",
 	    unit: "fractional"
-	}, {
-	    name: "loss",
+	},
+	/*
+	{
+	    name: "throughput",
 	    esmondName: "packet-retransmits",
 	    label: "Retransmits",
-	    unit: "packet"
-	}, {
+	    unit: "packet",
+	},
+	*/
+	{
 	    name: "latency",
 	    esmondName: "histogram-owdelay",
 	    label: "Latency",
@@ -25445,20 +25449,20 @@
 	                        _label = "ping";
 	                    } else if (_row.properties.eventType == "packet-count-lost-bidir") {
 	                        _label = "ping count";
-	                    } else if (_row.properties.eventType == "packet-retransmits") {
-	                        _label = "retransmits";
 	                    } else if (_row.properties.mainEventType == "throughput") {
 	                        _label = "UDP";
 	                    } else if (_row.properties.mainEventType == "histogram-owdelay") {
 	                        _label = "owamp";
 	                    }
 	
-	                    if (_row.properties.eventType != "packet-retransmits") {
+	                    //let packetCountRe = /packet-count/;
+	                    //if ( row.properties.eventType != "packet-retransmits" && !packetCountRe.test( row.properties.eventType ) ) {
+	                    if (_row.properties.eventType == "packet-loss-rate") {
 	                        _row.value = this._formatToolTipLossValue(_row.value, "float") + "%";
 	                        _row.lostValue = this._formatToolTipLossValue(_row.lostValue, "integer");
 	                        _row.sentValue = this._formatToolTipLossValue(_row.sentValue, "integer");
 	                    } else {
-	                        _row.value = this._formatToolTipLossValue(_row.value, "integer");
+	                        continue;
 	                    }
 	
 	                    var key = _row.properties["metadata-key"];
@@ -49125,7 +49129,7 @@
 	var metadataURLs = {};
 	var dataURLs = {};
 	
-	var lossTypes = ['packet-loss-rate', 'packet-count-lost', 'packet-count-sent', 'packet-count-lost-bidir', 'packet-loss-rate-bidir', 'packet-retransmits'];
+	var lossTypes = ['packet-loss-rate', 'packet-count-lost', 'packet-count-sent', 'packet-count-lost-bidir', 'packet-loss-rate-bidir'];
 	
 	module.exports = {
 	
@@ -49512,6 +49516,9 @@
 	                        var val = item[key];
 	                        if (key in e.properties && e.properties[key] == val) {
 	                            show = false || show;
+	                            if (e.properties.eventType == "packet-loss-rate" && e.properties.mainTestType == "throughput") {
+	                                console.log("packet-loss throughput");
+	                            }
 	                            found++;
 	                        } else {
 	                            show = true || show;
@@ -92068,38 +92075,13 @@
 	        stroke: scheme.requests,
 	        strokeWidth: 1
 	    }
-	
-	    /*
-	     * Colors from mockup
-	     * blue: #004987
-	     * purple: #750075
-	     * orange: #ff8e01
-	    /*
-	        node: {
-	            normal: {stroke: "#737373", strokeWidth: 4, fill: "none"},
-	            highlighted: {stroke: "#b1b1b1", strokeWidth: 4, fill: "#b1b1b1"}
-	        },
-	        line: {
-	            normal: {stroke: "#1f77b4", strokeWidth: 3, fill: "none"},
-	            highlighted: {stroke: "#4EC1E0",strokeWidth: 4,fill: "none"}
-	        },
-	        label: {
-	            normal: {fill: "#9D9D9D",fontFamily: "verdana, sans-serif",fontSize: 10}
-	        }
-	        */
 	};
 	
-	/* colors from old graphs
-	 * #0076b4 blue (throughput)
-	 * #cc7dbe  purple (loss)
-	 * #e5a11c yellow (ping)
-	 */
-	
-	/* original colors, from the design
-	const ipv4Color = "#004987"; // blue
-	const ipv6Color = "#750075"; // purple
-	const tcpColor = "#ff8e01"; // orange
-	const udpColor = "#633"; // brown from old graphs
+	/*
+	 * Colors from mockup
+	 * blue: #004987
+	 * purple: #750075
+	 * orange: #ff8e01
 	*/
 	
 	// Colors from old graphs
@@ -92926,19 +92908,7 @@
 	    },
 	
 	    componentWillReceiveProps: function componentWillReceiveProps(nextProps) {
-	        console.log("nextProps", nextProps);
 	        this.getCurrentURL();
-	
-	        /*
-	        let start = this.state.start;
-	        let end = this.state.end;
-	        let timeframe = this.state.timeframe;
-	        if ( nextProps.start != start &&
-	             nextProps.end != end &&
-	             nextProps.timeframe != timeframe ) {
-	                 this.getCurrentURL();
-	         }
-	        */
 	    },
 	    changeTimePeriod: function changeTimePeriod(event) {
 	        var period = event.target.value;

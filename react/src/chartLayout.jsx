@@ -44,38 +44,13 @@ const lineStyles = {
         stroke: scheme.requests,
         strokeWidth: 1
     }
+};
 
 /*
  * Colors from mockup
  * blue: #004987
  * purple: #750075
  * orange: #ff8e01
-/*
-    node: {
-        normal: {stroke: "#737373", strokeWidth: 4, fill: "none"},
-        highlighted: {stroke: "#b1b1b1", strokeWidth: 4, fill: "#b1b1b1"}
-    },
-    line: {
-        normal: {stroke: "#1f77b4", strokeWidth: 3, fill: "none"},
-        highlighted: {stroke: "#4EC1E0",strokeWidth: 4,fill: "none"}
-    },
-    label: {
-        normal: {fill: "#9D9D9D",fontFamily: "verdana, sans-serif",fontSize: 10}
-    }
-    */
-};
-
-/* colors from old graphs
- * #0076b4 blue (throughput)
- * #cc7dbe  purple (loss)
- * #e5a11c yellow (ping)
- */
-
-/* original colors, from the design
-const ipv4Color = "#004987"; // blue
-const ipv6Color = "#750075"; // purple
-const tcpColor = "#ff8e01"; // orange
-const udpColor = "#633"; // brown from old graphs
 */
 
 // Colors from old graphs
