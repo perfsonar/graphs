@@ -178,6 +178,11 @@ module.exports = {
             console.log("COMPLETED ALL", reqCount, " REQUESTS in", duration);
             completedReqs = 0;
             reqCount = 0;
+            if ( chartMetadata.length == 0 ) {
+                emitter.emit("empty");
+                return;
+
+            }
             data = this.filterEventTypes( chartMetadata );
             data = this.getData( chartMetadata );
             console.log("chartMetadata", chartMetadata);
@@ -824,6 +829,12 @@ module.exports = {
     },
     unsubscribeError: function( callback ) {
         emitter.off("error", callback);
+    },
+    subscribeEmpty: function( callback ) {
+        emitter.on("empty", callback);
+    },
+    unsubscribeEmpty: function( callback ) {
+        emitter.off("empty", callback);
     },
     render: function() {
     },

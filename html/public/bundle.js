@@ -26356,10 +26356,18 @@
 	
 	        _GraphDataStore2.default.subscribeError(this.dataError);
 	
+	        _GraphDataStore2.default.subscribeEmpty(this.dataEmpty);
+	
 	        _GraphDataStore2.default.getHostPairMetadata(src, dst, start, end, ma_url, params, summaryWindow);
 	    },
 	    dataError: function dataError() {
 	        var data = _GraphDataStore2.default.getErrorData();
+	        this.setState({ dataError: data, loading: false });
+	    },
+	    dataEmpty: function dataEmpty() {
+	        var data = {};
+	        data.responseJSON = {};
+	        data.responseJSON.detail = "No data found in the measurement archive";
 	        this.setState({ dataError: data, loading: false });
 	    },
 	    componentWillReceiveProps: function componentWillReceiveProps(nextProps) {
@@ -26379,6 +26387,7 @@
 	        this.serverRequest.abort();
 	        _GraphDataStore2.default.unsubscribe(this.updateChartData);
 	        _GraphDataStore2.default.unsubscribeError(this.dataError);
+	        _GraphDataStore2.default.unsubscribeEmpty(this.dataEmpty);
 	    },
 	    handleHiddenItemsChange: function handleHiddenItemsChange(options) {
 	        this.toggleType(options);
@@ -49281,6 +49290,10 @@
 	            console.log("COMPLETED ALL", reqCount, " REQUESTS in", duration);
 	            completedReqs = 0;
 	            reqCount = 0;
+	            if (chartMetadata.length == 0) {
+	                emitter.emit("empty");
+	                return;
+	            }
 	            data = this.filterEventTypes(chartMetadata);
 	            data = this.getData(chartMetadata);
 	            console.log("chartMetadata", chartMetadata);
@@ -49892,6 +49905,12 @@
 	    },
 	    unsubscribeError: function unsubscribeError(callback) {
 	        emitter.off("error", callback);
+	    },
+	    subscribeEmpty: function subscribeEmpty(callback) {
+	        emitter.on("empty", callback);
+	    },
+	    unsubscribeEmpty: function unsubscribeEmpty(callback) {
+	        emitter.off("empty", callback);
 	    },
 	    render: function render() {}
 	

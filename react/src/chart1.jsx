@@ -1212,6 +1212,7 @@ export default React.createClass({
 
     },
 
+
     render() {
         if ( this.state.dataError ) {
             return this.renderError();
@@ -1362,10 +1363,19 @@ export default React.createClass({
 
         GraphDataStore.subscribeError(this.dataError);
 
+        GraphDataStore.subscribeEmpty(this.dataEmpty);
+
         GraphDataStore.getHostPairMetadata( src, dst, start, end, ma_url, params, summaryWindow );
     },
     dataError: function() {
         let data = GraphDataStore.getErrorData();
+        this.setState({dataError: data, loading: false});
+
+    },
+    dataEmpty: function() {
+        let data = {};
+        data.responseJSON = {};
+        data.responseJSON.detail = "No data found in the measurement archive";
         this.setState({dataError: data, loading: false});
 
     },
@@ -1387,6 +1397,7 @@ export default React.createClass({
         this.serverRequest.abort();
         GraphDataStore.unsubscribe( this.updateChartData );
         GraphDataStore.unsubscribeError(this.dataError);
+        GraphDataStore.unsubscribeEmpty(this.dataEmpty);
     },
     handleHiddenItemsChange: function( options ) {
         this.toggleType( options );
