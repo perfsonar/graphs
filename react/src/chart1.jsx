@@ -4,8 +4,6 @@ import moment from "moment";
 import Markdown from "react-markdown";
 import GraphDataStore from "./GraphDataStore";
 import GraphUtilities from "./GraphUtilities";
-//import Highlighter from "./highlighter";
-
 
 import { AreaChart, Brush, Charts, ChartContainer, ChartRow, YAxis, LineChart, ScatterChart, Highlighter, Resizable, Legend, styler } from "react-timeseries-charts";
 
@@ -170,12 +168,10 @@ function getChartStyle( options, column ) {
     switch ( options.protocol ) {
         case "tcp":
             color = scheme.tcp;
-            //width = 3;
             opacity = 0.8;
             break;
         default:
             color = scheme.udp;
-            //width = 3;
             opacity = 0.8;
             break;
     }
@@ -227,12 +223,6 @@ function getChartStyle( options, column ) {
             muted: { stroke: color, strokeWidth: width, opacity: opacity, strokeDasharray: strokeStyle }
     };
     //console.log("style: " , style );
-    /*
-    style[column].stroke = color;
-    style[column].strokeWidth = width;
-    style[column].strokeDasharray = strokeStyle;
-    style[column].strokeOpacity = opacity;
-    */
     return style;
 
 }
@@ -242,13 +232,6 @@ const lineStyles = {
         stroke: scheme.udp,
         strokeWidth: 1.5
     }
-
-/*
- * Colors from mockup
- * blue: #004987
- * purple: #750075
- * orange: #ff8e01
-*/
 };
 
 const reverseStyles = {
@@ -339,7 +322,8 @@ export default React.createClass({
             loading: true,
             params: undefined,
             dataloaded: false,
-            initialLoading: true
+            initialLoading: true,
+            lockToolTip: false
         };
     },
     handleSelectionChanged(point) {
@@ -354,7 +338,7 @@ export default React.createClass({
     handleMouseMove(event, point) {
         let { clientHeight, clientWidth } = this.refs.graphDiv;
         let posX = clientWidth - event.pageX;
-        if ( typeof this.refs.tooltip == "undefined" ) {
+        if ( typeof this.refs.tooltip == "undefined" || this.state.lockTooltip ) {
             return;
         }
         let { toolTipWidth, toolTipHeight } = this.refs.tooltip;
@@ -367,6 +351,14 @@ export default React.createClass({
         }
         this.setState({posX: posX});
 
+    },
+
+    handleClick(e, f, g) {
+        console.log("handleClick e f g", e, f, g);
+        this.setState({
+            lockToolTip: ! this.state.lockToolTip
+    //        highlight: point
+        });
     },
 
     handleMouseNear(point) {
@@ -470,8 +462,6 @@ export default React.createClass({
                         label = "owamp";
                     }
 
-                //let packetCountRe = /packet-count/;
-                //if ( row.properties.eventType != "packet-retransmits" && !packetCountRe.test( row.properties.eventType ) ) {
                 if ( row.properties.eventType == "packet-loss-rate") {
                     row.value = this._formatToolTipLossValue( row.value, "float" ) + "%";
                     row.lostValue = this._formatToolTipLossValue( row.lostValue, "integer" );
@@ -927,6 +917,7 @@ export default React.createClass({
                                         axis={"axis" + type} series={series}
                                         style={getChartStyle( properties )} smooth={false} breakLine={true}
                                         min={0}
+                                        onClick={this.handleClick}
                                         //max={stats.max}
                                         columns={[ "value" ]} />
                                     );
@@ -986,7 +977,7 @@ export default React.createClass({
                                     //onSelectionChange={this.handleSelectionChanged}
                                     selected={this.state.selection}
                                     //onMouseNear={this.handleMouseNear}
-                                    //onClick={this.handleMouseNear}
+                                    //onClick={this.handleClick}
                                     highlighted={this.state.highlight}
                                 />
                             );

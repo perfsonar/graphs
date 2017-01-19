@@ -25005,9 +25005,6 @@
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
-	//import Highlighter from "./highlighter";
-	
-	
 	var charts = void 0;
 	var chartData = void 0;
 	
@@ -25149,12 +25146,10 @@
 	    switch (options.protocol) {
 	        case "tcp":
 	            color = scheme.tcp;
-	            //width = 3;
 	            opacity = 0.8;
 	            break;
 	        default:
 	            color = scheme.udp;
-	            //width = 3;
 	            opacity = 0.8;
 	            break;
 	    }
@@ -25206,12 +25201,6 @@
 	        muted: { stroke: color, strokeWidth: width, opacity: opacity, strokeDasharray: strokeStyle }
 	    };
 	    //console.log("style: " , style );
-	    /*
-	    style[column].stroke = color;
-	    style[column].strokeWidth = width;
-	    style[column].strokeDasharray = strokeStyle;
-	    style[column].strokeOpacity = opacity;
-	    */
 	    return style;
 	}
 	
@@ -25220,13 +25209,6 @@
 	        stroke: scheme.udp,
 	        strokeWidth: 1.5
 	    }
-	
-	    /*
-	     * Colors from mockup
-	     * blue: #004987
-	     * purple: #750075
-	     * orange: #ff8e01
-	    */
 	};
 	
 	var reverseStyles = {
@@ -25319,7 +25301,8 @@
 	            loading: true,
 	            params: undefined,
 	            dataloaded: false,
-	            initialLoading: true
+	            initialLoading: true,
+	            lockToolTip: false
 	        };
 	    },
 	    handleSelectionChanged: function handleSelectionChanged(point) {
@@ -25336,7 +25319,7 @@
 	            clientWidth = _refs$graphDiv.clientWidth;
 	
 	        var posX = clientWidth - event.pageX;
-	        if (typeof this.refs.tooltip == "undefined") {
+	        if (typeof this.refs.tooltip == "undefined" || this.state.lockTooltip) {
 	            return;
 	        }
 	        var _refs$tooltip = this.refs.tooltip,
@@ -25351,6 +25334,13 @@
 	            posX -= offsetX;
 	        }
 	        this.setState({ posX: posX });
+	    },
+	    handleClick: function handleClick(e, f, g) {
+	        console.log("handleClick e f g", e, f, g);
+	        this.setState({
+	            lockToolTip: !this.state.lockToolTip
+	            //        highlight: point
+	        });
 	    },
 	    handleMouseNear: function handleMouseNear(point) {
 	        this.setState({
@@ -25455,8 +25445,6 @@
 	                        _label = "owamp";
 	                    }
 	
-	                    //let packetCountRe = /packet-count/;
-	                    //if ( row.properties.eventType != "packet-retransmits" && !packetCountRe.test( row.properties.eventType ) ) {
 	                    if (_row.properties.eventType == "packet-loss-rate") {
 	                        _row.value = this._formatToolTipLossValue(_row.value, "float") + "%";
 	                        _row.lostValue = this._formatToolTipLossValue(_row.lostValue, "integer");
@@ -25928,7 +25916,8 @@
 	                            charts[_type][_ipv].push(_react2.default.createElement(_reactTimeseriesCharts.LineChart, { key: _type + Math.floor(Math.random()),
 	                                axis: "axis" + _type, series: series,
 	                                style: getChartStyle(properties), smooth: false, breakLine: true,
-	                                min: 0
+	                                min: 0,
+	                                onClick: this.handleClick
 	                                //max={stats.max}
 	                                , columns: ["value"] }));
 	                            //for(let result in data.results ) {
@@ -25982,7 +25971,7 @@
 	                                //onSelectionChange={this.handleSelectionChanged}
 	                                , selected: this.state.selection
 	                                //onMouseNear={this.handleMouseNear}
-	                                //onClick={this.handleMouseNear}
+	                                //onClick={this.handleClick}
 	                                , highlighted: this.state.highlight
 	                            }));
 	                        }
