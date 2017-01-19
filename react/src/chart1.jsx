@@ -4,6 +4,7 @@ import moment from "moment";
 import Markdown from "react-markdown";
 import GraphDataStore from "./GraphDataStore";
 import GraphUtilities from "./GraphUtilities";
+import d3 from "d3";
 
 import { AreaChart, Brush, Charts, ChartContainer, ChartRow, YAxis, LineChart, ScatterChart, Highlighter, Resizable, Legend, styler } from "react-timeseries-charts";
 
@@ -49,7 +50,7 @@ const typesToChart = [
     {
         name: "loss",
         esmondName: "packet-loss-rate",
-        label: "Packet Loss",
+        label: "Packet Loss %",
         unit: "fractional",
     },
     {
@@ -1054,20 +1055,22 @@ export default React.createClass({
                     var chartArr = charts[type][ipv];
 
                     var format = ".2s";
+                    
+                    var max = charts[type].stats.max;
 
                     if ( type == "latency" ) {
                         //format = ".1f";
+                        label += " ms";
                     } else if ( type == "loss" ) {
                         format = ".1f";
-                            //charts[type].stats.max = this._formatToolTipLossValue ( charts[type].stats.max, "float" );
+                        label += " %";
                         if ( charts[type].stats.max < 10 ) {
-                            //charts[type].stats.max = this._formatToolTipLossValue ( charts[type].stats.max, "float" );
                             format = ".2f";
                         }
-                        //console.log("loss max",  charts[type].stats.max );
 
+                    } else if ( type == "throughput" ) {
+                        //label += " bps"
                     }
-
 
                     // push the chartrows for the main charts
                     charts[type].chartRows.push(
@@ -1081,7 +1084,7 @@ export default React.createClass({
                                 className="yaxis-label"
                                 format={format}
                                 min={0}
-                                max={charts[type].stats.max}
+                                max={max}
                                 width={80} type="linear" align="left" />
                             <Charts>
                             {charts[type][ipv]}
