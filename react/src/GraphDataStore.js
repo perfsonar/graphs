@@ -24,6 +24,8 @@ let maURLs = [];
 let metadataURLs = {};
 let dataURLs = {};
 
+let proxyURL = '/perfsonar-graphs/cgi-bin/graphData.cgi?action=ma_data&url=';
+
 let lossTypes = [ 'packet-loss-rate', 'packet-count-lost', 'packet-count-sent', 'packet-count-lost-bidir', 'packet-loss-rate-bidir' ];
 
 module.exports = {
@@ -40,6 +42,7 @@ module.exports = {
         dataReqCount = 0;
         completedReqs = 0;
         completedDataReqs = 0;
+        this.useProxy = false;
         this.summaryWindow = 3600;
         this.eventTypeStats = {};
 
@@ -126,6 +129,13 @@ module.exports = {
                 //url += "&time-start=" + start;
                 //url += "&time-end=" + end;
 
+
+                // url += "&time-start=" + start + "&time-end=" + end; TODO: add this back?
+
+                url = this.getMAURL( url );
+
+                console.log("metadata url: ", url);
+
                 // Make sure we don't retrieve the same URL twice
 
                 if ( metadataURLs[url] ) {
@@ -136,28 +146,48 @@ module.exports = {
 
                 }
 
-                // url += "&time-start=" + start + "&time-end=" + end; TODO: add this back?
-                console.log("metadata url: ", url);
-
                 this.serverRequest = $.get( url, function(data) {
                     this.handleMetadataResponse(data, direction[j]);
                 }.bind(this))
                 .fail(function( data ) {
-                //.fail(function( jqXHR, textStatus, errorThrown ) {
-                    console.log("get metadata failed");
-                    this.handleMetadataError( data );
                     // if we get an error, try the cgi instead 
                     // and set a new flag, useProxy  and make
                     // all requests through the proxy CGI
-                }.bind(this)
+                    if ( data.status == 404 ) {
+                        this.useProxy = true;
+                        url = this.getMAURL( url );
+                        this.serverRequest = $.get( url, function(data) {
+                            this.handleMetadataResponse(data, direction[j]);
+                        }.bind(this))
+                        .fail(function( data ) {
+                            this.handleMetadataError( data );
+                        }.bind(this)
+                        )
+
+
+                        } else {
+                            this.handleMetadataError( data );
+
+                        }
+
+                        }.bind(this)
                 );
 
                 reqCount++;
             }
         }
 },
+    getMAURL( url ) {
+        if ( this.useProxy ) {
+            url = encodeURIComponent( url );
+            url = proxyURL + url;
+        }
+        return url;
+
+    },
     handleMetadataError: function( data ) {
         this.errorData = data;
+        console.log("emitting error");
         emitter.emit("error");
 
     },
@@ -312,6 +342,13 @@ module.exports = {
                     }
                     uri += "?time-start=" + start + "&time-end=" + end;
                     let url = baseURL + uri;
+
+                    // If using CORS proxy
+                    if ( this.useProxy ) {
+                        url = encodeURIComponent( url );
+                        url = proxyURL + url;
+                    }
+
                     console.log("data url", url);
 
                     // Make sure we don't retrieve the same URL twice
