@@ -81,26 +81,32 @@ sub get_ma_data {
 
     if ( not defined $url ) {
         error("No URL specified", 400);
-
     }
 
     my $ua = LWP::UserAgent->new;
 
+    # Make sure the URL looks like an esmond URL -- starts with http or https and looks like
+    # http://host/esmond/perfsonar/archive/[something]
+    # this should be url encoded
     if ( $url =~ m|^https?://[^/]+/esmond/perfsonar/archive| ) {
         my $req = HTTP::Request->new( 
             GET => $url,
         );
 
+        # perform http GET on the URL
         my $res = $ua->request($req);
+
+        # success
         if ( $res->is_success ) {
             print $cgi->header('application/json');
             my $message = $res->decoded_content;
             print $message;
         } else {
+            # if there is an error, return the error message and code
             error($res->message, $res->code);
         }
     } else {
-        #print $cgi->header('text/plain');
+        # url does not appear to be a valid esmond archive
         warn "URL is not a valid esmond archive: $url";
         error("URL is not a valid esmond archive");
     }
