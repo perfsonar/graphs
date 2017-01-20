@@ -24,6 +24,8 @@ let maURLs = [];
 let metadataURLs = {};
 let dataURLs = {};
 
+let proxyURL = 'http://ps-test.bldc.grnoc.iu.edu/perfsonar-graphs/cgi-bin/graphData.cgi?action=ma_data&url=';
+
 let lossTypes = [ 'packet-loss-rate', 'packet-count-lost', 'packet-count-sent', 'packet-count-lost-bidir', 'packet-loss-rate-bidir' ];
 
 module.exports = {
@@ -137,9 +139,10 @@ module.exports = {
                 }
 
                 // url += "&time-start=" + start + "&time-end=" + end; TODO: add this back?
-                console.log("metadata url: ", url);
+                url = encodeURIComponent( url );
+                console.log("metadata url: ", proxyURL + url);
 
-                this.serverRequest = $.get( url, function(data) {
+                this.serverRequest = $.get( proxyURL + url, function(data) {
                     this.handleMetadataResponse(data, direction[j]);
                 }.bind(this))
                 .fail(function( data ) {
@@ -312,6 +315,10 @@ module.exports = {
                     }
                     uri += "?time-start=" + start + "&time-end=" + end;
                     let url = baseURL + uri;
+
+                    // If using CORS proxy
+                    url = proxyURL + encodeURIComponent( url );
+
                     console.log("data url", url);
 
                     // Make sure we don't retrieve the same URL twice

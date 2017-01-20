@@ -68,8 +68,50 @@ elsif ($action eq 'ls_hosts'){
 elsif ($action eq 'hosts'){
     get_host_info();
 }
+elsif ($action eq 'ma_data'){
+    get_ma_data();
+}
 else {
     error("Unknown action; must specify either data, tests, hosts, or interfaces", 400);
+}
+
+# Fallback proxy for esmond requests for esmond instances that don't have CORS enabled
+sub get_ma_data {
+    my $url        = $cgi->param('url');
+
+    if ( not defined $url ) {
+        error("No URL specified", 400);
+
+    }
+
+    my $ua = LWP::UserAgent->new;
+
+    warn "url: " . Dumper $url;
+    if ( $url =~ m|^https?://[^/]+/esmond/perfsonar/archive| ) {
+        warn "retrieving url: $url";
+        my $req = HTTP::Request->new( 
+            GET => $url,
+        );
+
+        my $res = $ua->request($req);
+        if ( $res->is_success ) {
+            #my $content_type = $res->header( "content-type");
+            print $cgi->header('application/json');
+            #print $cgi->header( $content_type );
+            my $message = $res->decoded_content;
+            print $message;
+            #print to_json(\%consolidated);
+
+        } else {
+            print "HTTP GET error code: ", $res->code, "\n";
+            print "HTTP GET error message: ", $res->message, "\n";
+        }
+
+    } else {
+        warn "URL is not a valid esmond archive: $url";
+
+    }
+
 }
 
 sub get_data {
