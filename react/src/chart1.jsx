@@ -337,9 +337,13 @@ export default React.createClass({
     },
 
     handleMouseMove(event, point) {
+        if ( this.state.lockToolTip ) {
+            return;
+
+        }
         let { clientHeight, clientWidth } = this.refs.graphDiv;
         let posX = clientWidth - event.pageX;
-        if ( typeof this.refs.tooltip == "undefined" || this.state.lockTooltip ) {
+        if ( typeof this.refs.tooltip == "undefined" ) {
             return;
         }
         let { toolTipWidth, toolTipHeight } = this.refs.tooltip;
@@ -355,11 +359,12 @@ export default React.createClass({
     },
 
     handleClick(e, f, g) {
-        console.log("handleClick e f g", e, f, g);
+        console.log("handleClick", e, f, g);
         this.setState({
-            lockToolTip: ! this.state.lockToolTip
+            lockToolTip: !this.state.lockToolTip
     //        highlight: point
         });
+        console.log("this.state.lockToolTip", this.state.lockToolTip );
     },
 
     handleMouseNear(point) {
@@ -380,12 +385,17 @@ export default React.createClass({
 
         let display = "block";
 
+        // Something here maybe, where we need to make sure "tracker" isn't null when locking the tooltip?
         if ( tracker != null && typeof charts != "undefined" ) {
             let data = this.getTrackerData();
             if ( data.length == 0 ) {
                 //return null;
                 display = "none";
             } else {
+                display = "block";
+            }
+
+            if ( this.state.lockToolTip ) {
                 display = "block";
             }
 
@@ -682,7 +692,16 @@ export default React.createClass({
     },
 
     handleTrackerChanged(trackerVal, selection) {
-        this.setState({tracker: trackerVal});
+        if ( this.state.lockToolTip ) {
+            //this.setState({tracker: this.state.tracker});
+            console.log("handleTrackerChanged locked; trackerVal:", trackerVal, selection);
+        } else {
+            console.log("handleTrackerChanged not locked; trackerVal:", trackerVal, selection);
+            //if ( trackerVal !== null ) {
+                this.setState({tracker: trackerVal});
+            //}
+
+        }
     },
 
     withinTime( ts1, ts2, range ) {
@@ -698,7 +717,7 @@ export default React.createClass({
         let tracker = this.state.tracker;
         let trackerData = [];
 
-        if ( tracker != null && typeof charts != "undefined"  ) {
+        if ( tracker != null && typeof charts != "undefined" ) {
 
             for ( let type in charts) {
                 let data = charts[type].data;
@@ -918,8 +937,8 @@ export default React.createClass({
                                         axis={"axis" + type} series={series}
                                         style={getChartStyle( properties )} smooth={false} breakLine={true}
                                         min={0}
-                                        onClick={this.handleClick}
-                                        //max={stats.max}
+                                        onSelectionChange={this.handleSelectionChanged}
+
                                         columns={[ "value" ]} />
                                     );
                             //for(let result in data.results ) {
@@ -975,7 +994,7 @@ export default React.createClass({
                                     //infoStyle={infoStyle}
                                     min={failureData.stats.min}
                                     max={failureData.stats.max}
-                                    //onSelectionChange={this.handleSelectionChanged}
+                                    onSelectionChange={this.handleSelectionChanged}
                                     selected={this.state.selection}
                                     //onMouseNear={this.handleMouseNear}
                                     //onClick={this.handleClick}
@@ -1055,7 +1074,7 @@ export default React.createClass({
                     var chartArr = charts[type][ipv];
 
                     var format = ".2s";
-                    
+
                     var max = charts[type].stats.max;
 
                     if ( type == "latency" ) {
@@ -1163,7 +1182,7 @@ export default React.createClass({
                         onTrackerChanged={this.handleTrackerChanged}
                         enablePanZoom={true}
                         onTimeRangeChanged={this.handleTimeRangeChange}
-                        onBackgroundClick={this.clearSelection}
+                        onBackgroundClick={this.handleClick}
                         minTime={this.state.initialTimerange.begin()}
                         maxTime={this.state.initialTimerange.end()}
                         minDuration={10 * 60 * 1000}
@@ -1184,11 +1203,6 @@ export default React.createClass({
         const active = this.state.active;
         active[key] = !disabled;
         this.setState({active});
-    },
-
-    clearSelection() {
-        this.setState({selection: null});
-
     },
 
     renderError() {
@@ -1426,13 +1440,4 @@ export default React.createClass({
             && ( direction === null || this.state.chartSeries[ eventType ][ direction ] );
     }
 });
-
-function getElementOffset(element)
-{
-    var de = document.documentElement;
-    var box = element.getBoundingClientRect();
-    var top = box.top + window.pageYOffset - de.clientTop;
-    var left = box.left + window.pageXOffset - de.clientLeft;
-    return { top: top, left: left };
-}
 
