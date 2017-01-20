@@ -86,30 +86,23 @@ sub get_ma_data {
 
     my $ua = LWP::UserAgent->new;
 
-    warn "url: " . Dumper $url;
     if ( $url =~ m|^https?://[^/]+/esmond/perfsonar/archive| ) {
-        warn "retrieving url: $url";
         my $req = HTTP::Request->new( 
             GET => $url,
         );
 
         my $res = $ua->request($req);
         if ( $res->is_success ) {
-            #my $content_type = $res->header( "content-type");
             print $cgi->header('application/json');
-            #print $cgi->header( $content_type );
             my $message = $res->decoded_content;
             print $message;
-            #print to_json(\%consolidated);
-
         } else {
-            print "HTTP GET error code: ", $res->code, "\n";
-            print "HTTP GET error message: ", $res->message, "\n";
+            error($res->message, $res->code);
         }
-
     } else {
+        #print $cgi->header('text/plain');
         warn "URL is not a valid esmond archive: $url";
-
+        error("URL is not a valid esmond archive");
     }
 
 }

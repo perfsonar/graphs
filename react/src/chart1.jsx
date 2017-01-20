@@ -1193,13 +1193,22 @@ export default React.createClass({
 
     renderError() {
         const data = this.state.dataError;
+        let msg;
+        if ( typeof data.responseJSON != "undefined" && data.responseJSON.detail != "undefined" ) {
+            msg = data.responseJSON.detail;
+        } else if ( typeof data.responseText != "undefined" ) {
+            msg = data.responseText;
+        } else {
+            msg = "An unknown error occurred";
+
+        }
         return (
                 <div>
                 <h3>Error loading data</h3>
                     <span className="alert-small-failure">
                         <i className="fa fa-exclamation-triangle"></i>
                          <b>Error retrieving data</b>
-                         <p>{data.responseJSON.detail}</p>
+                         <p>{msg}</p>
                     </span>
                 </div>
                );
@@ -1363,6 +1372,7 @@ export default React.createClass({
     },
     dataError: function() {
         let data = GraphDataStore.getErrorData();
+        console.log("dataError", data);
         this.setState({dataError: data, loading: false});
 
     },
