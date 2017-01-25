@@ -101816,17 +101816,10 @@
 	        active[id] = !active[id];
 	        this.setState({ active: active, itemsToHide: newItems });
 	        //this.setHashVals( newItems );
+	
 	        //this.setHashVals( this.state.hashValues );
 	        //this.updateURLHash();
-	        /*
-	        this.handleTimerangeChange({
-	            "start": this.state.start,
-	            "end": this.state.end,
-	            "timeframe": timeframe
-	        });
-	        */
-	        //this.forceUpdate();
-	        //event.preventDefault();
+	        event.preventDefault();
 	    },
 	
 	    getActiveClass: function getActiveClass(value) {
