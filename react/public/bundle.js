@@ -25045,15 +25045,13 @@
 	    label: "Packet Loss",
 	    unit: "fractional"
 	},
-	/*
+	// RETRANSMITS
 	{
 	    name: "throughput",
 	    esmondName: "packet-retransmits",
 	    label: "Retransmits",
-	    unit: "packet",
-	},
-	*/
-	{
+	    unit: "packet"
+	}, {
 	    name: "latency",
 	    esmondName: "histogram-owdelay",
 	    label: "Latency",
@@ -25893,6 +25891,24 @@
 	                            var series = result.values;
 	                            var properties = result.properties;
 	
+	                            if (_esmondName == "packet-retransmits") {
+	                                console.log("filter", filter);
+	
+	                                var retransFilter = {};
+	                                retransFilter = { eventType: "packet-retransmits", "metadata-key": properties["metadata-key"], ipversion: _ipversion2 };
+	                                console.log("retransFilter", retransFilter, "itemsToHide", this.state.itemsToHide);
+	                                //let retransData = GraphDataStore.filterData( data, retransFilter, this.state.itemsToHide );
+	
+	                                var retransData = _GraphDataStore2.default.getChartData(retransFilter, this.state.itemsToHide);
+	                                var throughputFilter = { eventType: "throughput", "metadata-key": properties["metadata-key"], ipversion: _ipversion2, "ip-transport-protocol": "tcp" };
+	                                var throughputData = _GraphDataStore2.default.getChartData(throughputFilter, this.state.itemsToHide);
+	                                console.log("retransData", retransData, "throughputData", throughputData);
+	                                if (retransData.results.length > 0) {
+	                                    retransData = _GraphDataStore2.default.pairRetrans(retransData, throughputData);
+	                                    console.log("retransData", retransData);
+	                                }
+	                            }
+	
 	                            charts[_type].data.push(result);
 	
 	                            // skip packet-count-lost and packet-count-sent
@@ -25921,26 +25937,8 @@
 	                                axis: "axis" + _type, series: series,
 	                                style: getChartStyle(properties), smooth: false, breakLine: true,
 	                                min: 0,
-	                                onClick: this.handleClick
-	                                //max={stats.max}
-	                                , columns: ["value"] }));
-	                            //for(let result in data.results ) {
-	                            //}
-	
-	                            // push the brush charts, if enabled
-	                            /*
-	                            if ( this.state.showBrush === true ) {
-	                                brushCharts[type][ipv].push(
-	                                        <LineChart key={"brush" + [type] + Math.floor( Math.random() )}
-	                                            axis={"brush_axis" + [type]} series={series}
-	                                            style={getChartStyle( properties )} smooth={false} breakLine={true}
-	                                            min={stats.min}
-	                                            max={stats.max}
-	                                            columns={[ "value" ]} />
-	                                        );
-	                                brushCharts[type].stats = stats;
-	                            }
-	                            */
+	                                onClick: this.handleClick,
+	                                columns: ["value"] }));
 	                        }
 	                        charts[_type].stats = stats;
 	                    }
@@ -49829,7 +49827,7 @@
 	                if (failureValue != null) {
 	                    var failureObj = {
 	                        errorText: failureValue.error,
-	                        value: 0.85 * max,
+	                        value: 0.9 * max,
 	                        type: "error"
 	                    };
 	                    var errorEvent = new _pondjs.Event(timestamp, failureObj);
@@ -49883,10 +49881,88 @@
 	        }
 	        return testType;
 	    },
+	    pairRetrans: function pairRetrans(retransData, data) {
+	        var deleteIndices = [];
+	        console.log("pairRetrans", retransData, data);
+	
+	        var _loop4 = function _loop4() {
+	            var row = retransData.results[i];
+	            var eventType = row.properties.eventType;
+	            var key = row.properties["metadata-key"];
+	            var direction = row.properties["direction"];
+	
+	            // If this is throughput, add the value of the
+	            // corresponding retrans type 
+	
+	            if (eventType == "packet-retransmits") {
+	                var indices = $.map(data.results, function (item, index) {
+	                    // If the value has the same "metadata-key", it's from the same test
+	                    if (item.properties["metadata-key"] == key && item.properties["direction"] == direction) {
+	                        if (item.properties.eventType == "throughput") {
+	                            row.retrans = data.results[index].value;
+	
+	                            // handle the throughput/retrans values
+	                            var newData = [];
+	                            var _iteratorNormalCompletion = true;
+	                            var _didIteratorError = false;
+	                            var _iteratorError = undefined;
+	
+	                            try {
+	                                for (var _iterator = item.values.events()[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+	                                    var e = _step.value;
+	
+	                                    if (typeof e == "undefined" || e === null) {
+	                                        break;
+	                                    }
+	                                    console.log(e.toString());
+	                                    console.log("e.timestamp()", e.timestamp());
+	                                    var tputVal = row.values.atTime(e.timestamp());
+	                                    console.log("tputVal", tputVal.value());
+	                                }
+	                            } catch (err) {
+	                                _didIteratorError = true;
+	                                _iteratorError = err;
+	                            } finally {
+	                                try {
+	                                    if (!_iteratorNormalCompletion && _iterator.return) {
+	                                        _iterator.return();
+	                                    }
+	                                } finally {
+	                                    if (_didIteratorError) {
+	                                        throw _iteratorError;
+	                                    }
+	                                }
+	                            }
+	
+	                            return index;
+	                        }
+	                    }
+	                });
+	
+	                deleteIndices = deleteIndices.concat(indices);
+	            }
+	        };
+	
+	        for (var i in retransData.results) {
+	            _loop4();
+	        }
+	
+	        // Delete the values with "packet-count-sent"
+	        /*        
+	                data.results = $.map( data.results, function( item, index ) {
+	                    if ( deleteIndices.indexOf( index ) > -1 ) {
+	                        return null;
+	                    } else {
+	                        return item;
+	                    }
+	                });
+	          */
+	        return data;
+	    },
 	    pairSentLost: function pairSentLost(data) {
 	        var deleteIndices = [];
 	
-	        var _loop4 = function _loop4() {
+	        var _loop5 = function _loop5() {
 	            var row = data[i];
 	            var eventType = row.properties.eventType;
 	            var key = row.properties["metadata-key"];
@@ -49916,7 +49992,7 @@
 	        };
 	
 	        for (var i in data) {
-	            _loop4();
+	            _loop5();
 	        }
 	
 	        // Delete the values with "packet-count-sent"

@@ -721,7 +721,7 @@ module.exports = {
 
             let min = 0;
             let max;
-            if ( typeof mainEventType != "undefined" 
+            if ( typeof mainEventType != "undefined"
                     && mainEventType in outputData
                     && "max" in outputData[ mainEventType ] ) {
                 max = outputData[ mainEventType ].max;
@@ -751,7 +751,7 @@ module.exports = {
                 if ( failureValue != null ) {
                     let failureObj = {
                         errorText: failureValue.error,
-                        value: 0.85 * max,
+                        value: 0.9 * max,
                         type: "error"
                     };
                     let errorEvent = new Event( timestamp, failureObj );
@@ -807,6 +807,67 @@ module.exports = {
             testType = "loss";
         }
         return testType;
+
+    },
+    pairRetrans: function( retransData, data ) {
+        let deleteIndices = [];
+        console.log("pairRetrans", retransData, data );
+
+        for(var i in retransData.results ) {
+            let row = retransData.results[i];
+            let eventType = row.properties.eventType;
+            let key = row.properties["metadata-key"];
+            let direction = row.properties["direction"];
+
+            // If this is throughput, add the value of the
+            // corresponding retrans type 
+
+            if ( eventType == "packet-retransmits" ) {
+                let indices = $.map( data.results, function( item, index ) {
+                    // If the value has the same "metadata-key", it's from the same test
+                    if ( item.properties["metadata-key"] == key && item.properties["direction"] == direction ) {
+                        if ( item.properties.eventType == "throughput" ) {
+                            row.retrans = data.results[index].value;
+
+                            // handle the throughput/retrans values
+                            let newData = [];
+                            for ( let e of item.values.events() ) {
+                                if ( typeof e == "undefined" || e === null ) {
+                                    break;
+                                }
+                                console.log( e.toString() );
+                                console.log("e.timestamp()", e.timestamp() );
+                                let tputVal = row.values.atTime( e.timestamp() );
+                                console.log("tputVal", tputVal.value());
+
+
+
+
+
+                            }
+
+                            return index;
+                        }
+                    }
+                });
+
+                deleteIndices = deleteIndices.concat( indices );
+
+            }
+
+        }
+
+        // Delete the values with "packet-count-sent"
+/*        
+        data.results = $.map( data.results, function( item, index ) {
+            if ( deleteIndices.indexOf( index ) > -1 ) {
+                return null;
+            } else {
+                return item;
+            }
+        });
+  */      
+        return data;
 
     },
     pairSentLost: function( data ) {

@@ -59,14 +59,14 @@ const typesToChart = [
         label: "Packet Loss",
         unit: "fractional",
     },
-    /*
+// RETRANSMITS
     {
         name: "throughput",
         esmondName: "packet-retransmits",
         label: "Retransmits",
         unit: "packet",
     },
-*/
+
     {
         name: "latency",
         esmondName: "histogram-owdelay",
@@ -875,11 +875,33 @@ export default React.createClass({
                     data = GraphDataStore.getChartData( filter, this.state.itemsToHide );
                     let eventTypeStats = GraphDataStore.eventTypeStats;
 
+
+
+
                     if ( this.state.active[type] && ( data.results.length > 0 ) ) {
                         for(let j in data.results) {
                             let result = data.results[j];
                             let series = result.values;
                             let properties = result.properties;
+
+                            if ( esmondName == "packet-retransmits" ) {                                
+                                console.log("filter", filter);
+
+                                let retransFilter = {};
+                                retransFilter = { eventType: "packet-retransmits", "metadata-key": properties["metadata-key"], ipversion: ipversion };
+                                console.log("retransFilter", retransFilter, "itemsToHide", this.state.itemsToHide );
+                                //let retransData = GraphDataStore.filterData( data, retransFilter, this.state.itemsToHide );
+
+                                let retransData = GraphDataStore.getChartData( retransFilter, this.state.itemsToHide );
+                                let throughputFilter = { eventType: "throughput", "metadata-key": properties["metadata-key"], ipversion: ipversion, "ip-transport-protocol": "tcp" };
+                                let throughputData = GraphDataStore.getChartData( throughputFilter, this.state.itemsToHide );
+                                    console.log("retransData", retransData, "throughputData", throughputData);
+                                if ( retransData.results.length > 0 ) {
+                                    retransData = GraphDataStore.pairRetrans( retransData, throughputData );
+                                    console.log("retransData", retransData);
+                                }
+
+                            }
 
                             charts[type].data.push( result );
 
@@ -919,27 +941,9 @@ export default React.createClass({
                                         style={getChartStyle( properties )} smooth={false} breakLine={true}
                                         min={0}
                                         onClick={this.handleClick}
-                                        //max={stats.max}
                                         columns={[ "value" ]} />
                                     );
-                            //for(let result in data.results ) {
-                            //}
 
-                            // push the brush charts, if enabled
-                            /*
-                            if ( this.state.showBrush === true ) {
-                                brushCharts[type][ipv].push(
-                                        <LineChart key={"brush" + [type] + Math.floor( Math.random() )}
-                                            axis={"brush_axis" + [type]} series={series}
-                                            style={getChartStyle( properties )} smooth={false} breakLine={true}
-                                            min={stats.min}
-                                            max={stats.max}
-                                            columns={[ "value" ]} />
-                                        );
-                                brushCharts[type].stats = stats;
-                            }
-
-                        */
                         }
                         charts[type].stats = stats;
 
