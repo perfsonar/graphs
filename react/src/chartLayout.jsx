@@ -218,7 +218,11 @@ export default React.createClass({
                                 </li>
 
                                 <li className={"graph-filter__item graph-filter__item packet-retransmits " + this.getActiveClass( this.state.active["eventType_packet-retransmits_"] )}>
-                                    <a href="#" onClick={this.toggleType.bind(this, {eventType: "packet-retransmits"})}>Retrans</a>
+                                    <a href="#" onClick={this.toggleType.bind(this, {eventType: "packet-retransmits"})}>Retrans
+                                    <svg width="10" height="10" className="direction-label">
+                                          <circle cx="5" cy="5" r="4" fill="#cc7dbe" />
+                                    </svg>
+                                    </a>
                                 </li>
 
                                 <li className={"graph-filter__item ipv6 " + this.getActiveClass( this.state.active["eventType_histogram-owdelay_"] )}>

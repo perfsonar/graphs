@@ -25045,15 +25045,13 @@
 	    label: "Packet Loss",
 	    unit: "fractional"
 	},
-	/*
+	// RETRANSMITS
 	{
 	    name: "throughput",
 	    esmondName: "packet-retransmits",
 	    label: "Retransmits",
-	    unit: "packet",
-	},
-	*/
-	{
+	    unit: "packet"
+	}, {
 	    name: "latency",
 	    esmondName: "histogram-owdelay",
 	    label: "Latency",
@@ -25077,7 +25075,8 @@
 	    ipv6: "#633", // brown
 	    throughput: "#0076b4", // blue
 	    throughputTCP: "#0076b4", // blue
-	    "packet-retransmits": "#56b4e9", // light blue
+	    //"packet-retransmits": "#56b4e9", // light blue
+	    "packet-retransmits": "#cc7dbe", // purple
 	    "packet-loss-rateLatency": "#2b9f78", // green
 	    "histogram-rtt": "#e5a11c", // yellow/orange
 	    "histogram-owdelay": "#633", // brown
@@ -25146,6 +25145,7 @@
 	    var strokeStyle = "";
 	    var width = 3;
 	    var opacity = 1;
+	    var fill = "none";
 	
 	    switch (options.protocol) {
 	        case "tcp":
@@ -25190,6 +25190,9 @@
 	            break;
 	        case "packet-retransmits":
 	            color = scheme["packet-retransmits"];
+	            opacity = 0.9;
+	            fill = "#cc7dbe";
+	            width = 0;
 	            break;
 	
 	    }
@@ -25199,7 +25202,7 @@
 	    }
 	    var style = {};
 	    style[column] = {
-	        normal: { stroke: color, strokeWidth: width, opacity: opacity, strokeDasharray: strokeStyle },
+	        normal: { stroke: color, strokeWidth: width, opacity: opacity, strokeDasharray: strokeStyle, fill: fill },
 	        highlighted: { stroke: color, strokeWidth: width, opacity: opacity, strokeDasharray: strokeStyle },
 	        selected: { stroke: color, strokeWidth: width, opacity: opacity, strokeDasharray: strokeStyle },
 	        muted: { stroke: color, strokeWidth: width, opacity: opacity, strokeDasharray: strokeStyle }
@@ -25732,6 +25735,9 @@
 	
 	                for (var i in data) {
 	                    var row = data[i];
+	                    if (typeof row == "undefined" || typeof row.values == "undefined") {
+	                        continue;
+	                    }
 	                    var valAtTime = row.values.atTime(tracker);
 	                    var value = void 0;
 	                    if (typeof valAtTime != "undefined") {
@@ -25888,10 +25894,42 @@
 	                    var eventTypeStats = _GraphDataStore2.default.eventTypeStats;
 	
 	                    if (this.state.active[_type] && data.results.length > 0) {
+	                        if (_esmondName == "packet-retransmits" && false) {
+	                            var _retransFilter = {};
+	                            _retransFilter = { eventType: "packet-retransmits", ipversion: _ipversion2 };
+	                            console.log("retransFilter", _retransFilter, "itemsToHide", this.state.itemsToHide);
+	
+	                            var retransData = _GraphDataStore2.default.getChartData(_retransFilter, this.state.itemsToHide);
+	                            var throughputFilter = { eventType: "throughput", ipversion: _ipversion2, "ip-transport-protocol": "tcp" };
+	                            var throughputData = _GraphDataStore2.default.getChartData(throughputFilter, this.state.itemsToHide);
+	                            //console.log("retransData", retransData, "throughputData", throughputData);
+	                            if (retransData.results.length > 0) {
+	                                retransData = _GraphDataStore2.default.pairRetrans(retransData, throughputData);
+	                                //console.log("retransData", retransData);
+	                                //result = retransData;
+	                                data.results = [];
+	                                data.stats = retransData.stats;
+	                                data.results = retransData.results;
+	                            }
+	                        }
 	                        for (var j in data.results) {
 	                            var result = data.results[j];
 	                            var series = result.values;
 	                            var properties = result.properties;
+	
+	                            if (_esmondName == "packet-retransmits" && false) {
+	                                console.log("filter", filter);
+	
+	                                var _retransData = _GraphDataStore2.default.getChartData(retransFilter, this.state.itemsToHide);
+	                                var _throughputFilter = { eventType: "throughput", "metadata-key": properties["metadata-key"], ipversion: _ipversion2, "ip-transport-protocol": "tcp" };
+	                                var _throughputData = _GraphDataStore2.default.getChartData(_throughputFilter, this.state.itemsToHide);
+	                                console.log("retransData", _retransData, "throughputData", _throughputData);
+	                                if (_retransData.results.length > 0) {
+	                                    _retransData = _GraphDataStore2.default.pairRetrans(_retransData, _throughputData);
+	                                    console.log("retransData", _retransData);
+	                                    result = _retransData;
+	                                }
+	                            }
 	
 	                            charts[_type].data.push(result);
 	
@@ -25911,36 +25949,39 @@
 	                                        }
 	                                        stats.min = 1e-9;
 	                                    }
-	                                    var scaledSeries = _GraphDataStore2.default.scaleValues(series, stats.max);
-	                                    series = scaledSeries;
+	                                    //var scaledSeries = GraphDataStore.scaleValues( series, stats.max );
+	                                    //series = scaledSeries;
 	                                }
 	                            }
 	
-	                            // push the charts for the main charts
-	                            charts[_type][_ipv].push(_react2.default.createElement(_reactTimeseriesCharts.LineChart, { key: _type + Math.floor(Math.random()),
-	                                axis: "axis" + _type, series: series,
-	                                style: getChartStyle(properties), smooth: false, breakLine: true,
-	                                min: 0,
-	                                onClick: this.handleClick
-	                                //max={stats.max}
-	                                , columns: ["value"] }));
-	                            //for(let result in data.results ) {
-	                            //}
+	                            if (_esmondName == "packet-retransmits") {
+	                                charts[_type][_ipv].push(_react2.default.createElement(_reactTimeseriesCharts.ScatterChart, {
+	                                    key: _type + "retrans" + Math.floor(Math.random()),
+	                                    axis: "axis" + _type,
+	                                    series: series,
+	                                    style: getChartStyle(properties), smooth: false, breakLine: true,
+	                                    radius: 4.0,
+	                                    columns: ["value"]
+	                                    //info={hintValues}
+	                                    //infoHeight={100}
+	                                    //infoWidth={200}
+	                                    //infoStyle={infoStyle}
+	                                    //onSelectionChange={this.handleSelectionChanged}
+	                                    , selected: this.state.selection
+	                                    //onMouseNear={this.handleMouseNear}
+	                                    //onClick={this.handleClick}
+	                                    , highlighted: this.state.highlight
+	                                }));
+	                            } else {
 	
-	                            // push the brush charts, if enabled
-	                            /*
-	                            if ( this.state.showBrush === true ) {
-	                                brushCharts[type][ipv].push(
-	                                        <LineChart key={"brush" + [type] + Math.floor( Math.random() )}
-	                                            axis={"brush_axis" + [type]} series={series}
-	                                            style={getChartStyle( properties )} smooth={false} breakLine={true}
-	                                            min={stats.min}
-	                                            max={stats.max}
-	                                            columns={[ "value" ]} />
-	                                        );
-	                                brushCharts[type].stats = stats;
+	                                // push the charts for the main charts
+	                                charts[_type][_ipv].push(_react2.default.createElement(_reactTimeseriesCharts.LineChart, { key: _type + Math.floor(Math.random()),
+	                                    axis: "axis" + _type, series: series,
+	                                    style: getChartStyle(properties), smooth: false, breakLine: true,
+	                                    min: 0,
+	                                    onClick: this.handleClick,
+	                                    columns: ["value"] }));
 	                            }
-	                            */
 	                        }
 	                        charts[_type].stats = stats;
 	                    }
@@ -49787,7 +49828,11 @@
 	        });
 	
 	        console.log("outputData", outputData);
+	        console.log("output", output);
 	        this.eventTypeStats = outputData;
+	
+	        // Create retransmit series
+	        output = this.pairRetrans(output);
 	
 	        // Create failure series
 	
@@ -49829,7 +49874,7 @@
 	                if (failureValue != null) {
 	                    var failureObj = {
 	                        errorText: failureValue.error,
-	                        value: 0.85 * max,
+	                        value: 0.9 * max,
 	                        type: "error"
 	                    };
 	                    var errorEvent = new _pondjs.Event(timestamp, failureObj);
@@ -49883,10 +49928,136 @@
 	        }
 	        return testType;
 	    },
+	    pairRetrans: function pairRetrans(data) {
+	        var _this3 = this;
+	
+	        var retransFilter = { eventType: "packet-retransmits" };
+	        console.log("retransFilter", retransFilter);
+	        var retransData = this.filterData(data, retransFilter, []);
+	        var tputFilter = { eventType: "throughput", "ip-transport-protocol": "tcp" };
+	        var tputData = this.filterData(data, tputFilter);
+	        console.log("retransData", retransData, "tputData", tputData);
+	        var newSeries = [];
+	
+	        var deleteIndices = [];
+	        //console.log("pairRetrans", retransData, data );
+	
+	        var _loop4 = function _loop4() {
+	            var row = retransData[i];
+	            var eventType = row.properties.eventType;
+	            var key = row.properties["metadata-key"];
+	            var direction = row.properties["direction"];
+	
+	            // If this is throughput, add the value of the
+	            // corresponding retrans type 
+	            var self = _this3;
+	            self.row = row;
+	
+	            var indices = $.map(data, function (row, index) {
+	                if (eventType == "packet-retransmits") {
+	                    // If the value has the same "metadata-key", it's from the same test
+	                    //for(var j in tputData ) {
+	                    // var tpItem = tputData[j];
+	                    var tpItem = data[index];
+	                    data[index];
+	
+	                    if (tpItem.properties["metadata-key"] == key && tpItem.properties["direction"] == direction) {
+	                        if (tpItem.properties.eventType == "throughput") {
+	                            //row.retrans = data.results[index].value;
+	
+	                            // handle the throughput/retrans values
+	                            var newEvents = [];
+	                            var _iteratorNormalCompletion = true;
+	                            var _didIteratorError = false;
+	                            var _iteratorError = undefined;
+	
+	                            try {
+	                                for (var _iterator = self.row.values.events()[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+	                                    var reEvent = _step.value;
+	
+	                                    if (typeof reEvent == "undefined" || reEvent === null) {
+	                                        return null;
+	                                    }
+	                                    //console.log( reEvent.toString() );
+	                                    //console.log("reEvent.timestamp()", reEvent.timestamp() );
+	
+	
+	                                    var retransVal = reEvent.value();
+	
+	                                    if (retransVal < 1) {
+	                                        continue;
+	                                    }
+	
+	                                    var tputVal = tpItem.values.atTime(reEvent.timestamp()).value();
+	
+	                                    //console.log("tputVal", tputVal, "retransVal", retransVal );
+	                                    var newEvent = new _pondjs.Event(reEvent.timestamp(), { value: tputVal, retrans: retransVal });
+	                                    newEvents.push(newEvent);
+	                                }
+	                            } catch (err) {
+	                                _didIteratorError = true;
+	                                _iteratorError = err;
+	                            } finally {
+	                                try {
+	                                    if (!_iteratorNormalCompletion && _iterator.return) {
+	                                        _iterator.return();
+	                                    }
+	                                } finally {
+	                                    if (_didIteratorError) {
+	                                        throw _iteratorError;
+	                                    }
+	                                }
+	                            }
+	
+	                            var series = new _pondjs.TimeSeries({
+	                                name: "Retransmits",
+	                                events: newEvents
+	                            });
+	                            var newRow = {};
+	                            newRow.properties = self.row.properties;
+	                            newRow.values = series;
+	                            newSeries.push(newRow);
+	
+	                            //return index;
+	
+	
+	                            //return series;
+	                        } else if (eventType == "packet-retransmits") {
+	                            return index;
+	                        }
+	
+	                        //retransData[i].values = series;
+	                        //retransData.stats = data.stats;
+	                    }
+	                    //}
+	                    //return index;
+	                }
+	            });
+	            deleteIndices = deleteIndices.concat(indices);
+	        };
+	
+	        for (var i in retransData) {
+	            _loop4();
+	        }
+	
+	        // Delete the values with "packet-count-sent"
+	
+	        data = $.map(data, function (item, index) {
+	            if (deleteIndices.indexOf(index) > -1) {
+	                return null;
+	            } else {
+	                return item;
+	            }
+	        });
+	
+	        data = data.concat(newSeries);
+	
+	        return data;
+	    },
 	    pairSentLost: function pairSentLost(data) {
 	        var deleteIndices = [];
 	
-	        var _loop4 = function _loop4() {
+	        var _loop5 = function _loop5() {
 	            var row = data[i];
 	            var eventType = row.properties.eventType;
 	            var key = row.properties["metadata-key"];
@@ -49916,7 +50087,7 @@
 	        };
 	
 	        for (var i in data) {
-	            _loop4();
+	            _loop5();
 	        }
 	
 	        // Delete the values with "packet-count-sent"
@@ -101902,7 +102073,12 @@
 	                            _react2.default.createElement(
 	                                "a",
 	                                { href: "#", onClick: this.toggleType.bind(this, { eventType: "packet-retransmits" }) },
-	                                "Retrans"
+	                                "Retrans",
+	                                _react2.default.createElement(
+	                                    "svg",
+	                                    { width: "10", height: "10", className: "direction-label" },
+	                                    _react2.default.createElement("circle", { cx: "5", cy: "5", r: "4", fill: "#cc7dbe" })
+	                                )
 	                            )
 	                        ),
 	                        _react2.default.createElement(
@@ -103232,7 +103408,7 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	exports = module.exports = __webpack_require__(/*! ./~/css-loader/cssToString.js */ 599)();
-	exports.push([module.id, "/*----------------------------------------------------------\n\n    Graphs\n\n----------------------------------------------------------*/\n\n.graph-filter {\n    padding: 0.25em 0;\n}\n\n.graph-label {\n    display: block;\n    float: left;\n    padding-top: .7em;\n    margin-right: .5em;\n}\n\n.graph-filter__list {\n    display: block;\n    list-style: none;\n    padding: 0;\n    margin: 0;\n    border: 1px solid #ccc;\n    border-radius: 4px;\n    display: inline-block;\n}\n\n.blockTrace {\n    display:block; \n}\n\n.hiddenTrace {\n    display:none;\n}\n\n/*\n * Clear fix\n*/\n.graph:after,\n.graph-filters:after,\n.graph-filter:after,\n.graph-filter__list:after {\n    content: \"\";\n    clear: both;\n    display: block;\n}\n\n.graph-filter__item {\n    float: left;\n    border-right: 1px solid #ccc;\n    margin: 0;\n}\n\n/*\n * Filter active states\n*/\n\n.graph-filter__item.graph-filter__item a {\n    color: #fff;\n    background-color: #ccc;\n}\n\n.graph-filter__item.graph-filter__item--blue-active a {\n    background-color: #0076b4;\n}\n\n.graph-filter__item.graph-filter__item--forward.active a, .graph-filter__item.graph-filter__item--reverse.active a, .graph-filter__item.graph-filter__item--failures.active a\n{\n    background-color: #0076b4;\n}\n\n\n.graph-filter__item.graph-filter__item.throughput-tcp.active a {\n    background-color: #0076b4;\n}\n\n.graph-filter__item.graph-filter__item.udp.active a {\n    background-color: #d6641e;\n    /*background-color: #cc7dbe;*/ /*pink */\n}\n\n.graph-filter__item.graph-filter__item.ipv4.active a {\n    background-color: #e5a11c;\n}\n\n.graph-filter__item.graph-filter__item.ipv6.active a {\n    background-color: #633;\n}\n\n.graph-filter__item.graph-filter__item.loss-throughput.active a {\n    background-color: #cc7dbe;\n}\n\n.graph-filter__item.graph-filter__item.loss-latency.active a {\n    background-color: #2b9f78;\n}\n\n.graph-filter__item.graph-filter__item.loss-ping.active.active a {\n    /*background-color: #f0e442; */  /* light yellow */\n    /* background-color: #d55e00; */ /* vermillion */\n    background-color: #e5801c; /* slightly browner orange */\n}\n\n.graph-filter__item.graph-filter__item.packet-retransmits.active a {\n    background-color: #56b4e9;\n}\n\n.graph-filter__item svg.direction-label {\n    margin-left: 1em;\n    vertical-align: middle;\n}\n\n.graph-filter__item:last-child {\n    border-right: none;\n}\n\n.graph-filter__item a {\n    color: #383f44;\n    display: inline-block;\n    padding: .75em 1em;\n}\n\n.graph-filter__item a:hover {\n    background-color: #ccc;\n    color: #383f44;\n}\n\n.graph-settings {\n    border: 1px solid #383f44;\n    border-radius: 4px;\n    color: #383f44;\n    display: inline-block;\n    margin-left: 1em;\n    /*\n     * This is a magic number to make this thing look right.\n    */\n    padding: .71em;\n}\n\n.graph-settings i {\n    font-size: 1.5em;\n}\n\n.graph-wrapper {\n\n}\n\n.graph-header {\n    border-bottom: 1px solid #ccc;\n    margin-top: 1em;\n    padding-bottom: .5em;\n}\n\n.graph-module,\n.graph-holder {\n    min-height: 400px;\n}\n\n.graph-module {\n    display: flex;\n    flex-direction: column;\n    justify-content: space-around;\n}\n\n.graph-module--small,\n.graph-holder--small {\n    min-height: 150px;\n}\n\n.graph-holder {\n    background-color: #ddd;\n}\n\n.graph-module__cell {\n    /*\n     * This is sort of brittle because it relies on a\n     * specific amount of padding to veritcally center\n     * the label\n    */\n    padding-top: 4em;\n    text-align: center;\n    border-bottom: 1px solid #ccc;\n    flex-grow: 1;\n    align-content: center;\n}\n\n.graph-module__cell--small {\n    padding-top: 1em;\n}\n\n.graph-module__cell--left {\n    padding-top: 1em;\n    padding-left: 1em;\n    text-align: left;\n}\n\n.graph-module__stat {\n    display: block;\n    line-height: 1.8;\n}\n\n.graph-module__stat i {\n    margin-right: 1em;\n}\n\n.graph-module__controls {\n    color: #383f44;\n}\n\n.graph-small {\n    margin-top: 1em;\n}\n\n.graph .hostLabel {\n    font-weight:700;\n}\n\n.sidebar-popover__close span {\n    float:left;\n}\n\n/* Graph-Values popover */\n\n.sidebar-popover span:after {\n    display:inline;\n}\n\n.sidebar-popover.graph-values-popover {\n  position: absolute;\n  top: -33px;\n  right: 0;\n  font-size: 80%;\n  padding: 1em 1em 0 1em;\n  display:block;\n  opacity:0.9;\n}\n\n.graph-values-popover .graph-type {\n  margin: 0;\n  padding: 0;\n  font-weight: 700;\n}\n\n.graph-values-popover__heading {\n  border-bottom: 1px solid rgba(255, 255, 255, .5);\n  font-size: 1.1em;\n  color: #fff;\n  padding: .5em 0;\n}\n\n.graph-values-popover__list {\n  list-style: none;\n  padding: 0;\n  margin: 2px 0 0 0;\n}\n\n.graph-values-popover__item {\n  padding: 1em 0;\n  border-top: 1px dashed rgba(255, 255, 255, .5);\n}\n\n.graph-values-popover__item:first-child {\n  border-top: none;\n  padding-top: 1.5em;\n}\n\n.graph-values-popover__item ul {\n  list-style: none;\n  margin: 0;\n}\n\n.graph-values-popover__item li:first-child {\n  font-size: 1.1em;\n  font-weight: 700;\n}\n\ndiv.graphholder div.small-2.columns {\n    float:right;\n    display:block;\n    width:23%;\n}\n\ndiv.graphholder #loading {\n    margin-top:4em;\n}\n\ndiv.chartTitleBar {\n    margin-top:5px;\n    margin-bottom:-5px;\n    padding-left: 0.9375rem;\n    padding-right: 0.9375rem;\n}\nspan.chartShareLinkContainer {\n    float:right;\n}\n", ""]);
+	exports.push([module.id, "/*----------------------------------------------------------\n\n    Graphs\n\n----------------------------------------------------------*/\n\n.graph-filter {\n    padding: 0.25em 0;\n}\n\n.graph-label {\n    display: block;\n    float: left;\n    padding-top: .7em;\n    margin-right: .5em;\n}\n\n.graph-filter__list {\n    display: block;\n    list-style: none;\n    padding: 0;\n    margin: 0;\n    border: 1px solid #ccc;\n    border-radius: 4px;\n    display: inline-block;\n}\n\n.blockTrace {\n    display:block; \n}\n\n.hiddenTrace {\n    display:none;\n}\n\n/*\n * Clear fix\n*/\n.graph:after,\n.graph-filters:after,\n.graph-filter:after,\n.graph-filter__list:after {\n    content: \"\";\n    clear: both;\n    display: block;\n}\n\n.graph-filter__item {\n    float: left;\n    border-right: 1px solid #ccc;\n    margin: 0;\n}\n\n/*\n * Filter active states\n*/\n\n.graph-filter__item.graph-filter__item a {\n    color: #fff;\n    background-color: #ccc;\n}\n\n.graph-filter__item.graph-filter__item--blue-active a {\n    background-color: #0076b4;\n}\n\n.graph-filter__item.graph-filter__item--forward.active a, .graph-filter__item.graph-filter__item--reverse.active a, .graph-filter__item.graph-filter__item--failures.active a, .graph-filter__item.graph-filter__item.packet-retransmits.active a\n{\n    background-color: #0076b4;\n}\n\n\n.graph-filter__item.graph-filter__item.throughput-tcp.active a {\n    background-color: #0076b4;\n}\n\n.graph-filter__item.graph-filter__item.udp.active a {\n    background-color: #d6641e;\n    /*background-color: #cc7dbe;*/ /*pink */\n}\n\n.graph-filter__item.graph-filter__item.ipv4.active a {\n    background-color: #e5a11c;\n}\n\n.graph-filter__item.graph-filter__item.ipv6.active a {\n    background-color: #633;\n}\n\n.graph-filter__item.graph-filter__item.loss-throughput.active a {\n    background-color: #cc7dbe;\n}\n\n.graph-filter__item.graph-filter__item.loss-latency.active a {\n    background-color: #2b9f78;\n}\n\n.graph-filter__item.graph-filter__item.loss-ping.active.active a {\n    /*background-color: #f0e442; */  /* light yellow */\n    /* background-color: #d55e00; */ /* vermillion */\n    background-color: #e5801c; /* slightly browner orange */\n}\n\n.graph-filter__item svg.direction-label {\n    margin-left: 1em;\n    vertical-align: middle;\n}\n\n.graph-filter__item:last-child {\n    border-right: none;\n}\n\n.graph-filter__item a {\n    color: #383f44;\n    display: inline-block;\n    padding: .75em 1em;\n}\n\n.graph-filter__item a:hover {\n    background-color: #ccc;\n    color: #383f44;\n}\n\n.graph-settings {\n    border: 1px solid #383f44;\n    border-radius: 4px;\n    color: #383f44;\n    display: inline-block;\n    margin-left: 1em;\n    /*\n     * This is a magic number to make this thing look right.\n    */\n    padding: .71em;\n}\n\n.graph-settings i {\n    font-size: 1.5em;\n}\n\n.graph-wrapper {\n\n}\n\n.graph-header {\n    border-bottom: 1px solid #ccc;\n    margin-top: 1em;\n    padding-bottom: .5em;\n}\n\n.graph-module,\n.graph-holder {\n    min-height: 400px;\n}\n\n.graph-module {\n    display: flex;\n    flex-direction: column;\n    justify-content: space-around;\n}\n\n.graph-module--small,\n.graph-holder--small {\n    min-height: 150px;\n}\n\n.graph-holder {\n    background-color: #ddd;\n}\n\n.graph-module__cell {\n    /*\n     * This is sort of brittle because it relies on a\n     * specific amount of padding to veritcally center\n     * the label\n    */\n    padding-top: 4em;\n    text-align: center;\n    border-bottom: 1px solid #ccc;\n    flex-grow: 1;\n    align-content: center;\n}\n\n.graph-module__cell--small {\n    padding-top: 1em;\n}\n\n.graph-module__cell--left {\n    padding-top: 1em;\n    padding-left: 1em;\n    text-align: left;\n}\n\n.graph-module__stat {\n    display: block;\n    line-height: 1.8;\n}\n\n.graph-module__stat i {\n    margin-right: 1em;\n}\n\n.graph-module__controls {\n    color: #383f44;\n}\n\n.graph-small {\n    margin-top: 1em;\n}\n\n.graph .hostLabel {\n    font-weight:700;\n}\n\n.sidebar-popover__close span {\n    float:left;\n}\n\n/* Graph-Values popover */\n\n.sidebar-popover span:after {\n    display:inline;\n}\n\n.sidebar-popover.graph-values-popover {\n  position: absolute;\n  top: -33px;\n  right: 0;\n  font-size: 80%;\n  padding: 1em 1em 0 1em;\n  display:block;\n  opacity:0.9;\n}\n\n.graph-values-popover .graph-type {\n  margin: 0;\n  padding: 0;\n  font-weight: 700;\n}\n\n.graph-values-popover__heading {\n  border-bottom: 1px solid rgba(255, 255, 255, .5);\n  font-size: 1.1em;\n  color: #fff;\n  padding: .5em 0;\n}\n\n.graph-values-popover__list {\n  list-style: none;\n  padding: 0;\n  margin: 2px 0 0 0;\n}\n\n.graph-values-popover__item {\n  padding: 1em 0;\n  border-top: 1px dashed rgba(255, 255, 255, .5);\n}\n\n.graph-values-popover__item:first-child {\n  border-top: none;\n  padding-top: 1.5em;\n}\n\n.graph-values-popover__item ul {\n  list-style: none;\n  margin: 0;\n}\n\n.graph-values-popover__item li:first-child {\n  font-size: 1.1em;\n  font-weight: 700;\n}\n\ndiv.graphholder div.small-2.columns {\n    float:right;\n    display:block;\n    width:23%;\n}\n\ndiv.graphholder #loading {\n    margin-top:4em;\n}\n\ndiv.chartTitleBar {\n    margin-top:5px;\n    margin-bottom:-5px;\n    padding-left: 0.9375rem;\n    padding-right: 0.9375rem;\n}\nspan.chartShareLinkContainer {\n    float:right;\n}\n", ""]);
 
 /***/ },
 /* 607 */

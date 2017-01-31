@@ -96,7 +96,8 @@ const scheme = {
     ipv6: "#633", // brown
     throughput: "#0076b4", // blue
     throughputTCP: "#0076b4", // blue
-    "packet-retransmits": "#56b4e9", // light blue
+    //"packet-retransmits": "#56b4e9", // light blue
+    "packet-retransmits": "#cc7dbe", // purple
     "packet-loss-rateLatency": "#2b9f78", // green
     "histogram-rtt": "#e5a11c", // yellow/orange
     "histogram-owdelay": "#633", // brown
@@ -165,6 +166,7 @@ function getChartStyle( options, column ) {
     let strokeStyle = "";
     let width = 3;
     let opacity = 1;
+    let fill = "none";
 
     switch ( options.protocol ) {
         case "tcp":
@@ -209,6 +211,9 @@ function getChartStyle( options, column ) {
             break;
         case "packet-retransmits":
             color = scheme["packet-retransmits"];
+            opacity = 0.9;
+            fill = "#cc7dbe";
+            width = 0;
             break;
 
     }
@@ -218,7 +223,7 @@ function getChartStyle( options, column ) {
     }
     let style = {};
     style[column] = {
-        normal: { stroke: color, strokeWidth: width, opacity: opacity, strokeDasharray: strokeStyle },
+        normal: { stroke: color, strokeWidth: width, opacity: opacity, strokeDasharray: strokeStyle, fill: fill },
             highlighted: { stroke: color, strokeWidth: width, opacity: opacity, strokeDasharray: strokeStyle },
             selected: { stroke: color, strokeWidth: width, opacity: opacity, strokeDasharray: strokeStyle },
             muted: { stroke: color, strokeWidth: width, opacity: opacity, strokeDasharray: strokeStyle }
@@ -946,23 +951,47 @@ export default React.createClass({
                                         }
                                         stats.min = 1e-9;
                                     }
-                                    var scaledSeries = GraphDataStore.scaleValues( series, stats.max );
+                                    //var scaledSeries = GraphDataStore.scaleValues( series, stats.max );
                                     //series = scaledSeries;
 
                                 }
 
                             }
 
-                            // push the charts for the main charts
-                            charts[type][ipv].push(
-                                    <LineChart key={type + Math.floor( Math.random() )}
+                            if ( esmondName == "packet-retransmits" ) {
+                                 charts[type][ipv].push( 
+                                    <ScatterChart
+                                        key={type + "retrans" + Math.floor( Math.random() )}
+                                        axis={"axis" + type}
+                                        series={series}
+                                        style={getChartStyle( properties )} smooth={false} breakLine={true}
+                                        radius={4.0}
+                                        columns={ [ "value" ] }
+                                        //info={hintValues}
+                                        //infoHeight={100}
+                                        //infoWidth={200}
+                                        //infoStyle={infoStyle}
+                                        //onSelectionChange={this.handleSelectionChanged}
+                                        selected={this.state.selection}
+                                        //onMouseNear={this.handleMouseNear}
+                                        //onClick={this.handleClick}
+                                        highlighted={this.state.highlight}
+                                    />
+
+                                         );
+                            } else {
+
+                                // push the charts for the main charts
+                                charts[type][ipv].push(
+                                        <LineChart key={type + Math.floor( Math.random() )}
                                         axis={"axis" + type} series={series}
                                         style={getChartStyle( properties )} smooth={false} breakLine={true}
                                         min={0}
                                         onClick={this.handleClick}
                                         columns={[ "value" ]} />
-                                    );
+                                        );
 
+                            }
                         }
                         charts[type].stats = stats;
 
