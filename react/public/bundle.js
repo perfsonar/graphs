@@ -25411,9 +25411,34 @@
 	                var _ipversion = ipversions[_i];
 	                var throughputData = _GraphDataStore2.default.filterData(data, filters.throughput[_ipversion], this.state.itemsToHide);
 	                throughputData.sort(this.compareToolTipData);
+	                console.log("throughputData", throughputData);
 	
 	                for (var _i2 in throughputData) {
 	                    var row = throughputData[_i2];
+	                    var key = row.properties["metadata-key"];
+	                    var direction = row.properties.direction;
+	
+	                    // get retrans valuesA
+	                    var _retransFilter = {
+	                        eventType: "packet-retransmits",
+	                        ipversion: _ipversion,
+	                        "metadata-key": key,
+	                        direction: direction
+	
+	                    };
+	                    var retransData = _GraphDataStore2.default.filterData(data, _retransFilter, this.state.itemsToHide);
+	                    console.log("retransData tt", retransData);
+	
+	                    var retransVal = "";
+	                    if (retransData.length > 0) {
+	                        retransVal = retransData[0].value;
+	                    }
+	
+	                    var retransLabel = "";
+	                    if (typeof retransVal != "undefined" && retransVal != "") {
+	                        retransLabel += "; retrans: " + retransVal;
+	                    }
+	
 	                    var dir = "->"; // Unicode >
 	                    if (row.properties.direction == "reverse") {
 	                        dir = "<-"; // Unicode <
@@ -25426,7 +25451,8 @@
 	                        _react2.default.createElement(_SIValue2.default, { value: row.value, digits: 3 }),
 	                        "bits/s (",
 	                        row.properties.protocol.toUpperCase(),
-	                        ")"
+	                        ")",
+	                        retransLabel
 	                    ));
 	                }
 	
@@ -25460,7 +25486,7 @@
 	                        continue;
 	                    }
 	
-	                    var key = _row.properties["metadata-key"];
+	                    var _key = _row.properties["metadata-key"];
 	
 	                    if (_row.lostValue != null && _row.sentValue != null) {
 	                        lossItems.push(_react2.default.createElement(
@@ -25754,6 +25780,11 @@
 	                        protocol = "";
 	                    }
 	
+	                    if (eventType == "packet-retransmits") {
+	                        // retrieve the trans instead of value
+	                        value = valAtTime.value("retrans");
+	                    }
+	
 	                    if (eventType == "packet-count-lost" && value > 1e-9) {
 	                        //console.log("packet-count-lost value", value);
 	
@@ -25894,24 +25925,6 @@
 	                    var eventTypeStats = _GraphDataStore2.default.eventTypeStats;
 	
 	                    if (this.state.active[_type] && data.results.length > 0) {
-	                        if (_esmondName == "packet-retransmits" && false) {
-	                            var _retransFilter = {};
-	                            _retransFilter = { eventType: "packet-retransmits", ipversion: _ipversion2 };
-	                            console.log("retransFilter", _retransFilter, "itemsToHide", this.state.itemsToHide);
-	
-	                            var retransData = _GraphDataStore2.default.getChartData(_retransFilter, this.state.itemsToHide);
-	                            var throughputFilter = { eventType: "throughput", ipversion: _ipversion2, "ip-transport-protocol": "tcp" };
-	                            var throughputData = _GraphDataStore2.default.getChartData(throughputFilter, this.state.itemsToHide);
-	                            //console.log("retransData", retransData, "throughputData", throughputData);
-	                            if (retransData.results.length > 0) {
-	                                retransData = _GraphDataStore2.default.pairRetrans(retransData, throughputData);
-	                                //console.log("retransData", retransData);
-	                                //result = retransData;
-	                                data.results = [];
-	                                data.stats = retransData.stats;
-	                                data.results = retransData.results;
-	                            }
-	                        }
 	                        for (var j in data.results) {
 	                            var result = data.results[j];
 	                            var series = result.values;
@@ -25920,14 +25933,14 @@
 	                            if (_esmondName == "packet-retransmits" && false) {
 	                                console.log("filter", filter);
 	
-	                                var _retransData = _GraphDataStore2.default.getChartData(retransFilter, this.state.itemsToHide);
-	                                var _throughputFilter = { eventType: "throughput", "metadata-key": properties["metadata-key"], ipversion: _ipversion2, "ip-transport-protocol": "tcp" };
-	                                var _throughputData = _GraphDataStore2.default.getChartData(_throughputFilter, this.state.itemsToHide);
-	                                console.log("retransData", _retransData, "throughputData", _throughputData);
-	                                if (_retransData.results.length > 0) {
-	                                    _retransData = _GraphDataStore2.default.pairRetrans(_retransData, _throughputData);
-	                                    console.log("retransData", _retransData);
-	                                    result = _retransData;
+	                                var retransData = _GraphDataStore2.default.getChartData(retransFilter, this.state.itemsToHide);
+	                                var throughputFilter = { eventType: "throughput", "metadata-key": properties["metadata-key"], ipversion: _ipversion2, "ip-transport-protocol": "tcp" };
+	                                var throughputData = _GraphDataStore2.default.getChartData(throughputFilter, this.state.itemsToHide);
+	                                console.log("retransData", retransData, "throughputData", throughputData);
+	                                if (retransData.results.length > 0) {
+	                                    retransData = _GraphDataStore2.default.pairRetrans(retransData, throughputData);
+	                                    console.log("retransData", retransData);
+	                                    result = retransData;
 	                                }
 	                            }
 	

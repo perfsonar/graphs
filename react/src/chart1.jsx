@@ -431,15 +431,42 @@ export default React.createClass({
                 let ipversion = ipversions[i];
                 let throughputData = GraphDataStore.filterData( data, filters.throughput[ipversion], this.state.itemsToHide );
                 throughputData.sort(this.compareToolTipData);
+                console.log("throughputData", throughputData);
 
                 for(let i in throughputData) {
                     let row = throughputData[i];
+                    let key = row.properties["metadata-key"];
+                    let direction = row.properties.direction;
+
+                    // get retrans valuesA
+                    let retransFilter = {
+                        eventType: "packet-retransmits",
+                        ipversion: ipversion,
+                        "metadata-key": key,
+                        direction: direction
+
+                    };
+                    let retransData = GraphDataStore.filterData( data, retransFilter, this.state.itemsToHide );
+                    console.log("retransData tt", retransData);
+
+                    let retransVal = "";
+                    if ( retransData.length > 0 ) {
+                        retransVal = retransData[0].value;
+
+                    }
+
+                    let retransLabel = "";
+                    if ( ( typeof retransVal != "undefined" ) && retransVal != "" ) {
+                        retransLabel += "; retrans: " + retransVal;
+
+                    }
+
                     let dir = "-\u003e"; // Unicode >
                     if ( row.properties.direction == "reverse" ) {
                         dir = "\u003c-"; // Unicode <
                     }
                     throughputItems.push(
-                            <li>{dir} <SIValue value={row.value} digits={3} />bits/s ({row.properties.protocol.toUpperCase()})</li>
+                            <li>{dir} <SIValue value={row.value} digits={3} />bits/s ({row.properties.protocol.toUpperCase()}){retransLabel}</li>
 
                             );
 
@@ -733,6 +760,12 @@ export default React.createClass({
                         protocol = "";
                     }
 
+                    if ( eventType == "packet-retransmits" ) {
+                        // retrieve the trans instead of value
+                        value = valAtTime.value("retrans");
+
+                    }
+
                     if ( eventType == "packet-count-lost" && value > 1e-9 ) {
                         //console.log("packet-count-lost value", value);
 
@@ -888,24 +921,6 @@ export default React.createClass({
 
 
                     if ( this.state.active[type] && ( data.results.length > 0 ) ) {
-                        if ( esmondName == "packet-retransmits" && false ) {
-                            let retransFilter = {};
-                            retransFilter = { eventType: "packet-retransmits", ipversion: ipversion };
-                            console.log("retransFilter", retransFilter, "itemsToHide", this.state.itemsToHide );
-
-                            let retransData = GraphDataStore.getChartData( retransFilter, this.state.itemsToHide );
-                            let throughputFilter = { eventType: "throughput", ipversion: ipversion, "ip-transport-protocol": "tcp" };
-                            let throughputData = GraphDataStore.getChartData( throughputFilter, this.state.itemsToHide );
-                            //console.log("retransData", retransData, "throughputData", throughputData);
-                            if ( retransData.results.length > 0 ) {
-                                retransData = GraphDataStore.pairRetrans( retransData, throughputData );
-                                //console.log("retransData", retransData);
-                                //result = retransData;
-                                data.results = [];
-                                data.stats = retransData.stats;
-                                data.results = retransData.results;
-                            }
-                        }
                         for(let j in data.results) {
                             let result = data.results[j];
                             let series = result.values;
