@@ -25730,6 +25730,9 @@
 	
 	                for (var i in data) {
 	                    var row = data[i];
+	                    if (typeof row == "undefined" || typeof row.values == "undefined") {
+	                        continue;
+	                    }
 	                    var valAtTime = row.values.atTime(tracker);
 	                    var value = void 0;
 	                    if (typeof valAtTime != "undefined") {
@@ -25886,26 +25889,40 @@
 	                    var eventTypeStats = _GraphDataStore2.default.eventTypeStats;
 	
 	                    if (this.state.active[_type] && data.results.length > 0) {
+	                        if (_esmondName == "packet-retransmits" && false) {
+	                            var _retransFilter = {};
+	                            _retransFilter = { eventType: "packet-retransmits", ipversion: _ipversion2 };
+	                            console.log("retransFilter", _retransFilter, "itemsToHide", this.state.itemsToHide);
+	
+	                            var retransData = _GraphDataStore2.default.getChartData(_retransFilter, this.state.itemsToHide);
+	                            var throughputFilter = { eventType: "throughput", ipversion: _ipversion2, "ip-transport-protocol": "tcp" };
+	                            var throughputData = _GraphDataStore2.default.getChartData(throughputFilter, this.state.itemsToHide);
+	                            //console.log("retransData", retransData, "throughputData", throughputData);
+	                            if (retransData.results.length > 0) {
+	                                retransData = _GraphDataStore2.default.pairRetrans(retransData, throughputData);
+	                                //console.log("retransData", retransData);
+	                                //result = retransData;
+	                                data.results = [];
+	                                data.stats = retransData.stats;
+	                                data.results = retransData.results;
+	                            }
+	                        }
 	                        for (var j in data.results) {
 	                            var result = data.results[j];
 	                            var series = result.values;
 	                            var properties = result.properties;
 	
-	                            if (_esmondName == "packet-retransmits") {
+	                            if (_esmondName == "packet-retransmits" && false) {
 	                                console.log("filter", filter);
 	
-	                                var retransFilter = {};
-	                                retransFilter = { eventType: "packet-retransmits", "metadata-key": properties["metadata-key"], ipversion: _ipversion2 };
-	                                console.log("retransFilter", retransFilter, "itemsToHide", this.state.itemsToHide);
-	                                //let retransData = GraphDataStore.filterData( data, retransFilter, this.state.itemsToHide );
-	
-	                                var retransData = _GraphDataStore2.default.getChartData(retransFilter, this.state.itemsToHide);
-	                                var throughputFilter = { eventType: "throughput", "metadata-key": properties["metadata-key"], ipversion: _ipversion2, "ip-transport-protocol": "tcp" };
-	                                var throughputData = _GraphDataStore2.default.getChartData(throughputFilter, this.state.itemsToHide);
-	                                console.log("retransData", retransData, "throughputData", throughputData);
-	                                if (retransData.results.length > 0) {
-	                                    retransData = _GraphDataStore2.default.pairRetrans(retransData, throughputData);
-	                                    console.log("retransData", retransData);
+	                                var _retransData = _GraphDataStore2.default.getChartData(retransFilter, this.state.itemsToHide);
+	                                var _throughputFilter = { eventType: "throughput", "metadata-key": properties["metadata-key"], ipversion: _ipversion2, "ip-transport-protocol": "tcp" };
+	                                var _throughputData = _GraphDataStore2.default.getChartData(_throughputFilter, this.state.itemsToHide);
+	                                console.log("retransData", _retransData, "throughputData", _throughputData);
+	                                if (_retransData.results.length > 0) {
+	                                    _retransData = _GraphDataStore2.default.pairRetrans(_retransData, _throughputData);
+	                                    console.log("retransData", _retransData);
+	                                    result = _retransData;
 	                                }
 	                            }
 	
@@ -25928,7 +25945,7 @@
 	                                        stats.min = 1e-9;
 	                                    }
 	                                    var scaledSeries = _GraphDataStore2.default.scaleValues(series, stats.max);
-	                                    series = scaledSeries;
+	                                    //series = scaledSeries;
 	                                }
 	                            }
 	
@@ -49785,7 +49802,11 @@
 	        });
 	
 	        console.log("outputData", outputData);
+	        console.log("output", output);
 	        this.eventTypeStats = outputData;
+	
+	        // Create retransmit series
+	        output = this.pairRetrans(output);
 	
 	        // Create failure series
 	
@@ -49881,43 +49902,71 @@
 	        }
 	        return testType;
 	    },
-	    pairRetrans: function pairRetrans(retransData, data) {
+	    pairRetrans: function pairRetrans(data) {
+	        var _this3 = this;
+	
+	        var retransFilter = { eventType: "packet-retransmits" };
+	        console.log("retransFilter", retransFilter);
+	        var retransData = this.filterData(data, retransFilter, []);
+	        var tputFilter = { eventType: "throughput", "ip-transport-protocol": "tcp" };
+	        var tputData = this.filterData(data, tputFilter);
+	        console.log("retransData", retransData, "tputData", tputData);
+	        var newSeries = [];
+	
 	        var deleteIndices = [];
-	        console.log("pairRetrans", retransData, data);
+	        //console.log("pairRetrans", retransData, data );
 	
 	        var _loop4 = function _loop4() {
-	            var row = retransData.results[i];
+	            var row = retransData[i];
 	            var eventType = row.properties.eventType;
 	            var key = row.properties["metadata-key"];
 	            var direction = row.properties["direction"];
 	
 	            // If this is throughput, add the value of the
 	            // corresponding retrans type 
+	            var self = _this3;
+	            self.row = row;
 	
-	            if (eventType == "packet-retransmits") {
-	                var indices = $.map(data.results, function (item, index) {
+	            var indices = $.map(data, function (row, index) {
+	                if (eventType == "packet-retransmits") {
 	                    // If the value has the same "metadata-key", it's from the same test
-	                    if (item.properties["metadata-key"] == key && item.properties["direction"] == direction) {
-	                        if (item.properties.eventType == "throughput") {
-	                            row.retrans = data.results[index].value;
+	                    //for(var j in tputData ) {
+	                    // var tpItem = tputData[j];
+	                    var tpItem = data[index];
+	                    data[index];
+	
+	                    if (tpItem.properties["metadata-key"] == key && tpItem.properties["direction"] == direction) {
+	                        if (tpItem.properties.eventType == "throughput") {
+	                            //row.retrans = data.results[index].value;
 	
 	                            // handle the throughput/retrans values
-	                            var newData = [];
+	                            var newEvents = [];
 	                            var _iteratorNormalCompletion = true;
 	                            var _didIteratorError = false;
 	                            var _iteratorError = undefined;
 	
 	                            try {
-	                                for (var _iterator = item.values.events()[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-	                                    var e = _step.value;
+	                                for (var _iterator = self.row.values.events()[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+	                                    var reEvent = _step.value;
 	
-	                                    if (typeof e == "undefined" || e === null) {
-	                                        break;
+	                                    if (typeof reEvent == "undefined" || reEvent === null) {
+	                                        return null;
 	                                    }
-	                                    console.log(e.toString());
-	                                    console.log("e.timestamp()", e.timestamp());
-	                                    var tputVal = row.values.atTime(e.timestamp());
-	                                    console.log("tputVal", tputVal.value());
+	                                    //console.log( reEvent.toString() );
+	                                    //console.log("reEvent.timestamp()", reEvent.timestamp() );
+	
+	
+	                                    var retransVal = reEvent.value();
+	
+	                                    if (retransVal < 1) {
+	                                        continue;
+	                                    }
+	
+	                                    var tputVal = tpItem.values.atTime(reEvent.timestamp()).value();
+	
+	                                    //console.log("tputVal", tputVal, "retransVal", retransVal );
+	                                    var newEvent = new _pondjs.Event(reEvent.timestamp(), { value: tputVal, retrans: retransVal });
+	                                    newEvents.push(newEvent);
 	                                }
 	                            } catch (err) {
 	                                _didIteratorError = true;
@@ -49934,29 +49983,49 @@
 	                                }
 	                            }
 	
+	                            var series = new _pondjs.TimeSeries({
+	                                name: "Retransmits",
+	                                events: newEvents
+	                            });
+	                            var newRow = {};
+	                            newRow.properties = self.row.properties;
+	                            newRow.values = series;
+	                            newSeries.push(newRow);
+	
+	                            //return index;
+	
+	
+	                            //return series;
+	                        } else if (eventType == "packet-retransmits") {
 	                            return index;
 	                        }
-	                    }
-	                });
 	
-	                deleteIndices = deleteIndices.concat(indices);
-	            }
+	                        //retransData[i].values = series;
+	                        //retransData.stats = data.stats;
+	                    }
+	                    //}
+	                    //return index;
+	                }
+	            });
+	            deleteIndices = deleteIndices.concat(indices);
 	        };
 	
-	        for (var i in retransData.results) {
+	        for (var i in retransData) {
 	            _loop4();
 	        }
 	
 	        // Delete the values with "packet-count-sent"
-	        /*        
-	                data.results = $.map( data.results, function( item, index ) {
-	                    if ( deleteIndices.indexOf( index ) > -1 ) {
-	                        return null;
-	                    } else {
-	                        return item;
-	                    }
-	                });
-	          */
+	
+	        data = $.map(data, function (item, index) {
+	            if (deleteIndices.indexOf(index) > -1) {
+	                return null;
+	            } else {
+	                return item;
+	            }
+	        });
+	
+	        data = data.concat(newSeries);
+	
 	        return data;
 	    },
 	    pairSentLost: function pairSentLost(data) {

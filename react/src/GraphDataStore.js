@@ -706,7 +706,11 @@ module.exports = {
         });
 
         console.log("outputData", outputData);
+        console.log("output", output);
         this.eventTypeStats = outputData;
+
+        // Create retransmit series
+        output = this.pairRetrans( output );
 
         // Create failure series
 
@@ -809,64 +813,108 @@ module.exports = {
         return testType;
 
     },
-    pairRetrans: function( retransData, data ) {
-        let deleteIndices = [];
-        console.log("pairRetrans", retransData, data );
+    pairRetrans: function( data ) {
+        let retransFilter = { eventType: "packet-retransmits" };
+        console.log("retransFilter", retransFilter );
+        let retransData = this.filterData( data, retransFilter, [] );
+        let tputFilter = { eventType: "throughput", "ip-transport-protocol": "tcp" };
+        let tputData = this.filterData( data, tputFilter ); 
+        console.log("retransData", retransData, "tputData", tputData);
+        let newSeries = [];
 
-        for(var i in retransData.results ) {
-            let row = retransData.results[i];
+        let deleteIndices = [];
+        //console.log("pairRetrans", retransData, data );
+
+        for(var i in retransData ) {
+            let row = retransData[i];
             let eventType = row.properties.eventType;
             let key = row.properties["metadata-key"];
             let direction = row.properties["direction"];
 
             // If this is throughput, add the value of the
             // corresponding retrans type 
+            let self = this;
+            self.row = row;
 
-            if ( eventType == "packet-retransmits" ) {
-                let indices = $.map( data.results, function( item, index ) {
+            let indices = $.map( data, function( row, index ) {
+                if ( eventType == "packet-retransmits" ) {
                     // If the value has the same "metadata-key", it's from the same test
-                    if ( item.properties["metadata-key"] == key && item.properties["direction"] == direction ) {
-                        if ( item.properties.eventType == "throughput" ) {
-                            row.retrans = data.results[index].value;
+                    //for(var j in tputData ) {
+                       // var tpItem = tputData[j];
+                       var tpItem = data[index];
+                       data[index];
 
-                            // handle the throughput/retrans values
-                            let newData = [];
-                            for ( let e of item.values.events() ) {
-                                if ( typeof e == "undefined" || e === null ) {
-                                    break;
+                        if ( tpItem.properties["metadata-key"] == key && tpItem.properties["direction"] == direction ) {
+                            if ( tpItem.properties.eventType == "throughput" ) {
+                                //row.retrans = data.results[index].value;
+
+                                // handle the throughput/retrans values
+            let newEvents = [];
+                                for ( let reEvent of self.row.values.events() ) {
+                                    if ( typeof reEvent == "undefined" || reEvent === null ) {
+                                        return null;
+                                    }
+                                    //console.log( reEvent.toString() );
+                                    //console.log("reEvent.timestamp()", reEvent.timestamp() );
+
+
+                                    let retransVal = reEvent.value();
+
+                                    if ( retransVal < 1 ) {
+                                        continue;
+
+                                    }
+
+                                    let tputVal = tpItem.values.atTime( reEvent.timestamp() ).value();
+
+                                    //console.log("tputVal", tputVal, "retransVal", retransVal );
+                                    let newEvent = new Event(reEvent.timestamp(), { value: tputVal, retrans: retransVal }); 
+                                    newEvents.push( newEvent );
                                 }
-                                console.log( e.toString() );
-                                console.log("e.timestamp()", e.timestamp() );
-                                let tputVal = row.values.atTime( e.timestamp() );
-                                console.log("tputVal", tputVal.value());
+                                const series = new TimeSeries({
+                                    name: "Retransmits",
+                                    events: newEvents
+                                });
+                                let newRow = {};
+                                newRow.properties = self.row.properties;
+                                newRow.values = series;
+                                newSeries.push( newRow );
+
+                                //return index;
 
 
-
-
-
+                                //return series;
+                            } else if ( eventType == "packet-retransmits" ) {
+                                return index;
                             }
 
-                            return index;
+                            //retransData[i].values = series;
+                            //retransData.stats = data.stats;
+
                         }
-                    }
-                });
+                    //}
+                    //return index;
+                }
 
-                deleteIndices = deleteIndices.concat( indices );
 
-            }
+
+            });
+            deleteIndices = deleteIndices.concat( indices );
 
         }
 
         // Delete the values with "packet-count-sent"
-/*        
-        data.results = $.map( data.results, function( item, index ) {
+        
+        data = $.map( data, function( item, index ) {
             if ( deleteIndices.indexOf( index ) > -1 ) {
                 return null;
             } else {
                 return item;
             }
         });
-  */      
+
+        data = data.concat( newSeries );
+        
         return data;
 
     },

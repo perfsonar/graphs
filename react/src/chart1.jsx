@@ -708,6 +708,10 @@ export default React.createClass({
 
                 for(let i in data) {
                     let row = data[i];
+                    if ( typeof( row ) == "undefined" || typeof ( row.values ) == "undefined" ) {
+                        continue;
+
+                    }
                     let valAtTime = row.values.atTime( tracker );
                     let value;
                     if ( typeof valAtTime != "undefined" ) {
@@ -879,27 +883,42 @@ export default React.createClass({
 
 
                     if ( this.state.active[type] && ( data.results.length > 0 ) ) {
+                        if ( esmondName == "packet-retransmits" && false ) {
+                            let retransFilter = {};
+                            retransFilter = { eventType: "packet-retransmits", ipversion: ipversion };
+                            console.log("retransFilter", retransFilter, "itemsToHide", this.state.itemsToHide );
+
+                            let retransData = GraphDataStore.getChartData( retransFilter, this.state.itemsToHide );
+                            let throughputFilter = { eventType: "throughput", ipversion: ipversion, "ip-transport-protocol": "tcp" };
+                            let throughputData = GraphDataStore.getChartData( throughputFilter, this.state.itemsToHide );
+                            //console.log("retransData", retransData, "throughputData", throughputData);
+                            if ( retransData.results.length > 0 ) {
+                                retransData = GraphDataStore.pairRetrans( retransData, throughputData );
+                                //console.log("retransData", retransData);
+                                //result = retransData;
+                                data.results = [];
+                                data.stats = retransData.stats;
+                                data.results = retransData.results;
+                            }
+                        }
                         for(let j in data.results) {
                             let result = data.results[j];
                             let series = result.values;
                             let properties = result.properties;
 
-                            if ( esmondName == "packet-retransmits" ) {                                
+                            if ( esmondName == "packet-retransmits" && false ) {
                                 console.log("filter", filter);
-
-                                let retransFilter = {};
-                                retransFilter = { eventType: "packet-retransmits", "metadata-key": properties["metadata-key"], ipversion: ipversion };
-                                console.log("retransFilter", retransFilter, "itemsToHide", this.state.itemsToHide );
-                                //let retransData = GraphDataStore.filterData( data, retransFilter, this.state.itemsToHide );
 
                                 let retransData = GraphDataStore.getChartData( retransFilter, this.state.itemsToHide );
                                 let throughputFilter = { eventType: "throughput", "metadata-key": properties["metadata-key"], ipversion: ipversion, "ip-transport-protocol": "tcp" };
                                 let throughputData = GraphDataStore.getChartData( throughputFilter, this.state.itemsToHide );
-                                    console.log("retransData", retransData, "throughputData", throughputData);
+                                console.log("retransData", retransData, "throughputData", throughputData);
                                 if ( retransData.results.length > 0 ) {
                                     retransData = GraphDataStore.pairRetrans( retransData, throughputData );
                                     console.log("retransData", retransData);
+                                    result = retransData;
                                 }
+
 
                             }
 
@@ -928,7 +947,7 @@ export default React.createClass({
                                         stats.min = 1e-9;
                                     }
                                     var scaledSeries = GraphDataStore.scaleValues( series, stats.max );
-                                    series = scaledSeries;
+                                    //series = scaledSeries;
 
                                 }
 
