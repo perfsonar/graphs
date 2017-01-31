@@ -815,15 +815,12 @@ module.exports = {
     },
     pairRetrans: function( data ) {
         let retransFilter = { eventType: "packet-retransmits" };
-        console.log("retransFilter", retransFilter );
         let retransData = this.filterData( data, retransFilter, [] );
         let tputFilter = { eventType: "throughput", "ip-transport-protocol": "tcp" };
         let tputData = this.filterData( data, tputFilter ); 
-        console.log("retransData", retransData, "tputData", tputData);
         let newSeries = [];
 
         let deleteIndices = [];
-        //console.log("pairRetrans", retransData, data );
 
         for(var i in retransData ) {
             let row = retransData[i];
@@ -839,14 +836,11 @@ module.exports = {
             let indices = $.map( data, function( row, index ) {
                 if ( eventType == "packet-retransmits" ) {
                     // If the value has the same "metadata-key", it's from the same test
-                    //for(var j in tputData ) {
-                       // var tpItem = tputData[j];
                        var tpItem = data[index];
                        data[index];
 
                         if ( tpItem.properties["metadata-key"] == key && tpItem.properties["direction"] == direction ) {
                             if ( tpItem.properties.eventType == "throughput" ) {
-                                //row.retrans = data.results[index].value;
 
                                 // handle the throughput/retrans values
             let newEvents = [];
@@ -854,9 +848,6 @@ module.exports = {
                                     if ( typeof reEvent == "undefined" || reEvent === null ) {
                                         return null;
                                     }
-                                    //console.log( reEvent.toString() );
-                                    //console.log("reEvent.timestamp()", reEvent.timestamp() );
-
 
                                     let retransVal = reEvent.value();
 
@@ -867,7 +858,6 @@ module.exports = {
 
                                     let tputVal = tpItem.values.atTime( reEvent.timestamp() ).value();
 
-                                    //console.log("tputVal", tputVal, "retransVal", retransVal );
                                     let newEvent = new Event(reEvent.timestamp(), { value: tputVal, retrans: retransVal }); 
                                     newEvents.push( newEvent );
                                 }
@@ -879,21 +869,11 @@ module.exports = {
                                 newRow.properties = self.row.properties;
                                 newRow.values = series;
                                 newSeries.push( newRow );
-
-                                //return index;
-
-
-                                //return series;
                             } else if ( eventType == "packet-retransmits" ) {
                                 return index;
                             }
 
-                            //retransData[i].values = series;
-                            //retransData.stats = data.stats;
-
                         }
-                    //}
-                    //return index;
                 }
 
 
@@ -904,7 +884,7 @@ module.exports = {
         }
 
         // Delete the values with "packet-count-sent"
-        
+
         data = $.map( data, function( item, index ) {
             if ( deleteIndices.indexOf( index ) > -1 ) {
                 return null;
@@ -914,7 +894,7 @@ module.exports = {
         });
 
         data = data.concat( newSeries );
-        
+
         return data;
 
     },

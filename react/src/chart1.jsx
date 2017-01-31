@@ -431,7 +431,6 @@ export default React.createClass({
                 let ipversion = ipversions[i];
                 let throughputData = GraphDataStore.filterData( data, filters.throughput[ipversion], this.state.itemsToHide );
                 throughputData.sort(this.compareToolTipData);
-                console.log("throughputData", throughputData);
 
                 for(let i in throughputData) {
                     let row = throughputData[i];
@@ -447,7 +446,6 @@ export default React.createClass({
 
                     };
                     let retransData = GraphDataStore.filterData( data, retransFilter, this.state.itemsToHide );
-                    console.log("retransData tt", retransData);
 
                     let retransVal = "";
                     if ( retransData.length > 0 ) {
@@ -509,9 +507,6 @@ export default React.createClass({
                             && row.sentValue != null ) {
                     lossItems.push(
                             <li>{dir} {row.value} lost ({row.lostValue} of {row.sentValue} packets) {"(" + label + ")"} </li>
-                            /*
-                            <li>{dir} {row.value} lost ({row.lostValue} of {row.sentValue} packets) {"(" + label + ")"}; key: {key} </li>
-                            */
                             );
                     } else {
                         lossItems.push(

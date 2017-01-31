@@ -25411,7 +25411,6 @@
 	                var _ipversion = ipversions[_i];
 	                var throughputData = _GraphDataStore2.default.filterData(data, filters.throughput[_ipversion], this.state.itemsToHide);
 	                throughputData.sort(this.compareToolTipData);
-	                console.log("throughputData", throughputData);
 	
 	                for (var _i2 in throughputData) {
 	                    var row = throughputData[_i2];
@@ -25427,7 +25426,6 @@
 	
 	                    };
 	                    var retransData = _GraphDataStore2.default.filterData(data, _retransFilter, this.state.itemsToHide);
-	                    console.log("retransData tt", retransData);
 	
 	                    var retransVal = "";
 	                    if (retransData.length > 0) {
@@ -25502,11 +25500,7 @@
 	                            " packets) ",
 	                            "(" + _label + ")",
 	                            " "
-	                        )
-	                        /*
-	                        <li>{dir} {row.value} lost ({row.lostValue} of {row.sentValue} packets) {"(" + label + ")"}; key: {key} </li>
-	                        */
-	                        );
+	                        ));
 	                    } else {
 	                        lossItems.push(_react2.default.createElement(
 	                            "li",
@@ -49945,15 +49939,12 @@
 	        var _this3 = this;
 	
 	        var retransFilter = { eventType: "packet-retransmits" };
-	        console.log("retransFilter", retransFilter);
 	        var retransData = this.filterData(data, retransFilter, []);
 	        var tputFilter = { eventType: "throughput", "ip-transport-protocol": "tcp" };
 	        var tputData = this.filterData(data, tputFilter);
-	        console.log("retransData", retransData, "tputData", tputData);
 	        var newSeries = [];
 	
 	        var deleteIndices = [];
-	        //console.log("pairRetrans", retransData, data );
 	
 	        var _loop4 = function _loop4() {
 	            var row = retransData[i];
@@ -49969,14 +49960,11 @@
 	            var indices = $.map(data, function (row, index) {
 	                if (eventType == "packet-retransmits") {
 	                    // If the value has the same "metadata-key", it's from the same test
-	                    //for(var j in tputData ) {
-	                    // var tpItem = tputData[j];
 	                    var tpItem = data[index];
 	                    data[index];
 	
 	                    if (tpItem.properties["metadata-key"] == key && tpItem.properties["direction"] == direction) {
 	                        if (tpItem.properties.eventType == "throughput") {
-	                            //row.retrans = data.results[index].value;
 	
 	                            // handle the throughput/retrans values
 	                            var newEvents = [];
@@ -49991,9 +49979,6 @@
 	                                    if (typeof reEvent == "undefined" || reEvent === null) {
 	                                        return null;
 	                                    }
-	                                    //console.log( reEvent.toString() );
-	                                    //console.log("reEvent.timestamp()", reEvent.timestamp() );
-	
 	
 	                                    var retransVal = reEvent.value();
 	
@@ -50003,7 +49988,6 @@
 	
 	                                    var tputVal = tpItem.values.atTime(reEvent.timestamp()).value();
 	
-	                                    //console.log("tputVal", tputVal, "retransVal", retransVal );
 	                                    var newEvent = new _pondjs.Event(reEvent.timestamp(), { value: tputVal, retrans: retransVal });
 	                                    newEvents.push(newEvent);
 	                                }
@@ -50030,20 +50014,10 @@
 	                            newRow.properties = self.row.properties;
 	                            newRow.values = series;
 	                            newSeries.push(newRow);
-	
-	                            //return index;
-	
-	
-	                            //return series;
 	                        } else if (eventType == "packet-retransmits") {
 	                            return index;
 	                        }
-	
-	                        //retransData[i].values = series;
-	                        //retransData.stats = data.stats;
 	                    }
-	                    //}
-	                    //return index;
 	                }
 	            });
 	            deleteIndices = deleteIndices.concat(indices);
@@ -101995,7 +101969,6 @@
 	            //let newItems = {};
 	            newItems[id] = options;
 	        }
-	        console.log("newItems", newItems);
 	        var active = this.state.active;
 	        active[id] = !active[id];
 	        this.setState({ active: active, itemsToHide: newItems });

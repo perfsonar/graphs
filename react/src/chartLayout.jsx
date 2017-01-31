@@ -162,7 +162,6 @@ export default React.createClass({
             //let newItems = {};
             newItems[id] = options;
         }
-        console.log("newItems", newItems);
         let active = this.state.active;
         active[id] = !active[id];
         this.setState({ active: active, itemsToHide: newItems } );
