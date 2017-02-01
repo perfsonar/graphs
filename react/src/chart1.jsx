@@ -59,14 +59,14 @@ const typesToChart = [
         label: "Packet Loss",
         unit: "fractional",
     },
-    /*
+// RETRANSMITS
     {
         name: "throughput",
         esmondName: "packet-retransmits",
         label: "Retransmits",
         unit: "packet",
     },
-*/
+
     {
         name: "latency",
         esmondName: "histogram-owdelay",
@@ -96,7 +96,8 @@ const scheme = {
     ipv6: "#633", // brown
     throughput: "#0076b4", // blue
     throughputTCP: "#0076b4", // blue
-    "packet-retransmits": "#56b4e9", // light blue
+    //"packet-retransmits": "#56b4e9", // light blue
+    "packet-retransmits": "#cc7dbe", // purple
     "packet-loss-rateLatency": "#2b9f78", // green
     "histogram-rtt": "#e5a11c", // yellow/orange
     "histogram-owdelay": "#633", // brown
@@ -165,6 +166,7 @@ function getChartStyle( options, column ) {
     let strokeStyle = "";
     let width = 3;
     let opacity = 1;
+    let fill = "none";
 
     switch ( options.protocol ) {
         case "tcp":
@@ -209,6 +211,9 @@ function getChartStyle( options, column ) {
             break;
         case "packet-retransmits":
             color = scheme["packet-retransmits"];
+            opacity = 0.9;
+            fill = "#cc7dbe";
+            width = 0;
             break;
 
     }
@@ -218,7 +223,7 @@ function getChartStyle( options, column ) {
     }
     let style = {};
     style[column] = {
-        normal: { stroke: color, strokeWidth: width, opacity: opacity, strokeDasharray: strokeStyle },
+        normal: { stroke: color, strokeWidth: width, opacity: opacity, strokeDasharray: strokeStyle, fill: fill },
             highlighted: { stroke: color, strokeWidth: width, opacity: opacity, strokeDasharray: strokeStyle },
             selected: { stroke: color, strokeWidth: width, opacity: opacity, strokeDasharray: strokeStyle },
             muted: { stroke: color, strokeWidth: width, opacity: opacity, strokeDasharray: strokeStyle }
@@ -439,12 +444,37 @@ export default React.createClass({
 
                 for(let i in throughputData) {
                     let row = throughputData[i];
+                    let key = row.properties["metadata-key"];
+                    let direction = row.properties.direction;
+
+                    // get retrans valuesA
+                    let retransFilter = {
+                        eventType: "packet-retransmits",
+                        ipversion: ipversion,
+                        "metadata-key": key,
+                        direction: direction
+
+                    };
+                    let retransData = GraphDataStore.filterData( data, retransFilter, this.state.itemsToHide );
+
+                    let retransVal = "";
+                    if ( retransData.length > 0 ) {
+                        retransVal = retransData[0].value;
+
+                    }
+
+                    let retransLabel = "";
+                    if ( ( typeof retransVal != "undefined" ) && retransVal != "" ) {
+                        retransLabel += "; retrans: " + retransVal;
+
+                    }
+
                     let dir = "-\u003e"; // Unicode >
                     if ( row.properties.direction == "reverse" ) {
                         dir = "\u003c-"; // Unicode <
                     }
                     throughputItems.push(
-                            <li>{dir} <SIValue value={row.value} digits={3} />bits/s ({row.properties.protocol.toUpperCase()})</li>
+                            <li>{dir} <SIValue value={row.value} digits={3} />bits/s ({row.properties.protocol.toUpperCase()}){retransLabel}</li>
 
                             );
 
@@ -487,9 +517,6 @@ export default React.createClass({
                             && row.sentValue != null ) {
                     lossItems.push(
                             <li>{dir} {row.value} lost ({row.lostValue} of {row.sentValue} packets) {"(" + label + ")"} </li>
-                            /*
-                            <li>{dir} {row.value} lost ({row.lostValue} of {row.sentValue} packets) {"(" + label + ")"}; key: {key} </li>
-                            */
                             );
                     } else {
                         lossItems.push(
@@ -727,6 +754,10 @@ export default React.createClass({
 
                 for(let i in data) {
                     let row = data[i];
+                    if ( typeof( row ) == "undefined" || typeof ( row.values ) == "undefined" ) {
+                        continue;
+
+                    }
                     let valAtTime = row.values.atTime( tracker );
                     let value;
                     if ( typeof valAtTime != "undefined" ) {
@@ -741,6 +772,12 @@ export default React.createClass({
 
                     if ( typeof protocol == "undefined" ) {
                         protocol = "";
+                    }
+
+                    if ( eventType == "packet-retransmits" ) {
+                        // retrieve the trans instead of value
+                        value = valAtTime.value("retrans");
+
                     }
 
                     if ( eventType == "packet-count-lost" && value > 1e-9 ) {
@@ -894,11 +931,30 @@ export default React.createClass({
                     data = GraphDataStore.getChartData( filter, this.state.itemsToHide );
                     let eventTypeStats = GraphDataStore.eventTypeStats;
 
+
+
+
                     if ( this.state.active[type] && ( data.results.length > 0 ) ) {
                         for(let j in data.results) {
                             let result = data.results[j];
                             let series = result.values;
                             let properties = result.properties;
+
+                            if ( esmondName == "packet-retransmits" && false ) {
+                                console.log("filter", filter);
+
+                                let retransData = GraphDataStore.getChartData( retransFilter, this.state.itemsToHide );
+                                let throughputFilter = { eventType: "throughput", "metadata-key": properties["metadata-key"], ipversion: ipversion, "ip-transport-protocol": "tcp" };
+                                let throughputData = GraphDataStore.getChartData( throughputFilter, this.state.itemsToHide );
+                                console.log("retransData", retransData, "throughputData", throughputData);
+                                if ( retransData.results.length > 0 ) {
+                                    retransData = GraphDataStore.pairRetrans( retransData, throughputData );
+                                    console.log("retransData", retransData);
+                                    result = retransData;
+                                }
+
+
+                            }
 
                             charts[type].data.push( result );
 
@@ -924,41 +980,48 @@ export default React.createClass({
                                         }
                                         stats.min = 1e-9;
                                     }
-                                    var scaledSeries = GraphDataStore.scaleValues( series, stats.max );
-                                    series = scaledSeries;
+                                    //var scaledSeries = GraphDataStore.scaleValues( series, stats.max );
+                                    //series = scaledSeries;
 
                                 }
 
                             }
 
-                            // push the charts for the main charts
-                            charts[type][ipv].push(
-                                    <LineChart key={type + Math.floor( Math.random() )}
+                            if ( esmondName == "packet-retransmits" ) {
+                                 charts[type][ipv].push( 
+                                    <ScatterChart
+                                        key={type + "retrans" + Math.floor( Math.random() )}
+                                        axis={"axis" + type}
+                                        series={series}
+                                        style={getChartStyle( properties )} smooth={false} breakLine={true}
+                                        radius={4.0}
+                                        columns={ [ "value" ] }
+                                        //info={hintValues}
+                                        //infoHeight={100}
+                                        //infoWidth={200}
+                                        //infoStyle={infoStyle}
+                                        //onSelectionChange={this.handleSelectionChanged}
+                                        selected={this.state.selection}
+                                        //onMouseNear={this.handleMouseNear}
+                                        //onClick={this.handleClick}
+                                        highlighted={this.state.highlight}
+                                    />
+
+                                         );
+                            } else {
+
+                                // push the charts for the main charts
+                                charts[type][ipv].push(
+                                        <LineChart key={type + Math.floor( Math.random() )}
                                         axis={"axis" + type} series={series}
                                         style={getChartStyle( properties )} smooth={false} breakLine={true}
                                         min={0}
                                         onSelectionChange={this.handleSelectionChanged}
-
+                                        onClick={this.handleClick}
                                         columns={[ "value" ]} />
-                                    );
-                            //for(let result in data.results ) {
-                            //}
-
-                            // push the brush charts, if enabled
-                            /*
-                            if ( this.state.showBrush === true ) {
-                                brushCharts[type][ipv].push(
-                                        <LineChart key={"brush" + [type] + Math.floor( Math.random() )}
-                                            axis={"brush_axis" + [type]} series={series}
-                                            style={getChartStyle( properties )} smooth={false} breakLine={true}
-                                            min={stats.min}
-                                            max={stats.max}
-                                            columns={[ "value" ]} />
                                         );
-                                brushCharts[type].stats = stats;
-                            }
 
-                        */
+                            }
                         }
                         charts[type].stats = stats;
 
@@ -1207,13 +1270,22 @@ export default React.createClass({
 
     renderError() {
         const data = this.state.dataError;
+        let msg;
+        if ( typeof data.responseJSON != "undefined" && data.responseJSON.detail != "undefined" ) {
+            msg = data.responseJSON.detail;
+        } else if ( typeof data.responseText != "undefined" ) {
+            msg = data.responseText;
+        } else {
+            msg = "An unknown error occurred";
+
+        }
         return (
                 <div>
                 <h3>Error loading data</h3>
                     <span className="alert-small-failure">
                         <i className="fa fa-exclamation-triangle"></i>
                          <b>Error retrieving data</b>
-                         <p>{data.responseJSON.detail}</p>
+                         <p>{msg}</p>
                     </span>
                 </div>
                );
@@ -1377,6 +1449,7 @@ export default React.createClass({
     },
     dataError: function() {
         let data = GraphDataStore.getErrorData();
+        console.log("dataError", data);
         this.setState({dataError: data, loading: false});
 
     },

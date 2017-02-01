@@ -162,22 +162,14 @@ export default React.createClass({
             //let newItems = {};
             newItems[id] = options;
         }
-        console.log("newItems", newItems);
         let active = this.state.active;
         active[id] = !active[id];
         this.setState({ active: active, itemsToHide: newItems } );
         //this.setHashVals( newItems );
-         //this.setHashVals( this.state.hashValues );
-         //this.updateURLHash();
-         /*
-         this.handleTimerangeChange({
-             "start": this.state.start,
-             "end": this.state.end,
-             "timeframe": timeframe
-         });
-        */
-        //this.forceUpdate();
-        //event.preventDefault();
+
+        //this.setHashVals( this.state.hashValues );
+        //this.updateURLHash();
+        event.preventDefault();
 
     },
 
@@ -225,7 +217,11 @@ export default React.createClass({
                                 </li>
 
                                 <li className={"graph-filter__item graph-filter__item packet-retransmits " + this.getActiveClass( this.state.active["eventType_packet-retransmits_"] )}>
-                                    <a href="#" onClick={this.toggleType.bind(this, {eventType: "packet-retransmits"})}>Retrans</a>
+                                    <a href="#" onClick={this.toggleType.bind(this, {eventType: "packet-retransmits"})}>Retrans
+                                    <svg width="10" height="10" className="direction-label">
+                                          <circle cx="5" cy="5" r="4" fill="#cc7dbe" />
+                                    </svg>
+                                    </a>
                                 </li>
 
                                 <li className={"graph-filter__item ipv6 " + this.getActiveClass( this.state.active["eventType_histogram-owdelay_"] )}>
