@@ -4,6 +4,8 @@ import HostInfoStore from "./HostInfoStore";
 
 import InterfaceInfoStore from "./InterfaceInfoStore";
 
+import GraphUtilities from "./GraphUtilities";
+
 import SIValue from "./SIValue";
 
 import "../css/graphs.css";
@@ -12,7 +14,7 @@ let EventEmitter = require('events').EventEmitter;
 
 let emitter = new EventEmitter();
 
-let moment = require('moment');
+let moment = require('moment-timezone');
 
 export default React.createClass({
     hostInfo: [],
@@ -22,8 +24,10 @@ export default React.createClass({
             start: this.props.start,
             end: this.props.end,
             timeframe: this.props.timeframe,
+            summaryWindow: 3600,
             interfaceInfo: null,
             traceInfo: [],
+            pageURL: window.location.href
         };
     },
     getTime() {
@@ -36,19 +40,36 @@ export default React.createClass({
 
 
     },
+    getCurrentURL() {
+        let url = window.location.href;
+        console.log("Current page URL", url);
+        this.setState({pageURL: url});
+        return url;
+
+    },
     render() {
         let startDate = new Date( this.state.start * 1000 );
         let endDate = new Date( this.state.end * 1000 );
-
-        let date = "ddd MM/DD/YYYY";
-        let time = "HH:mm:ss ZZ";
-
         let startMoment = moment( startDate );
         let endMoment = moment( endDate );
-        //let startOut = startMoment.format( format );
-        let endOut = endMoment.format( date );
+
+        let startTZ = GraphUtilities.getTimezone( startDate );
+        let endTZ = GraphUtilities.getTimezone( endDate );
+
+        let date = "ddd MM/DD/YYYY";
+        let time = "HH:mm:ss";
 
         return (
+
+    <div>
+        <div className="chartTitleBar">
+            <span>perfSONAR test results</span>
+            <span className="chartShareLinkContainer">
+                <a href={this.state.pageURL} target="_blank">
+                    <i className="fa fa-share-square-o" aria-hidden="true"></i> Share/open in new window
+                </a>
+            </span>
+        </div>
 
         <div className="chartHeader">
                     <div className="overview overview--pad">
@@ -85,7 +106,7 @@ export default React.createClass({
                                 <span className="timerange_holder">
                                     { startMoment.format( date )}
                                     <br />
-                                    { startMoment.format( time )}
+                                    { startMoment.format( time )} {startTZ}
                                  </span>
                                  <span className="timerange_holder">
                                          to
@@ -93,7 +114,7 @@ export default React.createClass({
                                 <span className="timerange_holder">
                                     { endMoment.format( date )}
                                     <br />
-                                    { endMoment.format( time )}
+                                    { endMoment.format( time ) } {endTZ}
                                 </span> 
                                 </div>
 
@@ -103,12 +124,18 @@ export default React.createClass({
 
         {/* End chartHeader */}
         </div>
+    </div>
         ); // End render()
+    },
+    componentWillReceiveProps: function( nextProps ) {
+        this.getCurrentURL();
+
     },
     changeTimePeriod: function( event ) {
         let period = event.target.value;
-        let vars = this.getTimeVars(period);
+        let vars = GraphUtilities.getTimeVars(period);
         let timeDiff = vars.timeDiff;
+        let summaryWindow = vars.summaryWindow;
         let half = timeDiff / 2;
         let start = this.state.start;
         let end = this.state.end;
@@ -119,16 +146,24 @@ export default React.createClass({
         if ( newEnd > now ) {
             newEnd = now;
         }
-        // convert ms to s
-        //newEnd = Math.floor( newEnd / 1000 ); 
+
+        // If newEnd is greater than now minus timeDiff, set newEnd to now
+        // because in this case we are "close enought" to "now" that we
+        // should go to current time
+        if ( newEnd > now - timeDiff ) {
+            newEnd = now;
+        }
+
 
         let newStart = newEnd - timeDiff;
 
         let options = {
             timeframe: period,
             start: newStart,
-            end: newEnd
+            end: newEnd,
+            summaryWindow: summaryWindow
         };
+        console.log("options", options);
         this.handleTimerangeChange( options );
     },
     getTraceURL: function(i) {
@@ -271,7 +306,7 @@ export default React.createClass({
 
     },
     handlePageChange: function( direction ) {
-        let timeVars = this.getTimeVars( this.state.timeframe );
+        let timeVars = GraphUtilities.getTimeVars( this.state.timeframe );
         let diff = timeVars.timeDiff;
         let newStart;
         let newEnd;
@@ -312,8 +347,9 @@ export default React.createClass({
         let options = {};
 
         let timeframe = this.state.timeframe || "1w";
-        let timeVars = this.getTimeVars( timeframe );
+        let timeVars = GraphUtilities.getTimeVars( timeframe );
         let diff = timeVars.timeDiff;
+        let summaryWindow = timeVars.summaryWindow;
 
         let now = Math.floor( new Date().getTime() / 1000 );
         let newEnd = now;
@@ -331,42 +367,10 @@ export default React.createClass({
         options.start = newStart;
         options.end = newEnd;
         options.timeframe = timeframe;
+        options.summaryWindow = summaryWindow;
 
         this.handleTimerangeChange( options, true );
 
     },
-
-    getTimeVars: function (period) {
-        let timeDiff;
-        let summaryWindow;
-        if (period == '4h') {
-            timeDiff = 60*60 * 4;
-            summaryWindow = 0;
-        } else if (period == '1d') {
-            timeDiff = 86400;
-            summaryWindow = 0;
-        } else if (period == '3d') {
-            timeDiff = 86400 * 3;
-            summaryWindow = 300;
-        } else if (period == '1w') {
-            timeDiff = 86400*7;
-            summaryWindow = 3600;
-        } else if (period == '1m') {
-            timeDiff = 86400*31;
-            summaryWindow = 86400;
-        } else if (period == '1y') {
-            timeDiff = 86400*365;
-            summaryWindow = 86400;
-        }
-        let timeRange = {
-            timeDiff: timeDiff,
-            summaryWindow: summaryWindow,
-            timeframe: period
-
-        };
-        return timeRange;
-
-    },
-
 
 });

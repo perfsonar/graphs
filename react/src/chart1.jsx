@@ -3,12 +3,12 @@ import _ from "underscore";
 import moment from "moment";
 import Markdown from "react-markdown";
 import GraphDataStore from "./GraphDataStore";
-//import Highlighter from "./highlighter";
-
+import GraphUtilities from "./GraphUtilities";
+import d3 from "d3";
 
 import { AreaChart, Brush, Charts, ChartContainer, ChartRow, YAxis, LineChart, ScatterChart, Highlighter, Resizable, Legend, styler } from "react-timeseries-charts";
 
-import { TimeSeries, TimeRange } from "pondjs";
+import { TimeSeries, TimeRange, Event } from "pondjs";
 
 import SIValue from "./SIValue";
 import "./chart1.css";
@@ -25,15 +25,48 @@ const text = 'perfSONAR chart';
 const typesToChart = [
     {
         name: "throughput",
+        esmondName: "throughput",
         label: "Throughput",
         unit: "bps",
     },
     {
         name: "loss",
+        esmondName: "packet-count-sent",
+        label: "Packet Loss",
+        unit: "packet",
+    },
+    {
+        name: "loss",
+        esmondName: "packet-count-lost",
+        label: "Packet Loss",
+        unit: "packet",
+    },
+    {
+        name: "loss",
+        esmondName: "packet-count-lost-bidir",
+        label: "Packet Loss",
+        unit: "packet",
+    },
+    {
+        name: "loss",
         esmondName: "packet-loss-rate",
+        label: "Packet Loss %",
+        unit: "fractional",
+    },
+    {
+        name: "loss",
+        esmondName: "packet-loss-rate-bidir",
         label: "Packet Loss",
         unit: "fractional",
     },
+    /*
+    {
+        name: "throughput",
+        esmondName: "packet-retransmits",
+        label: "Retransmits",
+        unit: "packet",
+    },
+*/
     {
         name: "latency",
         esmondName: "histogram-owdelay",
@@ -63,11 +96,14 @@ const scheme = {
     ipv6: "#633", // brown
     throughput: "#0076b4", // blue
     throughputTCP: "#0076b4", // blue
+    "packet-retransmits": "#56b4e9", // light blue
     "packet-loss-rateLatency": "#2b9f78", // green
-    "histogram-rtt": "#e5a11c", // yellow
+    "histogram-rtt": "#e5a11c", // yellow/orange
     "histogram-owdelay": "#633", // brown
     "packet-loss-rate": "#cc7dbe", // purple
     "packet-loss-rateThroughput": "#cc7dbe", // purple
+    "packet-loss-ratePing": "#e5801c", // browny orangey
+    //"packet-loss-ratePing": "#f0e442", // yellow
     //"packet-loss-rateThroughput": "#f0e54b" // yellos
     throughputUDP: "#d6641e" // vermillion
 };
@@ -133,17 +169,15 @@ function getChartStyle( options, column ) {
     switch ( options.protocol ) {
         case "tcp":
             color = scheme.tcp;
-            //width = 3;
             opacity = 0.8;
             break;
-        case "udp":
+        default:
             color = scheme.udp;
-            //width = 3;
             opacity = 0.8;
             break;
     }
 
-        //console.log("style options", options);
+       //console.log("style options", options);
     switch ( options.eventType ) {
         case "throughput":
             if ( options.protocol == "tcp" ) {
@@ -170,6 +204,12 @@ function getChartStyle( options, column ) {
             //color = scheme[options.mainEventType];
 
             break;
+        case "packet-loss-rate-bidir":
+            color = scheme["packet-loss-ratePing"];
+            break;
+        case "packet-retransmits":
+            color = scheme["packet-retransmits"];
+            break;
 
     }
     if ( options.direction == "reverse" ) {
@@ -184,12 +224,6 @@ function getChartStyle( options, column ) {
             muted: { stroke: color, strokeWidth: width, opacity: opacity, strokeDasharray: strokeStyle }
     };
     //console.log("style: " , style );
-    /*
-    style[column].stroke = color;
-    style[column].strokeWidth = width;
-    style[column].strokeDasharray = strokeStyle;
-    style[column].strokeOpacity = opacity;
-    */
     return style;
 
 }
@@ -199,25 +233,6 @@ const lineStyles = {
         stroke: scheme.udp,
         strokeWidth: 1.5
     }
-
-/*
- * Colors from mockup
- * blue: #004987
- * purple: #750075
- * orange: #ff8e01
-/*
-    node: {
-        normal: {stroke: "#737373", strokeWidth: 4, fill: "none"},
-        highlighted: {stroke: "#b1b1b1", strokeWidth: 4, fill: "#b1b1b1"}
-    },
-    line: {
-        normal: {stroke: "#1f77b4", strokeWidth: 3, fill: "none"},
-        highlighted: {stroke: "#4EC1E0",strokeWidth: 4,fill: "none"}
-    },
-    label: {
-        normal: {fill: "#9D9D9D",fontFamily: "verdana, sans-serif",fontSize: 10}
-    }
-    */
 };
 
 const reverseStyles = {
@@ -277,14 +292,17 @@ export default React.createClass({
                 throughput: true,
                 forward: true,
                 reverse: true,
-                "loss": true,
+                loss: true,
                 latency: true,
-                failures: true
+                failures: true,
+                "packet-retransmits": true,
+                "loss-latency": true
+
             },
-            //src: null,
-            //dst: null,
             start: this.props.start,
             end: this.props.end,
+            summaryWindow: this.props.summaryWindow,
+            agent: this.props.agent,
             tracker: null,
             chartSeries: null,
             timerange: timerange,
@@ -305,7 +323,8 @@ export default React.createClass({
             loading: true,
             params: undefined,
             dataloaded: false,
-            initialLoading: true
+            initialLoading: true,
+            lockToolTip: false
         };
     },
     handleSelectionChanged(point) {
@@ -320,12 +339,12 @@ export default React.createClass({
     handleMouseMove(event, point) {
         let { clientHeight, clientWidth } = this.refs.graphDiv;
         let posX = clientWidth - event.pageX;
-        if ( typeof this.refs.tooltip == "undefined" ) {
+        if ( typeof this.refs.tooltip == "undefined" || this.state.lockTooltip ) {
             return;
         }
         let { toolTipWidth, toolTipHeight } = this.refs.tooltip;
         //let offsetX = toolTipWidth;
-        let offsetX = Math.floor( clientWidth * 0.18 );
+        let offsetX = Math.floor( clientWidth * 0.23 );
         if ( posX < 0.25 * clientWidth ) {
             posX += offsetX / 4;
         } else {
@@ -335,20 +354,29 @@ export default React.createClass({
 
     },
 
+    handleClick(e, f, g) {
+        console.log("handleClick e f g", e, f, g);
+        this.setState({
+            lockToolTip: ! this.state.lockToolTip
+    //        highlight: point
+        });
+    },
+
     handleMouseNear(point) {
         this.setState({
             highlight: point
         });
     },
- 
+
     contextTypes: {
         router: React.PropTypes.func
     },
 
     renderToolTip() {
         let tracker = this.state.tracker;
-        let dateFormat = "MM/DD/YYYY HH:mm:ss ZZ";
+        let dateFormat = "MM/DD/YYYY HH:mm:ss";
         let date =  moment( tracker ).format(dateFormat);
+        let tz = GraphUtilities.getTimezone( tracker );
 
         let display = "block";
 
@@ -412,9 +440,10 @@ export default React.createClass({
 
                 }
 
-
-
                 let lossData = GraphDataStore.filterData( data, filters["loss"][ipversion], this.state.itemsToHide );
+
+                lossData = GraphDataStore.pairSentLost( lossData );
+
                 lossData.sort(this.compareToolTipData);
                 for(let i in lossData) {
                     let row = lossData[i];
@@ -423,17 +452,41 @@ export default React.createClass({
                         dir = "\u003c-"; // Unicode <
 
                     }
-                    let label = "one-way";
+                    let label = "latency";
                     if ( row.properties.mainEventType == "histogram-rtt" ) {
                         label = "ping";
+                    } else if ( row.properties.eventType == "packet-count-lost-bidir" ) {
+                        label = "ping count";
                     } else if ( row.properties.mainEventType == "throughput" ) {
-                        label = "throughput"
+                        label = "UDP"
+                    } else if ( row.properties.mainEventType == "histogram-owdelay" ) {
+                        label = "owamp";
+                    }
+
+                if ( row.properties.eventType == "packet-loss-rate") {
+                    row.value = this._formatToolTipLossValue( row.value, "float" ) + "%";
+                    row.lostValue = this._formatToolTipLossValue( row.lostValue, "integer" );
+                    row.sentValue = this._formatToolTipLossValue( row.sentValue, "integer" );
+                }  else {
+                    continue;
+                }
+
+                let key = row.properties["metadata-key"];
+
+                    if ( row.lostValue != null
+                            && row.sentValue != null ) {
+                    lossItems.push(
+                            <li>{dir} {row.value} lost ({row.lostValue} of {row.sentValue} packets) {"(" + label + ")"} </li>
+                            /*
+                            <li>{dir} {row.value} lost ({row.lostValue} of {row.sentValue} packets) {"(" + label + ")"}; key: {key} </li>
+                            */
+                            );
+                    } else {
+                        lossItems.push(
+                                <li>{dir} {row.value} ({label})</li>
+                                );
 
                     }
-                    lossItems.push(
-                            <li>{dir} {row.value.toPrecision(4)}  {"(" + label + ")"} </li>
-
-                            );
 
                 }
 
@@ -449,12 +502,12 @@ export default React.createClass({
                         dir = "\u003c-"; // Unicode <
 
                     }
-                    let label = "one-way";
+                    let label = "(owamp)";
                     if ( row.properties.mainEventType == "histogram-rtt" ) {
-                        label = "ping";
+                        label = "(ping)";
                     }
                     latencyItems.push(
-                            <li>{dir} {row.value.toFixed(1)} ms  {"(" + label + ")"} </li>
+                            <li>{dir} {row.value.toFixed(1)} ms {label} </li>
 
                             );
 
@@ -560,7 +613,7 @@ export default React.createClass({
             return (
             <div className="small-2 columns">
                 <div className="sidebar-popover graph-values-popover" display={display} style={toolTipStyle} ref="tooltip">
-                                    <span className="graph-values-popover__heading">{date}</span>
+                                    <span className="graph-values-popover__heading">{date} {tz}</span>
                                     <ul className="graph-values-popover__list">
                                         {tooltipItems}
                                     </ul>
@@ -574,10 +627,56 @@ export default React.createClass({
 
     },
 
+    _formatToolTipLossValue( value, format ) {
+        if ( typeof format == "undefined" ) {
+            format = "float";
+        }
+        if ( typeof value == "undefined" ) {
+            return null;
+        }
+
+        // Horrible hack; values of 0 are rewritten to 1e-9 since our log scale
+        // can't handle zeroes
+        if ( value == 1e-9 ) {
+            value = 0;
+        }  else {
+            if ( format == "integer" ) {
+                value = Math.floor( value );
+            } else if ( format == "percent" ) {
+                value = parseFloat( (value * 100).toPrecision(5) );
+            } else {
+                value = parseFloat( value.toPrecision(6) );
+
+            }
+        }
+        value = this._removeExp( value );
+        return value;
+    },
+
+    _removeExp( val ) {
+        val += "";
+        if ( ( val ).includes("e") ) {
+            var arr = val.split('e');
+            var precision = Math.abs(arr[1]);
+            var num = arr[0].split('.');
+            precision += num[1].length;
+
+            val = (+val).toFixed(precision);
+        }
+
+        return val;
+
+    },
+
     compareToolTipData( a, b ) {
-        if (a.sortKey < b.sortKey)
+        a = a.sortKey;
+        b = b.sortKey;
+        // Hack to show ping loss after owamp loss
+        a = a.replace(/-bidir/, "z-bidir");
+        b = b.replace(/-bidir/, "z-bidir");
+        if (a < b)
             return -1;
-        if (a.sortKey > b.sortKey)
+        if (a > b)
             return 1;
         return 0;
     },
@@ -616,12 +715,19 @@ export default React.createClass({
                     } else {
                         continue; // TODO: fix this so it actually removes the values?
                     }
-                    
-                    
 
                     let eventType = row.properties.eventType;
                     let direction = row.properties.direction;
                     let protocol = row.properties.protocol;
+
+                    if ( typeof protocol == "undefined" ) {
+                        protocol = "";
+                    }
+
+                    if ( eventType == "packet-count-lost" && value > 1e-9 ) {
+                        //console.log("packet-count-lost value", value);
+
+                    }
 
                     let sortKey = eventType + protocol + direction;
 
@@ -767,31 +873,60 @@ export default React.createClass({
 
                     }
                     data = GraphDataStore.getChartData( filter, this.state.itemsToHide );
+                    let eventTypeStats = GraphDataStore.eventTypeStats;
+
                     if ( this.state.active[type] && ( data.results.length > 0 ) ) {
                         for(let j in data.results) {
                             let result = data.results[j];
                             let series = result.values;
                             let properties = result.properties;
-                            stats.min = GraphDataStore.getMin( data.stats.min, stats.min );
-                            stats.max = GraphDataStore.getMax( data.stats.max, stats.max );
-                            // TODO: Try changing stats
-                            //stats.min = data.stats.min;
-                            //stats.max = data.stats.max;
+
+                            charts[type].data.push( result );
+
+                            // skip packet-count-lost and packet-count-sent
+                            if ( esmondName != "packet-count-sent"
+                                    && esmondName != "packet-count-lost"
+                                    && esmondName != "packet-count-lost-bidir"
+                                    && esmondName != "packet-retransmits"
+                                    ) {
+
+                                stats.min = GraphDataStore.getMin( data.stats.min, stats.min );
+                                stats.max = GraphDataStore.getMax( data.stats.max, stats.max );
+
+                            } else {
+                                if ( esmondName != "packet-retransmits" ) {
+                                    continue;
+                                } else {
+                                    if ( (typeof stats.max == "undefined") 
+                                            && (typeof eventTypeStats["packet-retransmits"].max != "undefined" ) ) {
+                                        stats.max = eventTypeStats["packet-retransmits"].max;
+                                        if ( stats.max = 1e-9 ) {
+                                            stats.max = 0.1;
+                                        }
+                                        stats.min = 1e-9;
+                                    }
+                                    var scaledSeries = GraphDataStore.scaleValues( series, stats.max );
+                                    series = scaledSeries;
+
+                                }
+
+                            }
 
                             // push the charts for the main charts
                             charts[type][ipv].push(
                                     <LineChart key={type + Math.floor( Math.random() )}
                                         axis={"axis" + type} series={series}
                                         style={getChartStyle( properties )} smooth={false} breakLine={true}
-                                        min={stats.min}
-                                        max={stats.max}
+                                        min={0}
+                                        onClick={this.handleClick}
+                                        //max={stats.max}
                                         columns={[ "value" ]} />
                                     );
                             //for(let result in data.results ) {
-                                charts[type].data.push( result );
                             //}
 
                             // push the brush charts, if enabled
+                            /*
                             if ( this.state.showBrush === true ) {
                                 brushCharts[type][ipv].push(
                                         <LineChart key={"brush" + [type] + Math.floor( Math.random() )}
@@ -804,6 +939,7 @@ export default React.createClass({
                                 brushCharts[type].stats = stats;
                             }
 
+                        */
                         }
                         charts[type].stats = stats;
 
@@ -842,7 +978,7 @@ export default React.createClass({
                                     //onSelectionChange={this.handleSelectionChanged}
                                     selected={this.state.selection}
                                     //onMouseNear={this.handleMouseNear}
-                                    //onClick={this.handleMouseNear}
+                                    //onClick={this.handleClick}
                                     highlighted={this.state.highlight}
                                 />
                             );
@@ -901,27 +1037,39 @@ export default React.createClass({
 
             // create a cache object, mostly so we can avoid displaying
             // latency twice, since it's in typesToChart twice
-            let chartRowsShown = {};
-            for (let h in typesToChart) {
-                let eventType = typesToChart[h];
-                let type = eventType.name;
-                let label = eventType.label;
-                let unit = eventType.unit;
-                let esmondName = eventType.esmondName;
+            var chartRowsShown = {};
+            for (var m in typesToChart) {
+                var eventType = typesToChart[m];
+                var type = eventType.name;
+                var label = eventType.label;
+                var unit = eventType.unit;
+                var esmondName = eventType.esmondName;
                 for( var i in ipversions ) {
-                    let ipversion = ipversions[i];
-                    let ipv = "ipv" + ipversion;
+                    var ipversion = ipversions[i];
+                    var ipv = "ipv" + ipversion;
 
                     if ( chartRowsShown[type + ipv] === true ) {
                         continue;
                     }
 
-                    let chartArr = charts[type][ipv];
+                    var chartArr = charts[type][ipv];
 
-                    let format = ".2s";
+                    var format = ".2s";
+                    
+                    var max = charts[type].stats.max;
 
                     if ( type == "latency" ) {
                         //format = ".1f";
+                        label += " ms";
+                    } else if ( type == "loss" ) {
+                        format = ".1f";
+                        label += " %";
+                        if ( charts[type].stats.max < 10 ) {
+                            format = ".2f";
+                        }
+
+                    } else if ( type == "throughput" ) {
+                        //label += " bps"
                     }
 
                     // push the chartrows for the main charts
@@ -935,8 +1083,8 @@ export default React.createClass({
                                 labelOffset={offsets.label}
                                 className="yaxis-label"
                                 format={format}
-                                min={charts[type].stats.min}
-                                max={charts[type].stats.max}
+                                min={0}
+                                max={max}
                                 width={80} type="linear" align="left" />
                             <Charts>
                             {charts[type][ipv]}
@@ -1047,6 +1195,7 @@ export default React.createClass({
         const data = this.state.dataError;
         return (
                 <div>
+                <h3>Error loading data</h3>
                     <span className="alert-small-failure">
                         <i className="fa fa-exclamation-triangle"></i>
                          <b>Error retrieving data</b>
@@ -1056,6 +1205,7 @@ export default React.createClass({
                );
 
     },
+
 
     render() {
         if ( this.state.dataError ) {
@@ -1165,7 +1315,7 @@ export default React.createClass({
     updateChartData: function() {
         let newChartSeries = GraphDataStore.getChartData();
         if ( this.state.initialLoading ) {
-            this.setState({ chartSeries: newChartSeries, initialLoading: false } );
+            this.setState({ chartSeries: newChartSeries, initialLoading: false, loading: true } );
         } else {
             this.setState({ chartSeries: newChartSeries, loading: false, dataloaded: false } );
         }
@@ -1180,38 +1330,57 @@ export default React.createClass({
         let end = this.state.end;
         let tool = this.props.tool;
         let ipversion = this.props.ipversion;
+        let agent = this.props.agent;
+
+        let summaryWindow = this.props.summaryWindow;
+
         let params = {
             tool: tool,
             ipversion: ipversion,
+            agent: agent
         };
-        this.setState({params: params});
+        this.setState({params: params, loading: true});
         let ma_url = this.props.ma_url || location.origin + "/esmond/perfsonar/archive/";
-        this.getDataFromMA(src, dst, start, end, ma_url, params);
+        this.getDataFromMA(src, dst, start, end, ma_url, params, summaryWindow);
 
     },
 
-    getDataFromMA: function(src, dst, start, end, ma_url, params ) {
+    getMetaDataFromMA: function() {
+
+    },
+
+    getDataFromMA: function(src, dst, start, end, ma_url, params, summaryWindow ) {
         this.setState({loading: true, dataloaded: false});
+        //let ma_url = this.props.ma_url || location.origin + "/esmond/perfsonar/archive/";
 
         GraphDataStore.subscribe(this.updateChartData);
 
         GraphDataStore.subscribeError(this.dataError);
 
-        GraphDataStore.getHostPairMetadata( src, dst, start, end, ma_url, params );
+        GraphDataStore.subscribeEmpty(this.dataEmpty);
+
+        GraphDataStore.getHostPairMetadata( src, dst, start, end, ma_url, params, summaryWindow );
     },
     dataError: function() {
         let data = GraphDataStore.getErrorData();
         this.setState({dataError: data, loading: false});
 
     },
+    dataEmpty: function() {
+        let data = {};
+        data.responseJSON = {};
+        data.responseJSON.detail = "No data found in the measurement archive";
+        this.setState({dataError: data, loading: false});
+
+    },
     componentWillReceiveProps( nextProps ) {
-        //console.log("nextProps", nextProps);
+        console.log("chart1 nextProps", nextProps);
         let timerange = new TimeRange([nextProps.start * 1000, nextProps.end * 1000 ]);
         this.setState({itemsToHide: nextProps.itemsToHide});
         if ( nextProps.start != this.state.start
                 || nextProps.end != this.state.end ) {
-            this.setState({start: nextProps.start, end: nextProps.end, chartSeries: null, timerange: timerange, brushrange: null, initialTimerange: timerange });
-            this.getDataFromMA(nextProps.src, nextProps.dst, nextProps.start, nextProps.end, nextProps.ma_url, this.state.params);
+            this.setState({start: nextProps.start, end: nextProps.end, chartSeries: null, timerange: timerange, brushrange: null, initialTimerange: timerange, summaryWindow: nextProps.summaryWindow });
+            this.getDataFromMA(nextProps.src, nextProps.dst, nextProps.start, nextProps.end, nextProps.ma_url, this.state.params, nextProps.summaryWindow);
         } else {
             GraphDataStore.toggleType( nextProps.itemsToHide) ;
 
@@ -1222,6 +1391,7 @@ export default React.createClass({
         this.serverRequest.abort();
         GraphDataStore.unsubscribe( this.updateChartData );
         GraphDataStore.unsubscribeError(this.dataError);
+        GraphDataStore.unsubscribeEmpty(this.dataEmpty);
     },
     handleHiddenItemsChange: function( options ) {
         this.toggleType( options );
