@@ -95,6 +95,15 @@
     background-color: #2b9f78;
 }
 
+.graph-filter__item.graph-filter__item.loss-ping.active.active a {
+    /*background-color: #f0e442; */  /* light yellow */
+    /* background-color: #d55e00; */ /* vermillion */
+    background-color: #e5801c; /* slightly browner orange */
+}
+
+.graph-filter__item.graph-filter__item.packet-retransmits.active a {
+    background-color: #56b4e9;
+}
 
 .graph-filter__item svg.direction-label {
     margin-left: 1em;
@@ -268,8 +277,19 @@
 div.graphholder div.small-2.columns {
     float:right;
     display:block;
+    width:23%;
 }
 
 div.graphholder #loading {
     margin-top:4em;
+}
+
+div.chartTitleBar {
+    margin-top:5px;
+    margin-bottom:-5px;
+    padding-left: 0.9375rem;
+    padding-right: 0.9375rem;
+}
+span.chartShareLinkContainer {
+    float:right;
 }

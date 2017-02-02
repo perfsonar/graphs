@@ -19,37 +19,48 @@ let end; // = Math.ceil( Date.now() / 1000 );
 
 let chartMetadata = [];
 let chartData = [];
+let maURLs = [];
 
 let metadataURLs = {};
 let dataURLs = {};
 
+let lossTypes = [ 'packet-loss-rate', 'packet-count-lost', 'packet-count-sent', 'packet-count-lost-bidir', 'packet-loss-rate-bidir' ];
+
 module.exports = {
 
-    eventTypes: ['throughput', 'histogram-owdelay', 'packet-loss-rate',
-                    'packet-retransmits', 'histogram-rtt', 'failures'],
-            //|| ['histogram-rtt'];
     maURL: null,
 
     initVars: function() {
         chartMetadata = [];
         chartData = [];
+        maURLs = [];
+        metadataURLs = {};
+        dataURLs = {};
+        reqCount = 0;
+        dataReqCount = 0;
+        completedReqs = 0;
+        completedDataReqs = 0;
+        this.summaryWindow = 3600;
+        this.eventTypeStats = {};
+
         this.eventTypes = ['throughput', 'histogram-owdelay', 'packet-loss-rate',
+                    'packet-loss-rate-bidir',
+                    'packet-count-lost', 'packet-count-sent', 'packet-count-lost-bidir',
                     'packet-retransmits', 'histogram-rtt', 'failures'];
         this.dataFilters = [];
         this.itemsToHide = [];
-        this.errorData = undefined;
+        this.errorData = null;
 
     },
 
-    getHostPairMetadata: function ( sources, dests, startInput, endInput, ma_url, params ) {
+    getHostPairMetadata: function ( sources, dests, startInput, endInput, ma_url, params, summaryWindow ) {
         start = startInput;
         end = endInput;
 
-        metadataURLs = {};
-
         this.initVars();
 
-        this.maURL = new URL(ma_url);
+        this.summaryWindow = summaryWindow;
+
         if ( !$.isArray( sources ) ) {
             sources = [ sources ];
         }
@@ -60,6 +71,8 @@ module.exports = {
         if ( !$.isArray( ma_url ) ) {
             ma_url = [ ma_url ];
         }
+
+        maURLs = ma_url;
 
 
 
@@ -101,11 +114,19 @@ module.exports = {
                             } else if ( val[i] == 6 ) {
                                 url += "&dns-match-rule=only-v6";
                             }
-
+                        } else if ( name == "agent" ) {
+                            if ( typeof val[i] != "undefined" ) {
+                                url += "&measurement-agent=" + val[i];
+                            }
                         }
 
                     }
                 }
+
+                //url += "&time-start=" + start;
+                //url += "&time-end=" + end;
+
+                // Make sure we don't retrieve the same URL twice
 
                 if ( metadataURLs[url] ) {
                     continue;
@@ -122,7 +143,12 @@ module.exports = {
                     this.handleMetadataResponse(data, direction[j]);
                 }.bind(this))
                 .fail(function( data ) {
+                //.fail(function( jqXHR, textStatus, errorThrown ) {
+                    console.log("get metadata failed");
                     this.handleMetadataError( data );
+                    // if we get an error, try the cgi instead 
+                    // and set a new flag, useProxy  and make
+                    // all requests through the proxy CGI
                 }.bind(this)
                 );
 
@@ -152,6 +178,11 @@ module.exports = {
             console.log("COMPLETED ALL", reqCount, " REQUESTS in", duration);
             completedReqs = 0;
             reqCount = 0;
+            if ( chartMetadata.length == 0 ) {
+                emitter.emit("empty");
+                return;
+
+            }
             data = this.filterEventTypes( chartMetadata );
             data = this.getData( chartMetadata );
             console.log("chartMetadata", chartMetadata);
@@ -204,105 +235,139 @@ module.exports = {
         return eventTypes;
 
     },
-    getData: function( metaData, window ) {
-        window = 3600; // todo: this should be dynamic
-        //window = 86400; // todo: this should be dynamic
+    getData: function( metaData ) {
+        let summaryWindow = this.summaryWindow; // || 3600; // todo: this should be dynamic
+        //summaryWindow = 86400; // todo: this should be dynamic
         let defaultSummaryType = "aggregation"; // TODO: allow other aggregate types
         let multipleTypes = [ "histogram-rtt", "histogram-owdelay" ];
-        let baseURL = this.maURL.origin;
-        dataReqCount = 0;
-        for(let i in metaData) {
-            let datum = metaData[i];
-            let direction = datum.direction;
-            for( let j in datum["event-types"] ) {
-                let eventTypeObj = datum["event-types"][j];
-                let eventType = eventTypeObj["event-type"];
-                let summaries = eventTypeObj["summaries"];
-                let summaryType = defaultSummaryType;
 
-                let source = datum.source;
+        for(let ma_url in maURLs) {
+            let maURL = new URL( maURLs[ma_url] );
+            let baseURL = maURL.origin;
+            dataReqCount = 0;
+            for(let i in metaData) {
+                let datum = metaData[i];
+                let direction = datum.direction;
+                for( let j in datum["event-types"] ) {
+                    let eventTypeObj = datum["event-types"][j];
+                    let eventType = eventTypeObj["event-type"];
+                    let summaries = eventTypeObj["summaries"];
+                    let summaryType = defaultSummaryType;
 
-                let addr = ipaddr.parse( source );
+                    let source = datum.source;
 
-                let ipversion;
-                if ( ipaddr.isValid( source ) ) {
-                    ipversion = addr.kind( source ).substring(3);
+                    let addr = ipaddr.parse( source );
 
-                } else {
-                    console.log("invalid IP address");
+                    let ipversion;
+                    if ( ipaddr.isValid( source ) ) {
+                        ipversion = addr.kind( source ).substring(3);
 
-                }
-
-                let uri = null;
-
-                if ( $.inArray( eventType, multipleTypes ) >= 0 ) {
-                    summaryType = "statistics";
-                    let win = $.grep( summaries, function( summary, k ) {
-                        return summary["summary-type"] == summaryType && summary["summary-window"] == window;
-                    });
-                    if ( win.length > 1 ) {
-                        console.log("WEIRD: multiple summary windows found. This should not happen.");
-                    } else if ( win.length == 1 ) {
-                        console.log("one summary window found");
-                        uri = win[0].uri;
                     } else {
-                        console.log("no summary windows found");
+                        console.log("invalid IP address");
+
                     }
 
-                } else {
-                    let win = $.grep( summaries, function( summary, k ) {
-                        return summary["summary-type"] == summaryType && summary["summary-window"] == window;
-                    });
-                    // TODO: allow lower summary windows
-                    if ( win.length > 1 ) {
-                        console.log("WEIRD: multiple summary windows found. This should not happen.");
-                    } else if ( win.length == 1 ) {
-                        console.log("one summary window found");
-                        uri = win[0].uri;
+                    let uri = null;
+
+                    if ( $.inArray( eventType, multipleTypes ) >= 0 ) {
+                        summaryType = "statistics";
+                        var that = this;
+                        let win = $.grep( summaries, function( summary, k ) {
+                            return summary["summary-type"] == summaryType && summary["summary-window"] == that.summaryWindow;
+                        });
+                        if ( win.length > 1 ) {
+                            console.log("WEIRD: multiple summary windows found. This should not happen.");
+                        } else if ( win.length == 1 ) {
+                            console.log("one summary window found");
+                            uri = win[0].uri;
+                        } else {
+                            console.log("no summary windows found");
+                        }
+
                     } else {
-                        console.log("no summary windows found");
+                        summaryType = "aggregation"
+                        var that = this;
+                        let win = $.grep( summaries, function( summary, k ) {
+                            return summary["summary-type"] == summaryType && summary["summary-window"] == that.summaryWindow;
+                        });
+
+                        // TODO: add ability to use aggregates
+                        // HERE NOW!
+
+                        // TODO: allow lower summary windows
+                        if ( win.length > 1 ) {
+                            console.log("WEIRD: multiple summary windows found. This should not happen.", win);
+                        } else if ( win.length == 1 ) {
+                            console.log("one summary window found", summaryWindow, eventType, win);
+                            uri = win[0].uri;
+                        } else {
+                            console.log("no summary windows found", summaryWindow, eventType, win);
+                        }
+
+
                     }
 
+                    if ( uri === null ) {
+                        uri = eventTypeObj["base-uri"];
+                    }
+                    uri += "?time-start=" + start + "&time-end=" + end;
+                    let url = baseURL + uri;
+                    console.log("data url", url);
+
+                    // Make sure we don't retrieve the same URL twice
+                    if ( dataURLs[url] ) {
+                        console.log("got the same URL twice: ", url);
+                        //continue;
+
+                    } else {
+                        dataURLs[url] = 1;
+
+                    }
+                    let row = pruneDatum( datum );
+                    row.protocol = datum["ip-transport-protocol"];
+                    row.ipversion = ipversion;
+
+                    dataReqCount++;
+
+                    if ( eventType == "failures" ) {
+                        console.log("FAILURES row", row);
+
+                    }
+                    this.serverRequest = $.get( url, function(data) {
+                        this.handleDataResponse(data, eventType, row);
+                    }.bind(this))
+                    .fail(function( data ) {
+                        console.log("get data failed; skipping this collection");
+                        this.handleDataResponse(null);
+                        //completedDataReqs++;
+                        //dataReqCount--;
+                        /*
+                        if ( dataReqCount <= 0 ) {
+                            this.handleMetadataError( data );
+                        }
+                        */
+                    }.bind(this));
+
 
                 }
-
-                if ( uri === null ) {
-                    console.log("uri not found, setting ... ");
-                    uri = eventTypeObj["base-uri"];
-                }
-                uri += "?time-start=" + start + "&time-end=" + end;
-                let url = baseURL + uri;
-                console.log("data url", url);
-                let row = pruneDatum( datum );
-                row.protocol = datum["ip-transport-protocol"];
-                row.ipversion = ipversion;
-
-                dataReqCount++;
-
-                if ( eventType == "failures" ) {
-                    console.log("FAILURES row", row);
-
-                }
-                this.serverRequest = $.get( url, function(data) {
-                    this.handleDataResponse(data, eventType, row);
-                }.bind(this));
-
-
             }
         }
 
     },
     handleDataResponse: function( data, eventType, datum ) {
-        let direction = datum.direction;
-        let protocol = datum.protocol;
-        let row = datum;
-        row.eventType = eventType;
-        row.data = data;
-        if (data.length > 0) {
-            chartData.push( row );
+        if ( data !== null ) {
+            let direction = datum.direction;
+            let protocol = datum.protocol;
+            let row = datum;
+            row.eventType = eventType;
+            row.data = data;
+            if (data.length > 0) {
+                chartData.push( row );
+                console.log("got datapoints", data.length, "eventType", eventType);
+            }
         }
         completedDataReqs++;
-        if ( completedDataReqs == dataReqCount ) {
+        if ( completedDataReqs >= dataReqCount ) {
             let endTime = Date.now();
             let duration = ( endTime - startTime ) / 1000;
             console.log("COMPLETED ALL DATA ", dataReqCount, " REQUESTS in", duration);
@@ -320,6 +385,9 @@ module.exports = {
             console.log("COMPLETED CREATING TIMESERIES in " , duration);
             console.log("chartData: ", chartData);
             emitter.emit("get");
+
+        } else {
+            //console.log("handled " + completedDataReqs + " out of " + dataReqCount + " data requests");
 
         }
     },
@@ -363,6 +431,10 @@ module.exports = {
                         let val = item[key];
                         if ( ( key in e.properties ) && e.properties[key] == val ) {
                             show  = false || show;
+                            if ( e.properties.eventType == "packet-loss-rate" && e.properties.mainTestType == "throughput" ) {
+                                console.log("packet-loss throughput");
+
+                            }
                             found++;
                         } else {
                             show = true || show;
@@ -507,6 +579,10 @@ module.exports = {
 
 
             testType = self.eventTypeToTestType( eventType );
+            if ( typeof testType == "undefined" ) {
+                console.log("undefined testType", datum);
+
+            }
             mainTestType = self.eventTypeToTestType( mainEventType );
 
             $.each(datum.data, function( valIndex, val ) {
@@ -518,7 +594,21 @@ module.exports = {
                     value = val["val"].minimum;
                 } else if ( eventType == 'histogram-rtt' ) {
                     value = val["val"].minimum;
+                } else if ( eventType == 'packet-count-lost' ) {
+                    if ( val["val"] > 0 ) {
+                        //console.log('packet count lost > 0', val);
+                    }
+
+                } else if ( eventType == 'packet-count-sent' ) {
+                    //console.log('packet count sent', val);
+
+                } else if ( eventType == 'packet-retransmits' ) {
+                } else if ( eventType == "packet-loss-rate" || eventType == "packet-loss-rate-bidir" ) {
+                    // convert to %
+                    value *= 100;
+
                 }
+
                 if (value <= 0 ) {
                     //console.log("VALUE IS ZERO OR LESS", Date());
                     value = 0.000000001;
@@ -533,7 +623,7 @@ module.exports = {
                 if ( failureValue != null ) {
                     let failureObj = {
                         errorText: failureValue.error,
-                        value: 85,
+                        value: 95,
                         type: "error"
                     };
                     let errorEvent = new Event( timestamp, failureObj );
@@ -551,8 +641,6 @@ module.exports = {
                 } else if ( value > max ) {
                     max = value;
                 }
-
-
 
             });
 
@@ -581,6 +669,7 @@ module.exports = {
         });
 
         console.log("outputData", outputData);
+        this.eventTypeStats = outputData;
 
         // Create failure series
 
@@ -651,16 +740,82 @@ module.exports = {
         });
         return output;
     },
+    scaleValues: function( series, maxVal ) {
+        var seriesMax = series.max();
+        if ( typeof maxVal == "undefined" ) {
+            maxVal = seriesMax;
+        }
+        var scaled = series.map( function( e ) {
+            let time = e.timestamp();
+            let value = e.value();
+            if ( maxVal == 0 || seriesMax == 0 || value == 1e-9 ) {
+                value = 1e-9;
+            } else {
+                value = e.value() * maxVal / seriesMax;
+            }
+            let newEvent = new Event( time, {"value": value});
+            return newEvent;
+        });
+        return scaled;
+
+
+    },
     eventTypeToTestType: function( eventType ) {
         let testType;
         if (eventType == "histogram-owdelay" || eventType == "histogram-rtt" ){
             testType = "latency";
         } else if ( eventType == "throughput") {
             testType = "throughput";
-        } else if ( eventType == "packet-loss-rate" ) {
+        } else if ( lossTypes.indexOf( eventType ) > -1 ) {
             testType = "loss";
         }
         return testType;
+
+    },
+    pairSentLost: function( data ) {
+        let deleteIndices = [];
+
+        for(var i in data ) {
+            let row = data[i];
+            let eventType = row.properties.eventType;
+            let key = row.properties["metadata-key"];
+
+            // If this is packet-count-sent, add the value to the
+            // corresponding packet-count-lost type and delete this
+
+            if ( eventType == "packet-loss-rate" || eventType == "packet-loss-rate-bidir"  ) {
+                let indices = $.map( data, function( item, index ) {
+                    // If the value has the same "metadata-key", it's from the same test
+                    if ( item.properties["metadata-key"] == key ) {
+                        if ( item.properties.eventType == "packet-count-sent" ) {
+                            row.sentValue = data[index].value;
+                            return index;
+                        } else if ( item.properties.eventType == "packet-count-lost" ) {
+                            row.lostValue = data[index].value;
+                            return index;
+                        } else if ( item.properties.eventType == "packet-count-lost-bidir" ) {
+                            row.lostValue = data[index].value;
+                            return index;
+                        }
+                    }
+                });
+
+                deleteIndices = deleteIndices.concat( indices );
+
+            }
+
+        }
+
+        // Delete the values with "packet-count-sent"
+        data = $.map( data, function( item, index ) {
+            if ( deleteIndices.indexOf( index ) > -1 ) {
+                return null;
+            } else {
+                return item;
+            }
+        });
+
+        return data;
 
     },
     subscribe: function( callback ) {
@@ -674,6 +829,12 @@ module.exports = {
     },
     unsubscribeError: function( callback ) {
         emitter.off("error", callback);
+    },
+    subscribeEmpty: function( callback ) {
+        emitter.on("empty", callback);
+    },
+    unsubscribeEmpty: function( callback ) {
+        emitter.off("empty", callback);
     },
     render: function() {
     },
