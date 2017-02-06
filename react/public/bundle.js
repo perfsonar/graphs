@@ -49411,6 +49411,22 @@
 	        }
 	        return eventTypes;
 	    },
+	    parseUrl: function () {
+	        var a = document.createElement('a');
+	        return function (url) {
+	            a.href = url;
+	            return {
+	                host: a.host,
+	                hostname: a.hostname,
+	                pathname: a.pathname,
+	                port: a.port,
+	                protocol: a.protocol,
+	                search: a.search,
+	                hash: a.hash,
+	                origin: a.protocol + a.host + a.port
+	            };
+	        };
+	    }(),
 	    getData: function getData(metaData) {
 	        var _this2 = this;
 	
@@ -49420,7 +49436,11 @@
 	        var multipleTypes = ["histogram-rtt", "histogram-owdelay"];
 	
 	        for (var ma_url in maURLs) {
-	            var maURL = new URL(maURLs[ma_url]);
+	            // "new URL" is clearer but doesn't work with some browsers
+	            // *ahem* IE, Edge ...
+	            //let maURL = new URL( maURLs[ma_url] );
+	            var maURL = this.parseUrl(maURLs[ma_url]);
+	
 	            var baseURL = maURL.origin;
 	            dataReqCount = 0;
 	            for (var i in metaData) {

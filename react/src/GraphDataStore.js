@@ -265,6 +265,22 @@ module.exports = {
         return eventTypes;
 
     },
+    parseUrl: (function () {
+        var a = document.createElement('a');
+        return function (url) {
+            a.href = url;
+            return {
+                host: a.host,
+                hostname: a.hostname,
+                pathname: a.pathname,
+                port: a.port,
+                protocol: a.protocol,
+                search: a.search,
+                hash: a.hash,
+                origin: a.protocol + a.host + a.port
+            };
+        }
+    })(),
     getData: function( metaData ) {
         let summaryWindow = this.summaryWindow; // || 3600; // todo: this should be dynamic
         //summaryWindow = 86400; // todo: this should be dynamic
@@ -272,7 +288,11 @@ module.exports = {
         let multipleTypes = [ "histogram-rtt", "histogram-owdelay" ];
 
         for(let ma_url in maURLs) {
-            let maURL = new URL( maURLs[ma_url] );
+            // "new URL" is clearer but doesn't work with some browsers
+            // *ahem* IE, Edge ...
+            //let maURL = new URL( maURLs[ma_url] );
+            let maURL = this.parseUrl( maURLs[ma_url] );
+
             let baseURL = maURL.origin;
             dataReqCount = 0;
             for(let i in metaData) {
