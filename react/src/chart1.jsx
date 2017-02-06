@@ -503,7 +503,8 @@ export default React.createClass({
                         label = "owamp";
                     }
 
-                if ( row.properties.eventType == "packet-loss-rate") {
+                if ( row.properties.eventType == "packet-loss-rate" 
+                     || row.properties.eventType == "packet-loss-rate-bidir" ) {
                     row.value = this._formatToolTipLossValue( row.value, "float" ) + "%";
                     row.lostValue = this._formatToolTipLossValue( row.lostValue, "integer" );
                     row.sentValue = this._formatToolTipLossValue( row.sentValue, "integer" );
