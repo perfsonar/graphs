@@ -582,6 +582,9 @@ module.exports = {
         let output = [];
         let self = this;
         console.log("esmondToTimeSeries inputData", inputData);
+        if ( ( typeof inputData == "undefined" ) || inputData.length == 0 ) {
+            return [];
+        }
 
         // loop through non-failures first, find maxes
         // then do failures and scale values

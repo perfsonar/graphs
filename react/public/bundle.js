@@ -49720,6 +49720,9 @@
 	        var output = [];
 	        var self = this;
 	        console.log("esmondToTimeSeries inputData", inputData);
+	        if (typeof inputData == "undefined" || inputData.length == 0) {
+	            return [];
+	        }
 	
 	        // loop through non-failures first, find maxes
 	        // then do failures and scale values
@@ -102327,12 +102330,24 @@
 	        */
 	
 	    handleTimerangeChange: function handleTimerangeChange(newTime, noupdateURL) {
+	        var timeVars = _GraphUtilities2.default.getTimeVars(newTime.timeframe);
+	        var timeDiff = timeVars.timeDiff;
+	        var oldStart = this.state.start;
+	        var oldEnd = this.state.end;
+	        var oldDiff = oldEnd - oldStart;
+	
+	        var now = Math.floor(new Date().getTime() / 1000);
+	
+	        if (now - newTime.end < oldDiff / 2) {
+	            newTime.end = now;
+	            newTime.start = newTime.end - timeDiff;
+	        }
+	
 	        console.log("chartLayout newTime", newTime);
 	        this.setState(newTime);
 	        //if ( !noupdateURL ) {
 	        this.setHashVals(newTime);
-	        //}
-	        //this.forceUpdate();
+	        //}        
 	        this.updateURLHash();
 	    },
 	

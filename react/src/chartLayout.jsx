@@ -344,12 +344,25 @@ export default React.createClass({
     */
 
     handleTimerangeChange: function( newTime, noupdateURL ) {
+        let timeVars = GraphUtilities.getTimeVars( newTime.timeframe );
+        let timeDiff = timeVars.timeDiff;
+        let oldStart = this.state.start;
+        let oldEnd = this.state.end;
+        let oldDiff = oldEnd - oldStart;
+
+        const now = Math.floor( new Date().getTime() / 1000 );
+
+        if ( now - newTime.end < oldDiff/2 ) {
+            newTime.end = now;
+            newTime.start = newTime.end - timeDiff;
+
+        }
+
         console.log("chartLayout newTime", newTime);
         this.setState( newTime );
         //if ( !noupdateURL ) {
             this.setHashVals( newTime );
-        //}
-        //this.forceUpdate();
+        //}        
         this.updateURLHash();
     },
 
