@@ -277,7 +277,7 @@ module.exports = {
                 protocol: a.protocol,
                 search: a.search,
                 hash: a.hash,
-                origin: a.protocol + a.host + a.port
+                origin: a.protocol + "//" + a.host + a.port
             };
         }
     })(),
@@ -611,6 +611,10 @@ module.exports = {
         $.each( inputData, function( index, datum ) {
             let max;
             let min;
+            if ( $.isEmptyObject( datum ) || !$.isPlainObject( datum ) || typeof datum == "undefined" ) {
+                    return true;
+
+            }
             let eventType = datum.eventType;
             let direction = datum.direction;
             let protocol = datum.protocol;
@@ -641,9 +645,15 @@ module.exports = {
             testType = self.eventTypeToTestType( eventType );
             if ( typeof testType == "undefined" ) {
                 console.log("undefined testType", datum);
+                return true;
 
             }
             mainTestType = self.eventTypeToTestType( mainEventType );
+
+            if ( typeof datum == "undefined" || typeof datum.data == "undefined" || datum.data.length == 0 ) {
+                return true;
+
+            }
 
             $.each(datum.data, function( valIndex, val ) {
                 const ts = val["ts"];
