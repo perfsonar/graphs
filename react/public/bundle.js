@@ -25011,6 +25011,7 @@
 	
 	var charts = void 0;
 	var chartData = void 0;
+	var tooltip = null;
 	
 	var text = 'perfSONAR chart';
 	
@@ -25321,12 +25322,15 @@
 	        });
 	    },
 	    handleMouseMove: function handleMouseMove(event, point) {
+	        if (this.state.lockToolTip) {
+	            return;
+	        }
 	        var _refs$graphDiv = this.refs.graphDiv,
 	            clientHeight = _refs$graphDiv.clientHeight,
 	            clientWidth = _refs$graphDiv.clientWidth;
 	
 	        var posX = clientWidth - event.pageX;
-	        if (typeof this.refs.tooltip == "undefined" || this.state.lockTooltip) {
+	        if (typeof this.refs.tooltip == "undefined") {
 	            return;
 	        }
 	        var _refs$tooltip = this.refs.tooltip,
@@ -25343,11 +25347,12 @@
 	        this.setState({ posX: posX });
 	    },
 	    handleClick: function handleClick(e, f, g) {
-	        console.log("handleClick e f g", e, f, g);
+	        console.log("handleClick", e, f, g);
 	        this.setState({
 	            lockToolTip: !this.state.lockToolTip
 	            //        highlight: point
 	        });
+	        console.log("this.state.lockToolTip", this.state.lockToolTip, "tooltip", tooltip);
 	    },
 	    handleMouseNear: function handleMouseNear(point) {
 	        this.setState({
@@ -25368,12 +25373,23 @@
 	
 	        var display = "block";
 	
-	        if (tracker != null && typeof charts != "undefined") {
+	        if (this.state.lockToolTip) {
+	            console.log("returning previous tooltip", tooltip);
+	            //return tooltip;
+	        }
+	
+	        // Something here maybe, where we need to make sure "tracker" isn't null when locking the tooltip?
+	        if (this.state.lockToolTip || tracker != null && typeof charts != "undefined") {
+	            //if ( true ) {
 	            var data = this.getTrackerData();
-	            if (data.length == 0) {
+	            if (typeof data == "undefined" || data.length == 0) {
 	                //return null;
 	                display = "none";
 	            } else {
+	                display = "block";
+	            }
+	
+	            if (this.state.lockToolTip) {
 	                display = "block";
 	            }
 	
@@ -25660,7 +25676,7 @@
 	                ));
 	            }
 	
-	            return _react2.default.createElement(
+	            var newTooltip = _react2.default.createElement(
 	                "div",
 	                { className: "small-2 columns" },
 	                _react2.default.createElement(
@@ -25680,6 +25696,8 @@
 	                    )
 	                )
 	            );
+	            tooltip = newTooltip;
+	            return tooltip;
 	        } else {
 	            return null;
 	        }
@@ -25732,7 +25750,15 @@
 	        return 0;
 	    },
 	    handleTrackerChanged: function handleTrackerChanged(trackerVal, selection) {
-	        this.setState({ tracker: trackerVal });
+	        if (this.state.lockToolTip) {
+	            //this.setState({tracker: this.state.tracker});
+	            //console.log("handleTrackerChanged locked; trackerVal:", trackerVal, selection);
+	        } else {
+	            //console.log("handleTrackerChanged not locked; trackerVal:", trackerVal, selection);
+	            //if ( trackerVal !== null ) {
+	            this.setState({ tracker: trackerVal });
+	            //}
+	        }
 	    },
 	    withinTime: function withinTime(ts1, ts2, range) {
 	        if (Math.abs(ts1 - ts2) < range) {
@@ -25986,6 +26012,7 @@
 	                                    axis: "axis" + _type, series: series,
 	                                    style: getChartStyle(properties), smooth: false, breakLine: true,
 	                                    min: 0,
+	                                    onSelectionChange: this.handleSelectionChanged,
 	                                    onClick: this.handleClick,
 	                                    columns: ["value"] }));
 	                            }
@@ -26019,9 +26046,9 @@
 	                                infoWidth: 200
 	                                //infoStyle={infoStyle}
 	                                , min: failureData.stats.min,
-	                                max: failureData.stats.max
-	                                //onSelectionChange={this.handleSelectionChanged}
-	                                , selected: this.state.selection
+	                                max: failureData.stats.max,
+	                                onSelectionChange: this.handleSelectionChanged,
+	                                selected: this.state.selection
 	                                //onMouseNear={this.handleMouseNear}
 	                                //onClick={this.handleClick}
 	                                , highlighted: this.state.highlight
@@ -26211,7 +26238,7 @@
 	                        onTrackerChanged: this.handleTrackerChanged,
 	                        enablePanZoom: true,
 	                        onTimeRangeChanged: this.handleTimeRangeChange,
-	                        onBackgroundClick: this.clearSelection,
+	                        onBackgroundClick: this.handleClick,
 	                        minTime: this.state.initialTimerange.begin(),
 	                        maxTime: this.state.initialTimerange.end(),
 	                        minDuration: 10 * 60 * 1000,
@@ -26229,9 +26256,6 @@
 	        var active = this.state.active;
 	        active[key] = !disabled;
 	        this.setState({ active: active });
-	    },
-	    clearSelection: function clearSelection() {
-	        this.setState({ selection: null });
 	    },
 	    renderError: function renderError() {
 	        var data = this.state.dataError;
@@ -26470,15 +26494,6 @@
 	        return this.state.chartSeries && this.state.chartSeries[eventType] && (direction === null || this.state.chartSeries[eventType][direction]);
 	    }
 	});
-	
-	
-	function getElementOffset(element) {
-	    var de = document.documentElement;
-	    var box = element.getBoundingClientRect();
-	    var top = box.top + window.pageYOffset - de.clientTop;
-	    var left = box.left + window.pageXOffset - de.clientLeft;
-	    return { top: top, left: left };
-	}
 
 /***/ },
 /* 210 */
@@ -103524,7 +103539,7 @@
 	
 	    // Hide the popover when the user clicks outside of it
 	    $(document).click(function (e) {
-	        $(".sidebar-popover").fadeOut("fast");
+	        $(".sidebar-popover").not(".graph-values-popover").fadeOut("fast");
 	    });
 	
 	    // Stop clicking inside the popover from hiding it
