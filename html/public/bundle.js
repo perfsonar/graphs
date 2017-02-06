@@ -25476,7 +25476,7 @@
 	                        _label = "owamp";
 	                    }
 	
-	                    if (_row.properties.eventType == "packet-loss-rate") {
+	                    if (_row.properties.eventType == "packet-loss-rate" || _row.properties.eventType == "packet-loss-rate-bidir") {
 	                        _row.value = this._formatToolTipLossValue(_row.value, "float") + "%";
 	                        _row.lostValue = this._formatToolTipLossValue(_row.lostValue, "integer");
 	                        _row.sentValue = this._formatToolTipLossValue(_row.sentValue, "integer");
