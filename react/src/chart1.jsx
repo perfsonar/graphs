@@ -19,6 +19,7 @@ import "../css/spinner.css";
 
 let charts;
 let chartData;
+let tooltip = null;
 
 const text = 'perfSONAR chart';
 
@@ -369,7 +370,7 @@ export default React.createClass({
             lockToolTip: !this.state.lockToolTip
     //        highlight: point
         });
-        console.log("this.state.lockToolTip", this.state.lockToolTip );
+        console.log("this.state.lockToolTip", this.state.lockToolTip, "tooltip", tooltip );
     },
 
     handleMouseNear(point) {
@@ -390,10 +391,17 @@ export default React.createClass({
 
         let display = "block";
 
+        if ( this.state.lockToolTip ) {
+            console.log("returning previous tooltip", tooltip);
+            //return tooltip;
+
+        }
+
         // Something here maybe, where we need to make sure "tracker" isn't null when locking the tooltip?
-        if ( tracker != null && typeof charts != "undefined" ) {
+        if ( this.state.lockToolTip || tracker != null && typeof charts != "undefined" ) {
+        //if ( true ) {
             let data = this.getTrackerData();
-            if ( data.length == 0 ) {
+            if ( typeof data == "undefined" ||  data.length == 0 ) {
                 //return null;
                 display = "none";
             } else {
@@ -648,7 +656,7 @@ export default React.createClass({
             }
 
 
-            return (
+            let newTooltip =  (
             <div className="small-2 columns">
                 <div className="sidebar-popover graph-values-popover" display={display} style={toolTipStyle} ref="tooltip">
                                     <span className="graph-values-popover__heading">{date} {tz}</span>
@@ -658,6 +666,8 @@ export default React.createClass({
                                 </div>
                 </div>
                    );
+            tooltip = newTooltip;
+            return tooltip;
 
         } else {
             return null;
@@ -722,9 +732,9 @@ export default React.createClass({
     handleTrackerChanged(trackerVal, selection) {
         if ( this.state.lockToolTip ) {
             //this.setState({tracker: this.state.tracker});
-            console.log("handleTrackerChanged locked; trackerVal:", trackerVal, selection);
+            //console.log("handleTrackerChanged locked; trackerVal:", trackerVal, selection);
         } else {
-            console.log("handleTrackerChanged not locked; trackerVal:", trackerVal, selection);
+            //console.log("handleTrackerChanged not locked; trackerVal:", trackerVal, selection);
             //if ( trackerVal !== null ) {
                 this.setState({tracker: trackerVal});
             //}
