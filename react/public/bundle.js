@@ -25546,12 +25546,19 @@
 	                    if (_row2.properties.mainEventType == "histogram-rtt") {
 	                        _label2 = "(ping)";
 	                    }
+	                    var owampVal = _row2.value.toFixed(1);
+	                    if (Math.abs(owampVal) < 1) {
+	                        owampVal = _row2.value.toFixed(2);
+	                    }
+	                    if (Math.abs(owampVal) < 0.01) {
+	                        owampVal = _row2.value.toFixed(4);
+	                    }
 	                    latencyItems.push(_react2.default.createElement(
 	                        "li",
 	                        null,
 	                        _dir2,
 	                        " ",
-	                        _row2.value.toFixed(1),
+	                        owampVal,
 	                        " ms ",
 	                        _label2,
 	                        " "
@@ -49825,7 +49832,7 @@
 	                    value *= 100;
 	                }
 	
-	                if (value <= 0) {
+	                if (value <= 0 && eventType != "histogram-owdelay") {
 	                    //console.log("VALUE IS ZERO OR LESS", Date());
 	                    value = 0.000000001;
 	                }

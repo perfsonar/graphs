@@ -679,7 +679,7 @@ module.exports = {
 
                 }
 
-                if (value <= 0 ) {
+                if (value <= 0 && eventType != "histogram-owdelay" ) {
                     //console.log("VALUE IS ZERO OR LESS", Date());
                     value = 0.000000001;
                 }

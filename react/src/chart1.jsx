@@ -552,8 +552,15 @@ export default React.createClass({
                     if ( row.properties.mainEventType == "histogram-rtt" ) {
                         label = "(ping)";
                     }
+                    let owampVal = row.value.toFixed(1);
+                    if ( Math.abs( owampVal ) < 1 ) {
+                        owampVal = row.value.toFixed(2);
+                    }
+                    if ( Math.abs( owampVal ) < 0.01 ) {
+                        owampVal = row.value.toFixed(4);
+                    }
                     latencyItems.push(
-                            <li>{dir} {row.value.toFixed(1)} ms {label} </li>
+                            <li>{dir} {owampVal} ms {label} </li>
 
                             );
 
