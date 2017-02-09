@@ -271,7 +271,7 @@
 }
 
 div.graphholder div.small-2.columns {
-    float:right;
+    float:left;
     display:block;
     width:23%;
 }
