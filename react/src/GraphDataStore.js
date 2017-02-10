@@ -130,7 +130,7 @@ module.exports = {
                 //url += "&time-end=" + end;
 
 
-                // url += "&time-start=" + start + "&time-end=" + end; TODO: add this back?
+                //url += "&time-start=" + start + "&time-end=" + end; //TODO: add this back?
 
                 url = this.getMAURL( url );
 
@@ -852,7 +852,7 @@ module.exports = {
         let testType;
         if (eventType == "histogram-owdelay" || eventType == "histogram-rtt" ){
             testType = "latency";
-        } else if ( eventType == "throughput") {
+        } else if ( eventType == "throughput" || eventType == "packet-retransmits") {
             testType = "throughput";
         } else if ( lossTypes.indexOf( eventType ) > -1 ) {
             testType = "loss";

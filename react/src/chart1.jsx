@@ -399,7 +399,6 @@ export default React.createClass({
         let display = "block";
 
         if ( this.state.lockToolTip ) {
-            console.log("returning previous tooltip", tooltip);
             //return tooltip;
 
         }
