@@ -455,6 +455,8 @@ module.exports = {
             duration = ( endTime - startTime ) / 1000;
             console.log("COMPLETED CREATING TIMESERIES in " , duration);
             console.log("chartData: ", chartData);
+            let retransData = this.filterData( chartData, {eventType: "packet-retransmits"} );
+            console.log("retransData", retransData);
             emitter.emit("get");
 
         } else {
@@ -882,45 +884,46 @@ module.exports = {
 
             let indices = $.map( data, function( row, index ) {
                 if ( eventType == "packet-retransmits" ) {
+                    var tpItem = data[index];
+                    data[index];
+
                     // If the value has the same "metadata-key", it's from the same test
-                       var tpItem = data[index];
-                       data[index];
 
-                        if ( tpItem.properties["metadata-key"] == key && tpItem.properties["direction"] == direction ) {
-                            if ( tpItem.properties.eventType == "throughput" ) {
+                    if ( tpItem.properties["metadata-key"] == key && tpItem.properties["direction"] == direction ) {
+                        if ( tpItem.properties.eventType == "throughput" ) {
 
-                                // handle the throughput/retrans values
-            let newEvents = [];
-                                for ( let reEvent of self.row.values.events() ) {
-                                    if ( typeof reEvent == "undefined" || reEvent === null ) {
-                                        return null;
-                                    }
-
-                                    let retransVal = reEvent.value();
-
-                                    if ( retransVal < 1 ) {
-                                        continue;
-
-                                    }
-
-                                    let tputVal = tpItem.values.atTime( reEvent.timestamp() ).value();
-
-                                    let newEvent = new Event(reEvent.timestamp(), { value: tputVal, retrans: retransVal }); 
-                                    newEvents.push( newEvent );
+                            // handle the throughput/retrans values
+                            let newEvents = [];
+                            for ( let reEvent of self.row.values.events() ) {
+                                if ( typeof reEvent == "undefined" || reEvent === null ) {
+                                    return null;
                                 }
-                                const series = new TimeSeries({
-                                    name: "Retransmits",
-                                    events: newEvents
-                                });
-                                let newRow = {};
-                                newRow.properties = self.row.properties;
-                                newRow.values = series;
-                                newSeries.push( newRow );
-                            } else if ( eventType == "packet-retransmits" ) {
-                                return index;
-                            }
 
+                                let retransVal = reEvent.value();
+
+                                if ( retransVal < 1 ) {
+                                    continue;
+
+                                }
+
+                                let tputVal = tpItem.values.atTime( reEvent.timestamp() ).value();
+
+                                let newEvent = new Event(reEvent.timestamp(), { value: tputVal, retrans: retransVal }); 
+                                newEvents.push( newEvent );
+                            }
+                            const series = new TimeSeries({
+                                name: "Retransmits",
+                                events: newEvents
+                            });
+                            let newRow = {};
+                            newRow.properties = self.row.properties;
+                            newRow.values = series;
+                            newSeries.push( newRow );
+                        } else if ( eventType == "packet-retransmits" ) {
+                            return index;
                         }
+
+                    }
                 }
 
 
@@ -930,7 +933,7 @@ module.exports = {
 
         }
 
-        // Delete the values with "packet-count-sent"
+        // Delete the original test results with "packet-retransmits"
 
         data = $.map( data, function( item, index ) {
             if ( deleteIndices.indexOf( index ) > -1 ) {

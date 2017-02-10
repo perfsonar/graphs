@@ -433,12 +433,14 @@ export default React.createClass({
                     let ipv = "ipv" + ipversion;
 
                     let filter = { testType: type, ipversion: ipversion };
-                    let failFilter = { eventType: type, ipversion: ipversion };
+                    let eventTypeFilter = { eventType: type, ipversion: ipversion };
                     filters[type] = {};
-                    if ( type != "failures" ) {
-                        filters[type][ipversion] = filter;
-                    } else {
-                        filters[type][ipversion] = failFilter;
+                    filters[type][ipversion] = filter;
+                    if ( type == "failures" ) {
+                        filters[type][ipversion] = eventTypeFilter;
+                    } else if ( type == "throughput" ) {
+                        filters[type][ipversion] = eventTypeFilter;
+
                     }
 
                 }
@@ -461,7 +463,7 @@ export default React.createClass({
                     let key = row.properties["metadata-key"];
                     let direction = row.properties.direction;
 
-                    // get retrans valuesA
+                    // get retrans values
                     let retransFilter = {
                         eventType: "packet-retransmits",
                         ipversion: ipversion,
@@ -469,7 +471,9 @@ export default React.createClass({
                         direction: direction
 
                     };
+                    console.log("retransFilter TT", retransFilter);
                     let retransData = GraphDataStore.filterData( data, retransFilter, this.state.itemsToHide );
+                    console.log("retransData TT", retransData);
 
                     let retransVal = "";
                     if ( retransData.length > 0 ) {
@@ -940,45 +944,26 @@ export default React.createClass({
                         ipversion: ipversion
                     };
 
-
-                    /*
-                    itemsToHide = [
-                        {
-                            eventType: "throughput",
-                            protocol: "tcp"
-                        }
-                    ];
-                    */
-                    if ( this.props.tool ) {
-
-                    }
                     data = GraphDataStore.getChartData( filter, this.state.itemsToHide );
                     let eventTypeStats = GraphDataStore.eventTypeStats;
-
-
-
 
                     if ( this.state.active[type] && ( data.results.length > 0 ) ) {
                         for(let j in data.results) {
                             let result = data.results[j];
                             let series = result.values;
                             let properties = result.properties;
+                            let key = properties["metadata-key"];
+                            let ipversion = properties.ipversion;
+                            let direction = properties.direction;
 
-                            if ( esmondName == "packet-retransmits" && false ) {
-                                console.log("filter", filter);
+                    // get retrans values
+                    let retransFilter = {
+                        eventType: "packet-retransmits",
+                        ipversion: ipversion,
+                        "metadata-key": key,
+                        direction: direction
 
-                                let retransData = GraphDataStore.getChartData( retransFilter, this.state.itemsToHide );
-                                let throughputFilter = { eventType: "throughput", "metadata-key": properties["metadata-key"], ipversion: ipversion, "ip-transport-protocol": "tcp" };
-                                let throughputData = GraphDataStore.getChartData( throughputFilter, this.state.itemsToHide );
-                                console.log("retransData", retransData, "throughputData", throughputData);
-                                if ( retransData.results.length > 0 ) {
-                                    retransData = GraphDataStore.pairRetrans( retransData, throughputData );
-                                    console.log("retransData", retransData);
-                                    result = retransData;
-                                }
-
-
-                            }
+                    };
 
                             charts[type].data.push( result );
 
@@ -1012,6 +997,7 @@ export default React.createClass({
                             }
 
                             if ( esmondName == "packet-retransmits" ) {
+                                console.log("retransData chart", result);
                                  charts[type][ipv].push( 
                                     <ScatterChart
                                         key={type + "retrans" + Math.floor( Math.random() )}
