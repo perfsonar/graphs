@@ -266,10 +266,20 @@ module.exports = {
 
     },
     parseUrl: (function () {
-        var a = document.createElement('a');
         return function (url) {
+            var a = document.createElement('a');
             a.href = url;
-            return {
+            console.log('a', a);
+
+            let port = "";
+            if ( typeof a.port != "undefined" ) {
+                if ( a.port != "80" && a.port != "443" && a.port != "" ) {
+                    port = ":" + a.port;
+                }
+            }
+
+            let host = a.host;
+            let ret = {
                 host: a.host,
                 hostname: a.hostname,
                 pathname: a.pathname,
@@ -277,8 +287,10 @@ module.exports = {
                 protocol: a.protocol,
                 search: a.search,
                 hash: a.hash,
-                origin: a.protocol + "//" + a.host + a.port
+                origin: a.protocol + "//" + a.hostname + port
             };
+            console.log('ret', ret);
+            return ret;
         }
     })(),
     getData: function( metaData ) {
@@ -292,6 +304,7 @@ module.exports = {
             // *ahem* IE, Edge ...
             //let maURL = new URL( maURLs[ma_url] );
             let maURL = this.parseUrl( maURLs[ma_url] );
+            console.log("maURL", maURL);
 
             let baseURL = maURL.origin;
             dataReqCount = 0;
