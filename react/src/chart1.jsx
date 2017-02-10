@@ -357,7 +357,7 @@ export default React.createClass({
         //let offsetX = toolTipWidth;
         //let offsetX = Math.floor( clientWidth * 0.23 );
         let offsetX = 25;
-        console.log("clientWidth", clientWidth, "toolTipWidth", toolTipWidth);
+        //console.log("clientWidth", clientWidth, "toolTipWidth", toolTipWidth);
         if ( posX < 0.66 * clientWidth ) {
             posX += offsetX;
         } else {

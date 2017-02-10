@@ -269,8 +269,10 @@ module.exports = {
         return function (url) {
             var a = document.createElement('a');
             a.href = url;
-            console.log('a', a);
 
+            // Work around a couple issues:
+            // - don't show the port if it's 80 or 443 (Chrome didn''t do this, but IE did)
+            // - don't append a port if the port is an empty string ""
             let port = "";
             if ( typeof a.port != "undefined" ) {
                 if ( a.port != "80" && a.port != "443" && a.port != "" ) {
@@ -289,7 +291,6 @@ module.exports = {
                 hash: a.hash,
                 origin: a.protocol + "//" + a.hostname + port
             };
-            console.log('ret', ret);
             return ret;
         }
     })(),

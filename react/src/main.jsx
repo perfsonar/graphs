@@ -11,11 +11,11 @@
 /* eslint max-len:0 */
 
 import "babel-polyfill";
-import "core-js/es6/object";
-import "core-js/es6/map";
-import "core-js/es6/weak-map";
-import "core-js/fn/symbol";
-import "es6-symbol/implement";
+//import "core-js/es6/object";
+//import "core-js/es6/map";
+//import "core-js/es6/weak-map";
+//import "core-js/fn/symbol";
+//import "es6-symbol/implement";
 
 import React from "react";
 import { render } from "react-dom";
