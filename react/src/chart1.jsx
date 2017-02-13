@@ -60,14 +60,12 @@ const typesToChart = [
         label: "Packet Loss",
         unit: "fractional",
     },
-// RETRANSMITS
     {
         name: "throughput",
         esmondName: "packet-retransmits",
         label: "Retransmits",
         unit: "packet",
     },
-
     {
         name: "latency",
         esmondName: "histogram-owdelay",
@@ -214,11 +212,11 @@ function getChartStyle( options, column ) {
             color = scheme["packet-retransmits"];
             opacity = 0.9;
             fill = "#cc7dbe";
-            width = 0;
+            width = 1;
             break;
 
     }
-    if ( options.direction == "reverse" ) {
+    if ( options.direction == "reverse" && options.eventType != "packet-retransmits" ) {
         strokeStyle = "4,2";
         width = 3;
     }
@@ -334,7 +332,7 @@ export default React.createClass({
         };
     },
     handleSelectionChanged(point) {
-        console.log("selection changed", point);
+        //console.log("selection changed", point);
         this.setState({
             selection: point
             //highlight: point
@@ -357,7 +355,7 @@ export default React.createClass({
         //let offsetX = toolTipWidth;
         //let offsetX = Math.floor( clientWidth * 0.23 );
         let offsetX = 25;
-        console.log("clientWidth", clientWidth, "toolTipWidth", toolTipWidth);
+        //console.log("clientWidth", clientWidth, "toolTipWidth", toolTipWidth);
         if ( posX < 0.66 * clientWidth ) {
             posX += offsetX;
         } else {
@@ -399,7 +397,6 @@ export default React.createClass({
         let display = "block";
 
         if ( this.state.lockToolTip ) {
-            console.log("returning previous tooltip", tooltip);
             //return tooltip;
 
         }
@@ -434,12 +431,14 @@ export default React.createClass({
                     let ipv = "ipv" + ipversion;
 
                     let filter = { testType: type, ipversion: ipversion };
-                    let failFilter = { eventType: type, ipversion: ipversion };
+                    let eventTypeFilter = { eventType: type, ipversion: ipversion };
                     filters[type] = {};
-                    if ( type != "failures" ) {
-                        filters[type][ipversion] = filter;
-                    } else {
-                        filters[type][ipversion] = failFilter;
+                    filters[type][ipversion] = filter;
+                    if ( type == "failures" ) {
+                        filters[type][ipversion] = eventTypeFilter;
+                    } else if ( type == "throughput" ) {
+                        filters[type][ipversion] = eventTypeFilter;
+
                     }
 
                 }
@@ -462,7 +461,7 @@ export default React.createClass({
                     let key = row.properties["metadata-key"];
                     let direction = row.properties.direction;
 
-                    // get retrans valuesA
+                    // get retrans values
                     let retransFilter = {
                         eventType: "packet-retransmits",
                         ipversion: ipversion,
@@ -941,45 +940,26 @@ export default React.createClass({
                         ipversion: ipversion
                     };
 
-
-                    /*
-                    itemsToHide = [
-                        {
-                            eventType: "throughput",
-                            protocol: "tcp"
-                        }
-                    ];
-                    */
-                    if ( this.props.tool ) {
-
-                    }
                     data = GraphDataStore.getChartData( filter, this.state.itemsToHide );
                     let eventTypeStats = GraphDataStore.eventTypeStats;
-
-
-
 
                     if ( this.state.active[type] && ( data.results.length > 0 ) ) {
                         for(let j in data.results) {
                             let result = data.results[j];
                             let series = result.values;
                             let properties = result.properties;
+                            let key = properties["metadata-key"];
+                            let ipversion = properties.ipversion;
+                            let direction = properties.direction;
 
-                            if ( esmondName == "packet-retransmits" && false ) {
-                                console.log("filter", filter);
+                    // get retrans values
+                    let retransFilter = {
+                        eventType: "packet-retransmits",
+                        ipversion: ipversion,
+                        "metadata-key": key,
+                        direction: direction
 
-                                let retransData = GraphDataStore.getChartData( retransFilter, this.state.itemsToHide );
-                                let throughputFilter = { eventType: "throughput", "metadata-key": properties["metadata-key"], ipversion: ipversion, "ip-transport-protocol": "tcp" };
-                                let throughputData = GraphDataStore.getChartData( throughputFilter, this.state.itemsToHide );
-                                console.log("retransData", retransData, "throughputData", throughputData);
-                                if ( retransData.results.length > 0 ) {
-                                    retransData = GraphDataStore.pairRetrans( retransData, throughputData );
-                                    console.log("retransData", retransData);
-                                    result = retransData;
-                                }
-
-
-                            }
+                    };
 
                             charts[type].data.push( result );
 
@@ -1013,26 +993,21 @@ export default React.createClass({
                             }
 
                             if ( esmondName == "packet-retransmits" ) {
-                                 charts[type][ipv].push( 
-                                    <ScatterChart
-                                        key={type + "retrans" + Math.floor( Math.random() )}
-                                        axis={"axis" + type}
-                                        series={series}
-                                        style={getChartStyle( properties )} smooth={false} breakLine={true}
-                                        radius={4.0}
-                                        columns={ [ "value" ] }
-                                        //info={hintValues}
-                                        //infoHeight={100}
-                                        //infoWidth={200}
-                                        //infoStyle={infoStyle}
-                                        //onSelectionChange={this.handleSelectionChanged}
-                                        selected={this.state.selection}
-                                        //onMouseNear={this.handleMouseNear}
-                                        //onClick={this.handleClick}
-                                        highlighted={this.state.highlight}
-                                    />
+                                charts[type][ipv].push(
+                                        <ScatterChart
+                                            key={type + "retrans" + Math.floor( Math.random() )}
+                                            axis={"axis" + type}
+                                            series={series}
+                                            style={getChartStyle( properties )} smooth={false} breakLine={true}
+                                            radius={4.0}
+                                            columns={ [ "value" ] }
+                                            //selected={this.state.selection}
+                                            //onMouseNear={this.handleMouseNear}
+                                            //onClick={this.handleClick}
+                                            highlighted={this.state.highlight}
+                                        />
 
-                                         );
+                                        );
                             } else {
 
                                 // push the charts for the main charts
