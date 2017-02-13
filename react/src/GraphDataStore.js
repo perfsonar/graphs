@@ -126,10 +126,6 @@ module.exports = {
                     }
                 }
 
-                //url += "&time-start=" + start;
-                //url += "&time-end=" + end;
-
-
                 //url += "&time-start=" + start + "&time-end=" + end; //TODO: add this back?
 
                 url = this.getMAURL( url );
@@ -447,22 +443,31 @@ module.exports = {
 
             // TODO: change this so it creates the esmond time series upon completion of each request, rather than after all requests has completed
 
-            let newChartData = this.esmondToTimeSeries( chartData );
-
-            chartData = newChartData;
+            chartData = this.esmondToTimeSeries( chartData );
 
             endTime = Date.now();
             duration = ( endTime - startTime ) / 1000;
             console.log("COMPLETED CREATING TIMESERIES in " , duration);
             console.log("chartData: ", chartData);
-            let retransData = this.filterData( chartData, {eventType: "packet-retransmits"} );
-            console.log("retransData", retransData);
-            emitter.emit("get");
+
+            var self = this;
+            
+
+            //window.setTimeout(function(){
+            self.emitGet();
+            //}, 500);
+
 
         } else {
             //console.log("handled " + completedDataReqs + " out of " + dataReqCount + " data requests");
 
         }
+    },
+
+    // emits the "get" event, we call this when we have finished retrieving/processing data
+    emitGet: function() {
+        emitter.emit("get");
+
     },
 
     toggleType: function( options ) {
@@ -537,6 +542,9 @@ module.exports = {
         let self = this;
         $.each( results, function( i, val ) {
             let values = val.values;
+            if ( typeof values == "undefined" ) {
+                return true;
+            }
             let valmin = values.min();
             let valmax = values.max();
 
@@ -581,9 +589,12 @@ module.exports = {
     },
     getUniqueValues: function( fields ) {
         let data = chartData;
+        var self = {};
+        self.data = data;
         let unique = {};
         $.each( data, function( index, datum ) {
             $.each( fields, function( field ) {
+                let dat =  self.data;
                 let val = datum.properties[field];
                 if ( ! ( field in unique) ) {
                     unique[field] = {};

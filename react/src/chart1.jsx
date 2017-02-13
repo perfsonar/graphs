@@ -212,7 +212,7 @@ function getChartStyle( options, column ) {
             color = scheme["packet-retransmits"];
             opacity = 0.9;
             fill = "#cc7dbe";
-            width = 1;
+            width = 0;
             break;
 
     }
@@ -845,6 +845,13 @@ export default React.createClass({
 
 
     renderChart() {
+
+       
+        if ( this.state.loading || this.state.initialLoading ) {
+            return null;
+        }
+        
+
         const highlight = this.state.highlight;
 
         const selection = this.state.selection;
@@ -1445,7 +1452,11 @@ export default React.createClass({
 
         GraphDataStore.subscribeEmpty(this.dataEmpty);
 
-        GraphDataStore.getHostPairMetadata( src, dst, start, end, ma_url, params, summaryWindow );
+        // If there are no parameters, we haven't filled them in yet so we don't make the call
+
+        if ( typeof params != "undefined" ) {
+            GraphDataStore.getHostPairMetadata( src, dst, start, end, ma_url, params, summaryWindow );
+        }
     },
     dataError: function() {
         let data = GraphDataStore.getErrorData();
