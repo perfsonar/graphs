@@ -60,14 +60,12 @@ const typesToChart = [
         label: "Packet Loss",
         unit: "fractional",
     },
-// RETRANSMITS
     {
         name: "throughput",
         esmondName: "packet-retransmits",
         label: "Retransmits",
         unit: "packet",
     },
-
     {
         name: "latency",
         esmondName: "histogram-owdelay",
@@ -214,11 +212,11 @@ function getChartStyle( options, column ) {
             color = scheme["packet-retransmits"];
             opacity = 0.9;
             fill = "#cc7dbe";
-            width = 0;
+            width = 1;
             break;
 
     }
-    if ( options.direction == "reverse" ) {
+    if ( options.direction == "reverse" && options.eventType != "packet-retransmits" ) {
         strokeStyle = "4,2";
         width = 3;
     }
@@ -334,7 +332,7 @@ export default React.createClass({
         };
     },
     handleSelectionChanged(point) {
-        console.log("selection changed", point);
+        //console.log("selection changed", point);
         this.setState({
             selection: point
             //highlight: point
@@ -471,9 +469,7 @@ export default React.createClass({
                         direction: direction
 
                     };
-                    console.log("retransFilter TT", retransFilter);
                     let retransData = GraphDataStore.filterData( data, retransFilter, this.state.itemsToHide );
-                    console.log("retransData TT", retransData);
 
                     let retransVal = "";
                     if ( retransData.length > 0 ) {
@@ -997,27 +993,21 @@ export default React.createClass({
                             }
 
                             if ( esmondName == "packet-retransmits" ) {
-                                console.log("retransData chart", result);
-                                 charts[type][ipv].push( 
-                                    <ScatterChart
-                                        key={type + "retrans" + Math.floor( Math.random() )}
-                                        axis={"axis" + type}
-                                        series={series}
-                                        style={getChartStyle( properties )} smooth={false} breakLine={true}
-                                        radius={4.0}
-                                        columns={ [ "value" ] }
-                                        //info={hintValues}
-                                        //infoHeight={100}
-                                        //infoWidth={200}
-                                        //infoStyle={infoStyle}
-                                        //onSelectionChange={this.handleSelectionChanged}
-                                        selected={this.state.selection}
-                                        //onMouseNear={this.handleMouseNear}
-                                        //onClick={this.handleClick}
-                                        highlighted={this.state.highlight}
-                                    />
+                                charts[type][ipv].push(
+                                        <ScatterChart
+                                            key={type + "retrans" + Math.floor( Math.random() )}
+                                            axis={"axis" + type}
+                                            series={series}
+                                            style={getChartStyle( properties )} smooth={false} breakLine={true}
+                                            radius={4.0}
+                                            columns={ [ "value" ] }
+                                            //selected={this.state.selection}
+                                            //onMouseNear={this.handleMouseNear}
+                                            //onClick={this.handleClick}
+                                            highlighted={this.state.highlight}
+                                        />
 
-                                         );
+                                        );
                             } else {
 
                                 // push the charts for the main charts

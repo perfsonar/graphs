@@ -881,15 +881,16 @@ module.exports = {
             // corresponding retrans type 
             let self = this;
             self.row = row;
+            self.key = key;
+            self.direction = direction;
 
             let indices = $.map( data, function( row, index ) {
                 if ( eventType == "packet-retransmits" ) {
                     var tpItem = data[index];
-                    data[index];
 
                     // If the value has the same "metadata-key", it's from the same test
 
-                    if ( tpItem.properties["metadata-key"] == key && tpItem.properties["direction"] == direction ) {
+                    if ( tpItem.properties["metadata-key"] == self.key && tpItem.properties["direction"] == self.direction ) {
                         if ( tpItem.properties.eventType == "throughput" ) {
 
                             // handle the throughput/retrans values
@@ -935,7 +936,7 @@ module.exports = {
 
         // Delete the original test results with "packet-retransmits"
 
-        data = $.map( data, function( item, index ) {
+        let reducedData = $.map( data, function( item, index ) {
             if ( deleteIndices.indexOf( index ) > -1 ) {
                 return null;
             } else {
@@ -943,7 +944,7 @@ module.exports = {
             }
         });
 
-        data = data.concat( newSeries );
+        data = reducedData.concat( newSeries );
 
         return data;
 
