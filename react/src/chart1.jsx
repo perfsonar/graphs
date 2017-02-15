@@ -460,6 +460,12 @@ export default React.createClass({
                     let row = throughputData[i];
                     let key = row.properties["metadata-key"];
                     let direction = row.properties.direction;
+                    let tool = row.properties["tool-name"];
+                    if ( typeof tool != "undefined" && tool != "") {
+                        tool = " [" +  tool + "]";
+                    } else {
+                        tool = "";
+                    }
 
                     // get retrans values
                     let retransFilter = {
@@ -488,7 +494,7 @@ export default React.createClass({
                         dir = "\u003c-"; // Unicode <
                     }
                     throughputItems.push(
-                            <li>{dir} <SIValue value={row.value} digits={3} />bits/s ({row.properties.protocol.toUpperCase()}){retransLabel}</li>
+                            <li>{dir} <SIValue value={row.value} digits={3} />bits/s ({row.properties.protocol.toUpperCase()}){retransLabel}{tool}</li>
 
                             );
 
@@ -517,6 +523,14 @@ export default React.createClass({
                         label = "owamp";
                     }
 
+                    let tool = row.properties["tool-name"];
+                    if ( typeof tool != "undefined" && tool != "") {
+                        tool = " [" +  tool + "]";
+                    } else {
+                        tool = "";
+                    }
+
+
                 if ( row.properties.eventType == "packet-loss-rate" 
                      || row.properties.eventType == "packet-loss-rate-bidir" ) {
                     row.value = this._formatToolTipLossValue( row.value, "float" ) + "%";
@@ -531,11 +545,11 @@ export default React.createClass({
                     if ( row.lostValue != null
                             && row.sentValue != null ) {
                     lossItems.push(
-                            <li>{dir} {row.value} lost ({row.lostValue} of {row.sentValue} packets) {"(" + label + ")"} </li>
+                            <li>{dir} {row.value} lost ({row.lostValue} of {row.sentValue} packets) {"(" + label + ")"}{tool}</li>
                             );
                     } else {
                         lossItems.push(
-                                <li>{dir} {row.value} ({label})</li>
+                                <li>{dir} {row.value} ({label}){tool}</li>
                                 );
 
                     }
@@ -558,6 +572,13 @@ export default React.createClass({
                     if ( row.properties.mainEventType == "histogram-rtt" ) {
                         label = "(ping)";
                     }
+                    let tool = row.properties["tool-name"];
+                    if ( typeof tool != "undefined" && tool != "") {
+                        tool = " [" +  tool + "]";
+                    } else {
+                        tool = "";
+                    }
+
                     let owampVal = row.value.toFixed(1);
                     if ( Math.abs( owampVal ) < 1 ) {
                         owampVal = row.value.toFixed(2);
@@ -566,7 +587,7 @@ export default React.createClass({
                         owampVal = row.value.toFixed(4);
                     }
                     latencyItems.push(
-                            <li>{dir} {owampVal} ms {label} </li>
+                            <li>{dir} {owampVal} ms {label}{tool}</li>
 
                             );
 
@@ -1409,12 +1430,12 @@ export default React.createClass({
         console.log("updateChartData");
         let newChartSeries = GraphDataStore.getChartData();
         //this.setState({loading: false, dataloaded: true});
-        
+
         if ( newChartSeries.results.length == 0 && ( this.state.loading )  ) {
             return;
 
         }
-        
+
         //this.setState({ chartSeries: newChartSeries, initialLoading: false, loading: false } );
         if ( this.state.initialLoading ) {
             this.setState({ chartSeries: newChartSeries, initialLoading: false, loading: true } );
