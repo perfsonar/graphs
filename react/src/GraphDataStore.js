@@ -183,7 +183,6 @@ module.exports = {
     },
     handleMetadataError: function( data ) {
         this.errorData = data;
-        console.log("emitting error");
         emitter.emit("error");
 
     },
@@ -438,8 +437,6 @@ module.exports = {
             let endTime = Date.now();
             let duration = ( endTime - startTime ) / 1000;
             console.log("COMPLETED ALL DATA ", dataReqCount, " REQUESTS in", duration);
-            completedDataReqs = 0;
-            dataReqCount = 0;
 
             // TODO: change this so it creates the esmond time series upon completion of each request, rather than after all requests has completed
 
@@ -451,23 +448,22 @@ module.exports = {
             console.log("chartData: ", chartData);
 
             var self = this;
-            
 
-            //window.setTimeout(function(){
-            self.emitGet();
-            //}, 500);
+            if ( chartData.length > 0 ) {
+                emitter.emit("get");
+            } else {
+                emitter.emit("empty");
+
+            }
+
+            completedDataReqs = 0;
+            dataReqCount = 0;
 
 
         } else {
-            //console.log("handled " + completedDataReqs + " out of " + dataReqCount + " data requests");
+            console.log("handled " + completedDataReqs + " out of " + dataReqCount + " data requests");
 
         }
-    },
-
-    // emits the "get" event, we call this when we have finished retrieving/processing data
-    emitGet: function() {
-        emitter.emit("get");
-
     },
 
     toggleType: function( options ) {

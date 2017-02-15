@@ -1231,7 +1231,7 @@ export default React.createClass({
         }
 
         if ( Object.keys( charts ) == 0 ) {
-            if ( !this.state.loading ) {
+            if ( !this.state.loading && !this.state.initialLoading ) {
                 return ( <div>No data found for this time range.</div> );
 
             } else { 
@@ -1338,7 +1338,7 @@ export default React.createClass({
 
     renderLoading() {
         let display = "none";
-        if ( this.state.loading ) {
+        if ( this.state.loading || this.state.initialLoading ) {
             display = "block";
             return (
                 <div id="loading" display={display}>
@@ -1406,13 +1406,21 @@ export default React.createClass({
     },
 
     updateChartData: function() {
+        console.log("updateChartData");
         let newChartSeries = GraphDataStore.getChartData();
+        //this.setState({loading: false, dataloaded: true});
+        
+        if ( newChartSeries.results.length == 0 && ( this.state.loading )  ) {
+            return;
+
+        }
+        
+        //this.setState({ chartSeries: newChartSeries, initialLoading: false, loading: false } );
         if ( this.state.initialLoading ) {
             this.setState({ chartSeries: newChartSeries, initialLoading: false, loading: true } );
         } else {
-            this.setState({ chartSeries: newChartSeries, loading: false, dataloaded: false } );
+            this.setState({ chartSeries: newChartSeries, loading: false, dataloaded: false, dataError: false } );
         }
-        //this.forceUpdate();
     },
 
     componentDidMount: function() {
@@ -1469,6 +1477,7 @@ export default React.createClass({
         data.responseJSON = {};
         data.responseJSON.detail = "No data found in the measurement archive";
         this.setState({dataError: data, loading: false});
+        console.log("Handling empty data");
 
     },
     componentWillReceiveProps( nextProps ) {
@@ -1477,7 +1486,7 @@ export default React.createClass({
         this.setState({itemsToHide: nextProps.itemsToHide});
         if ( nextProps.start != this.state.start
                 || nextProps.end != this.state.end ) {
-            this.setState({start: nextProps.start, end: nextProps.end, chartSeries: null, timerange: timerange, brushrange: null, initialTimerange: timerange, summaryWindow: nextProps.summaryWindow });
+            this.setState({start: nextProps.start, end: nextProps.end, chartSeries: null, timerange: timerange, brushrange: null, initialTimerange: timerange, summaryWindow: nextProps.summaryWindow , loading: true});
             this.getDataFromMA(nextProps.src, nextProps.dst, nextProps.start, nextProps.end, nextProps.ma_url, this.state.params, nextProps.summaryWindow);
         } else {
             GraphDataStore.toggleType( nextProps.itemsToHide) ;
