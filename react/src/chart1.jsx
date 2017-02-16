@@ -460,12 +460,7 @@ export default React.createClass({
                     let row = throughputData[i];
                     let key = row.properties["metadata-key"];
                     let direction = row.properties.direction;
-                    let tool = row.properties["tool-name"];
-                    if ( typeof tool != "undefined" && tool != "") {
-                        tool = " [" +  tool + "]";
-                    } else {
-                        tool = "";
-                    }
+                    let tool = this.getTool( row );
 
                     // get retrans values
                     let retransFilter = {
@@ -523,13 +518,7 @@ export default React.createClass({
                         label = "owamp";
                     }
 
-                    let tool = row.properties["tool-name"];
-                    if ( typeof tool != "undefined" && tool != "") {
-                        tool = " [" +  tool + "]";
-                    } else {
-                        tool = "";
-                    }
-
+                    let tool = this.getTool( row );
 
                 if ( row.properties.eventType == "packet-loss-rate" 
                      || row.properties.eventType == "packet-loss-rate-bidir" ) {
@@ -572,12 +561,8 @@ export default React.createClass({
                     if ( row.properties.mainEventType == "histogram-rtt" ) {
                         label = "(ping)";
                     }
-                    let tool = row.properties["tool-name"];
-                    if ( typeof tool != "undefined" && tool != "") {
-                        tool = " [" +  tool + "]";
-                    } else {
-                        tool = "";
-                    }
+
+                    let tool = this.getTool( row );
 
                     let owampVal = row.value.toFixed(1);
                     if ( Math.abs( owampVal ) < 1 ) {
@@ -1546,6 +1531,20 @@ export default React.createClass({
 
 
         });
+    },
+
+    getTool( row ) {
+        let tool;
+        tool = row.properties["tool-name"];
+
+        if ( typeof tool != "undefined" && tool != "") {
+            tool = tool.replace(/^pscheduler\//, "");
+            tool = " [" +  tool + "]";
+        } else {
+            tool = "";
+        }
+
+        return tool;
     },
 
     checkEventType: function ( eventType, direction ) {
