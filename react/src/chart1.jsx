@@ -868,7 +868,7 @@ export default React.createClass({
     renderChart() {
 
        
-        if ( this.state.loading || this.state.initialLoading ) {
+        if ( this.state.initialLoading ) {
             return null;
         }
         
@@ -1432,7 +1432,7 @@ export default React.createClass({
         //this.setState({loading: false, dataloaded: true});
 
         if ( newChartSeries.results.length == 0 && ( this.state.loading )  ) {
-            return;
+            //return;
 
         }
 
