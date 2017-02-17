@@ -852,11 +852,11 @@ export default React.createClass({
 
     renderChart() {
 
-       
+
         if ( this.state.initialLoading ) {
             return null;
         }
-        
+
 
         const highlight = this.state.highlight;
 
@@ -1237,7 +1237,7 @@ export default React.createClass({
         }
 
         if ( Object.keys( charts ) == 0 ) {
-            if ( !this.state.loading && !this.state.initialLoading ) {
+            if ( !this.state.loading && !this.state.initialLoading && this.state.dataloaded ) {
                 return ( <div>No data found for this time range.</div> );
 
             } else { 
@@ -1344,7 +1344,7 @@ export default React.createClass({
 
     renderLoading() {
         let display = "none";
-        if ( this.state.loading || this.state.initialLoading ) {
+        if ( this.state.loading || this.state.initialLoading || !this.state.dataloaded ) {
             display = "block";
             return (
                 <div id="loading" display={display}>
@@ -1416,7 +1416,8 @@ export default React.createClass({
         let newChartSeries = GraphDataStore.getChartData();
         //this.setState({loading: false, dataloaded: true});
 
-        if ( newChartSeries.results.length == 0 && ( this.state.loading )  ) {
+        if ( newChartSeries.results.length == 0 && ( this.state.initialLoading )  ) {
+            //this.setState({ initialLoading: false });
             //return;
 
         }
@@ -1424,8 +1425,12 @@ export default React.createClass({
         //this.setState({ chartSeries: newChartSeries, initialLoading: false, loading: false } );
         if ( this.state.initialLoading ) {
             this.setState({ chartSeries: newChartSeries, initialLoading: false, loading: true } );
-        } else {
+        } else if ( this.state.loading && newChartSeries.results.length == 0 )  {
             this.setState({ chartSeries: newChartSeries, loading: false, dataloaded: false, dataError: false } );
+        } 
+        else {
+            this.setState( {dataloaded: true, chartSeries: newChartSeries, loading: false} );
+
         }
     },
 
@@ -1446,7 +1451,7 @@ export default React.createClass({
             ipversion: ipversion,
             agent: agent
         };
-        this.setState({params: params, loading: true});
+        this.setState({params: params, loading: true, initialLoading: true});
         let ma_url = this.props.ma_url || location.origin + "/esmond/perfsonar/archive/";
         this.getDataFromMA(src, dst, start, end, ma_url, params, summaryWindow);
 
@@ -1489,10 +1494,10 @@ export default React.createClass({
     componentWillReceiveProps( nextProps ) {
         console.log("chart1 nextProps", nextProps);
         let timerange = new TimeRange([nextProps.start * 1000, nextProps.end * 1000 ]);
-        this.setState({itemsToHide: nextProps.itemsToHide});
+        this.setState({itemsToHide: nextProps.itemsToHide, initialLoading: false});
         if ( nextProps.start != this.state.start
                 || nextProps.end != this.state.end ) {
-            this.setState({start: nextProps.start, end: nextProps.end, chartSeries: null, timerange: timerange, brushrange: null, initialTimerange: timerange, summaryWindow: nextProps.summaryWindow , loading: true});
+            this.setState({start: nextProps.start, end: nextProps.end, chartSeries: null, timerange: timerange, brushrange: null, initialTimerange: timerange, summaryWindow: nextProps.summaryWindow , loading: true, dataloaded: false, initialLoading: false, dataError: false});
             this.getDataFromMA(nextProps.src, nextProps.dst, nextProps.start, nextProps.end, nextProps.ma_url, this.state.params, nextProps.summaryWindow);
         } else {
             GraphDataStore.toggleType( nextProps.itemsToHide) ;
