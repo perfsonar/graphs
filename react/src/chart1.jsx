@@ -328,7 +328,8 @@ export default React.createClass({
             params: undefined,
             dataloaded: false,
             initialLoading: true,
-            lockToolTip: false
+            lockToolTip: false,
+            toolTipWidth: null,
         };
     },
     handleSelectionChanged(point) {
@@ -346,12 +347,23 @@ export default React.createClass({
 
         }
         let { clientHeight, clientWidth } = this.refs.graphDiv;
-        let posX = event.pageX;
+        //let posX = event.pageX;
+        let pos = this.getMousePos( event );
+
+        let posX = pos.posX;
+
+        let toolTipWidth;
         if ( typeof this.refs.tooltip == "undefined" ) {
-            return;
+            toolTipWidth = this.state.toolTipWidth;
+            //return;
+        } else {
+            toolTipWidth = this.refs.tooltip.clientWidth;
         }
-        let toolTipWidth = this.refs.tooltip.clientWidth;
-        let toolTipHeight = this.refs.tooltip.clientHeight;
+        if ( typeof toolTipWidth == "undefined" || toolTipWidth === null ) {
+            toolTipWidth = this.state.toolTipWidth;
+
+        }
+        //let toolTipHeight = this.refs.tooltip.clientHeight;
         //let offsetX = toolTipWidth;
         //let offsetX = Math.floor( clientWidth * 0.23 );
         let offsetX = 25;
@@ -361,21 +373,57 @@ export default React.createClass({
         } else {
             posX -= (offsetX + toolTipWidth + 25);
         }
-        this.setState({posX: posX});
+        this.setState({posX: posX, toolTipWidth: toolTipWidth});
 
     },
-    setToolTipPos( ) {
+    getMousePos(e) {
+        var m_posx = 0, m_posy = 0, e_posx = 0, e_posy = 0,
+        obj = this;
+        //get mouse position on document crossbrowser
+        if (!e){e = window.event;}
+        if (e.pageX || e.pageY){
+            m_posx = e.pageX;
+            m_posy = e.pageY;
+        } else if (e.clientX || e.clientY){
+            m_posx = e.clientX + document.body.scrollLeft
+                + document.documentElement.scrollLeft;
+            m_posy = e.clientY + document.body.scrollTop
+                + document.documentElement.scrollTop;
+        }
+        //get parent element position in document
+        if (obj.offsetParent){
+            do {
+                e_posx += obj.offsetLeft;
+                e_posy += obj.offsetTop;
+            } while (obj = obj.offsetParent);
+        }
+        // mouse position minus elm position is mouseposition relative to element:
+        var x_position = m_posx-e_posx;
+        var y_position = m_posy-e_posy;
+
+        //console.log( ' X Position: ' +  x_position
+        //    + ' Y Position: ' + y_position );
+
+        return { posX: x_position, posY: y_position };
+    },
+
+/*
+var elem = document.getElementById('container');
+elem.addEventListener('mousemove', onMousemove, false);
+*/
+    getToolTipPos( ) {
+
 
 
     },
 
     handleClick(e, f, g) {
-        console.log("handleClick", e, f, g);
+        //console.log("handleClick", e, f, g);
         this.setState({
             lockToolTip: !this.state.lockToolTip
     //        highlight: point
         });
-        console.log("this.state.lockToolTip", this.state.lockToolTip, "tooltip", tooltip );
+        //console.log("this.state.lockToolTip", this.state.lockToolTip, "tooltip", tooltip );
     },
 
     handleMouseNear(point) {
@@ -402,8 +450,7 @@ export default React.createClass({
         }
 
         // Something here maybe, where we need to make sure "tracker" isn't null when locking the tooltip?
-        if ( this.state.lockToolTip || tracker != null && typeof charts != "undefined" ) {
-        //if ( true ) {
+        if ( ( this.state.lockToolTip || tracker != null ) && typeof charts != "undefined" ) {
             let data = this.getTrackerData();
             if ( typeof data == "undefined" ||  data.length == 0 ) {
                 //return null;
@@ -674,6 +721,9 @@ export default React.createClass({
 
             }
 
+            if ( tooltipItems.length == 0 ) {
+                display = "none";
+            }
 
             let newTooltip =  (
             <div className="small-2 columns">
@@ -1497,7 +1547,7 @@ export default React.createClass({
         this.setState({itemsToHide: nextProps.itemsToHide, initialLoading: false});
         if ( nextProps.start != this.state.start
                 || nextProps.end != this.state.end ) {
-            this.setState({start: nextProps.start, end: nextProps.end, chartSeries: null, timerange: timerange, brushrange: null, initialTimerange: timerange, summaryWindow: nextProps.summaryWindow , loading: true, dataloaded: false, initialLoading: false, dataError: false});
+            this.setState({start: nextProps.start, end: nextProps.end, chartSeries: null, timerange: timerange, brushrange: null, initialTimerange: timerange, summaryWindow: nextProps.summaryWindow , loading: true, dataloaded: false, initialLoading: false, dataError: false, lockToolTip: false});
             this.getDataFromMA(nextProps.src, nextProps.dst, nextProps.start, nextProps.end, nextProps.ma_url, this.state.params, nextProps.summaryWindow);
         } else {
             GraphDataStore.toggleType( nextProps.itemsToHide) ;
