@@ -721,8 +721,13 @@ elem.addEventListener('mousemove', onMousemove, false);
 
             }
 
-            if ( tooltipItems.length == 0 ) {
+            let trackerTS = Math.floor( tracker / 1000 );
+            if ( tooltipItems.length == 0 || ! ( trackerTS >=  this.state.start && trackerTS <= this.state.end  )  ) {
                 display = "none";
+                return;
+            } else {
+                //console.log("tooltipItems", tooltipItems);
+
             }
 
             let newTooltip =  (
@@ -912,14 +917,14 @@ elem.addEventListener('mousemove', onMousemove, false);
 
         const selection = this.state.selection;
         let selectionTime = "";
-        if ( typeof selection != "undefined" && selection !== null ) {
+        if ( typeof selection != "undefined" && selection !== null && typeof selection.event != "undefined"  ) {
             selectionTime = selection.event.timestampAsUTCString();
         }
         //console.log("highlight", highlight, "selection", this.state.selection, selectionTime );
 
         let text = `Speed: - mph, time: -:--`;
         let hintValues = [];
-        if (selection) {
+        if (selection && selection.event) {
             let highlightText = selection.event.get("errorText");
             hintValues = [{label: "Error", value: highlightText}];
         }
