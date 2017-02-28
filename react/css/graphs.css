@@ -244,6 +244,11 @@
   padding: .5em 0;
 }
 
+.graph-values-popover__close {
+    float:right;
+    font-size:120%;
+}
+
 .graph-values-popover__list {
   list-style: none;
   padding: 0;

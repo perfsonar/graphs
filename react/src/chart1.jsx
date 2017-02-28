@@ -732,12 +732,15 @@ elem.addEventListener('mousemove', onMousemove, false);
 
             let newTooltip =  (
             <div className="small-2 columns">
-                <div className="sidebar-popover graph-values-popover" display={display} style={toolTipStyle} ref="tooltip">
-                                    <span className="graph-values-popover__heading">{date} {tz}</span>
-                                    <ul className="graph-values-popover__list">
-                                        {tooltipItems}
-                                    </ul>
-                                </div>
+                    <div className="sidebar-popover graph-values-popover" display={display} style={toolTipStyle} ref="tooltip">
+                        <span className="graph-values-popover__heading">{date} {tz}</span>
+                        <span className="graph-values-popover__close sidebar-popover__close">
+                            <a href="" onClick={this.handleCloseTooltipClick}><i className="fa fa-close"></i></a>
+                        </span>
+                        <ul className="graph-values-popover__list">
+                            {tooltipItems}
+                        </ul>
+                    </div>
                 </div>
                    );
             tooltip = newTooltip;
@@ -1084,7 +1087,7 @@ elem.addEventListener('mousemove', onMousemove, false);
                                         axis={"axis" + type} series={series}
                                         style={getChartStyle( properties )} smooth={false} breakLine={true}
                                         min={0}
-                                        onSelectionChange={this.handleSelectionChanged}
+                                        //onSelectionChange={this.handleSelectionChanged}
                                         onClick={this.handleClick}
                                         columns={[ "value" ]} />
                                         );
@@ -1125,7 +1128,7 @@ elem.addEventListener('mousemove', onMousemove, false);
                                     //infoStyle={infoStyle}
                                     min={failureData.stats.min}
                                     max={failureData.stats.max}
-                                    onSelectionChange={this.handleSelectionChanged}
+                                    //onSelectionChange={this.handleSelectionChanged}
                                     selected={this.state.selection}
                                     //onMouseNear={this.handleMouseNear}
                                     //onClick={this.handleClick}
@@ -1439,6 +1442,11 @@ elem.addEventListener('mousemove', onMousemove, false);
         }
     },
 
+    handleCloseTooltipClick( event ) {
+        event.preventDefault();
+        this.setState({ lockToolTip: false, tracker: null });
+
+    },
 
     renderBrush( brushCharts ) {
         if ( this.state.showBrush === false ) {
