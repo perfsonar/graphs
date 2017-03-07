@@ -16,11 +16,17 @@ module.exports = {
             tz = "";
             out = "";
         } else {
-            tz = tzRe.exec( ( date ).toString() )[1];
-            let dateMoment = moment( date );
-            offset = dateMoment.utcOffset() / 60;
-            if ( offset >= 0 ) {
-                offset = "+" + offset;
+            tz = tzRe.exec( ( date ).toString() );
+            if ( typeof tz == "undefined" || tz === null ) {
+                // timezone is unknown
+                return "";
+            } else {
+                tz = tz[1];
+                let dateMoment = moment( date );
+                offset = dateMoment.utcOffset() / 60;
+                if ( offset >= 0 ) {
+                    offset = "+" + offset;
+                }
             }
         }
 
