@@ -347,12 +347,10 @@ export default React.createClass({
 
         }
         let { clientHeight, clientWidth } = this.refs.graphDiv;
-        //let posX = event.pageX;
         let pos = this.getMousePos( event );
-
         let posX = pos.posX;
-
         let toolTipWidth;
+
         if ( typeof this.refs.tooltip == "undefined" ) {
             toolTipWidth = this.state.toolTipWidth;
             //return;
@@ -360,12 +358,8 @@ export default React.createClass({
             toolTipWidth = this.refs.tooltip.clientWidth;
         }
         if ( typeof toolTipWidth == "undefined" || toolTipWidth === null ) {
-            toolTipWidth = this.state.toolTipWidth;
-
+            toolTipWidth = clientWidth * 0.23;
         }
-        //let toolTipHeight = this.refs.tooltip.clientHeight;
-        //let offsetX = toolTipWidth;
-        //let offsetX = Math.floor( clientWidth * 0.23 );
         let offsetX = 25;
         //console.log("clientWidth", clientWidth, "toolTipWidth", toolTipWidth);
         if ( posX < 0.66 * clientWidth ) {

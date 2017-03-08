@@ -278,7 +278,7 @@
 div.graphholder div.small-2.columns {
     float:left;
     display:block;
-    width:23%;
+    width:23%; /* NOTE this width may be overridden in the React code */
 }
 
 div.graphholder #loading {
