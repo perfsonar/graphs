@@ -330,6 +330,13 @@ export default React.createClass({
             initialLoading: true,
             lockToolTip: false,
             toolTipWidth: null,
+            ttCollapse: {
+                throughput: false,
+                loss: false,
+                latency: false,
+                failures: false
+
+            },
         };
     },
     handleSelectionChanged(point) {
@@ -339,6 +346,47 @@ export default React.createClass({
             //highlight: point
 
         });
+    },
+
+    toggleTT( event, testType ) {
+        if ( !event ) {
+            return;
+
+        }
+        event.preventDefault();
+        $("li.graph-values-popover__item li." + testType + "-val").toggle();
+
+        let ttCollapse = this.state.ttCollapse;
+
+        let collapsed = ttCollapse[ testType ];
+
+        ttCollapse[ testType ] = !collapsed;
+
+        this.setState( { ttCollapse: ttCollapse });
+
+
+    },
+
+    getTTItemClass( testType ) {
+        let ttCollapse = this.state.ttCollapse;
+        let ret = testType + "-val";
+        if ( ttCollapse[ testType ] ) {
+            return ret + " hidden";
+        } else {
+            return ret;
+
+        }
+
+    },
+    getTTIconClass( testType ) {
+        let ttCollapse = this.state.ttCollapse;
+        if ( ttCollapse[ testType ] ) {
+            return "fa-plus-square-o";
+        } else {
+            return "fa-minus-square-o";
+
+        }
+
     },
 
     handleMouseMove(event, point) {
@@ -530,7 +578,7 @@ elem.addEventListener('mousemove', onMousemove, false);
                         dir = "\u003c-"; // Unicode <
                     }
                     throughputItems.push(
-                            <li>{dir} <SIValue value={row.value} digits={3} />bits/s ({row.properties.protocol.toUpperCase()}){retransLabel}{tool}</li>
+                            <li className={this.getTTItemClass("throughput")}>{dir} <SIValue value={row.value} digits={3} />bits/s ({row.properties.protocol.toUpperCase()}){retransLabel}{tool}</li>
 
                             );
 
@@ -575,11 +623,11 @@ elem.addEventListener('mousemove', onMousemove, false);
                     if ( row.lostValue != null
                             && row.sentValue != null ) {
                     lossItems.push(
-                            <li>{dir} {row.value} lost ({row.lostValue} of {row.sentValue} packets) {"(" + label + ")"}{tool}</li>
+                            <li className={this.getTTItemClass("loss")}>{dir} {row.value} lost ({row.lostValue} of {row.sentValue} packets) {"(" + label + ")"}{tool}</li>
                             );
                     } else {
                         lossItems.push(
-                                <li>{dir} {row.value} ({label}){tool}</li>
+                                <li className={this.getTTItemClass("loss")}>{dir} {row.value} ({label}){tool}</li>
                                 );
 
                     }
@@ -613,7 +661,7 @@ elem.addEventListener('mousemove', onMousemove, false);
                         owampVal = row.value.toFixed(4);
                     }
                     latencyItems.push(
-                            <li>{dir} {owampVal} ms {label}{tool}</li>
+                            <li className={this.getTTItemClass("latency")}>{dir} {owampVal} ms {label}{tool}</li>
 
                             );
 
@@ -627,6 +675,7 @@ elem.addEventListener('mousemove', onMousemove, false);
                     for(let i in failuresData) {
                         let row = failuresData[i];
                         let ts = row.ts;
+                        let tool = this.getTool( row );
                         let timeslip = 0.005;
                         let duration = this.state.timerange.duration();
                         let range = duration * timeslip;
@@ -652,7 +701,7 @@ elem.addEventListener('mousemove', onMousemove, false);
                         }
                         let testType = row.properties.mainTestType;
                         failureItems.push(
-                                <li>{dir} [{testType}] {prot}{row.error}</li>
+                                <li className={this.getTTItemClass("failures")}>{dir} [{testType}] {prot}{row.error} {tool}</li>
                                 );
 
                     }
@@ -669,7 +718,9 @@ elem.addEventListener('mousemove', onMousemove, false);
                 tooltipItems.push(
                                     <li className="graph-values-popover__item">
                                         <ul>
-                                            <li>Throughput</li>
+                                            <li><h6><a href="#" onClick={(event) => this.toggleTT(event, "throughput") }>
+                                                <i className={"fa " + this.getTTIconClass("throughput")} aria-hidden="true"></i>
+                                                Throughput</a></h6></li>
                                             {throughputItems}
                                         </ul>
                                     </li>
@@ -681,7 +732,9 @@ elem.addEventListener('mousemove', onMousemove, false);
                 tooltipItems.push(
                                     <li className="graph-values-popover__item">
                                         <ul>
-                                            <li>Loss</li>
+                                            <li><h6><a href="#" onClick={(event) => this.toggleTT(event, "loss") }>
+                                                <i className={"fa " + this.getTTIconClass("loss")} aria-hidden="true"></i>
+                                                Loss</a></h6></li>
                                             {lossItems}
                                         </ul>
                                     </li>
@@ -693,7 +746,9 @@ elem.addEventListener('mousemove', onMousemove, false);
                 tooltipItems.push(
                                     <li className="graph-values-popover__item">
                                         <ul>
-                                            <li>Latency</li>
+                                            <li><h6><a href="#" onClick={(event) => this.toggleTT(event, "latency") }>
+                                                <i className={"fa " + this.getTTIconClass("latency")} aria-hidden="true"></i>
+                                                Latency</a></h6></li>
                                             {latencyItems}
                                         </ul>
                                     </li>
@@ -706,7 +761,9 @@ elem.addEventListener('mousemove', onMousemove, false);
                 tooltipItems.push(
                                     <li className="graph-values-popover__item">
                                         <ul>
-                                            <li>Test Failures</li>
+                                            <li><h6><a href="#" onClick={(event) => this.toggleTT(event, "failures") }>
+                                                <i className={"fa " + this.getTTIconClass("failures")} aria-hidden="true"></i>
+                                                Test Failures</a></h6></li>
                                             {failureItems}
                                         </ul>
                                     </li>
