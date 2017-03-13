@@ -318,7 +318,7 @@ export default React.createClass({
             maxThroughput: 1,
             maxLoss: 0.0000000001,
             latencySeries: null,
-            itemsToHide: [],
+            itemsToHide: {},
             showBrush: false,
             // Highlighting
             hover: null,
@@ -667,11 +667,45 @@ elem.addEventListener('mousemove', onMousemove, false);
 
                 }
 
+                // We need to use a different list of items to hide for failures, because
+                // normally we query on "eventType" but for this we need to check
+                // "mainEventType" (since "failures" is the "eventType" and 
+                // "mainEventType might be "throughput" or "latency" etc.)
+                let failureItemsToHide = [];
+                let eventTypeRe = /^eventType/;
+
+                for( let key in this.state.itemsToHide ) {
+                    let row = this.state.itemsToHide[ key ];
+                    let newObj = {};
+                    //let newKey = key.replace(eventTypeRe, "mainEventType");
+                    let newKey = key;
+                    if ( newKey ) {
+                        for( let subkey in row ) {
+                            let val = row[ subkey ];
+                            //let newSubkey = subkey.replace(eventTypeRe, "mainEventType");
+                            let newSubkey = subkey;
+                            if ( newSubkey ) {
+                                newObj[ newSubkey ] = val;
+                            }
+
+
+                        }
+
+                        //let newRow = {};
+                        //newRow[ newKey ] = newObj;
+                        failureItemsToHide.push( newObj );
+                    }
+
+                }
+
+                console.log("failuresData itemsToHide", failureItemsToHide );
+
                 let failuresData = GraphDataStore.filterData( data, filters["failures"][ipversion], this.state.itemsToHide );
                 //failureData.sort(this.compareToolTipData);
                 if ( failuresData.length == 0 ) {
                     //failureItems = [];
                 } else {
+                    FAILUREDATA:
                     for(let i in failuresData) {
                         let row = failuresData[i];
                         let ts = row.ts;
@@ -690,6 +724,52 @@ elem.addEventListener('mousemove', onMousemove, false);
                         if ( typeof row.properties.mainEventType == "undefined" ) {
                             continue;
                         }
+
+                        // TODO: Add something here to continue; if the main event type
+                        // we're looking at is supposed to be hidden
+
+                        console.log("frow", row);
+
+                        /* TODO: come back to this */
+                        let hide = false;
+                        FAILUREITEMS:
+                        for( let j in failureItemsToHide ) {
+                            let item = failureItemsToHide[j];
+                            hide = true;
+                            for( let criterion in item ) {
+                                if ( criterion == "eventType" ) {
+                                    if ( row.properties.mainEventType == item[ criterion ] 
+                                           && item[ criterion ] != "packet-loss-rate" ) {
+                                        hide = hide && true;
+                                        //continue;
+                                        
+                                    } else {
+                                        hide = false;
+                                        continue;
+                                    }
+                                } else {
+                                    if ( row.properties[criterion] == item[ criterion ] ) {
+                                        hide = hide && true;
+                                    } else {
+                                        hide = false;
+                                        continue;
+
+                                    }
+
+                                }
+
+
+                            }
+                            console.log("hide, item", hide, item);
+                            if ( hide ) {
+                                continue FAILUREDATA;
+
+                            }
+
+                        }
+
+                        
+                        
                         let dir = "-\u003e"; // Unicode >
                         if ( row.properties.direction == "reverse" ) {
                             dir = "\u003c-"; // Unicode <
@@ -700,9 +780,11 @@ elem.addEventListener('mousemove', onMousemove, false);
                             prot += " ";
                         }
                         let testType = row.properties.mainTestType;
-                        failureItems.push(
+                        if ( !hide ) {
+                            failureItems.push(
                                 <li className={this.getTTItemClass("failures")}>{dir} [{testType}] {prot}{row.error} {tool}</li>
-                                );
+                            );
+                        }
 
                     }
                 }

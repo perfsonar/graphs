@@ -482,6 +482,7 @@ module.exports = {
     },
 
     filterData: function( data, filters, itemsToHide ) {
+        //console.log("filters", filters, "itemsToHide", itemsToHide);
         let results = $.grep( data, function( e, i ) {
             let found = true;
             for (var key in filters ) {
@@ -506,7 +507,7 @@ module.exports = {
                         if ( ( key in e.properties ) && e.properties[key] == val ) {
                             show  = false || show;
                             if ( e.properties.eventType == "packet-loss-rate" && e.properties.mainTestType == "throughput" ) {
-                                console.log("packet-loss throughput");
+                                //console.log("packet-loss throughput");
 
                             }
                             found++;
