@@ -64,7 +64,7 @@
     background-color: #0076b4;
 }
 
-.graph-filter__item.graph-filter__item--forward.active a, .graph-filter__item.graph-filter__item--reverse.active a, .graph-filter__item.graph-filter__item--failures.active a
+.graph-filter__item.graph-filter__item--forward.active a, .graph-filter__item.graph-filter__item--reverse.active a, .graph-filter__item.graph-filter__item--failures.active a, .graph-filter__item.graph-filter__item.packet-retransmits.active a
 {
     background-color: #0076b4;
 }
@@ -99,10 +99,6 @@
     /*background-color: #f0e442; */  /* light yellow */
     /* background-color: #d55e00; */ /* vermillion */
     background-color: #e5801c; /* slightly browner orange */
-}
-
-.graph-filter__item.graph-filter__item.packet-retransmits.active a {
-    background-color: #56b4e9;
 }
 
 .graph-filter__item svg.direction-label {
@@ -248,6 +244,11 @@
   padding: .5em 0;
 }
 
+.graph-values-popover__close {
+    float:right;
+    font-size:120%;
+}
+
 .graph-values-popover__list {
   list-style: none;
   padding: 0;
@@ -275,9 +276,9 @@
 }
 
 div.graphholder div.small-2.columns {
-    float:right;
+    float:left;
     display:block;
-    width:23%;
+    width:23%; /* NOTE this width may be overridden in the React code */
 }
 
 div.graphholder #loading {

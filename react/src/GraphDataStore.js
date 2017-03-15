@@ -24,6 +24,8 @@ let maURLs = [];
 let metadataURLs = {};
 let dataURLs = {};
 
+let proxyURL = '/perfsonar-graphs/cgi-bin/graphData.cgi?action=ma_data&url=';
+
 let lossTypes = [ 'packet-loss-rate', 'packet-count-lost', 'packet-count-sent', 'packet-count-lost-bidir', 'packet-loss-rate-bidir' ];
 
 module.exports = {
@@ -40,6 +42,7 @@ module.exports = {
         dataReqCount = 0;
         completedReqs = 0;
         completedDataReqs = 0;
+        this.useProxy = false;
         this.summaryWindow = 3600;
         this.eventTypeStats = {};
 
@@ -123,8 +126,11 @@ module.exports = {
                     }
                 }
 
-                //url += "&time-start=" + start;
-                //url += "&time-end=" + end;
+                //url += "&time-start=" + start + "&time-end=" + end; //TODO: add this back?
+
+                url = this.getMAURL( url );
+
+                console.log("metadata url: ", url);
 
                 // Make sure we don't retrieve the same URL twice
 
@@ -136,26 +142,45 @@ module.exports = {
 
                 }
 
-                // url += "&time-start=" + start + "&time-end=" + end; TODO: add this back?
-                console.log("metadata url: ", url);
-
                 this.serverRequest = $.get( url, function(data) {
                     this.handleMetadataResponse(data, direction[j]);
                 }.bind(this))
                 .fail(function( data ) {
-                //.fail(function( jqXHR, textStatus, errorThrown ) {
-                    console.log("get metadata failed");
-                    this.handleMetadataError( data );
                     // if we get an error, try the cgi instead 
                     // and set a new flag, useProxy  and make
                     // all requests through the proxy CGI
-                }.bind(this)
+                    if ( data.status == 404 ) {
+                        this.useProxy = true;
+                        url = this.getMAURL( url );
+                        this.serverRequest = $.get( url, function(data) {
+                            this.handleMetadataResponse(data, direction[j]);
+                        }.bind(this))
+                        .fail(function( data ) {
+                            this.handleMetadataError( data );
+                        }.bind(this)
+                        )
+
+
+                        } else {
+                            this.handleMetadataError( data );
+
+                        }
+
+                        }.bind(this)
                 );
 
                 reqCount++;
             }
         }
 },
+    getMAURL( url ) {
+        if ( this.useProxy ) {
+            url = encodeURIComponent( url );
+            url = proxyURL + url;
+        }
+        return url;
+
+    },
     handleMetadataError: function( data ) {
         this.errorData = data;
         emitter.emit("error");
@@ -235,6 +260,35 @@ module.exports = {
         return eventTypes;
 
     },
+    parseUrl: (function () {
+        return function (url) {
+            var a = document.createElement('a');
+            a.href = url;
+
+            // Work around a couple issues:
+            // - don't show the port if it's 80 or 443 (Chrome didn''t do this, but IE did)
+            // - don't append a port if the port is an empty string ""
+            let port = "";
+            if ( typeof a.port != "undefined" ) {
+                if ( a.port != "80" && a.port != "443" && a.port != "" ) {
+                    port = ":" + a.port;
+                }
+            }
+
+            let host = a.host;
+            let ret = {
+                host: a.host,
+                hostname: a.hostname,
+                pathname: a.pathname,
+                port: a.port,
+                protocol: a.protocol,
+                search: a.search,
+                hash: a.hash,
+                origin: a.protocol + "//" + a.hostname + port
+            };
+            return ret;
+        }
+    })(),
     getData: function( metaData ) {
         let summaryWindow = this.summaryWindow; // || 3600; // todo: this should be dynamic
         //summaryWindow = 86400; // todo: this should be dynamic
@@ -242,7 +296,12 @@ module.exports = {
         let multipleTypes = [ "histogram-rtt", "histogram-owdelay" ];
 
         for(let ma_url in maURLs) {
-            let maURL = new URL( maURLs[ma_url] );
+            // "new URL" is clearer but doesn't work with some browsers
+            // *ahem* IE, Edge ...
+            //let maURL = new URL( maURLs[ma_url] );
+            let maURL = this.parseUrl( maURLs[ma_url] );
+            console.log("maURL", maURL);
+
             let baseURL = maURL.origin;
             dataReqCount = 0;
             for(let i in metaData) {
@@ -312,6 +371,13 @@ module.exports = {
                     }
                     uri += "?time-start=" + start + "&time-end=" + end;
                     let url = baseURL + uri;
+
+                    // If using CORS proxy
+                    if ( this.useProxy ) {
+                        url = encodeURIComponent( url );
+                        url = proxyURL + url;
+                    }
+
                     console.log("data url", url);
 
                     // Make sure we don't retrieve the same URL twice
@@ -371,23 +437,31 @@ module.exports = {
             let endTime = Date.now();
             let duration = ( endTime - startTime ) / 1000;
             console.log("COMPLETED ALL DATA ", dataReqCount, " REQUESTS in", duration);
-            completedDataReqs = 0;
-            dataReqCount = 0;
 
             // TODO: change this so it creates the esmond time series upon completion of each request, rather than after all requests has completed
 
-            let newChartData = this.esmondToTimeSeries( chartData );
-
-            chartData = newChartData;
+            chartData = this.esmondToTimeSeries( chartData );
 
             endTime = Date.now();
             duration = ( endTime - startTime ) / 1000;
             console.log("COMPLETED CREATING TIMESERIES in " , duration);
             console.log("chartData: ", chartData);
-            emitter.emit("get");
+
+            var self = this;
+
+            if ( chartData.length > 0 ) {
+                emitter.emit("get");
+            } else {
+                emitter.emit("empty");
+
+            }
+
+            completedDataReqs = 0;
+            dataReqCount = 0;
+
 
         } else {
-            //console.log("handled " + completedDataReqs + " out of " + dataReqCount + " data requests");
+            console.log("handled " + completedDataReqs + " out of " + dataReqCount + " data requests");
 
         }
     },
@@ -464,6 +538,9 @@ module.exports = {
         let self = this;
         $.each( results, function( i, val ) {
             let values = val.values;
+            if ( typeof values == "undefined" ) {
+                return true;
+            }
             let valmin = values.min();
             let valmax = values.max();
 
@@ -508,9 +585,12 @@ module.exports = {
     },
     getUniqueValues: function( fields ) {
         let data = chartData;
+        var self = {};
+        self.data = data;
         let unique = {};
         $.each( data, function( index, datum ) {
             $.each( fields, function( field ) {
+                let dat =  self.data;
                 let val = datum.properties[field];
                 if ( ! ( field in unique) ) {
                     unique[field] = {};
@@ -545,12 +625,19 @@ module.exports = {
         let output = [];
         let self = this;
         console.log("esmondToTimeSeries inputData", inputData);
+        if ( ( typeof inputData == "undefined" ) || inputData.length == 0 ) {
+            return [];
+        }
 
         // loop through non-failures first, find maxes
         // then do failures and scale values
         $.each( inputData, function( index, datum ) {
             let max;
             let min;
+            if ( $.isEmptyObject( datum ) || !$.isPlainObject( datum ) || typeof datum == "undefined" ) {
+                    return true;
+
+            }
             let eventType = datum.eventType;
             let direction = datum.direction;
             let protocol = datum.protocol;
@@ -581,9 +668,15 @@ module.exports = {
             testType = self.eventTypeToTestType( eventType );
             if ( typeof testType == "undefined" ) {
                 console.log("undefined testType", datum);
+                return true;
 
             }
             mainTestType = self.eventTypeToTestType( mainEventType );
+
+            if ( typeof datum == "undefined" || typeof datum.data == "undefined" || datum.data.length == 0 ) {
+                return true;
+
+            }
 
             $.each(datum.data, function( valIndex, val ) {
                 const ts = val["ts"];
@@ -609,7 +702,7 @@ module.exports = {
 
                 }
 
-                if (value <= 0 ) {
+                if (value <= 0 && eventType != "histogram-owdelay" ) {
                     //console.log("VALUE IS ZERO OR LESS", Date());
                     value = 0.000000001;
                 }
@@ -669,7 +762,11 @@ module.exports = {
         });
 
         console.log("outputData", outputData);
+        console.log("output", output);
         this.eventTypeStats = outputData;
+
+        // Create retransmit series
+        output = this.pairRetrans( output );
 
         // Create failure series
 
@@ -684,7 +781,7 @@ module.exports = {
 
             let min = 0;
             let max;
-            if ( typeof mainEventType != "undefined" 
+            if ( typeof mainEventType != "undefined"
                     && mainEventType in outputData
                     && "max" in outputData[ mainEventType ] ) {
                 max = outputData[ mainEventType ].max;
@@ -714,7 +811,7 @@ module.exports = {
                 if ( failureValue != null ) {
                     let failureObj = {
                         errorText: failureValue.error,
-                        value: 0.85 * max,
+                        value: 0.9 * max,
                         type: "error"
                     };
                     let errorEvent = new Event( timestamp, failureObj );
@@ -764,12 +861,99 @@ module.exports = {
         let testType;
         if (eventType == "histogram-owdelay" || eventType == "histogram-rtt" ){
             testType = "latency";
-        } else if ( eventType == "throughput") {
+        } else if ( eventType == "throughput" || eventType == "packet-retransmits") {
             testType = "throughput";
         } else if ( lossTypes.indexOf( eventType ) > -1 ) {
             testType = "loss";
         }
         return testType;
+
+    },
+    pairRetrans: function( data ) {
+        let retransFilter = { eventType: "packet-retransmits" };
+        let retransData = this.filterData( data, retransFilter, [] );
+        let tputFilter = { eventType: "throughput", "ip-transport-protocol": "tcp" };
+        let tputData = this.filterData( data, tputFilter ); 
+        let newSeries = [];
+
+        let deleteIndices = [];
+
+        for(var i in retransData ) {
+            let row = retransData[i];
+            let eventType = row.properties.eventType;
+            let key = row.properties["metadata-key"];
+            let direction = row.properties["direction"];
+
+            // If this is throughput, add the value of the
+            // corresponding retrans type 
+            let self = this;
+            self.row = row;
+            self.key = key;
+            self.direction = direction;
+
+            let indices = $.map( data, function( row, index ) {
+                if ( eventType == "packet-retransmits" ) {
+                    var tpItem = data[index];
+
+                    // If the value has the same "metadata-key", it's from the same test
+
+                    if ( tpItem.properties["metadata-key"] == self.key && tpItem.properties["direction"] == self.direction ) {
+                        if ( tpItem.properties.eventType == "throughput" ) {
+
+                            // handle the throughput/retrans values
+                            let newEvents = [];
+                            for ( let reEvent of self.row.values.events() ) {
+                                if ( typeof reEvent == "undefined" || reEvent === null ) {
+                                    return null;
+                                }
+
+                                let retransVal = reEvent.value();
+
+                                if ( retransVal < 1 ) {
+                                    continue;
+
+                                }
+
+                                let tputVal = tpItem.values.atTime( reEvent.timestamp() ).value();
+
+                                let newEvent = new Event(reEvent.timestamp(), { value: tputVal, retrans: retransVal }); 
+                                newEvents.push( newEvent );
+                            }
+                            const series = new TimeSeries({
+                                name: "Retransmits",
+                                events: newEvents
+                            });
+                            let newRow = {};
+                            newRow.properties = self.row.properties;
+                            newRow.values = series;
+                            newSeries.push( newRow );
+                        } else if ( eventType == "packet-retransmits" ) {
+                            return index;
+                        }
+
+                    }
+                }
+
+
+
+            });
+            deleteIndices = deleteIndices.concat( indices );
+
+        }
+
+        // Delete the original test results with "packet-retransmits"
+
+        let reducedData = $.map( data, function( item, index ) {
+            if ( deleteIndices.indexOf( index ) > -1 ) {
+                return null;
+            } else {
+                return item;
+            }
+        });
+
+        data = reducedData.concat( newSeries );
+
+        return data;
 
     },
     pairSentLost: function( data ) {

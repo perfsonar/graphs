@@ -54,6 +54,10 @@ export default React.createClass({
         let endMoment = moment( endDate );
 
         let startTZ = GraphUtilities.getTimezone( startDate );
+        if ( startTZ == "" ) {
+            console.log("unknown timezone; date: " , startDate.toString() );
+
+        }
         let endTZ = GraphUtilities.getTimezone( endDate );
 
         let date = "ddd MM/DD/YYYY";

@@ -19,6 +19,7 @@ import "../css/spinner.css";
 
 let charts;
 let chartData;
+let tooltip = null;
 
 const text = 'perfSONAR chart';
 
@@ -59,14 +60,12 @@ const typesToChart = [
         label: "Packet Loss",
         unit: "fractional",
     },
-    /*
     {
         name: "throughput",
         esmondName: "packet-retransmits",
         label: "Retransmits",
         unit: "packet",
     },
-*/
     {
         name: "latency",
         esmondName: "histogram-owdelay",
@@ -96,7 +95,8 @@ const scheme = {
     ipv6: "#633", // brown
     throughput: "#0076b4", // blue
     throughputTCP: "#0076b4", // blue
-    "packet-retransmits": "#56b4e9", // light blue
+    //"packet-retransmits": "#56b4e9", // light blue
+    "packet-retransmits": "#cc7dbe", // purple
     "packet-loss-rateLatency": "#2b9f78", // green
     "histogram-rtt": "#e5a11c", // yellow/orange
     "histogram-owdelay": "#633", // brown
@@ -165,6 +165,7 @@ function getChartStyle( options, column ) {
     let strokeStyle = "";
     let width = 3;
     let opacity = 1;
+    let fill = "none";
 
     switch ( options.protocol ) {
         case "tcp":
@@ -209,16 +210,19 @@ function getChartStyle( options, column ) {
             break;
         case "packet-retransmits":
             color = scheme["packet-retransmits"];
+            opacity = 0.9;
+            fill = "#cc7dbe";
+            width = 0;
             break;
 
     }
-    if ( options.direction == "reverse" ) {
+    if ( options.direction == "reverse" && options.eventType != "packet-retransmits" ) {
         strokeStyle = "4,2";
         width = 3;
     }
     let style = {};
     style[column] = {
-        normal: { stroke: color, strokeWidth: width, opacity: opacity, strokeDasharray: strokeStyle },
+        normal: { stroke: color, strokeWidth: width, opacity: opacity, strokeDasharray: strokeStyle, fill: fill },
             highlighted: { stroke: color, strokeWidth: width, opacity: opacity, strokeDasharray: strokeStyle },
             selected: { stroke: color, strokeWidth: width, opacity: opacity, strokeDasharray: strokeStyle },
             muted: { stroke: color, strokeWidth: width, opacity: opacity, strokeDasharray: strokeStyle }
@@ -324,11 +328,12 @@ export default React.createClass({
             params: undefined,
             dataloaded: false,
             initialLoading: true,
-            lockToolTip: false
+            lockToolTip: false,
+            toolTipWidth: null,
         };
     },
     handleSelectionChanged(point) {
-        console.log("selection changed", point);
+        //console.log("selection changed", point);
         this.setState({
             selection: point
             //highlight: point
@@ -337,29 +342,82 @@ export default React.createClass({
     },
 
     handleMouseMove(event, point) {
-        let { clientHeight, clientWidth } = this.refs.graphDiv;
-        let posX = clientWidth - event.pageX;
-        if ( typeof this.refs.tooltip == "undefined" || this.state.lockTooltip ) {
+        if ( this.state.lockToolTip ) {
             return;
+
         }
-        let { toolTipWidth, toolTipHeight } = this.refs.tooltip;
-        //let offsetX = toolTipWidth;
-        let offsetX = Math.floor( clientWidth * 0.23 );
-        if ( posX < 0.25 * clientWidth ) {
-            posX += offsetX / 4;
+        let { clientHeight, clientWidth } = this.refs.graphDiv;
+        let pos = this.getMousePos( event );
+        let posX = pos.posX;
+        let toolTipWidth;
+
+        if ( typeof this.refs.tooltip == "undefined" ) {
+            toolTipWidth = this.state.toolTipWidth;
+            //return;
         } else {
-            posX -= offsetX;
+            toolTipWidth = this.refs.tooltip.clientWidth;
         }
-        this.setState({posX: posX});
+        if ( typeof toolTipWidth == "undefined" || toolTipWidth === null ) {
+            toolTipWidth = clientWidth * 0.23;
+        }
+        let offsetX = 25;
+        //console.log("clientWidth", clientWidth, "toolTipWidth", toolTipWidth);
+        if ( posX < 0.66 * clientWidth ) {
+            posX += offsetX;
+        } else {
+            posX -= (offsetX + toolTipWidth + 25);
+        }
+        this.setState({posX: posX, toolTipWidth: toolTipWidth});
+
+    },
+    getMousePos(e) {
+        var m_posx = 0, m_posy = 0, e_posx = 0, e_posy = 0,
+        obj = this;
+        //get mouse position on document crossbrowser
+        if (!e){e = window.event;}
+        if (e.pageX || e.pageY){
+            m_posx = e.pageX;
+            m_posy = e.pageY;
+        } else if (e.clientX || e.clientY){
+            m_posx = e.clientX + document.body.scrollLeft
+                + document.documentElement.scrollLeft;
+            m_posy = e.clientY + document.body.scrollTop
+                + document.documentElement.scrollTop;
+        }
+        //get parent element position in document
+        if (obj.offsetParent){
+            do {
+                e_posx += obj.offsetLeft;
+                e_posy += obj.offsetTop;
+            } while (obj = obj.offsetParent);
+        }
+        // mouse position minus elm position is mouseposition relative to element:
+        var x_position = m_posx-e_posx;
+        var y_position = m_posy-e_posy;
+
+        //console.log( ' X Position: ' +  x_position
+        //    + ' Y Position: ' + y_position );
+
+        return { posX: x_position, posY: y_position };
+    },
+
+/*
+var elem = document.getElementById('container');
+elem.addEventListener('mousemove', onMousemove, false);
+*/
+    getToolTipPos( ) {
+
+
 
     },
 
     handleClick(e, f, g) {
-        console.log("handleClick e f g", e, f, g);
+        //console.log("handleClick", e, f, g);
         this.setState({
-            lockToolTip: ! this.state.lockToolTip
+            lockToolTip: !this.state.lockToolTip
     //        highlight: point
         });
+        //console.log("this.state.lockToolTip", this.state.lockToolTip, "tooltip", tooltip );
     },
 
     handleMouseNear(point) {
@@ -380,12 +438,22 @@ export default React.createClass({
 
         let display = "block";
 
-        if ( tracker != null && typeof charts != "undefined" ) {
+        if ( this.state.lockToolTip ) {
+            //return tooltip;
+
+        }
+
+        // Something here maybe, where we need to make sure "tracker" isn't null when locking the tooltip?
+        if ( ( this.state.lockToolTip || tracker != null ) && typeof charts != "undefined" ) {
             let data = this.getTrackerData();
-            if ( data.length == 0 ) {
+            if ( typeof data == "undefined" ||  data.length == 0 ) {
                 //return null;
                 display = "none";
             } else {
+                display = "block";
+            }
+
+            if ( this.state.lockToolTip ) {
                 display = "block";
             }
 
@@ -404,12 +472,14 @@ export default React.createClass({
                     let ipv = "ipv" + ipversion;
 
                     let filter = { testType: type, ipversion: ipversion };
-                    let failFilter = { eventType: type, ipversion: ipversion };
+                    let eventTypeFilter = { eventType: type, ipversion: ipversion };
                     filters[type] = {};
-                    if ( type != "failures" ) {
-                        filters[type][ipversion] = filter;
-                    } else {
-                        filters[type][ipversion] = failFilter;
+                    filters[type][ipversion] = filter;
+                    if ( type == "failures" ) {
+                        filters[type][ipversion] = eventTypeFilter;
+                    } else if ( type == "throughput" ) {
+                        filters[type][ipversion] = eventTypeFilter;
+
                     }
 
                 }
@@ -429,12 +499,38 @@ export default React.createClass({
 
                 for(let i in throughputData) {
                     let row = throughputData[i];
+                    let key = row.properties["metadata-key"];
+                    let direction = row.properties.direction;
+                    let tool = this.getTool( row );
+
+                    // get retrans values
+                    let retransFilter = {
+                        eventType: "packet-retransmits",
+                        ipversion: ipversion,
+                        "metadata-key": key,
+                        direction: direction
+
+                    };
+                    let retransData = GraphDataStore.filterData( data, retransFilter, this.state.itemsToHide );
+
+                    let retransVal = "";
+                    if ( retransData.length > 0 ) {
+                        retransVal = retransData[0].value;
+
+                    }
+
+                    let retransLabel = "";
+                    if ( ( typeof retransVal != "undefined" ) && retransVal != "" ) {
+                        retransLabel += "; retrans: " + retransVal;
+
+                    }
+
                     let dir = "-\u003e"; // Unicode >
                     if ( row.properties.direction == "reverse" ) {
                         dir = "\u003c-"; // Unicode <
                     }
                     throughputItems.push(
-                            <li>{dir} <SIValue value={row.value} digits={3} />bits/s ({row.properties.protocol.toUpperCase()})</li>
+                            <li>{dir} <SIValue value={row.value} digits={3} />bits/s ({row.properties.protocol.toUpperCase()}){retransLabel}{tool}</li>
 
                             );
 
@@ -463,7 +559,10 @@ export default React.createClass({
                         label = "owamp";
                     }
 
-                if ( row.properties.eventType == "packet-loss-rate") {
+                    let tool = this.getTool( row );
+
+                if ( row.properties.eventType == "packet-loss-rate" 
+                     || row.properties.eventType == "packet-loss-rate-bidir" ) {
                     row.value = this._formatToolTipLossValue( row.value, "float" ) + "%";
                     row.lostValue = this._formatToolTipLossValue( row.lostValue, "integer" );
                     row.sentValue = this._formatToolTipLossValue( row.sentValue, "integer" );
@@ -476,14 +575,11 @@ export default React.createClass({
                     if ( row.lostValue != null
                             && row.sentValue != null ) {
                     lossItems.push(
-                            <li>{dir} {row.value} lost ({row.lostValue} of {row.sentValue} packets) {"(" + label + ")"} </li>
-                            /*
-                            <li>{dir} {row.value} lost ({row.lostValue} of {row.sentValue} packets) {"(" + label + ")"}; key: {key} </li>
-                            */
+                            <li>{dir} {row.value} lost ({row.lostValue} of {row.sentValue} packets) {"(" + label + ")"}{tool}</li>
                             );
                     } else {
                         lossItems.push(
-                                <li>{dir} {row.value} ({label})</li>
+                                <li>{dir} {row.value} ({label}){tool}</li>
                                 );
 
                     }
@@ -506,8 +602,18 @@ export default React.createClass({
                     if ( row.properties.mainEventType == "histogram-rtt" ) {
                         label = "(ping)";
                     }
+
+                    let tool = this.getTool( row );
+
+                    let owampVal = row.value.toFixed(1);
+                    if ( Math.abs( owampVal ) < 1 ) {
+                        owampVal = row.value.toFixed(2);
+                    }
+                    if ( Math.abs( owampVal ) < 0.01 ) {
+                        owampVal = row.value.toFixed(4);
+                    }
                     latencyItems.push(
-                            <li>{dir} {row.value.toFixed(1)} ms {label} </li>
+                            <li>{dir} {owampVal} ms {label}{tool}</li>
 
                             );
 
@@ -554,7 +660,7 @@ export default React.createClass({
             }
             let posX = this.state.posX;
             let toolTipStyle = {
-                right: posX + "px"
+                left: posX + "px"
 
             };
 
@@ -609,17 +715,30 @@ export default React.createClass({
 
             }
 
+            let trackerTS = Math.floor( tracker / 1000 );
+            if ( tooltipItems.length == 0 || ! ( trackerTS >=  this.state.start && trackerTS <= this.state.end  )  ) {
+                display = "none";
+                return;
+            } else {
+                //console.log("tooltipItems", tooltipItems);
 
-            return (
+            }
+
+            let newTooltip =  (
             <div className="small-2 columns">
-                <div className="sidebar-popover graph-values-popover" display={display} style={toolTipStyle} ref="tooltip">
-                                    <span className="graph-values-popover__heading">{date} {tz}</span>
-                                    <ul className="graph-values-popover__list">
-                                        {tooltipItems}
-                                    </ul>
-                                </div>
+                    <div className="sidebar-popover graph-values-popover" display={display} style={toolTipStyle} ref="tooltip">
+                        <span className="graph-values-popover__heading">{date} {tz}</span>
+                        <span className="graph-values-popover__close sidebar-popover__close">
+                            <a href="" onClick={this.handleCloseTooltipClick}><i className="fa fa-close"></i></a>
+                        </span>
+                        <ul className="graph-values-popover__list">
+                            {tooltipItems}
+                        </ul>
+                    </div>
                 </div>
                    );
+            tooltip = newTooltip;
+            return tooltip;
 
         } else {
             return null;
@@ -682,7 +801,16 @@ export default React.createClass({
     },
 
     handleTrackerChanged(trackerVal, selection) {
-        this.setState({tracker: trackerVal});
+        if ( this.state.lockToolTip ) {
+            //this.setState({tracker: this.state.tracker});
+            //console.log("handleTrackerChanged locked; trackerVal:", trackerVal, selection);
+        } else {
+            //console.log("handleTrackerChanged not locked; trackerVal:", trackerVal, selection);
+            //if ( trackerVal !== null ) {
+                this.setState({tracker: trackerVal});
+            //}
+
+        }
     },
 
     withinTime( ts1, ts2, range ) {
@@ -698,7 +826,7 @@ export default React.createClass({
         let tracker = this.state.tracker;
         let trackerData = [];
 
-        if ( tracker != null && typeof charts != "undefined"  ) {
+        if ( tracker != null && typeof charts != "undefined" ) {
 
             for ( let type in charts) {
                 let data = charts[type].data;
@@ -708,6 +836,10 @@ export default React.createClass({
 
                 for(let i in data) {
                     let row = data[i];
+                    if ( typeof( row ) == "undefined" || typeof ( row.values ) == "undefined" ) {
+                        continue;
+
+                    }
                     let valAtTime = row.values.atTime( tracker );
                     let value;
                     if ( typeof valAtTime != "undefined" ) {
@@ -722,6 +854,12 @@ export default React.createClass({
 
                     if ( typeof protocol == "undefined" ) {
                         protocol = "";
+                    }
+
+                    if ( eventType == "packet-retransmits" ) {
+                        // retrieve the trans instead of value
+                        value = valAtTime.value("retrans");
+
                     }
 
                     if ( eventType == "packet-count-lost" && value > 1e-9 ) {
@@ -765,18 +903,25 @@ export default React.createClass({
 
 
     renderChart() {
+
+
+        if ( this.state.initialLoading ) {
+            return null;
+        }
+
+
         const highlight = this.state.highlight;
 
         const selection = this.state.selection;
         let selectionTime = "";
-        if ( typeof selection != "undefined" && selection !== null ) {
+        if ( typeof selection != "undefined" && selection !== null && typeof selection.event != "undefined"  ) {
             selectionTime = selection.event.timestampAsUTCString();
         }
         //console.log("highlight", highlight, "selection", this.state.selection, selectionTime );
 
         let text = `Speed: - mph, time: -:--`;
         let hintValues = [];
-        if (selection) {
+        if (selection && selection.event) {
             let highlightText = selection.event.get("errorText");
             hintValues = [{label: "Error", value: highlightText}];
         }
@@ -860,18 +1005,6 @@ export default React.createClass({
                         ipversion: ipversion
                     };
 
-
-                    /*
-                    itemsToHide = [
-                        {
-                            eventType: "throughput",
-                            protocol: "tcp"
-                        }
-                    ];
-                    */
-                    if ( this.props.tool ) {
-
-                    }
                     data = GraphDataStore.getChartData( filter, this.state.itemsToHide );
                     let eventTypeStats = GraphDataStore.eventTypeStats;
 
@@ -880,6 +1013,18 @@ export default React.createClass({
                             let result = data.results[j];
                             let series = result.values;
                             let properties = result.properties;
+                            let key = properties["metadata-key"];
+                            let ipversion = properties.ipversion;
+                            let direction = properties.direction;
+
+                    // get retrans values
+                    let retransFilter = {
+                        eventType: "packet-retransmits",
+                        ipversion: ipversion,
+                        "metadata-key": key,
+                        direction: direction
+
+                    };
 
                             charts[type].data.push( result );
 
@@ -905,41 +1050,43 @@ export default React.createClass({
                                         }
                                         stats.min = 1e-9;
                                     }
-                                    var scaledSeries = GraphDataStore.scaleValues( series, stats.max );
-                                    series = scaledSeries;
+                                    //var scaledSeries = GraphDataStore.scaleValues( series, stats.max );
+                                    //series = scaledSeries;
 
                                 }
 
                             }
 
-                            // push the charts for the main charts
-                            charts[type][ipv].push(
-                                    <LineChart key={type + Math.floor( Math.random() )}
+                            if ( esmondName == "packet-retransmits" ) {
+                                charts[type][ipv].push(
+                                        <ScatterChart
+                                            key={type + "retrans" + Math.floor( Math.random() )}
+                                            axis={"axis" + type}
+                                            series={series}
+                                            style={getChartStyle( properties )} smooth={false} breakLine={true}
+                                            radius={4.0}
+                                            columns={ [ "value" ] }
+                                            //selected={this.state.selection}
+                                            //onMouseNear={this.handleMouseNear}
+                                            //onClick={this.handleClick}
+                                            highlighted={this.state.highlight}
+                                        />
+
+                                        );
+                            } else {
+
+                                // push the charts for the main charts
+                                charts[type][ipv].push(
+                                        <LineChart key={type + Math.floor( Math.random() )}
                                         axis={"axis" + type} series={series}
                                         style={getChartStyle( properties )} smooth={false} breakLine={true}
                                         min={0}
+                                        //onSelectionChange={this.handleSelectionChanged}
                                         onClick={this.handleClick}
-                                        //max={stats.max}
                                         columns={[ "value" ]} />
-                                    );
-                            //for(let result in data.results ) {
-                            //}
-
-                            // push the brush charts, if enabled
-                            /*
-                            if ( this.state.showBrush === true ) {
-                                brushCharts[type][ipv].push(
-                                        <LineChart key={"brush" + [type] + Math.floor( Math.random() )}
-                                            axis={"brush_axis" + [type]} series={series}
-                                            style={getChartStyle( properties )} smooth={false} breakLine={true}
-                                            min={stats.min}
-                                            max={stats.max}
-                                            columns={[ "value" ]} />
                                         );
-                                brushCharts[type].stats = stats;
-                            }
 
-                        */
+                            }
                         }
                         charts[type].stats = stats;
 
@@ -1055,7 +1202,7 @@ export default React.createClass({
                     var chartArr = charts[type][ipv];
 
                     var format = ".2s";
-                    
+
                     var max = charts[type].stats.max;
 
                     if ( type == "latency" ) {
@@ -1142,7 +1289,7 @@ export default React.createClass({
         }
 
         if ( Object.keys( charts ) == 0 ) {
-            if ( !this.state.loading ) {
+            if ( !this.state.loading && !this.state.initialLoading && this.state.dataloaded ) {
                 return ( <div>No data found for this time range.</div> );
 
             } else { 
@@ -1163,7 +1310,7 @@ export default React.createClass({
                         onTrackerChanged={this.handleTrackerChanged}
                         enablePanZoom={true}
                         onTimeRangeChanged={this.handleTimeRangeChange}
-                        onBackgroundClick={this.clearSelection}
+                        onBackgroundClick={this.handleClick}
                         minTime={this.state.initialTimerange.begin()}
                         maxTime={this.state.initialTimerange.end()}
                         minDuration={10 * 60 * 1000}
@@ -1186,20 +1333,24 @@ export default React.createClass({
         this.setState({active});
     },
 
-    clearSelection() {
-        this.setState({selection: null});
-
-    },
-
     renderError() {
         const data = this.state.dataError;
+        let msg;
+        if ( typeof data.responseJSON != "undefined" && data.responseJSON.detail != "undefined" ) {
+            msg = data.responseJSON.detail;
+        } else if ( typeof data.responseText != "undefined" ) {
+            msg = data.responseText;
+        } else {
+            msg = "An unknown error occurred";
+
+        }
         return (
                 <div>
                 <h3>Error loading data</h3>
                     <span className="alert-small-failure">
                         <i className="fa fa-exclamation-triangle"></i>
                          <b>Error retrieving data</b>
-                         <p>{data.responseJSON.detail}</p>
+                         <p>{msg}</p>
                     </span>
                 </div>
                );
@@ -1245,7 +1396,7 @@ export default React.createClass({
 
     renderLoading() {
         let display = "none";
-        if ( this.state.loading ) {
+        if ( this.state.loading || this.state.initialLoading || !this.state.dataloaded ) {
             display = "block";
             return (
                 <div id="loading" display={display}>
@@ -1285,6 +1436,11 @@ export default React.createClass({
         }
     },
 
+    handleCloseTooltipClick( event ) {
+        event.preventDefault();
+        this.setState({ lockToolTip: false, tracker: null });
+
+    },
 
     renderBrush( brushCharts ) {
         if ( this.state.showBrush === false ) {
@@ -1313,13 +1469,26 @@ export default React.createClass({
     },
 
     updateChartData: function() {
+        console.log("updateChartData");
         let newChartSeries = GraphDataStore.getChartData();
+        //this.setState({loading: false, dataloaded: true});
+
+        if ( newChartSeries.results.length == 0 && ( this.state.initialLoading )  ) {
+            //this.setState({ initialLoading: false });
+            //return;
+
+        }
+
+        //this.setState({ chartSeries: newChartSeries, initialLoading: false, loading: false } );
         if ( this.state.initialLoading ) {
             this.setState({ chartSeries: newChartSeries, initialLoading: false, loading: true } );
-        } else {
-            this.setState({ chartSeries: newChartSeries, loading: false, dataloaded: false } );
+        } else if ( this.state.loading && newChartSeries.results.length == 0 )  {
+            this.setState({ chartSeries: newChartSeries, loading: false, dataloaded: false, dataError: false } );
+        } 
+        else {
+            this.setState( {dataloaded: true, chartSeries: newChartSeries, loading: false} );
+
         }
-        //this.forceUpdate();
     },
 
     componentDidMount: function() {
@@ -1339,7 +1508,7 @@ export default React.createClass({
             ipversion: ipversion,
             agent: agent
         };
-        this.setState({params: params, loading: true});
+        this.setState({params: params, loading: true, initialLoading: true});
         let ma_url = this.props.ma_url || location.origin + "/esmond/perfsonar/archive/";
         this.getDataFromMA(src, dst, start, end, ma_url, params, summaryWindow);
 
@@ -1359,10 +1528,15 @@ export default React.createClass({
 
         GraphDataStore.subscribeEmpty(this.dataEmpty);
 
-        GraphDataStore.getHostPairMetadata( src, dst, start, end, ma_url, params, summaryWindow );
+        // If there are no parameters, we haven't filled them in yet so we don't make the call
+
+        if ( typeof params != "undefined" ) {
+            GraphDataStore.getHostPairMetadata( src, dst, start, end, ma_url, params, summaryWindow );
+        }
     },
     dataError: function() {
         let data = GraphDataStore.getErrorData();
+        console.log("dataError", data);
         this.setState({dataError: data, loading: false});
 
     },
@@ -1371,15 +1545,16 @@ export default React.createClass({
         data.responseJSON = {};
         data.responseJSON.detail = "No data found in the measurement archive";
         this.setState({dataError: data, loading: false});
+        console.log("Handling empty data");
 
     },
     componentWillReceiveProps( nextProps ) {
         console.log("chart1 nextProps", nextProps);
         let timerange = new TimeRange([nextProps.start * 1000, nextProps.end * 1000 ]);
-        this.setState({itemsToHide: nextProps.itemsToHide});
+        this.setState({itemsToHide: nextProps.itemsToHide, initialLoading: false});
         if ( nextProps.start != this.state.start
                 || nextProps.end != this.state.end ) {
-            this.setState({start: nextProps.start, end: nextProps.end, chartSeries: null, timerange: timerange, brushrange: null, initialTimerange: timerange, summaryWindow: nextProps.summaryWindow });
+            this.setState({start: nextProps.start, end: nextProps.end, chartSeries: null, timerange: timerange, brushrange: null, initialTimerange: timerange, summaryWindow: nextProps.summaryWindow , loading: true, dataloaded: false, initialLoading: false, dataError: false, lockToolTip: false});
             this.getDataFromMA(nextProps.src, nextProps.dst, nextProps.start, nextProps.end, nextProps.ma_url, this.state.params, nextProps.summaryWindow);
         } else {
             GraphDataStore.toggleType( nextProps.itemsToHide) ;
@@ -1420,19 +1595,24 @@ export default React.createClass({
         });
     },
 
+    getTool( row ) {
+        let tool;
+        tool = row.properties["tool-name"];
+
+        if ( typeof tool != "undefined" && tool != "") {
+            tool = tool.replace(/^pscheduler\//, "");
+            tool = " [" +  tool + "]";
+        } else {
+            tool = "";
+        }
+
+        return tool;
+    },
+
     checkEventType: function ( eventType, direction ) {
         return this.state.chartSeries 
             && this.state.chartSeries[ eventType ]
             && ( direction === null || this.state.chartSeries[ eventType ][ direction ] );
     }
 });
-
-function getElementOffset(element)
-{
-    var de = document.documentElement;
-    var box = element.getBoundingClientRect();
-    var top = box.top + window.pageYOffset - de.clientTop;
-    var left = box.left + window.pageXOffset - de.clientLeft;
-    return { top: top, left: left };
-}
 

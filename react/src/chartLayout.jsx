@@ -16,10 +16,10 @@ const text = 'perfSONAR chart';
 const now = Math.floor( new Date().getTime() / 1000 );
 
 const defaults = {
-    summaryWindow: 3600
-    //start: now - 86400*7,
-    //end: now,
-    //timeframe: "1w",
+    summaryWindow: 3600,
+    start: now - 86400*7,
+    end: now,
+    timeframe: "1w",
 };
 
 const scheme = {
@@ -162,22 +162,14 @@ export default React.createClass({
             //let newItems = {};
             newItems[id] = options;
         }
-        console.log("newItems", newItems);
         let active = this.state.active;
         active[id] = !active[id];
         this.setState({ active: active, itemsToHide: newItems } );
         //this.setHashVals( newItems );
-         //this.setHashVals( this.state.hashValues );
-         //this.updateURLHash();
-         /*
-         this.handleTimerangeChange({
-             "start": this.state.start,
-             "end": this.state.end,
-             "timeframe": timeframe
-         });
-        */
-        //this.forceUpdate();
-        //event.preventDefault();
+
+        //this.setHashVals( this.state.hashValues );
+        //this.updateURLHash();
+        event.preventDefault();
 
     },
 
@@ -191,6 +183,15 @@ export default React.createClass({
 
     },
     render() {
+        if ( typeof this.state.src == "undefined" 
+                || typeof this.state.dst == "undefined"
+                || typeof this.state.start == "undefined"
+                || typeof this.state.end == "undefined"
+                || typeof this.state.timeframe == "undefined"
+                || typeof this.state.ma_url == "undefined" ) {
+            return ( <div></div> );
+
+        }
         return (
 
                 <div className="graph">
@@ -225,7 +226,11 @@ export default React.createClass({
                                 </li>
 
                                 <li className={"graph-filter__item graph-filter__item packet-retransmits " + this.getActiveClass( this.state.active["eventType_packet-retransmits_"] )}>
-                                    <a href="#" onClick={this.toggleType.bind(this, {eventType: "packet-retransmits"})}>Retrans</a>
+                                    <a href="#" onClick={this.toggleType.bind(this, {eventType: "packet-retransmits"})}>Retrans
+                                    <svg width="10" height="10" className="direction-label">
+                                          <circle cx="5" cy="5" r="4" fill="#cc7dbe" />
+                                    </svg>
+                                    </a>
                                 </li>
 
                                 <li className={"graph-filter__item ipv6 " + this.getActiveClass( this.state.active["eventType_histogram-owdelay_"] )}>
@@ -348,12 +353,25 @@ export default React.createClass({
     */
 
     handleTimerangeChange: function( newTime, noupdateURL ) {
+        let timeVars = GraphUtilities.getTimeVars( newTime.timeframe );
+        let timeDiff = timeVars.timeDiff;
+        let oldStart = this.state.start;
+        let oldEnd = this.state.end;
+        let oldDiff = oldEnd - oldStart;
+
+        const now = Math.floor( new Date().getTime() / 1000 );
+
+        if ( now - newTime.end < oldDiff/2 ) {
+            newTime.end = now;
+            newTime.start = newTime.end - timeDiff;
+
+        }
+
         console.log("chartLayout newTime", newTime);
         this.setState( newTime );
         //if ( !noupdateURL ) {
             this.setHashVals( newTime );
-        //}
-        //this.forceUpdate();
+        //}        
         this.updateURLHash();
     },
 
@@ -367,9 +385,14 @@ export default React.createClass({
         this.updateURLHash();
 
     },
-    updateURLHash: function() {
+    updateURLHash: function( vals ) {
         let hash = "#";
-        let hashVals = this.state.hashValues;
+        let hashVals;
+        if ( typeof vals == "undefined" ) {
+            hashVals = this.state.hashValues;
+        } else {
+            hashVals = vals;
+        }
         console.log("updateURLHash hashVals", hashVals);
         let arr = [];
         for(let key in hashVals ) {
@@ -398,6 +421,9 @@ export default React.createClass({
             let row = hashPairs[i].split("=");
             let key = row[0];
             let val = row[1];
+            if ( typeof val == "undefined") {
+                continue;
+            }
             hashObj[key] = val;
         }
 
@@ -422,16 +448,15 @@ export default React.createClass({
         let timeVars = GraphUtilities.getTimeVars( timeframe );
 
         if ( typeof hashObj.start != "undefined" ) {
-            start = hashObj.start || defaults.start;
+            start = hashObj.start;
         } else if ( typeof hashObj.start_ts != "undefined" ) {
-            start = hashObj.start_ts || defaults.start;
-
+            start = hashObj.start_ts;
         }
 
         if ( typeof hashObj.end != "undefined" ) {
-            end = hashObj.end || defaults.end;
+            end = hashObj.end;
         } else if ( typeof hashObj.end_ts != "undefined" ) {
-            end = hashObj.end_ts || defaults.end;
+            end = hashObj.end_ts;
         }
 
         if ( typeof qs.ipversion != "undefined" ) {
@@ -447,6 +472,12 @@ export default React.createClass({
             summaryWindow = timeVars.summaryWindow;
 
         }
+
+        hashObj.start = start;
+        hashObj.end = end;
+        hashObj.summaryWindow = summaryWindow;
+
+        this.updateURLHash( hashObj );
 
         let ma_urls = qs.url || location.origin + "/esmond/perfsonar/archive/";
         let localhostRe = /localhost/i;
@@ -487,11 +518,8 @@ export default React.createClass({
             hashValues: hashObj,
         };
 
-        // TODO: allow multiple src/dest pairs ( I think this work, but needs testing)
         HostInfoStore.retrieveHostInfo( src, dst );
 
-        //this.setState(newState);
-        //this.forceUpdate();
         return newState;
     }
 
