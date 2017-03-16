@@ -1054,13 +1054,6 @@ elem.addEventListener('mousemove', onMousemove, false);
         }
         //console.log("highlight", highlight, "selection", this.state.selection, selectionTime );
 
-        let text = `Speed: - mph, time: -:--`;
-        let hintValues = [];
-        if (selection && selection.event) {
-            let highlightText = selection.event.get("errorText");
-            hintValues = [{label: "Error", value: highlightText}];
-        }
-
         let chartSeries = this.state.chartSeries;
         charts = {};
         let brushCharts = {};
@@ -1241,6 +1234,8 @@ elem.addEventListener('mousemove', onMousemove, false);
                             //stats.max = GraphDataStore.getMax( failureData.stats.max, stats.max );
                             //stats.min = failureData.stats.min;
                             //stats.max = failureData.stats.max, stats.max;
+                            var scaledSeries = GraphDataStore.scaleValues( failureSeries, stats.max );
+                            failureSeries = scaledSeries;
 
                             // push the charts for the main charts
                             charts[type][ipv].push(
@@ -1251,7 +1246,6 @@ elem.addEventListener('mousemove', onMousemove, false);
                                     style={failureStyle}
                                     radius={4.0}
                                     columns={ [ "value" ] }
-                                    info={hintValues}
                                     infoHeight={100}
                                     infoWidth={200}
                                     //infoStyle={infoStyle}

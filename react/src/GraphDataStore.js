@@ -506,7 +506,7 @@ module.exports = {
                         let val = item[key];
                         let f = filters;
                         //console.log("filters", filters);
-                        if ( filters.eventType == "failures"
+                        if ( false && filters.eventType == "failures"
                                 && item.eventType != "packet-loss-rate"
                                 && e.properties.mainEventType == filters.mainEventType ) {
                             console.log("EWOHGOIWHEO!!!");
