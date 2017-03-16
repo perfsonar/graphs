@@ -1730,6 +1730,13 @@ elem.addEventListener('mousemove', onMousemove, false);
 
         if ( typeof tool != "undefined" && tool != "") {
             tool = tool.replace(/^pscheduler\//, "");
+
+            // We don't include the tool if it's "ping" because this is redundant
+            // with the test type
+            if ( tool == "ping" ) {
+                return "";
+            }
+
             tool = " [" +  tool + "]";
         } else {
             tool = "";

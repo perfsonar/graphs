@@ -506,12 +506,30 @@ module.exports = {
                         let val = item[key];
                         let f = filters;
                         //console.log("filters", filters);
-                        if ( false && filters.eventType == "failures"
-                                && item.eventType != "packet-loss-rate"
+                        if ( filters.eventType == "failures"
+                                //&& item.eventType != "packet-loss-rate"
                                 && e.properties.mainEventType == filters.mainEventType ) {
+
+                            // hide failures if failures are hidden
+                            if ( key == "eventType" && val == "failures" ) {
+                                return false;
+                            }
+
+                            // if we're looking at eventType, we really
+                            // need to look at mainEventType
+                            if ( key == "eventType" ) {
+                                //key = "mainEventType";
+
+                            }
                             console.log("EWOHGOIWHEO!!!");
-                            found++;
-                            return false;
+                            if ( ( key in e.properties ) && ( e.properties[key] == val ) ) {
+                                //show  = false || show;
+                                found++;
+                                return false;
+                            } else {
+                                show = true;;
+                            }
+                            //return false;
 
                         } else if ( ( key in e.properties ) && e.properties[key] == val ) {
                             show  = false || show;
