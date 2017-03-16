@@ -725,12 +725,8 @@ elem.addEventListener('mousemove', onMousemove, false);
                             continue;
                         }
 
-                        // TODO: Add something here to continue; if the main event type
-                        // we're looking at is supposed to be hidden
-
                         console.log("frow", row);
 
-                        /* TODO: come back to this */
                         let hide = false;
                         FAILUREITEMS:
                         for( let j in failureItemsToHide ) {

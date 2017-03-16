@@ -496,7 +496,7 @@ module.exports = {
             return found;
         });
         // Filter out items in the itemsToHide array
-        if ( typeof itemsToHide != "undefined" && itemsToHide.length > 0 ) {
+        if ( typeof itemsToHide != "undefined" && Object.keys( itemsToHide ).length > 0 ) {
             results = $.grep( results, function( e, i ) {
                 let show = false;
                 for ( var j in itemsToHide ) {
@@ -504,7 +504,16 @@ module.exports = {
                     let item = itemsToHide[j];
                     for( var key in item ) {
                         let val = item[key];
-                        if ( ( key in e.properties ) && e.properties[key] == val ) {
+                        let f = filters;
+                        //console.log("filters", filters);
+                        if ( filters.eventType == "failures"
+                                && item.eventType != "packet-loss-rate"
+                                && e.properties.mainEventType == filters.mainEventType ) {
+                            console.log("EWOHGOIWHEO!!!");
+                            found++;
+                            return false;
+
+                        } else if ( ( key in e.properties ) && e.properties[key] == val ) {
                             show  = false || show;
                             if ( e.properties.eventType == "packet-loss-rate" && e.properties.mainTestType == "throughput" ) {
                                 //console.log("packet-loss throughput");
@@ -512,7 +521,8 @@ module.exports = {
                             }
                             found++;
                         } else {
-                            show = true || show;
+                            show = true;
+                            //return false;
                         }
                     }
                     show = ( found < Object.keys( item ).length );
