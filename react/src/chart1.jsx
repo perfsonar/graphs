@@ -550,6 +550,7 @@ elem.addEventListener('mousemove', onMousemove, false);
                     let key = row.properties["metadata-key"];
                     let direction = row.properties.direction;
                     let tool = this.getTool( row );
+                    let protocol = this.getProtocol( row ); 
 
                     // get retrans values
                     let retransFilter = {
@@ -578,7 +579,7 @@ elem.addEventListener('mousemove', onMousemove, false);
                         dir = "\u003c-"; // Unicode <
                     }
                     throughputItems.push(
-                            <li className={this.getTTItemClass("throughput")}>{dir} <SIValue value={row.value} digits={3} />bits/s ({row.properties.protocol.toUpperCase()}){retransLabel}{tool}</li>
+                            <li className={this.getTTItemClass("throughput")}>{dir} <SIValue value={row.value} digits={3} />bits/s{protocol}{retransLabel}{tool}</li>
 
                             );
 
@@ -590,7 +591,10 @@ elem.addEventListener('mousemove', onMousemove, false);
 
                 lossData.sort(this.compareToolTipData);
                 for(let i in lossData) {
-                    let row = lossData[i];
+                    let row = lossData[i];                    
+                    if ( typeof row == "undefined" ||  typeof row.value == "undefined" ) {
+                        continue;
+                    }
                     let dir = "-\u003e"; // Unicode >
                     if ( row.properties.direction == "reverse" ) {
                         dir = "\u003c-"; // Unicode <
@@ -605,13 +609,14 @@ elem.addEventListener('mousemove', onMousemove, false);
                         label = "UDP"
                     } else if ( row.properties.mainEventType == "histogram-owdelay" ) {
                         label = "owamp";
-                    }
+                    }                    
 
                     let tool = this.getTool( row );
+                    let value = row.value;
 
                 if ( row.properties.eventType == "packet-loss-rate" 
                      || row.properties.eventType == "packet-loss-rate-bidir" ) {
-                    row.value = this._formatToolTipLossValue( row.value, "float" ) + "%";
+                    value = this._formatToolTipLossValue( value, "float" );
                     row.lostValue = this._formatToolTipLossValue( row.lostValue, "integer" );
                     row.sentValue = this._formatToolTipLossValue( row.sentValue, "integer" );
                 }  else {
@@ -623,11 +628,11 @@ elem.addEventListener('mousemove', onMousemove, false);
                     if ( row.lostValue != null
                             && row.sentValue != null ) {
                     lossItems.push(
-                            <li className={this.getTTItemClass("loss")}>{dir} {row.value} lost ({row.lostValue} of {row.sentValue} packets) {"(" + label + ")"}{tool}</li>
+                            <li className={this.getTTItemClass("loss")}>{dir} {value}% lost ({row.lostValue} of {row.sentValue} packets) {"(" + label + ")"}{tool}</li>
                             );
                     } else {
                         lossItems.push(
-                                <li className={this.getTTItemClass("loss")}>{dir} {row.value} ({label}){tool}</li>
+                                <li className={this.getTTItemClass("loss")}>{dir} {value}% ({label}){tool}</li>
                                 );
 
                     }
@@ -637,28 +642,28 @@ elem.addEventListener('mousemove', onMousemove, false);
                 let latencyData = GraphDataStore.filterData( data, filters["latency"][ipversion], this.state.itemsToHide );
                 latencyData.sort(this.compareToolTipData);
                 for(let i in latencyData) {
-                    let row = latencyData[i];
-                    if ( typeof row.value == "undefined" ) {
+                    let latRow = latencyData[i];
+                    if ( ( typeof latRow == "undefined" ) || ( typeof latRow.value == "undefined" ) ) {
                         continue;
                     }
                     let dir = "-\u003e"; // Unicode >
-                    if ( row.properties.direction == "reverse" ) {
+                    if ( latRow.properties.direction == "reverse" ) {
                         dir = "\u003c-"; // Unicode <
 
                     }
                     let label = "(owamp)";
-                    if ( row.properties.mainEventType == "histogram-rtt" ) {
+                    if ( latRow.properties.mainEventType == "histogram-rtt" ) {
                         label = "(ping)";
                     }
 
-                    let tool = this.getTool( row );
+                    let tool = this.getTool( latRow );
 
-                    let owampVal = row.value.toFixed(1);
+                    let owampVal = latRow.value.toFixed(1);
                     if ( Math.abs( owampVal ) < 1 ) {
-                        owampVal = row.value.toFixed(2);
+                        owampVal = latRow.value.toFixed(2);
                     }
                     if ( Math.abs( owampVal ) < 0.01 ) {
-                        owampVal = row.value.toFixed(4);
+                        owampVal = latRow.value.toFixed(4);
                     }
                     latencyItems.push(
                             <li className={this.getTTItemClass("latency")}>{dir} {owampVal} ms {label}{tool}</li>
@@ -714,7 +719,7 @@ elem.addEventListener('mousemove', onMousemove, false);
                         let duration = this.state.timerange.duration();
                         let range = duration * timeslip;
 
-                        if ( !this.withinTime( ts.getTime(), tracker.getTime(), range ) ) {
+                        if ( ( typeof ts == "undefined"  ) || !this.withinTime( ts.getTime(), tracker.getTime(), range ) ) {
                             continue;
                         }
 
@@ -1743,6 +1748,16 @@ elem.addEventListener('mousemove', onMousemove, false);
         }
 
         return tool;
+    },
+
+    getProtocol( row ) {
+        let protocol = "";
+
+        if ( typeof row != "undefined" && typeof row.properties.protocol != "undefined" ) {
+            protocol = " (" + row.properties.protocol.toUpperCase() + ")";
+        }
+
+        return protocol;
     },
 
     checkEventType: function ( eventType, direction ) {
