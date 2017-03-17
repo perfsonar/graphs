@@ -201,6 +201,7 @@ export default React.createClass({
         //this.updateURLHash();
         event.preventDefault();
 
+        //return false;
     },
 
 

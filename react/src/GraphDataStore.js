@@ -483,6 +483,11 @@ module.exports = {
 
     filterData: function( data, filters, itemsToHide ) {
         //console.log("filters", filters, "itemsToHide", itemsToHide);
+        if ( typeof data == "undefined" || typeof filters == "undefined" ) {
+            //return [];
+
+        }
+
         let results = $.grep( data, function( e, i ) {
             let found = true;
             for (var key in filters ) {
@@ -532,10 +537,6 @@ module.exports = {
 
                         } else if ( ( key in e.properties ) && e.properties[key] == val ) {
                             show  = false || show;
-                            if ( e.properties.eventType == "packet-loss-rate" && e.properties.mainTestType == "throughput" ) {
-                                //console.log("packet-loss throughput");
-
-                            }
                             found++;
                         } else {
                             show = true;
