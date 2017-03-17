@@ -482,12 +482,13 @@ module.exports = {
     },
 
     filterData: function( data, filters, itemsToHide ) {
+        //console.log("filters", filters, "itemsToHide", itemsToHide);
         let results = $.grep( data, function( e, i ) {
             let found = true;
             for (var key in filters ) {
                 let val = filters[key];
                 if ( ( key in e.properties ) && e.properties[key] == val ) {
-                    found = true;
+                    found = found && true;
                 } else {
                     return false;
                 }
@@ -495,7 +496,7 @@ module.exports = {
             return found;
         });
         // Filter out items in the itemsToHide array
-        if ( typeof itemsToHide != "undefined" && itemsToHide.length > 0 ) {
+        if ( typeof itemsToHide != "undefined" && Object.keys( itemsToHide ).length > 0 ) {
             results = $.grep( results, function( e, i ) {
                 let show = false;
                 for ( var j in itemsToHide ) {
@@ -503,15 +504,42 @@ module.exports = {
                     let item = itemsToHide[j];
                     for( var key in item ) {
                         let val = item[key];
-                        if ( ( key in e.properties ) && e.properties[key] == val ) {
+                        let f = filters;
+                        //console.log("filters", filters);
+                        if ( filters.eventType == "failures"
+                                //&& item.eventType != "packet-loss-rate"
+                                && e.properties.mainEventType == filters.mainEventType ) {
+
+                            // hide failures if failures are hidden
+                            if ( key == "eventType" && val == "failures" ) {
+                                return false;
+                            }
+
+                            // if we're looking at eventType, we really
+                            // need to look at mainEventType
+                            if ( key == "eventType" && e.properties.mainTestType == "latency" ) {
+                                key = "mainEventType";
+
+                            }
+                            if ( ( key in e.properties ) && ( e.properties[key] == val ) ) {
+                                //show  = false || show;
+                                found++;
+                                return false;
+                            } else {
+                                show = true;;
+                            }
+                            //return false;
+
+                        } else if ( ( key in e.properties ) && e.properties[key] == val ) {
                             show  = false || show;
                             if ( e.properties.eventType == "packet-loss-rate" && e.properties.mainTestType == "throughput" ) {
-                                console.log("packet-loss throughput");
+                                //console.log("packet-loss throughput");
 
                             }
                             found++;
                         } else {
-                            show = true || show;
+                            show = true;
+                            //return false;
                         }
                     }
                     show = ( found < Object.keys( item ).length );

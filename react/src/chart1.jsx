@@ -318,7 +318,7 @@ export default React.createClass({
             maxThroughput: 1,
             maxLoss: 0.0000000001,
             latencySeries: null,
-            itemsToHide: [],
+            itemsToHide: {},
             showBrush: false,
             // Highlighting
             hover: null,
@@ -672,11 +672,45 @@ elem.addEventListener('mousemove', onMousemove, false);
 
                 }
 
+                // We need to use a different list of items to hide for failures, because
+                // normally we query on "eventType" but for this we need to check
+                // "mainEventType" (since "failures" is the "eventType" and 
+                // "mainEventType might be "throughput" or "latency" etc.)
+                let failureItemsToHide = [];
+                let eventTypeRe = /^eventType/;
+
+                for( let key in this.state.itemsToHide ) {
+                    let row = this.state.itemsToHide[ key ];
+                    let newObj = {};
+                    //let newKey = key.replace(eventTypeRe, "mainEventType");
+                    let newKey = key;
+                    if ( newKey ) {
+                        for( let subkey in row ) {
+                            let val = row[ subkey ];
+                            //let newSubkey = subkey.replace(eventTypeRe, "mainEventType");
+                            let newSubkey = subkey;
+                            if ( newSubkey ) {
+                                newObj[ newSubkey ] = val;
+                            }
+
+
+                        }
+
+                        //let newRow = {};
+                        //newRow[ newKey ] = newObj;
+                        failureItemsToHide.push( newObj );
+                    }
+
+                }
+
+                //console.log("failuresData itemsToHide", failureItemsToHide );
+
                 let failuresData = GraphDataStore.filterData( data, filters["failures"][ipversion], this.state.itemsToHide );
                 //failureData.sort(this.compareToolTipData);
                 if ( failuresData.length == 0 ) {
                     //failureItems = [];
                 } else {
+                    FAILUREDATA:
                     for(let i in failuresData) {
                         let row = failuresData[i];
                         let ts = row.ts;
@@ -695,6 +729,41 @@ elem.addEventListener('mousemove', onMousemove, false);
                         if ( typeof row.properties.mainEventType == "undefined" ) {
                             continue;
                         }
+
+                        let hide = false;
+                        FAILUREITEMS:
+                        for( let j in failureItemsToHide ) {
+                            let item = failureItemsToHide[j];
+                            hide = true;
+                            for( let criterion in item ) {
+                                if ( criterion == "eventType" ) {
+                                    if ( row.properties.mainEventType == item[ criterion ] 
+                                           && item[ criterion ] != "packet-loss-rate" ) {
+                                        hide = hide && true;
+                                    } else {
+                                        hide = false;
+                                        continue;
+                                    }
+                                } else {
+                                    if ( row.properties[criterion] == item[ criterion ] ) {
+                                        hide = hide && true;
+                                    } else {
+                                        hide = false;
+                                        continue;
+
+                                    }
+
+                                }
+
+
+                            }
+                            if ( hide ) {
+                                continue FAILUREDATA;
+
+                            }
+
+                        }
+
                         let dir = "-\u003e"; // Unicode >
                         if ( row.properties.direction == "reverse" ) {
                             dir = "\u003c-"; // Unicode <
@@ -705,9 +774,11 @@ elem.addEventListener('mousemove', onMousemove, false);
                             prot += " ";
                         }
                         let testType = row.properties.mainTestType;
-                        failureItems.push(
+                        if ( !hide ) {
+                            failureItems.push(
                                 <li className={this.getTTItemClass("failures")}>{dir} [{testType}] {prot}{row.error} {tool}</li>
-                                );
+                            );
+                        }
 
                     }
                 }
@@ -981,13 +1052,6 @@ elem.addEventListener('mousemove', onMousemove, false);
         }
         //console.log("highlight", highlight, "selection", this.state.selection, selectionTime );
 
-        let text = `Speed: - mph, time: -:--`;
-        let hintValues = [];
-        if (selection && selection.event) {
-            let highlightText = selection.event.get("errorText");
-            hintValues = [{label: "Error", value: highlightText}];
-        }
-
         let chartSeries = this.state.chartSeries;
         charts = {};
         let brushCharts = {};
@@ -1168,6 +1232,8 @@ elem.addEventListener('mousemove', onMousemove, false);
                             //stats.max = GraphDataStore.getMax( failureData.stats.max, stats.max );
                             //stats.min = failureData.stats.min;
                             //stats.max = failureData.stats.max, stats.max;
+                            var scaledSeries = GraphDataStore.scaleValues( failureSeries, stats.max );
+                            failureSeries = scaledSeries;
 
                             // push the charts for the main charts
                             charts[type][ipv].push(
@@ -1178,7 +1244,6 @@ elem.addEventListener('mousemove', onMousemove, false);
                                     style={failureStyle}
                                     radius={4.0}
                                     columns={ [ "value" ] }
-                                    info={hintValues}
                                     infoHeight={100}
                                     infoWidth={200}
                                     //infoStyle={infoStyle}
@@ -1663,6 +1728,13 @@ elem.addEventListener('mousemove', onMousemove, false);
 
         if ( typeof tool != "undefined" && tool != "") {
             tool = tool.replace(/^pscheduler\//, "");
+
+            // We don't include the tool if it's "ping" because this is redundant
+            // with the test type
+            if ( tool == "ping" ) {
+                return "";
+            }
+
             tool = " [" +  tool + "]";
         } else {
             tool = "";
