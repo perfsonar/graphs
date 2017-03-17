@@ -521,7 +521,6 @@ module.exports = {
                                 key = "mainEventType";
 
                             }
-                            console.log("EWOHGOIWHEO!!!");
                             if ( ( key in e.properties ) && ( e.properties[key] == val ) ) {
                                 //show  = false || show;
                                 found++;

@@ -703,7 +703,7 @@ elem.addEventListener('mousemove', onMousemove, false);
 
                 }
 
-                console.log("failuresData itemsToHide", failureItemsToHide );
+                //console.log("failuresData itemsToHide", failureItemsToHide );
 
                 let failuresData = GraphDataStore.filterData( data, filters["failures"][ipversion], this.state.itemsToHide );
                 //failureData.sort(this.compareToolTipData);
@@ -730,8 +730,6 @@ elem.addEventListener('mousemove', onMousemove, false);
                             continue;
                         }
 
-                        console.log("frow", row);
-
                         let hide = false;
                         FAILUREITEMS:
                         for( let j in failureItemsToHide ) {
@@ -742,8 +740,6 @@ elem.addEventListener('mousemove', onMousemove, false);
                                     if ( row.properties.mainEventType == item[ criterion ] 
                                            && item[ criterion ] != "packet-loss-rate" ) {
                                         hide = hide && true;
-                                        //continue;
-                                        
                                     } else {
                                         hide = false;
                                         continue;
@@ -761,7 +757,6 @@ elem.addEventListener('mousemove', onMousemove, false);
 
 
                             }
-                            console.log("hide, item", hide, item);
                             if ( hide ) {
                                 continue FAILUREDATA;
 
@@ -769,8 +764,6 @@ elem.addEventListener('mousemove', onMousemove, false);
 
                         }
 
-                        
-                        
                         let dir = "-\u003e"; // Unicode >
                         if ( row.properties.direction == "reverse" ) {
                             dir = "\u003c-"; // Unicode <
