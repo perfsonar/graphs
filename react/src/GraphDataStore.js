@@ -517,8 +517,8 @@ module.exports = {
 
                             // if we're looking at eventType, we really
                             // need to look at mainEventType
-                            if ( key == "eventType" ) {
-                                //key = "mainEventType";
+                            if ( key == "eventType" && e.properties.mainTestType == "latency" ) {
+                                key = "mainEventType";
 
                             }
                             console.log("EWOHGOIWHEO!!!");
