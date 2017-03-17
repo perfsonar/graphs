@@ -521,7 +521,9 @@ elem.addEventListener('mousemove', onMousemove, false);
 
                     let filter = { testType: type, ipversion: ipversion };
                     let eventTypeFilter = { eventType: type, ipversion: ipversion };
-                    filters[type] = {};
+                    if ( typeof filters[type] == "undefined" ) {
+                        filters[type] = {};
+                    }
                     filters[type][ipversion] = filter;
                     if ( type == "failures" ) {
                         filters[type][ipversion] = eventTypeFilter;
@@ -535,14 +537,28 @@ elem.addEventListener('mousemove', onMousemove, false);
 
             }
 
-            let throughputItems = [];
-            let lossItems = [];
-            let latencyItems = [];
-            let failureItems = [];
 
-            for( let i in ipversions ) {
-                let ipversion = ipversions[i];
+            let tooltipItems = {};
+            tooltipItems["throughput"] = [];
+            tooltipItems["latency"] = [];
+            tooltipItems["loss"] = [];
+            tooltipItems["failures"] = [];
+
+            for( let j in ipversions ) {
+                let throughputItems = [];
+                let lossItems = [];
+                let latencyItems = [];
+                let failureItems = [];
+
+                let ipversion = ipversions[j];
+                let ipv = "ipv" + ipversion;
+
+                /*if ( typeof tooltipItems[ ipversion ] == "undefined" ) { 
+                    tooltipItems[ ipversion ] = [];
+                }
+                */
                 let throughputData = GraphDataStore.filterData( data, filters.throughput[ipversion], this.state.itemsToHide );
+                //console.log("tooltip ipversion ", ipversions[j]);
                 throughputData.sort(this.compareToolTipData);
 
                 for(let i in throughputData) {
@@ -550,7 +566,7 @@ elem.addEventListener('mousemove', onMousemove, false);
                     let key = row.properties["metadata-key"];
                     let direction = row.properties.direction;
                     let tool = this.getTool( row );
-                    let protocol = this.getProtocol( row ); 
+                    let protocol = this.getProtocol( row );
 
                     // get retrans values
                     let retransFilter = {
@@ -591,7 +607,7 @@ elem.addEventListener('mousemove', onMousemove, false);
 
                 lossData.sort(this.compareToolTipData);
                 for(let i in lossData) {
-                    let row = lossData[i];                    
+                    let row = lossData[i];
                     if ( typeof row == "undefined" ||  typeof row.value == "undefined" ) {
                         continue;
                     }
@@ -609,7 +625,7 @@ elem.addEventListener('mousemove', onMousemove, false);
                         label = "UDP"
                     } else if ( row.properties.mainEventType == "histogram-owdelay" ) {
                         label = "owamp";
-                    }                    
+                    }
 
                     let tool = this.getTool( row );
                     let value = row.value;
@@ -782,80 +798,84 @@ elem.addEventListener('mousemove', onMousemove, false);
 
                     }
                 }
-            }
-            let posX = this.state.posX;
-            let toolTipStyle = {
-                left: posX + "px"
 
-            };
-
-            let tooltipItems = [];
-            if ( throughputItems.length > 0 ) {
-                tooltipItems.push(
+                if ( throughputItems.length > 0 ) {
+                    tooltipItems["throughput"].push(
                                     <li className="graph-values-popover__item">
                                         <ul>
                                             <li><h6><a href="#" onClick={(event) => this.toggleTT(event, "throughput") }>
                                                 <i className={"fa " + this.getTTIconClass("throughput")} aria-hidden="true"></i>
-                                                Throughput</a></h6></li>
+                                                Throughput - {ipv}</a></h6></li>
                                             {throughputItems}
                                         </ul>
                                     </li>
 
-                        );
+                    );
 
+                }
+                if ( lossItems.length > 0 ) {
+                    tooltipItems["loss"].push(
+                                        <li className="graph-values-popover__item">
+                                            <ul>
+                                                <li><h6><a href="#" onClick={(event) => this.toggleTT(event, "loss") }>
+                                                    <i className={"fa " + this.getTTIconClass("loss")} aria-hidden="true"></i>
+                                                    Loss - {ipv}</a></h6></li>
+                                                {lossItems}
+                                            </ul>
+                                        </li>
+
+                            );
+
+                }
+                if ( latencyItems.length > 0 ) {
+                    tooltipItems["latency"].push(
+                                        <li className="graph-values-popover__item">
+                                            <ul>
+                                                <li><h6><a href="#" onClick={(event) => this.toggleTT(event, "latency") }>
+                                                    <i className={"fa " + this.getTTIconClass("latency")} aria-hidden="true"></i>
+                                                    Latency - {ipv}</a></h6></li>
+                                                {latencyItems}
+                                            </ul>
+                                        </li>
+
+                            );
+
+                }
+
+                if ( failureItems.length > 0 ) {
+                    tooltipItems["failures"].push(
+                                        <li className="graph-values-popover__item">
+                                            <ul>
+                                                <li><h6><a href="#" onClick={(event) => this.toggleTT(event, "failures") }>
+                                                    <i className={"fa " + this.getTTIconClass("failures")} aria-hidden="true"></i>
+                                                    Test Failures - {ipv}</a></h6></li>
+                                                {failureItems}
+                                            </ul>
+                                        </li>
+
+                            );
+
+                }
             }
-            if ( lossItems.length > 0 ) {
-                tooltipItems.push(
-                                    <li className="graph-values-popover__item">
-                                        <ul>
-                                            <li><h6><a href="#" onClick={(event) => this.toggleTT(event, "loss") }>
-                                                <i className={"fa " + this.getTTIconClass("loss")} aria-hidden="true"></i>
-                                                Loss</a></h6></li>
-                                            {lossItems}
-                                        </ul>
-                                    </li>
 
-                        );
 
-            }
-            if ( latencyItems.length > 0 ) {
-                tooltipItems.push(
-                                    <li className="graph-values-popover__item">
-                                        <ul>
-                                            <li><h6><a href="#" onClick={(event) => this.toggleTT(event, "latency") }>
-                                                <i className={"fa " + this.getTTIconClass("latency")} aria-hidden="true"></i>
-                                                Latency</a></h6></li>
-                                            {latencyItems}
-                                        </ul>
-                                    </li>
-
-                        );
-
-            }
-
-            if ( failureItems.length > 0 ) {
-                tooltipItems.push(
-                                    <li className="graph-values-popover__item">
-                                        <ul>
-                                            <li><h6><a href="#" onClick={(event) => this.toggleTT(event, "failures") }>
-                                                <i className={"fa " + this.getTTIconClass("failures")} aria-hidden="true"></i>
-                                                Test Failures</a></h6></li>
-                                            {failureItems}
-                                        </ul>
-                                    </li>
-
-                        );
-
-            }
+            let allItems = tooltipItems["throughput"].concat( 
+                    tooltipItems["loss"],
+                    tooltipItems["latency"],
+                    tooltipItems["failures"]);
 
             let trackerTS = Math.floor( tracker / 1000 );
-            if ( tooltipItems.length == 0 || ! ( trackerTS >=  this.state.start && trackerTS <= this.state.end  )  ) {
+            if ( allItems.length == 0 || ! ( trackerTS >=  this.state.start && trackerTS <= this.state.end  )  ) {
                 display = "none";
                 return;
             } else {
                 //console.log("tooltipItems", tooltipItems);
 
             }
+            let posX = this.state.posX;
+            let toolTipStyle = {
+                left: posX + "px"
+            };
 
             let newTooltip =  (
             <div className="small-2 columns">
@@ -865,7 +885,7 @@ elem.addEventListener('mousemove', onMousemove, false);
                             <a href="" onClick={this.handleCloseTooltipClick}><i className="fa fa-close"></i></a>
                         </span>
                         <ul className="graph-values-popover__list">
-                            {tooltipItems}
+                            {allItems}
                         </ul>
                     </div>
                 </div>
@@ -1596,7 +1616,6 @@ elem.addEventListener('mousemove', onMousemove, false);
     },
 
     updateChartData: function() {
-        console.log("updateChartData");
         let newChartSeries = GraphDataStore.getChartData();
         //this.setState({loading: false, dataloaded: true});
 
