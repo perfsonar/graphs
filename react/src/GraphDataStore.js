@@ -488,7 +488,7 @@ module.exports = {
             for (var key in filters ) {
                 let val = filters[key];
                 if ( ( key in e.properties ) && e.properties[key] == val ) {
-                    found = true;
+                    found = found && true;
                 } else {
                     return false;
                 }
