@@ -17,7 +17,7 @@ export default React.createClass({
         let suffix = this.props.unit || '';
         var thresh = si ? 1000 : 1024;
         if(Math.abs(value) < thresh) {
-            return value + ' B';
+            return value + ' ';
         }
         var units = si
             ? ['k','M','G','T','P','E','Z','Y']

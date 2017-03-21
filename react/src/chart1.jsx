@@ -595,7 +595,7 @@ elem.addEventListener('mousemove', onMousemove, false);
                         dir = "\u003c-"; // Unicode <
                     }
                     throughputItems.push(
-                            <li className={this.getTTItemClass("throughput")}>{dir} <SIValue value={row.value} digits={3} />bits/s{protocol}{retransLabel}{tool}</li>
+                            <li className={this.getTTItemClass("throughput")}>{dir} <SIValue value={this._formatZero( row.value )} digits={3} />bits/s{protocol}{retransLabel}{tool}</li>
 
                             );
 
@@ -899,6 +899,14 @@ elem.addEventListener('mousemove', onMousemove, false);
 
     },
 
+    _formatZero ( value ) {
+        if ( value == 1e-9 ) {
+            return 0;
+        }
+        return value;
+
+    },
+
     _formatToolTipLossValue( value, format ) {
         if ( typeof format == "undefined" ) {
             format = "float";
@@ -909,9 +917,8 @@ elem.addEventListener('mousemove', onMousemove, false);
 
         // Horrible hack; values of 0 are rewritten to 1e-9 since our log scale
         // can't handle zeroes
-        if ( value == 1e-9 ) {
-            value = 0;
-        }  else {
+        value = this._formatZero( value );
+        if ( value > 0 ) {
             if ( format == "integer" ) {
                 value = Math.floor( value );
             } else if ( format == "percent" ) {
