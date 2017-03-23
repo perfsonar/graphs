@@ -318,7 +318,7 @@ export default React.createClass({
             maxThroughput: 1,
             maxLoss: 0.0000000001,
             latencySeries: null,
-            itemsToHide: [],
+            itemsToHide: {},
             showBrush: false,
             // Highlighting
             hover: null,
@@ -330,6 +330,13 @@ export default React.createClass({
             initialLoading: true,
             lockToolTip: false,
             toolTipWidth: null,
+            ttCollapse: {
+                throughput: false,
+                loss: false,
+                latency: false,
+                failures: false
+
+            },
         };
     },
     handleSelectionChanged(point) {
@@ -339,6 +346,47 @@ export default React.createClass({
             //highlight: point
 
         });
+    },
+
+    toggleTT( event, testType ) {
+        if ( !event ) {
+            return;
+
+        }
+        event.preventDefault();
+        $("li.graph-values-popover__item li." + testType + "-val").toggle();
+
+        let ttCollapse = this.state.ttCollapse;
+
+        let collapsed = ttCollapse[ testType ];
+
+        ttCollapse[ testType ] = !collapsed;
+
+        this.setState( { ttCollapse: ttCollapse });
+
+
+    },
+
+    getTTItemClass( testType ) {
+        let ttCollapse = this.state.ttCollapse;
+        let ret = testType + "-val";
+        if ( ttCollapse[ testType ] ) {
+            return ret + " hidden";
+        } else {
+            return ret;
+
+        }
+
+    },
+    getTTIconClass( testType ) {
+        let ttCollapse = this.state.ttCollapse;
+        if ( ttCollapse[ testType ] ) {
+            return "fa-plus-square-o";
+        } else {
+            return "fa-minus-square-o";
+
+        }
+
     },
 
     handleMouseMove(event, point) {
@@ -473,7 +521,9 @@ elem.addEventListener('mousemove', onMousemove, false);
 
                     let filter = { testType: type, ipversion: ipversion };
                     let eventTypeFilter = { eventType: type, ipversion: ipversion };
-                    filters[type] = {};
+                    if ( typeof filters[type] == "undefined" ) {
+                        filters[type] = {};
+                    }
                     filters[type][ipversion] = filter;
                     if ( type == "failures" ) {
                         filters[type][ipversion] = eventTypeFilter;
@@ -487,14 +537,28 @@ elem.addEventListener('mousemove', onMousemove, false);
 
             }
 
-            let throughputItems = [];
-            let lossItems = [];
-            let latencyItems = [];
-            let failureItems = [];
 
-            for( let i in ipversions ) {
-                let ipversion = ipversions[i];
+            let tooltipItems = {};
+            tooltipItems["throughput"] = [];
+            tooltipItems["latency"] = [];
+            tooltipItems["loss"] = [];
+            tooltipItems["failures"] = [];
+
+            for( let j in ipversions ) {
+                let throughputItems = [];
+                let lossItems = [];
+                let latencyItems = [];
+                let failureItems = [];
+
+                let ipversion = ipversions[j];
+                let ipv = "ipv" + ipversion;
+
+                /*if ( typeof tooltipItems[ ipversion ] == "undefined" ) { 
+                    tooltipItems[ ipversion ] = [];
+                }
+                */
                 let throughputData = GraphDataStore.filterData( data, filters.throughput[ipversion], this.state.itemsToHide );
+                //console.log("tooltip ipversion ", ipversions[j]);
                 throughputData.sort(this.compareToolTipData);
 
                 for(let i in throughputData) {
@@ -502,6 +566,7 @@ elem.addEventListener('mousemove', onMousemove, false);
                     let key = row.properties["metadata-key"];
                     let direction = row.properties.direction;
                     let tool = this.getTool( row );
+                    let protocol = this.getProtocol( row );
 
                     // get retrans values
                     let retransFilter = {
@@ -530,7 +595,7 @@ elem.addEventListener('mousemove', onMousemove, false);
                         dir = "\u003c-"; // Unicode <
                     }
                     throughputItems.push(
-                            <li>{dir} <SIValue value={row.value} digits={3} />bits/s ({row.properties.protocol.toUpperCase()}){retransLabel}{tool}</li>
+                            <li className={this.getTTItemClass("throughput")}>{dir} <SIValue value={this._formatZero( row.value )} digits={3} />bits/s{protocol}{retransLabel}{tool}</li>
 
                             );
 
@@ -543,6 +608,9 @@ elem.addEventListener('mousemove', onMousemove, false);
                 lossData.sort(this.compareToolTipData);
                 for(let i in lossData) {
                     let row = lossData[i];
+                    if ( typeof row == "undefined" ||  typeof row.value == "undefined" ) {
+                        continue;
+                    }
                     let dir = "-\u003e"; // Unicode >
                     if ( row.properties.direction == "reverse" ) {
                         dir = "\u003c-"; // Unicode <
@@ -560,10 +628,11 @@ elem.addEventListener('mousemove', onMousemove, false);
                     }
 
                     let tool = this.getTool( row );
+                    let value = row.value;
 
                 if ( row.properties.eventType == "packet-loss-rate" 
                      || row.properties.eventType == "packet-loss-rate-bidir" ) {
-                    row.value = this._formatToolTipLossValue( row.value, "float" ) + "%";
+                    value = this._formatToolTipLossValue( value, "float" );
                     row.lostValue = this._formatToolTipLossValue( row.lostValue, "integer" );
                     row.sentValue = this._formatToolTipLossValue( row.sentValue, "integer" );
                 }  else {
@@ -575,11 +644,11 @@ elem.addEventListener('mousemove', onMousemove, false);
                     if ( row.lostValue != null
                             && row.sentValue != null ) {
                     lossItems.push(
-                            <li>{dir} {row.value} lost ({row.lostValue} of {row.sentValue} packets) {"(" + label + ")"}{tool}</li>
+                            <li className={this.getTTItemClass("loss")}>{dir} {value}% lost ({row.lostValue} of {row.sentValue} packets) {"(" + label + ")"}{tool}</li>
                             );
                     } else {
                         lossItems.push(
-                                <li>{dir} {row.value} ({label}){tool}</li>
+                                <li className={this.getTTItemClass("loss")}>{dir} {value}% ({label}){tool}</li>
                                 );
 
                     }
@@ -589,49 +658,84 @@ elem.addEventListener('mousemove', onMousemove, false);
                 let latencyData = GraphDataStore.filterData( data, filters["latency"][ipversion], this.state.itemsToHide );
                 latencyData.sort(this.compareToolTipData);
                 for(let i in latencyData) {
-                    let row = latencyData[i];
-                    if ( typeof row.value == "undefined" ) {
+                    let latRow = latencyData[i];
+                    if ( ( typeof latRow == "undefined" ) || ( typeof latRow.value == "undefined" ) ) {
                         continue;
                     }
                     let dir = "-\u003e"; // Unicode >
-                    if ( row.properties.direction == "reverse" ) {
+                    if ( latRow.properties.direction == "reverse" ) {
                         dir = "\u003c-"; // Unicode <
 
                     }
                     let label = "(owamp)";
-                    if ( row.properties.mainEventType == "histogram-rtt" ) {
+                    if ( latRow.properties.mainEventType == "histogram-rtt" ) {
                         label = "(ping)";
                     }
 
-                    let tool = this.getTool( row );
+                    let tool = this.getTool( latRow );
 
-                    let owampVal = row.value.toFixed(1);
+                    let owampVal = latRow.value.toFixed(1);
                     if ( Math.abs( owampVal ) < 1 ) {
-                        owampVal = row.value.toFixed(2);
+                        owampVal = latRow.value.toFixed(2);
                     }
                     if ( Math.abs( owampVal ) < 0.01 ) {
-                        owampVal = row.value.toFixed(4);
+                        owampVal = latRow.value.toFixed(4);
                     }
                     latencyItems.push(
-                            <li>{dir} {owampVal} ms {label}{tool}</li>
+                            <li className={this.getTTItemClass("latency")}>{dir} {owampVal} ms {label}{tool}</li>
 
                             );
 
                 }
+
+                // We need to use a different list of items to hide for failures, because
+                // normally we query on "eventType" but for this we need to check
+                // "mainEventType" (since "failures" is the "eventType" and 
+                // "mainEventType might be "throughput" or "latency" etc.)
+                let failureItemsToHide = [];
+                let eventTypeRe = /^eventType/;
+
+                for( let key in this.state.itemsToHide ) {
+                    let row = this.state.itemsToHide[ key ];
+                    let newObj = {};
+                    //let newKey = key.replace(eventTypeRe, "mainEventType");
+                    let newKey = key;
+                    if ( newKey ) {
+                        for( let subkey in row ) {
+                            let val = row[ subkey ];
+                            //let newSubkey = subkey.replace(eventTypeRe, "mainEventType");
+                            let newSubkey = subkey;
+                            if ( newSubkey ) {
+                                newObj[ newSubkey ] = val;
+                            }
+
+
+                        }
+
+                        //let newRow = {};
+                        //newRow[ newKey ] = newObj;
+                        failureItemsToHide.push( newObj );
+                    }
+
+                }
+
+                //console.log("failuresData itemsToHide", failureItemsToHide );
 
                 let failuresData = GraphDataStore.filterData( data, filters["failures"][ipversion], this.state.itemsToHide );
                 //failureData.sort(this.compareToolTipData);
                 if ( failuresData.length == 0 ) {
                     //failureItems = [];
                 } else {
+                    FAILUREDATA:
                     for(let i in failuresData) {
                         let row = failuresData[i];
                         let ts = row.ts;
+                        let tool = this.getTool( row );
                         let timeslip = 0.005;
                         let duration = this.state.timerange.duration();
                         let range = duration * timeslip;
 
-                        if ( !this.withinTime( ts.getTime(), tracker.getTime(), range ) ) {
+                        if ( ( typeof ts == "undefined"  ) || !this.withinTime( ts.getTime(), tracker.getTime(), range ) ) {
                             continue;
                         }
 
@@ -641,6 +745,41 @@ elem.addEventListener('mousemove', onMousemove, false);
                         if ( typeof row.properties.mainEventType == "undefined" ) {
                             continue;
                         }
+
+                        let hide = false;
+                        FAILUREITEMS:
+                        for( let j in failureItemsToHide ) {
+                            let item = failureItemsToHide[j];
+                            hide = true;
+                            for( let criterion in item ) {
+                                if ( criterion == "eventType" ) {
+                                    if ( row.properties.mainEventType == item[ criterion ] 
+                                           && item[ criterion ] != "packet-loss-rate" ) {
+                                        hide = hide && true;
+                                    } else {
+                                        hide = false;
+                                        continue;
+                                    }
+                                } else {
+                                    if ( row.properties[criterion] == item[ criterion ] ) {
+                                        hide = hide && true;
+                                    } else {
+                                        hide = false;
+                                        continue;
+
+                                    }
+
+                                }
+
+
+                            }
+                            if ( hide ) {
+                                continue FAILUREDATA;
+
+                            }
+
+                        }
+
                         let dir = "-\u003e"; // Unicode >
                         if ( row.properties.direction == "reverse" ) {
                             dir = "\u003c-"; // Unicode <
@@ -651,78 +790,92 @@ elem.addEventListener('mousemove', onMousemove, false);
                             prot += " ";
                         }
                         let testType = row.properties.mainTestType;
-                        failureItems.push(
-                                <li>{dir} [{testType}] {prot}{row.error}</li>
-                                );
+                        if ( !hide ) {
+                            failureItems.push(
+                                <li className={this.getTTItemClass("failures")}>{dir} [{testType}] {prot}{row.error} {tool}</li>
+                            );
+                        }
 
                     }
                 }
-            }
-            let posX = this.state.posX;
-            let toolTipStyle = {
-                left: posX + "px"
 
-            };
-
-            let tooltipItems = [];
-            if ( throughputItems.length > 0 ) {
-                tooltipItems.push(
+                if ( throughputItems.length > 0 ) {
+                    tooltipItems["throughput"].push(
                                     <li className="graph-values-popover__item">
                                         <ul>
-                                            <li>Throughput</li>
+                                            <li><h6><a href="#" onClick={(event) => this.toggleTT(event, "throughput") }>
+                                                <i className={"fa " + this.getTTIconClass("throughput")} aria-hidden="true"></i>
+                                                Throughput - {ipv}</a></h6></li>
                                             {throughputItems}
                                         </ul>
                                     </li>
 
-                        );
+                    );
 
+                }
+                if ( lossItems.length > 0 ) {
+                    tooltipItems["loss"].push(
+                                        <li className="graph-values-popover__item">
+                                            <ul>
+                                                <li><h6><a href="#" onClick={(event) => this.toggleTT(event, "loss") }>
+                                                    <i className={"fa " + this.getTTIconClass("loss")} aria-hidden="true"></i>
+                                                    Loss - {ipv}</a></h6></li>
+                                                {lossItems}
+                                            </ul>
+                                        </li>
+
+                            );
+
+                }
+                if ( latencyItems.length > 0 ) {
+                    tooltipItems["latency"].push(
+                                        <li className="graph-values-popover__item">
+                                            <ul>
+                                                <li><h6><a href="#" onClick={(event) => this.toggleTT(event, "latency") }>
+                                                    <i className={"fa " + this.getTTIconClass("latency")} aria-hidden="true"></i>
+                                                    Latency - {ipv}</a></h6></li>
+                                                {latencyItems}
+                                            </ul>
+                                        </li>
+
+                            );
+
+                }
+
+                if ( failureItems.length > 0 ) {
+                    tooltipItems["failures"].push(
+                                        <li className="graph-values-popover__item">
+                                            <ul>
+                                                <li><h6><a href="#" onClick={(event) => this.toggleTT(event, "failures") }>
+                                                    <i className={"fa " + this.getTTIconClass("failures")} aria-hidden="true"></i>
+                                                    Test Failures - {ipv}</a></h6></li>
+                                                {failureItems}
+                                            </ul>
+                                        </li>
+
+                            );
+
+                }
             }
-            if ( lossItems.length > 0 ) {
-                tooltipItems.push(
-                                    <li className="graph-values-popover__item">
-                                        <ul>
-                                            <li>Loss</li>
-                                            {lossItems}
-                                        </ul>
-                                    </li>
 
-                        );
 
-            }
-            if ( latencyItems.length > 0 ) {
-                tooltipItems.push(
-                                    <li className="graph-values-popover__item">
-                                        <ul>
-                                            <li>Latency</li>
-                                            {latencyItems}
-                                        </ul>
-                                    </li>
-
-                        );
-
-            }
-
-            if ( failureItems.length > 0 ) {
-                tooltipItems.push(
-                                    <li className="graph-values-popover__item">
-                                        <ul>
-                                            <li>Test Failures</li>
-                                            {failureItems}
-                                        </ul>
-                                    </li>
-
-                        );
-
-            }
+            let allItems = tooltipItems["throughput"].concat( 
+                    tooltipItems["loss"],
+                    tooltipItems["latency"],
+                    tooltipItems["failures"]);
 
             let trackerTS = Math.floor( tracker / 1000 );
-            if ( tooltipItems.length == 0 || ! ( trackerTS >=  this.state.start && trackerTS <= this.state.end  )  ) {
+            if ( allItems.length == 0 || ! ( trackerTS >=  this.state.start && trackerTS <= this.state.end  )  ) {
                 display = "none";
                 return;
             } else {
                 //console.log("tooltipItems", tooltipItems);
 
             }
+            let posX = this.state.posX;
+            let toolTipStyle = {
+                left: posX + "px"
+            };
 
             let newTooltip =  (
             <div className="small-2 columns">
@@ -732,7 +885,7 @@ elem.addEventListener('mousemove', onMousemove, false);
                             <a href="" onClick={this.handleCloseTooltipClick}><i className="fa fa-close"></i></a>
                         </span>
                         <ul className="graph-values-popover__list">
-                            {tooltipItems}
+                            {allItems}
                         </ul>
                     </div>
                 </div>
@@ -746,6 +899,14 @@ elem.addEventListener('mousemove', onMousemove, false);
 
     },
 
+    _formatZero ( value ) {
+        if ( value == 1e-9 ) {
+            return 0;
+        }
+        return value;
+
+    },
+
     _formatToolTipLossValue( value, format ) {
         if ( typeof format == "undefined" ) {
             format = "float";
@@ -756,9 +917,8 @@ elem.addEventListener('mousemove', onMousemove, false);
 
         // Horrible hack; values of 0 are rewritten to 1e-9 since our log scale
         // can't handle zeroes
-        if ( value == 1e-9 ) {
-            value = 0;
-        }  else {
+        value = this._formatZero( value );
+        if ( value > 0 ) {
             if ( format == "integer" ) {
                 value = Math.floor( value );
             } else if ( format == "percent" ) {
@@ -918,13 +1078,6 @@ elem.addEventListener('mousemove', onMousemove, false);
             selectionTime = selection.event.timestampAsUTCString();
         }
         //console.log("highlight", highlight, "selection", this.state.selection, selectionTime );
-
-        let text = `Speed: - mph, time: -:--`;
-        let hintValues = [];
-        if (selection && selection.event) {
-            let highlightText = selection.event.get("errorText");
-            hintValues = [{label: "Error", value: highlightText}];
-        }
 
         let chartSeries = this.state.chartSeries;
         charts = {};
@@ -1106,6 +1259,8 @@ elem.addEventListener('mousemove', onMousemove, false);
                             //stats.max = GraphDataStore.getMax( failureData.stats.max, stats.max );
                             //stats.min = failureData.stats.min;
                             //stats.max = failureData.stats.max, stats.max;
+                            var scaledSeries = GraphDataStore.scaleValues( failureSeries, stats.max );
+                            failureSeries = scaledSeries;
 
                             // push the charts for the main charts
                             charts[type][ipv].push(
@@ -1116,7 +1271,6 @@ elem.addEventListener('mousemove', onMousemove, false);
                                     style={failureStyle}
                                     radius={4.0}
                                     columns={ [ "value" ] }
-                                    info={hintValues}
                                     infoHeight={100}
                                     infoWidth={200}
                                     //infoStyle={infoStyle}
@@ -1469,7 +1623,6 @@ elem.addEventListener('mousemove', onMousemove, false);
     },
 
     updateChartData: function() {
-        console.log("updateChartData");
         let newChartSeries = GraphDataStore.getChartData();
         //this.setState({loading: false, dataloaded: true});
 
@@ -1601,12 +1754,29 @@ elem.addEventListener('mousemove', onMousemove, false);
 
         if ( typeof tool != "undefined" && tool != "") {
             tool = tool.replace(/^pscheduler\//, "");
+
+            // We don't include the tool if it's "ping" because this is redundant
+            // with the test type
+            if ( tool == "ping" ) {
+                return "";
+            }
+
             tool = " [" +  tool + "]";
         } else {
             tool = "";
         }
 
         return tool;
+    },
+
+    getProtocol( row ) {
+        let protocol = "";
+
+        if ( typeof row != "undefined" && typeof row.properties.protocol != "undefined" ) {
+            protocol = " (" + row.properties.protocol.toUpperCase() + ")";
+        }
+
+        return protocol;
     },
 
     checkEventType: function ( eventType, direction ) {
