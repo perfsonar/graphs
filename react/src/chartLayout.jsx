@@ -93,6 +93,32 @@ const brushStyle = {
     paddingTop: 10
 };
 
+// These aliases allow us to use shorter strings in the URL to indicate values
+// which are hidden. 
+// This hash lets us map from Long to Short aliases, for example to take the full show/hide
+// string and turn it into a short alias to put in the URL
+const showHideAliasesLongToShort = {
+    "eventType_throughput_protocol_tcp_": "throughput_tcp",
+    "eventType_throughput_protocol_udp_": "throughput_udp",
+    "eventType_packet-loss-rate_mainEventType_histogram-owdelay_": "loss_owdelay",
+    "eventType_packet-loss-rate_mainTestType_throughput_": "loss_throughput",
+    "eventType_histogram-owdelay_": "latency_owdelay",
+    "eventType_histogram-rtt_": "latency_ping",
+    "direction_forward_": "forward",
+    "direction_reverse_": "reverse",
+    "eventType_failures_": "failures",
+    "eventType_packet-retransmits_": "retrans",
+    "eventType_packet-loss-rate-bidir_": "loss_ping"
+};
+
+// This hash lets us map from Short to Long aliases, for example
+// to take a value from the URL and derive the longer value
+let showHideAliasesShortToLong = {};
+for( var key in showHideAliasesLongToShort ) {
+    let val = showHideAliasesLongToShort[key];
+    showHideAliasesShortToLong[val] = key;
+}
+
 export default React.createClass({
     displayName: "ChartLayout",
 
@@ -122,23 +148,11 @@ export default React.createClass({
             ma_url: newState.ma_url,
             agent: newState.agent,
             summaryWindow: newState.summaryWindow,
-            itemsToHide: {},
+            itemsToHide: newState.itemsToHide,
             tool: newState.tool,
             ipversion: newState.ipversion,
-            hashValues: {},
-            active: {
-                "eventType_throughput_protocol_tcp_": true,
-                "eventType_throughput_protocol_udp_": true,
-                "eventType_packet-loss-rate_mainEventType_histogram-owdelay_": true,
-                "eventType_packet-loss-rate_mainTestType_throughput_": true,
-                "eventType_histogram-owdelay_": true,
-                "eventType_histogram-rtt_": true,
-                "direction_forward_": true,
-                "direction_reverse_": true,
-                "eventType_failures_": true,
-                "eventType_packet-retransmits_": true,
-                "eventType_packet-loss-rate-bidir_": true
-            },
+            hashValues: newState.hashValues,
+            active: newState.active
         };
     },
     contextTypes: {
@@ -147,7 +161,6 @@ export default React.createClass({
     toggleType: function( options, event ) {
         console.log("toggleType options: ", options); //, "event", event);
         let newItems = this.state.itemsToHide;
-        //newItems.push( options );
         let sorted = Object.keys( options ).sort();
         let id = "";
         for(let i in sorted) {
@@ -163,14 +176,32 @@ export default React.createClass({
             newItems[id] = options;
         }
         let active = this.state.active;
+        console.log("previous active", active);
         active[id] = !active[id];
+        console.log("new itemsToHide", newItems);
+        console.log("new active", active);
         this.setState({ active: active, itemsToHide: newItems } );
+
+        let activeHash = this.state.hashValues;
+        for(let key in active) {
+            let show = active[key];
+            let shortKey = showHideAliasesLongToShort[key];
+            if (! show ) {
+                activeHash["hide_" + shortKey] = !active[key];
+            } else {
+                delete activeHash["hide_" + shortKey];
+            }
+
+        }
+        this.setState( { hashValues: activeHash } );
+        this.setHashVals( activeHash );
         //this.setHashVals( newItems );
 
         //this.setHashVals( this.state.hashValues );
         //this.updateURLHash();
         event.preventDefault();
 
+        //return false;
     },
 
 
@@ -369,10 +400,8 @@ export default React.createClass({
 
         console.log("chartLayout newTime", newTime);
         this.setState( newTime );
-        //if ( !noupdateURL ) {
-            this.setHashVals( newTime );
-        //}        
-        this.updateURLHash();
+        this.setHashVals( newTime );
+        //this.updateURLHash();
     },
 
     setHashVals: function( options ) {
@@ -428,6 +457,7 @@ export default React.createClass({
         }
 
 
+
         let src = qs.source;
         let dst = qs.dest;
         let start = defaults.start;
@@ -477,8 +507,6 @@ export default React.createClass({
         hashObj.end = end;
         hashObj.summaryWindow = summaryWindow;
 
-        this.updateURLHash( hashObj );
-
         let ma_urls = qs.url || location.origin + "/esmond/perfsonar/archive/";
         let localhostRe = /localhost/i;
 
@@ -490,6 +518,7 @@ export default React.createClass({
             agent = [ agent ];
         }
 
+        // Get MA URLs
         for(let i in ma_urls ) {
             let ma_url = ma_urls[i];
             let found = ma_url.match( localhostRe );
@@ -504,12 +533,81 @@ export default React.createClass({
                 ma_urls[i] = new_url;
             }
         }
+
+        // Get itemsToHide/"active" items
+        console.log("hashObj", hashObj);
+        let re = /^hide_(.+)$/;
+        let underscoreRe = /_$/;
+
+        let newItems = {};
+        //let active = {}; // this.state.active;
+        let active = {
+                "eventType_throughput_protocol_tcp_": true,
+                "eventType_throughput_protocol_udp_": true,
+                "eventType_packet-loss-rate_mainEventType_histogram-owdelay_": true,
+                "eventType_packet-loss-rate_mainTestType_throughput_": true,
+                "eventType_histogram-owdelay_": true,
+                "eventType_histogram-rtt_": true,
+                "direction_forward_": true,
+                "direction_reverse_": true,
+                "eventType_failures_": true,
+                "eventType_packet-retransmits_": true,
+                "eventType_packet-loss-rate-bidir_": true
+        };
+
+        let itemsToHide = {};
+        for( var key in hashObj ) {
+            // skip anything that doesn't start with hide_
+            let res = re.exec( key );
+            if ( !res ) {
+                continue;
+            }
+
+            console.log('res', res);
+            // get the name, minus "hide_"
+            let name = res[1];
+            // skip any variables that do not match our list of acceptable names
+            if ( ! ( name in showHideAliasesShortToLong ) ) {
+                console.log("name not found", name);
+                continue;
+            }
+
+            let longName = showHideAliasesShortToLong[ name ];
+            // longName will be in the form of "key1_value1_key2_value2_" ...
+            longName = longName.replace(underscoreRe, "");
+
+            // if 'hidden' is seto to 'false', then 'active' is true (and vice versa)
+            if ( hashObj[key] == "false" ) {
+                active[longName + "_"] = true;
+            } else {
+                active[longName + "_"] = false;
+            }
+
+            let splitNames = longName.split("_");
+            console.log("splitNames", splitNames);
+            let itemFilter = {};
+            for(let i=0; i<splitNames.length; i+=2) {
+                let activeKey = splitNames[i];
+                let activeValue = splitNames[i+1];
+                itemFilter[ activeKey ] = activeValue;
+            }
+            itemsToHide[ longName + "_" ] = itemFilter;
+
+        }
+
+        console.log("active", active);
+        console.log("itemsToHide", itemsToHide);
+
+
+        // Create the new state object
         const newState = {
             src:    src,
             dst:    dst,
             start:  start,
             end:    end,
             ma_url: ma_urls,
+            active: active,
+            itemsToHide: itemsToHide,
             summaryWindow: summaryWindow,
             tool: tool,
             agent: agent,
@@ -517,6 +615,9 @@ export default React.createClass({
             timeframe: timeframe,
             hashValues: hashObj,
         };
+
+        console.log("updating URL hash", hashObj);
+        this.updateURLHash( hashObj );
 
         HostInfoStore.retrieveHostInfo( src, dst );
 
