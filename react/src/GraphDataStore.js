@@ -24,10 +24,7 @@ let maURLs = [];
 let metadataURLs = {};
 let dataURLs = {};
 
-// TODO: revert the proxy URL
-//let proxyURL = '/perfsonar-graphs/cgi-bin/graphData.cgi?action=ma_data&url=';
-
-let proxyURL = '/cgi-bin/graphData.cgi?action=ma_data&url=';
+let proxyURL = '/perfsonar-graphs/cgi-bin/graphData.cgi?action=ma_data&url=';
 
 let lossTypes = [ 'packet-loss-rate', 'packet-count-lost', 'packet-count-sent', 'packet-count-lost-bidir', 'packet-loss-rate-bidir' ];
 

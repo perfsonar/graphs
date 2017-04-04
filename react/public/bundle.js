@@ -59230,10 +59230,7 @@
 	var metadataURLs = {};
 	var dataURLs = {};
 	
-	// TODO: revert the proxy URL
-	//let proxyURL = '/perfsonar-graphs/cgi-bin/graphData.cgi?action=ma_data&url=';
-	
-	var proxyURL = '/cgi-bin/graphData.cgi?action=ma_data&url=';
+	var proxyURL = '/perfsonar-graphs/cgi-bin/graphData.cgi?action=ma_data&url=';
 	
 	var lossTypes = ['packet-loss-rate', 'packet-count-lost', 'packet-count-sent', 'packet-count-lost-bidir', 'packet-loss-rate-bidir'];
 	
