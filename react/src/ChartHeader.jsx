@@ -54,7 +54,7 @@ export default React.createClass({
 
         let startTZ = GraphUtilities.getTimezone( startDate );
         if ( startTZ == "" ) {
-            console.log("unknown timezone; date: " , startDate.toString() );
+            //console.log("unknown timezone; date: " , startDate.toString() );
 
         }
         let endTZ = GraphUtilities.getTimezone( endDate );

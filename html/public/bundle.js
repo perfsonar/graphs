@@ -33914,7 +33914,6 @@
 	            break;
 	    }
 	
-	    //console.log("style options", options);
 	    switch (options.eventType) {
 	        case "throughput":
 	            if (options.protocol == "tcp") {
@@ -33963,7 +33962,6 @@
 	        selected: { stroke: color, strokeWidth: width, opacity: opacity, strokeDasharray: strokeStyle },
 	        muted: { stroke: color, strokeWidth: width, opacity: opacity, strokeDasharray: strokeStyle }
 	    };
-	    //console.log("style: " , style );
 	    return style;
 	}
 	
@@ -34174,9 +34172,6 @@
 	        var x_position = m_posx - e_posx;
 	        var y_position = m_posy - e_posy;
 	
-	        //console.log( ' X Position: ' +  x_position
-	        //    + ' Y Position: ' + y_position );
-	
 	        return { posX: x_position, posY: y_position };
 	    },
 	
@@ -34187,12 +34182,10 @@
 	    */
 	    getToolTipPos: function getToolTipPos() {},
 	    handleClick: function handleClick(e, f, g) {
-	        //console.log("handleClick", e, f, g);
 	        this.setState({
 	            lockToolTip: !this.state.lockToolTip
 	            //        highlight: point
 	        });
-	        //console.log("this.state.lockToolTip", this.state.lockToolTip, "tooltip", tooltip );
 	    },
 	    handleMouseNear: function handleMouseNear(point) {
 	        this.setState({
@@ -34280,7 +34273,6 @@
 	                }
 	                */
 	                var throughputData = _GraphDataStore2.default.filterData(data, filters.throughput[_ipversion], this.state.itemsToHide);
-	                //console.log("tooltip ipversion ", ipversions[j]);
 	                throughputData.sort(this.compareToolTipData);
 	
 	                for (var _i in throughputData) {
@@ -34459,8 +34451,6 @@
 	                        failureItemsToHide.push(newObj);
 	                    }
 	                }
-	
-	                //console.log("failuresData itemsToHide", failureItemsToHide );
 	
 	                var failuresData = _GraphDataStore2.default.filterData(data, filters["failures"][_ipversion], this.state.itemsToHide);
 	                //failureData.sort(this.compareToolTipData);
@@ -34757,14 +34747,8 @@
 	        return 0;
 	    },
 	    handleTrackerChanged: function handleTrackerChanged(trackerVal, selection) {
-	        if (this.state.lockToolTip) {
-	            //this.setState({tracker: this.state.tracker});
-	            //console.log("handleTrackerChanged locked; trackerVal:", trackerVal, selection);
-	        } else {
-	            //console.log("handleTrackerChanged not locked; trackerVal:", trackerVal, selection);
-	            //if ( trackerVal !== null ) {
+	        if (!this.state.lockToolTip) {
 	            this.setState({ tracker: trackerVal });
-	            //}
 	        }
 	    },
 	    withinTime: function withinTime(ts1, ts2, range) {
@@ -34812,11 +34796,6 @@
 	                        value = valAtTime.value("retrans");
 	                    }
 	
-	                    if (eventType == "packet-count-lost" && value > 1e-9) {
-	                        //console.log("packet-count-lost value", value);
-	
-	                    }
-	
 	                    var sortKey = eventType + protocol + direction;
 	
 	                    var out = {
@@ -34842,7 +34821,6 @@
 	                }
 	            }
 	        }
-	        //console.log("trackerData", trackerData);
 	        return trackerData;
 	    },
 	    renderChart: function renderChart() {
@@ -34858,7 +34836,6 @@
 	        if (typeof selection != "undefined" && selection !== null && typeof selection.event != "undefined") {
 	            selectionTime = selection.event.timestampAsUTCString();
 	        }
-	        //console.log("highlight", highlight, "selection", this.state.selection, selectionTime );
 	
 	        var chartSeries = this.state.chartSeries;
 	        charts = {};
@@ -35187,8 +35164,6 @@
 	            }
 	        }
 	
-	        //console.log("charts just created", charts);
-	
 	        var timerange;
 	
 	        if (chartSeries) {
@@ -35421,7 +35396,6 @@
 	        };
 	        this.setState({ params: params, loading: true, initialLoading: true });
 	        var ma_url = this.props.ma_url || location.origin + "/esmond/perfsonar/archive/";
-	        console.log("DidMount MA URLs", ma_url);
 	        this.getDataFromMA(src, dst, start, end, ma_url, params, summaryWindow);
 	    },
 	
@@ -35456,7 +35430,6 @@
 	        console.log("Handling empty data");
 	    },
 	    componentWillReceiveProps: function componentWillReceiveProps(nextProps) {
-	        console.log("chart1 nextProps", nextProps);
 	        var timerange = new _pondjs.TimeRange([nextProps.start * 1000, nextProps.end * 1000]);
 	        this.setState({ itemsToHide: nextProps.itemsToHide, initialLoading: false });
 	        if (nextProps.start != this.state.start || nextProps.end != this.state.end) {
@@ -35481,21 +35454,6 @@
 	        _GraphDataStore2.default.toggleType(options);
 	
 	        //event.preventDefault();
-	    },
-	
-	    _checkSortOrder: function _checkSortOrder(ary) {
-	        var valName = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 'ts';
-	
-	        var lastVal = 0;
-	        _underscore2.default.each(ary, function (val) {
-	            if (val.ts <= lastVal) {
-	                console.log('ts is not greater than last ts');
-	            } else {
-	                //console.log('ts is greater than last ts');
-	
-	            }
-	            lastVal = val.ts;
-	        });
 	    },
 	
 	    getTool: function getTool(row) {
@@ -59349,7 +59307,6 @@
 	                    if (data.status == 404) {
 	                        this.useProxy = true;
 	                        url = this.getMAURL(url);
-	                        console.log("metadata proxy url: ", url);
 	                        this.serverRequest = $.get(url, function (data) {
 	                            this.handleMetadataResponse(data, direction[j]);
 	                        }.bind(this)).fail(function (data) {
@@ -59377,7 +59334,6 @@
 	    getMAURL: function getMAURL(url) {
 	
 	        var proxy = this.parseUrl(proxyURL);
-	        console.log("proxy", proxy);
 	
 	        if (this.useProxy) {
 	            url = encodeURIComponent(url);
@@ -59506,7 +59462,6 @@
 	                var addr = ipaddr.parse(source);
 	
 	                var maURL = _this2.parseUrl(datum.url).origin;
-	                console.log("maURL: ", maURL);
 	
 	                var ipversion = void 0;
 	                if (ipaddr.isValid(source)) {
@@ -59526,13 +59481,12 @@
 	                        return summary["summary-type"] == summaryType && summary["summary-window"] == that.summaryWindow;
 	                    });
 	                    if (win.length > 1) {
-	                        console.log("WEIRD: multiple summary windows found. This should not happen.");
+	                        //console.log("WEIRD: multiple summary windows found. This should not happen.");
 	                    } else if (win.length == 1) {
-	                        console.log("one summary window found");
 	                        uri = win[0].uri;
 	                        dataUrl = win[0].url;
 	                    } else {
-	                        console.log("no summary windows found");
+	                        //console.log("no summary windows found");
 	                    }
 	                } else {
 	                    summaryType = "aggregation";
@@ -59547,13 +59501,12 @@
 	
 	                    // TODO: allow lower summary windows
 	                    if (_win.length > 1) {
-	                        console.log("WEIRD: multiple summary windows found. This should not happen.", _win);
+	                        //console.log("WEIRD: multiple summary windows found. This should not happen.", win);
 	                    } else if (_win.length == 1) {
-	                        console.log("one summary window found", summaryWindow, eventType, _win);
 	                        uri = _win[0].uri;
 	                        dataUrl = _win[0].url;
 	                    } else {
-	                        console.log("no summary windows found", summaryWindow, eventType, _win);
+	                        //console.log("no summary windows found", summaryWindow, eventType, win);
 	                    }
 	                }
 	
@@ -59572,12 +59525,12 @@
 	                    url = proxyURL + url;
 	                }
 	
-	                console.log("data url", url);
+	                //console.log("data url", url);
 	
 	                // Make sure we don't retrieve the same URL twice
 	                if (dataURLs[url]) {
-	                    console.log("got the same URL twice: ", url);
 	                    //continue;
+	
 	                } else {
 	                    dataURLs[url] = 1;
 	                }
@@ -59587,9 +59540,6 @@
 	
 	                dataReqCount++;
 	
-	                if (eventType == "failures") {
-	                    console.log("FAILURES row", row);
-	                }
 	                _this2.serverRequest = $.get(url, function (data) {
 	                    this.handleDataResponse(data, eventType, row);
 	                }.bind(_this2)).fail(function (data) {
@@ -59622,7 +59572,6 @@
 	            _row.data = data;
 	            if (data.length > 0) {
 	                chartData.push(_row);
-	                console.log("got datapoints", data.length, "eventType", eventType);
 	            }
 	        }
 	        completedDataReqs++;
@@ -59671,7 +59620,6 @@
 	    },
 	
 	    filterData: function filterData(data, filters, itemsToHide) {
-	        //console.log("filters", filters, "itemsToHide", itemsToHide);
 	        if (typeof data == "undefined" || typeof filters == "undefined") {
 	            //return [];
 	
@@ -59699,7 +59647,6 @@
 	                    for (var key in item) {
 	                        var val = item[key];
 	                        var f = filters;
-	                        //console.log("filters", filters);
 	                        if (filters.eventType == "failures"
 	                        //&& item.eventType != "packet-loss-rate"
 	                        && e.properties.mainEventType == filters.mainEventType) {
@@ -59834,7 +59781,7 @@
 	        var outputData = {};
 	        var output = [];
 	        var self = this;
-	        console.log("esmondToTimeSeries inputData", inputData);
+	        //console.log("esmondToTimeSeries inputData", inputData);
 	        if (typeof inputData == "undefined" || inputData.length == 0) {
 	            return [];
 	        }
@@ -59875,7 +59822,6 @@
 	
 	            testType = self.eventTypeToTestType(eventType);
 	            if (typeof testType == "undefined") {
-	                console.log("undefined testType", datum);
 	                return true;
 	            }
 	            mainTestType = self.eventTypeToTestType(mainEventType);
@@ -59894,13 +59840,8 @@
 	                } else if (eventType == 'histogram-rtt') {
 	                    value = val["val"].minimum;
 	                } else if (eventType == 'packet-count-lost') {
-	                    if (val["val"] > 0) {
-	                        //console.log('packet count lost > 0', val);
-	                    }
-	                } else if (eventType == 'packet-count-sent') {
-	                    //console.log('packet count sent', val);
-	
-	                } else if (eventType == 'packet-retransmits') {} else if (eventType == "packet-loss-rate" || eventType == "packet-loss-rate-bidir") {
+	                    if (val["val"] > 0) {}
+	                } else if (eventType == 'packet-count-sent') {} else if (eventType == 'packet-retransmits') {} else if (eventType == "packet-loss-rate" || eventType == "packet-loss-rate-bidir") {
 	                    // convert to %
 	                    value *= 100;
 	                }
@@ -59960,8 +59901,6 @@
 	            output.push(row);
 	        });
 	
-	        console.log("outputData", outputData);
-	        console.log("output", output);
 	        this.eventTypeStats = outputData;
 	
 	        // Create retransmit series
@@ -110223,7 +110162,6 @@
 	        router: _react2.default.PropTypes.func
 	    },
 	    toggleType: function toggleType(options, event) {
-	        console.log("toggleType options: ", options); //, "event", event);
 	        var newItems = this.state.itemsToHide;
 	        var sorted = Object.keys(options).sort();
 	        var id = "";
@@ -110232,7 +110170,6 @@
 	            var _val = options[_key];
 	            id += _key + "_" + _val + "_";
 	        }
-	        //console.log("id", id);
 	        if (id in newItems) {
 	            delete newItems[id];
 	        } else {
@@ -110240,10 +110177,7 @@
 	            newItems[id] = options;
 	        }
 	        var active = this.state.active;
-	        console.log("previous active", active);
 	        active[id] = !active[id];
-	        console.log("new itemsToHide", newItems);
-	        console.log("new active", active);
 	        this.setState({ active: active, itemsToHide: newItems });
 	
 	        var activeHash = this.state.hashValues;
@@ -110631,10 +110565,8 @@
 	            newTime.start = newTime.end - timeDiff;
 	        }
 	
-	        console.log("chartLayout newTime", newTime);
 	        this.setState(newTime);
 	        this.setHashVals(newTime);
-	        //this.updateURLHash();
 	    },
 	
 	    setHashVals: function setHashVals(options) {
@@ -110642,7 +110574,6 @@
 	        for (var _key3 in options) {
 	            hashVals[_key3] = options[_key3];
 	        }
-	        console.log("hashVals", hashVals);
 	        this.setState({ hashValues: hashVals });
 	        this.updateURLHash();
 	    },
@@ -110654,14 +110585,12 @@
 	        } else {
 	            hashVals = vals;
 	        }
-	        console.log("updateURLHash hashVals", hashVals);
 	        var arr = [];
 	        for (var _key4 in hashVals) {
 	            var _val2 = encodeURIComponent(hashVals[_key4]);
 	            arr.push(_key4 + "=" + _val2);
 	        }
 	        hash += arr.join("&");
-	        console.log("hash", hash);
 	        window.location.hash = hash;
 	    },
 	
@@ -110670,7 +110599,6 @@
 	
 	        // get hash values
 	        var hash = this.props.location.hash;
-	        console.log("qs", qs, "hash", hash);
 	        var hashRe = /^#/;
 	        hash = hash.replace(hashRe, "");
 	
@@ -110751,18 +110679,15 @@
 	            var found = ma_url.match(localhostRe);
 	            var host = location.host;
 	            if (found !== null) {
-	                console.log("ma_url", ma_url);
 	
 	                // replace 'localhost' with the local hostname
 	                var new_url = ma_url.replace(localhostRe, host);
 	
-	                console.log('localhost URL found, rewriting to host', host, "new ma url", new_url);
 	                ma_urls[_i] = new_url;
 	            }
 	        }
 	
 	        // Get itemsToHide/"active" items
-	        console.log("hashObj", hashObj);
 	        var re = /^hide_(.+)$/;
 	        var underscoreRe = /_$/;
 	
@@ -110790,12 +110715,10 @@
 	                continue;
 	            }
 	
-	            console.log('res', res);
 	            // get the name, minus "hide_"
 	            var name = res[1];
 	            // skip any variables that do not match our list of acceptable names
 	            if (!(name in showHideAliasesShortToLong)) {
-	                console.log("name not found", name);
 	                continue;
 	            }
 	
@@ -110811,7 +110734,6 @@
 	            }
 	
 	            var splitNames = longName.split("_");
-	            console.log("splitNames", splitNames);
 	            var itemFilter = {};
 	            for (var _i2 = 0; _i2 < splitNames.length; _i2 += 2) {
 	                var activeKey = splitNames[_i2];
@@ -110820,9 +110742,6 @@
 	            }
 	            itemsToHide[longName + "_"] = itemFilter;
 	        }
-	
-	        console.log("active", active);
-	        console.log("itemsToHide", itemsToHide);
 	
 	        // Create the new state object
 	        var newState = {
@@ -110841,7 +110760,6 @@
 	            hashValues: hashObj
 	        };
 	
-	        console.log("updating URL hash", hashObj);
 	        this.updateURLHash(hashObj);
 	
 	        _HostInfoStore2.default.retrieveHostInfo(src, dst);
@@ -110931,7 +110849,8 @@
 	
 	        var startTZ = _GraphUtilities2.default.getTimezone(startDate);
 	        if (startTZ == "") {
-	            console.log("unknown timezone; date: ", startDate.toString());
+	            //console.log("unknown timezone; date: " , startDate.toString() );
+	
 	        }
 	        var endTZ = _GraphUtilities2.default.getTimezone(endDate);
 	
