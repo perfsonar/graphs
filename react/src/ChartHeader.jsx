@@ -42,7 +42,6 @@ export default React.createClass({
     },
     getCurrentURL() {
         let url = window.location.href;
-        console.log("Current page URL", url);
         this.setState({pageURL: url});
         return url;
 
@@ -167,7 +166,6 @@ export default React.createClass({
             end: newEnd,
             summaryWindow: summaryWindow
         };
-        console.log("options", options);
         this.handleTimerangeChange( options );
     },
     getTraceURL: function(i) {
@@ -365,8 +363,6 @@ export default React.createClass({
         if ( typeof this.props.end != "undefined" ) {
             newEnd = this.props.end;
         }
-
-        //console.log("setting initial time; state: ", this.state);
 
         options.start = newStart;
         options.end = newEnd;

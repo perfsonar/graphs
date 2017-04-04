@@ -24,7 +24,10 @@ let maURLs = [];
 let metadataURLs = {};
 let dataURLs = {};
 
-let proxyURL = '/perfsonar-graphs/cgi-bin/graphData.cgi?action=ma_data&url=';
+// TODO: revert the proxy URL
+//let proxyURL = '/perfsonar-graphs/cgi-bin/graphData.cgi?action=ma_data&url=';
+
+let proxyURL = '/cgi-bin/graphData.cgi?action=ma_data&url=';
 
 let lossTypes = [ 'packet-loss-rate', 'packet-count-lost', 'packet-count-sent', 'packet-count-lost-bidir', 'packet-loss-rate-bidir' ];
 
@@ -152,6 +155,7 @@ module.exports = {
                     if ( data.status == 404 ) {
                         this.useProxy = true;
                         url = this.getMAURL( url );
+                        console.log("metadata proxy url: ", url);
                         this.serverRequest = $.get( url, function(data) {
                             this.handleMetadataResponse(data, direction[j]);
                         }.bind(this))
@@ -174,10 +178,16 @@ module.exports = {
         }
 },
     getMAURL( url ) {
+
+        let proxy = this.parseUrl( proxyURL );
+        console.log("proxy", proxy);
+
         if ( this.useProxy ) {
             url = encodeURIComponent( url );
             url = proxyURL + url;
         }
+        let urlObj = this.parseUrl( url );
+        url = urlObj.origin + urlObj.pathname + urlObj.search;
         return url;
 
     },
@@ -213,7 +223,7 @@ module.exports = {
             console.log("chartMetadata", chartMetadata);
 
         } else {
-            console.log("completed " + reqCount + " requests");
+            console.log("completed " + completedReqs + " requests out of " + reqCount );
 
         }
 
@@ -290,19 +300,12 @@ module.exports = {
         }
     })(),
     getData: function( metaData ) {
+        console.log("getData metaData", metaData);
         let summaryWindow = this.summaryWindow; // || 3600; // todo: this should be dynamic
         //summaryWindow = 86400; // todo: this should be dynamic
         let defaultSummaryType = "aggregation"; // TODO: allow other aggregate types
         let multipleTypes = [ "histogram-rtt", "histogram-owdelay" ];
 
-        for(let ma_url in maURLs) {
-            // "new URL" is clearer but doesn't work with some browsers
-            // *ahem* IE, Edge ...
-            //let maURL = new URL( maURLs[ma_url] );
-            let maURL = this.parseUrl( maURLs[ma_url] );
-            console.log("maURL", maURL);
-
-            let baseURL = maURL.origin;
             dataReqCount = 0;
             for(let i in metaData) {
                 let datum = metaData[i];
@@ -317,6 +320,9 @@ module.exports = {
 
                     let addr = ipaddr.parse( source );
 
+                    let maURL = this.parseUrl( datum.url ).origin;
+                    console.log("maURL: " ,  maURL);
+
                     let ipversion;
                     if ( ipaddr.isValid( source ) ) {
                         ipversion = addr.kind( source ).substring(3);
@@ -327,6 +333,7 @@ module.exports = {
                     }
 
                     let uri = null;
+                    let dataUrl = null;
 
                     if ( $.inArray( eventType, multipleTypes ) >= 0 ) {
                         summaryType = "statistics";
@@ -339,6 +346,7 @@ module.exports = {
                         } else if ( win.length == 1 ) {
                             console.log("one summary window found");
                             uri = win[0].uri;
+                            dataUrl = win[0].url;
                         } else {
                             console.log("no summary windows found");
                         }
@@ -359,6 +367,7 @@ module.exports = {
                         } else if ( win.length == 1 ) {
                             console.log("one summary window found", summaryWindow, eventType, win);
                             uri = win[0].uri;
+                            dataUrl = win[0].url;
                         } else {
                             console.log("no summary windows found", summaryWindow, eventType, win);
                         }
@@ -370,7 +379,10 @@ module.exports = {
                         uri = eventTypeObj["base-uri"];
                     }
                     uri += "?time-start=" + start + "&time-end=" + end;
-                    let url = baseURL + uri;
+                    dataUrl += "?time-start=" + start + "&time-end=" + end;
+                    //let url = baseURL + uri;
+                    //let url = dataUrl;
+                    let url = maURL + uri;
 
                     // If using CORS proxy
                     if ( this.useProxy ) {
@@ -417,7 +429,6 @@ module.exports = {
 
                 }
             }
-        }
 
     },
     handleDataResponse: function( data, eventType, datum ) {

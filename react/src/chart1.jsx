@@ -1663,6 +1663,7 @@ elem.addEventListener('mousemove', onMousemove, false);
         };
         this.setState({params: params, loading: true, initialLoading: true});
         let ma_url = this.props.ma_url || location.origin + "/esmond/perfsonar/archive/";
+        console.log("DidMount MA URLs", ma_url);
         this.getDataFromMA(src, dst, start, end, ma_url, params, summaryWindow);
 
     },
