@@ -2,8 +2,6 @@ var EventEmitter = require('events').EventEmitter;
 
 var emitter = new EventEmitter();
 
-
-
 module.exports = {
 
     /* Expects an object of hosts like this (keys must be src, dst (can be multiple -- number of sources and dests must match) ): 
@@ -45,7 +43,6 @@ module.exports = {
 
             let url = baseUrl + "&source=" + src;
             url += "&dest=" + dst
-            console.log("tracerout url");
 
             this.tracerouteReqs = sources.length;
 
@@ -72,14 +69,11 @@ module.exports = {
         } else {
             dests = [ dest_input ];
         }
-        console.log("sources", sources);
-        console.log("dests", dests);
         for (let i=0; i<sources.length; i++ ) {
             url += "&src=" + sources[i];
             url += "&dest=" + dests[i];
 
         }
-        console.log("url", url);
         this.serverRequest = $.get( url, function(data) {
             this.handleHostInfoResponse( data );
         }.bind(this));
@@ -93,8 +87,6 @@ module.exports = {
         emitter.emit("get");
     },
     handleTracerouteResponse: function( data, i ) {
-        //this.tracerouteInfo = data;
-        console.log( "trace data", data, "i", i );
         this.tracerouteReqsCompleted++;
         this.tracerouteInfo.push( data );
         if ( this.tracerouteReqsCompleted == this.tracerouteReqs ) {
@@ -103,7 +95,6 @@ module.exports = {
         }
     },
     mergeTracerouteData: function() {
-        console.log("trace completed", this.tracerouteInfo);
         emitter.emit("getTrace");
     },
     getTraceInfo: function() {

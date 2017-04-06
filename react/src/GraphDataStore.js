@@ -130,8 +130,6 @@ module.exports = {
 
                 url = this.getMAURL( url );
 
-                console.log("metadata url: ", url);
-
                 // Make sure we don't retrieve the same URL twice
 
                 if ( metadataURLs[url] ) {
@@ -205,7 +203,7 @@ module.exports = {
         if ( completedReqs == reqCount ) {
             let endTime = Date.now();
             let duration = ( endTime - startTime ) / 1000;
-            console.log("COMPLETED ALL", reqCount, " REQUESTS in", duration);
+            //console.log("COMPLETED ALL", reqCount, " REQUESTS in", duration);
             completedReqs = 0;
             reqCount = 0;
             if ( chartMetadata.length == 0 ) {
@@ -215,10 +213,10 @@ module.exports = {
             }
             data = this.filterEventTypes( chartMetadata );
             data = this.getData( chartMetadata );
-            console.log("chartMetadata", chartMetadata);
+            //console.log("chartMetadata", chartMetadata);
 
         } else {
-            console.log("completed " + completedReqs + " requests out of " + reqCount );
+            //console.log("completed " + completedReqs + " requests out of " + reqCount );
 
         }
 
@@ -295,7 +293,6 @@ module.exports = {
         }
     })(),
     getData: function( metaData ) {
-        console.log("getData metaData", metaData);
         let summaryWindow = this.summaryWindow; // || 3600; // todo: this should be dynamic
         //summaryWindow = 86400; // todo: this should be dynamic
         let defaultSummaryType = "aggregation"; // TODO: allow other aggregate types
@@ -322,7 +319,7 @@ module.exports = {
                         ipversion = addr.kind( source ).substring(3);
 
                     } else {
-                        console.log("invalid IP address");
+                        //console.log("invalid IP address");
 
                     }
 
@@ -433,7 +430,7 @@ module.exports = {
         if ( completedDataReqs >= dataReqCount ) {
             let endTime = Date.now();
             let duration = ( endTime - startTime ) / 1000;
-            console.log("COMPLETED ALL DATA ", dataReqCount, " REQUESTS in", duration);
+            //console.log("COMPLETED ALL DATA ", dataReqCount, " REQUESTS in", duration);
 
             // TODO: change this so it creates the esmond time series upon completion of each request, rather than after all requests has completed
 
@@ -441,8 +438,8 @@ module.exports = {
 
             endTime = Date.now();
             duration = ( endTime - startTime ) / 1000;
-            console.log("COMPLETED CREATING TIMESERIES in " , duration);
-            console.log("chartData: ", chartData);
+            //console.log("COMPLETED CREATING TIMESERIES in " , duration);
+            //console.log("chartData: ", chartData);
 
             var self = this;
 
@@ -458,7 +455,7 @@ module.exports = {
 
 
         } else {
-            console.log("handled " + completedDataReqs + " out of " + dataReqCount + " data requests");
+            //console.log("handled " + completedDataReqs + " out of " + dataReqCount + " data requests");
 
         }
     },
