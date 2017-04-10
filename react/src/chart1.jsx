@@ -178,7 +178,6 @@ function getChartStyle( options, column ) {
             break;
     }
 
-       //console.log("style options", options);
     switch ( options.eventType ) {
         case "throughput":
             if ( options.protocol == "tcp" ) {
@@ -227,7 +226,6 @@ function getChartStyle( options, column ) {
             selected: { stroke: color, strokeWidth: width, opacity: opacity, strokeDasharray: strokeStyle },
             muted: { stroke: color, strokeWidth: width, opacity: opacity, strokeDasharray: strokeStyle }
     };
-    //console.log("style: " , style );
     return style;
 
 }
@@ -443,9 +441,6 @@ export default React.createClass({
         var x_position = m_posx-e_posx;
         var y_position = m_posy-e_posy;
 
-        //console.log( ' X Position: ' +  x_position
-        //    + ' Y Position: ' + y_position );
-
         return { posX: x_position, posY: y_position };
     },
 
@@ -460,12 +455,10 @@ elem.addEventListener('mousemove', onMousemove, false);
     },
 
     handleClick(e, f, g) {
-        //console.log("handleClick", e, f, g);
         this.setState({
             lockToolTip: !this.state.lockToolTip
     //        highlight: point
         });
-        //console.log("this.state.lockToolTip", this.state.lockToolTip, "tooltip", tooltip );
     },
 
     handleMouseNear(point) {
@@ -558,7 +551,6 @@ elem.addEventListener('mousemove', onMousemove, false);
                 }
                 */
                 let throughputData = GraphDataStore.filterData( data, filters.throughput[ipversion], this.state.itemsToHide );
-                //console.log("tooltip ipversion ", ipversions[j]);
                 throughputData.sort(this.compareToolTipData);
 
                 for(let i in throughputData) {
@@ -719,7 +711,6 @@ elem.addEventListener('mousemove', onMousemove, false);
 
                 }
 
-                //console.log("failuresData itemsToHide", failureItemsToHide );
 
                 let failuresData = GraphDataStore.filterData( data, filters["failures"][ipversion], this.state.itemsToHide );
                 //failureData.sort(this.compareToolTipData);
@@ -961,15 +952,8 @@ elem.addEventListener('mousemove', onMousemove, false);
     },
 
     handleTrackerChanged(trackerVal, selection) {
-        if ( this.state.lockToolTip ) {
-            //this.setState({tracker: this.state.tracker});
-            //console.log("handleTrackerChanged locked; trackerVal:", trackerVal, selection);
-        } else {
-            //console.log("handleTrackerChanged not locked; trackerVal:", trackerVal, selection);
-            //if ( trackerVal !== null ) {
-                this.setState({tracker: trackerVal});
-            //}
-
+        if ( !this.state.lockToolTip ) {
+            this.setState({tracker: trackerVal});
         }
     },
 
@@ -1022,11 +1006,6 @@ elem.addEventListener('mousemove', onMousemove, false);
 
                     }
 
-                    if ( eventType == "packet-count-lost" && value > 1e-9 ) {
-                        //console.log("packet-count-lost value", value);
-
-                    }
-
                     let sortKey = eventType + protocol + direction;
 
                     let out = {
@@ -1056,7 +1035,6 @@ elem.addEventListener('mousemove', onMousemove, false);
             }
 
         }
-        //console.log("trackerData", trackerData);
         return trackerData;
 
     },
@@ -1077,7 +1055,6 @@ elem.addEventListener('mousemove', onMousemove, false);
         if ( typeof selection != "undefined" && selection !== null && typeof selection.event != "undefined"  ) {
             selectionTime = selection.event.timestampAsUTCString();
         }
-        //console.log("highlight", highlight, "selection", this.state.selection, selectionTime );
 
         let chartSeries = this.state.chartSeries;
         charts = {};
@@ -1430,8 +1407,6 @@ elem.addEventListener('mousemove', onMousemove, false);
             }
         }
 
-        //console.log("charts just created", charts);
-
         var timerange;
 
         if (chartSeries) {
@@ -1702,7 +1677,6 @@ elem.addEventListener('mousemove', onMousemove, false);
 
     },
     componentWillReceiveProps( nextProps ) {
-        console.log("chart1 nextProps", nextProps);
         let timerange = new TimeRange([nextProps.start * 1000, nextProps.end * 1000 ]);
         this.setState({itemsToHide: nextProps.itemsToHide, initialLoading: false});
         if ( nextProps.start != this.state.start
@@ -1730,22 +1704,6 @@ elem.addEventListener('mousemove', onMousemove, false);
 
         //event.preventDefault();
 
-    },
-
-    _checkSortOrder : function( ary, valName='ts' ) {
-        var lastVal = 0;
-        _.each( ary, val => {
-            if ( val.ts <= lastVal ) {
-                console.log('ts is not greater than last ts');
-
-            } else {
-                //console.log('ts is greater than last ts');
-
-            }
-            lastVal = val.ts;
-
-
-        });
     },
 
     getTool( row ) {
