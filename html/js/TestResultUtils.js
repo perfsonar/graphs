@@ -3,7 +3,7 @@
 
 var TestResultUtils = {};
 
-TestResultUtils.formatValue = function(value, prefix) { 
+TestResultUtils.formatValue = function(value, prefix) {
     var format_str = '';
     var formatted_value;
     var suffix = '';
@@ -26,11 +26,13 @@ TestResultUtils.formatValue = function(value, prefix) {
             format_str = '.2f';
             suffix = '(rtt)';
         } else if ((/^loss_/).test(prefix)) {
-            format_str = '.2e';
+            // may or may not need this - formatting to float based on precision
+            // value = parseFloat( value.toPrecision(6) );
+            format_str = '.3%';
         }
         var val_prefix = d3.formatPrefix(value, 3);
-       
-        if ( (/^owdelay_/).test(prefix) || (/^rtt_/).test(prefix) ) { 
+
+        if ( (/^owdelay_/).test(prefix) || (/^rtt_/).test(prefix) ) {
             formatted_value = value.toPrecision(3) + " " + suffix;
         } else if ((/^loss_/).test(prefix)) {
             if (value == 0) {
@@ -98,9 +100,9 @@ TestResultUtils.formatOutput = function(data) {
     ret += '<table class="grid-value' + inactive_class  + '">';
     for(var d in data) {
         inactive_class = '';
-        if (data[d].inactive) { 
+        if (data[d].inactive) {
             inactive_class = ' inactive';
-        }		    
+        }
         ret += '<tr class="' + inactive_class + '">';
         ret += '<td>' + 
             '</td><td><span class="psgraph-val">' + 

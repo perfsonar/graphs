@@ -159,7 +159,6 @@ export default React.createClass({
         router: React.PropTypes.func
     },
     toggleType: function( options, event ) {
-        console.log("toggleType options: ", options); //, "event", event);
         let newItems = this.state.itemsToHide;
         let sorted = Object.keys( options ).sort();
         let id = "";
@@ -168,7 +167,6 @@ export default React.createClass({
             let val = options[key];
             id += key + "_" + val + "_";
         }
-        //console.log("id", id);
         if ( id in newItems ) {
             delete newItems[id];
         } else {
@@ -176,10 +174,7 @@ export default React.createClass({
             newItems[id] = options;
         }
         let active = this.state.active;
-        console.log("previous active", active);
         active[id] = !active[id];
-        console.log("new itemsToHide", newItems);
-        console.log("new active", active);
         this.setState({ active: active, itemsToHide: newItems } );
 
         let activeHash = this.state.hashValues;
@@ -398,10 +393,8 @@ export default React.createClass({
 
         }
 
-        console.log("chartLayout newTime", newTime);
         this.setState( newTime );
         this.setHashVals( newTime );
-        //this.updateURLHash();
     },
 
     setHashVals: function( options ) {
@@ -409,7 +402,6 @@ export default React.createClass({
         for(let key in options) {
             hashVals[key] = options[key];
         }
-        console.log("hashVals", hashVals);
         this.setState({hashValues: hashVals});
         this.updateURLHash();
 
@@ -422,14 +414,12 @@ export default React.createClass({
         } else {
             hashVals = vals;
         }
-        console.log("updateURLHash hashVals", hashVals);
         let arr = [];
         for(let key in hashVals ) {
             let val = encodeURIComponent( hashVals[key] );
             arr.push( key + "=" + val );
         }
         hash += arr.join("&");
-        console.log("hash", hash);
         window.location.hash = hash;
 
     },
@@ -439,7 +429,6 @@ export default React.createClass({
 
         // get hash values
         let hash = this.props.location.hash;
-        console.log( "qs", qs, "hash", hash );
         let hashRe = /^#/;
         hash = hash.replace( hashRe, "");
 
@@ -524,18 +513,15 @@ export default React.createClass({
             let found = ma_url.match( localhostRe );
             let host = location.host;
             if ( found !== null ) {
-                console.log("ma_url", ma_url);
 
                 // replace 'localhost' with the local hostname
                 let new_url = ma_url.replace( localhostRe,  host );
 
-                console.log('localhost URL found, rewriting to host', host, "new ma url", new_url);
                 ma_urls[i] = new_url;
             }
         }
 
         // Get itemsToHide/"active" items
-        console.log("hashObj", hashObj);
         let re = /^hide_(.+)$/;
         let underscoreRe = /_$/;
 
@@ -563,12 +549,10 @@ export default React.createClass({
                 continue;
             }
 
-            console.log('res', res);
             // get the name, minus "hide_"
             let name = res[1];
             // skip any variables that do not match our list of acceptable names
             if ( ! ( name in showHideAliasesShortToLong ) ) {
-                console.log("name not found", name);
                 continue;
             }
 
@@ -584,7 +568,6 @@ export default React.createClass({
             }
 
             let splitNames = longName.split("_");
-            console.log("splitNames", splitNames);
             let itemFilter = {};
             for(let i=0; i<splitNames.length; i+=2) {
                 let activeKey = splitNames[i];
@@ -595,8 +578,6 @@ export default React.createClass({
 
         }
 
-        console.log("active", active);
-        console.log("itemsToHide", itemsToHide);
 
 
         // Create the new state object
@@ -616,7 +597,6 @@ export default React.createClass({
             hashValues: hashObj,
         };
 
-        console.log("updating URL hash", hashObj);
         this.updateURLHash( hashObj );
 
         HostInfoStore.retrieveHostInfo( src, dst );

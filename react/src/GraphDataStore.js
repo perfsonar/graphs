@@ -130,8 +130,6 @@ module.exports = {
 
                 url = this.getMAURL( url );
 
-                console.log("metadata url: ", url);
-
                 // Make sure we don't retrieve the same URL twice
 
                 if ( metadataURLs[url] ) {
@@ -174,10 +172,15 @@ module.exports = {
         }
 },
     getMAURL( url ) {
+
+        let proxy = this.parseUrl( proxyURL );
+
         if ( this.useProxy ) {
             url = encodeURIComponent( url );
             url = proxyURL + url;
         }
+        let urlObj = this.parseUrl( url );
+        url = urlObj.origin + urlObj.pathname + urlObj.search;
         return url;
 
     },
@@ -200,7 +203,7 @@ module.exports = {
         if ( completedReqs == reqCount ) {
             let endTime = Date.now();
             let duration = ( endTime - startTime ) / 1000;
-            console.log("COMPLETED ALL", reqCount, " REQUESTS in", duration);
+            //console.log("COMPLETED ALL", reqCount, " REQUESTS in", duration);
             completedReqs = 0;
             reqCount = 0;
             if ( chartMetadata.length == 0 ) {
@@ -210,10 +213,10 @@ module.exports = {
             }
             data = this.filterEventTypes( chartMetadata );
             data = this.getData( chartMetadata );
-            console.log("chartMetadata", chartMetadata);
+            //console.log("chartMetadata", chartMetadata);
 
         } else {
-            console.log("completed " + reqCount + " requests");
+            //console.log("completed " + completedReqs + " requests out of " + reqCount );
 
         }
 
@@ -295,14 +298,6 @@ module.exports = {
         let defaultSummaryType = "aggregation"; // TODO: allow other aggregate types
         let multipleTypes = [ "histogram-rtt", "histogram-owdelay" ];
 
-        for(let ma_url in maURLs) {
-            // "new URL" is clearer but doesn't work with some browsers
-            // *ahem* IE, Edge ...
-            //let maURL = new URL( maURLs[ma_url] );
-            let maURL = this.parseUrl( maURLs[ma_url] );
-            console.log("maURL", maURL);
-
-            let baseURL = maURL.origin;
             dataReqCount = 0;
             for(let i in metaData) {
                 let datum = metaData[i];
@@ -317,16 +312,19 @@ module.exports = {
 
                     let addr = ipaddr.parse( source );
 
+                    let maURL = this.parseUrl( datum.url ).origin;
+
                     let ipversion;
                     if ( ipaddr.isValid( source ) ) {
                         ipversion = addr.kind( source ).substring(3);
 
                     } else {
-                        console.log("invalid IP address");
+                        //console.log("invalid IP address");
 
                     }
 
                     let uri = null;
+                    let dataUrl = null;
 
                     if ( $.inArray( eventType, multipleTypes ) >= 0 ) {
                         summaryType = "statistics";
@@ -335,12 +333,12 @@ module.exports = {
                             return summary["summary-type"] == summaryType && summary["summary-window"] == that.summaryWindow;
                         });
                         if ( win.length > 1 ) {
-                            console.log("WEIRD: multiple summary windows found. This should not happen.");
+                            //console.log("WEIRD: multiple summary windows found. This should not happen.");
                         } else if ( win.length == 1 ) {
-                            console.log("one summary window found");
                             uri = win[0].uri;
+                            dataUrl = win[0].url;
                         } else {
-                            console.log("no summary windows found");
+                            //console.log("no summary windows found");
                         }
 
                     } else {
@@ -355,12 +353,12 @@ module.exports = {
 
                         // TODO: allow lower summary windows
                         if ( win.length > 1 ) {
-                            console.log("WEIRD: multiple summary windows found. This should not happen.", win);
+                            //console.log("WEIRD: multiple summary windows found. This should not happen.", win);
                         } else if ( win.length == 1 ) {
-                            console.log("one summary window found", summaryWindow, eventType, win);
                             uri = win[0].uri;
+                            dataUrl = win[0].url;
                         } else {
-                            console.log("no summary windows found", summaryWindow, eventType, win);
+                            //console.log("no summary windows found", summaryWindow, eventType, win);
                         }
 
 
@@ -370,7 +368,10 @@ module.exports = {
                         uri = eventTypeObj["base-uri"];
                     }
                     uri += "?time-start=" + start + "&time-end=" + end;
-                    let url = baseURL + uri;
+                    dataUrl += "?time-start=" + start + "&time-end=" + end;
+                    //let url = baseURL + uri;
+                    //let url = dataUrl;
+                    let url = maURL + uri;
 
                     // If using CORS proxy
                     if ( this.useProxy ) {
@@ -378,11 +379,10 @@ module.exports = {
                         url = proxyURL + url;
                     }
 
-                    console.log("data url", url);
+                    //console.log("data url", url);
 
                     // Make sure we don't retrieve the same URL twice
                     if ( dataURLs[url] ) {
-                        console.log("got the same URL twice: ", url);
                         //continue;
 
                     } else {
@@ -395,10 +395,6 @@ module.exports = {
 
                     dataReqCount++;
 
-                    if ( eventType == "failures" ) {
-                        console.log("FAILURES row", row);
-
-                    }
                     this.serverRequest = $.get( url, function(data) {
                         this.handleDataResponse(data, eventType, row);
                     }.bind(this))
@@ -417,7 +413,6 @@ module.exports = {
 
                 }
             }
-        }
 
     },
     handleDataResponse: function( data, eventType, datum ) {
@@ -429,14 +424,13 @@ module.exports = {
             row.data = data;
             if (data.length > 0) {
                 chartData.push( row );
-                console.log("got datapoints", data.length, "eventType", eventType);
             }
         }
         completedDataReqs++;
         if ( completedDataReqs >= dataReqCount ) {
             let endTime = Date.now();
             let duration = ( endTime - startTime ) / 1000;
-            console.log("COMPLETED ALL DATA ", dataReqCount, " REQUESTS in", duration);
+            //console.log("COMPLETED ALL DATA ", dataReqCount, " REQUESTS in", duration);
 
             // TODO: change this so it creates the esmond time series upon completion of each request, rather than after all requests has completed
 
@@ -444,8 +438,8 @@ module.exports = {
 
             endTime = Date.now();
             duration = ( endTime - startTime ) / 1000;
-            console.log("COMPLETED CREATING TIMESERIES in " , duration);
-            console.log("chartData: ", chartData);
+            //console.log("COMPLETED CREATING TIMESERIES in " , duration);
+            //console.log("chartData: ", chartData);
 
             var self = this;
 
@@ -461,7 +455,7 @@ module.exports = {
 
 
         } else {
-            console.log("handled " + completedDataReqs + " out of " + dataReqCount + " data requests");
+            //console.log("handled " + completedDataReqs + " out of " + dataReqCount + " data requests");
 
         }
     },
@@ -482,7 +476,6 @@ module.exports = {
     },
 
     filterData: function( data, filters, itemsToHide ) {
-        //console.log("filters", filters, "itemsToHide", itemsToHide);
         if ( typeof data == "undefined" || typeof filters == "undefined" ) {
             //return [];
 
@@ -510,7 +503,6 @@ module.exports = {
                     for( var key in item ) {
                         let val = item[key];
                         let f = filters;
-                        //console.log("filters", filters);
                         if ( filters.eventType == "failures"
                                 //&& item.eventType != "packet-loss-rate"
                                 && e.properties.mainEventType == filters.mainEventType ) {
@@ -653,7 +645,7 @@ module.exports = {
         let outputData = {};
         let output = [];
         let self = this;
-        console.log("esmondToTimeSeries inputData", inputData);
+        //console.log("esmondToTimeSeries inputData", inputData);
         if ( ( typeof inputData == "undefined" ) || inputData.length == 0 ) {
             return [];
         }
@@ -696,7 +688,6 @@ module.exports = {
 
             testType = self.eventTypeToTestType( eventType );
             if ( typeof testType == "undefined" ) {
-                console.log("undefined testType", datum);
                 return true;
 
             }
@@ -718,11 +709,9 @@ module.exports = {
                     value = val["val"].minimum;
                 } else if ( eventType == 'packet-count-lost' ) {
                     if ( val["val"] > 0 ) {
-                        //console.log('packet count lost > 0', val);
                     }
 
                 } else if ( eventType == 'packet-count-sent' ) {
-                    //console.log('packet count sent', val);
 
                 } else if ( eventType == 'packet-retransmits' ) {
                 } else if ( eventType == "packet-loss-rate" || eventType == "packet-loss-rate-bidir" ) {
@@ -790,8 +779,6 @@ module.exports = {
 
         });
 
-        console.log("outputData", outputData);
-        console.log("output", output);
         this.eventTypeStats = outputData;
 
         // Create retransmit series
