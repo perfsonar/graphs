@@ -1342,6 +1342,10 @@ elem.addEventListener('mousemove', onMousemove, false);
                     } else if ( type == "loss" ) {
                         format = ".1f";
                         label += " %";
+                        if ( max == 0 || max == 1e-9 ) {
+                            max = 0.05;
+
+                        }
                         if ( charts[type].stats.max < 10 ) {
                             format = ".2f";
                         }
