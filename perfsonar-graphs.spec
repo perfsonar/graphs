@@ -7,7 +7,7 @@
 %define relnum  1 
 
 Name:			perfsonar-graphs
-Version:		4.0
+Version:		4.0.0.1
 Release:		%{relnum}%{?dist}
 Summary:		perfSONAR Graphs
 License:		Distributable, see LICENSE
@@ -101,6 +101,9 @@ service httpd restart &> /dev/null || :
 /etc/httpd/conf.d/*
 
 %changelog
+* Thu Apr 19 2017 andy@es.net 4.0.0.1
+- Fixed issue where esmond caused combine http and https in graphs
+
 * Thu Sep 8 2016 mj82@globalnoc.iu.edu 4.0-rc1
 - Update file layout prior to 4.0 RC1
 
