@@ -78,7 +78,6 @@ module.exports = {
         maURLs = ma_url;
 
 
-
         if ( ! end ) {
             //end = Math.ceil( Date.now() / 1000 ); 
         }
@@ -89,7 +88,7 @@ module.exports = {
 
 
         for( let i in sources ) {
-            let directions = [ [ sources[i], dests[i] ], 
+            let directions = [ [ sources[i], dests[i] ],
                 [ dests[i], sources[i] ] ];
             let direction = [ "forward", "reverse" ];
             for( let j in directions ) {
@@ -141,7 +140,7 @@ module.exports = {
                 }
 
                 this.serverRequest = $.get( url, function(data) {
-                    this.handleMetadataResponse(data, direction[j]);
+                    this.handleMetadataResponse(data, direction[j], ma_url[i] );
                 }.bind(this))
                 .fail(function( data ) {
                     // if we get an error, try the cgi instead 
@@ -151,7 +150,7 @@ module.exports = {
                         this.useProxy = true;
                         url = this.getMAURL( url );
                         this.serverRequest = $.get( url, function(data) {
-                            this.handleMetadataResponse(data, direction[j]);
+                            this.handleMetadataResponse(data, direction[j], ma_url[i] );
                         }.bind(this))
                         .fail(function( data ) {
                             this.handleMetadataError( data );
@@ -193,7 +192,7 @@ module.exports = {
         return this.errorData;
 
     },
-    handleMetadataResponse: function( data, direction ) {
+    handleMetadataResponse: function( data, direction, maURL ) {
         //data.label = label;
         for(let i in data) {
             data[i].direction = direction;
@@ -212,7 +211,7 @@ module.exports = {
 
             }
             data = this.filterEventTypes( chartMetadata );
-            data = this.getData( chartMetadata );
+            data = this.getData( chartMetadata, maURL );
             //console.log("chartMetadata", chartMetadata);
 
         } else {
@@ -292,9 +291,8 @@ module.exports = {
             return ret;
         }
     })(),
-    getData: function( metaData ) {
-        let summaryWindow = this.summaryWindow; // || 3600; // todo: this should be dynamic
-        //summaryWindow = 86400; // todo: this should be dynamic
+    getData: function( metaData, maURL ) {
+        let summaryWindow = this.summaryWindow; 
         let defaultSummaryType = "aggregation"; // TODO: allow other aggregate types
         let multipleTypes = [ "histogram-rtt", "histogram-owdelay" ];
 
@@ -312,7 +310,7 @@ module.exports = {
 
                     let addr = ipaddr.parse( source );
 
-                    let maURL = this.parseUrl( datum.url ).origin;
+                    let url = this.parseUrl( maURL ).origin + datum.uri;
 
                     let ipversion;
                     if ( ipaddr.isValid( source ) ) {
@@ -371,15 +369,13 @@ module.exports = {
                     dataUrl += "?time-start=" + start + "&time-end=" + end;
                     //let url = baseURL + uri;
                     //let url = dataUrl;
-                    let url = maURL + uri;
+                    url += uri;
 
                     // If using CORS proxy
                     if ( this.useProxy ) {
                         url = encodeURIComponent( url );
                         url = proxyURL + url;
                     }
-
-                    //console.log("data url", url);
 
                     // Make sure we don't retrieve the same URL twice
                     if ( dataURLs[url] ) {
