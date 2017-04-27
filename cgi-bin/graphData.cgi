@@ -33,7 +33,7 @@ use SimpleLookupService::Client::SimpleLS;
 use perfSONAR_PS::Client::LS::PSRecords::PSService;
 use perfSONAR_PS::Client::LS::PSRecords::PSInterface;
 use perfSONAR_PS::Utils::LookupService qw(discover_lookup_services);
-use perfSONAR_PS::Utils::DNS qw(resolve_address);
+use perfSONAR_PS::Utils::DNS qw(resolve_address reverse_dns);
 use SimpleLookupService::Client::Query;
 use SimpleLookupService::QueryObjects::Network::InterfaceQueryObject;
 
@@ -615,7 +615,9 @@ sub get_test_list {
     my $metadata_out = [];
 
     my $dns_time = 0; # TODO: remove dns_time (benchmarking)
+    my $dns_requests = 0;
 
+    # TODO: review this, do we need to do all this for each host? 
     HOSTS: foreach my $metadatum (@$metadata) {
         push @$metadata_out, $metadatum->{data};
         $hosts{ $metadatum->{'data'}->{'source'} } = 1;
@@ -643,6 +645,7 @@ sub get_test_list {
                 my $dns_end = Time::HiRes::time();
                 my $dns_delta = $dns_end - $dns_start;
                 $dns_time += $dns_delta;
+                $dns_requests++;
                 # TODO: take this out (for perf testing only)
                 #warn "hostname parameters: source: $source; dest: $dest";
                 #my $hostnames = { source_host => $source, dest_host => $dest, source_ip => $source, dest_ip => $dest };
@@ -672,7 +675,6 @@ sub get_test_list {
         }
 
     }
-    #warn "dns time: $dns_time";
 
     $results = \@active_tests;
 
@@ -1153,9 +1155,10 @@ sub host_info {
         # if $host is IP address, do DNS lookup
         if (is_ipv4($host) || is_ipv6($host)) {
             $results->{$key . '_ip'} = $host;
-            my ($err, @addrs) = getaddrinfo( $host, 0 );
-            my ( @names) = getnameinfo( $addrs[2] );
+
+            my ( @names ) = reverse_dns( $host, 1 );
             $results->{$key . '_host'} = $names[0];
+
         } else {
             $results->{$key . '_host'} = $host;
             $results->{$key . '_ip'} = '';
