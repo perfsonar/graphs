@@ -46,7 +46,6 @@ templates/header.tmpl
 templates/serviceTest.tmpl
 templates/serviceTest_new.tmpl
 templates/serviceTest_error.tmpl
-html/public/bundle.js.map
 html/public/bundle.js
 html/public/css/font-awesome/css/font-awesome.min.css
 html/public/css/font-awesome/fonts/FontAwesome.otf
