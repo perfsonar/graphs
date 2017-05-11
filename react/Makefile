@@ -24,14 +24,14 @@ rebuild: clean build
 rebuild-all: clean all
 
 clean:
-	find public/ -maxdepth 1 -name bundle.* -type f -exec /bin/rm {} \;
-	find ../html/public/ -maxdepth 1 -type f -exec /bin/rm {} \;
+	find public/ -maxdepth 1 -name bundle.* -type f -exec rm {} \;
+	find ../html/public/ -maxdepth 1 -type f -exec rm {} \;
 
 clean-deps: 
 	rm -rf node_modules
 
 deploy:
-	find public/ -maxdepth 1 -type f -exec /usr/bin/cp "{}" ../html/public/ \;
+	find public/ -maxdepth 1 -type f -exec cp "{}" ../html/public/ \;
 
 setup:
 	npm install webpack
