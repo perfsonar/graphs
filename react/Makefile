@@ -23,6 +23,9 @@ rebuild: clean build
 
 rebuild-all: clean all
 
+deps:
+	npm install
+
 clean:
 	find public/ -maxdepth 1 -name bundle.* -type f -exec rm {} \;
 	find ../html/public/ -maxdepth 1 -type f -exec rm {} \;

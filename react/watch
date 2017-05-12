@@ -1,0 +1,5 @@
+#!/bin/bash
+inotifywait -q -m -e close_write public/bundle.js |
+while read -r filename event; do
+  ./cpreact         # or "./$filename"
+done

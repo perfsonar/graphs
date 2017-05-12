@@ -1,28 +1,5 @@
 var webpack = require('webpack');
 require('es6-promise').polyfill()
-/*
-module.exports = {
-  devtool: 'eval-source-map',
-  entry: './src/entry.jsx',
-  output: {
-    filename: './public/bundle.js'
-  },
-  module: {
-    loaders: [
-      { test: /\.json$/, loader: 'json-loader' },
-      { test: /\.jsx$/,
-        loader: 'babel-loader',
-        query: {
-          presets: ['es2015', 'react']
-        }
-      },
-      { test: /\.css$/,
-        loader: 'css-loader'
-      }
-    ]
-  }
-};
-*/
 
 var plugins = [
   new webpack.DefinePlugin({
@@ -49,11 +26,6 @@ module.exports = {
     open: 'src/main.jsx'
   },
     entry: "./src/main.jsx",
-/*
-    entry: {
-        app: ["./src/main.jsx"]
-    },
-    */
 
     output: {
         filename: './public/bundle.js'
