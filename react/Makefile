@@ -12,7 +12,7 @@ BROWSERIFY = browserify
 
 UNAME := $(shell uname)
 ifeq ($(UNAME),Darwin)
-	WAITCOMMAND = fswatch -r -1 src/	
+	WAITCOMMAND = fswatch -r -1 src/
 else
 	WAITCOMMAND = inotifywait -qre close_write src/
 endif
@@ -26,11 +26,13 @@ rebuild-all: clean all
 deps:
 	npm install
 
+clean-all: clean clean-deps
+
 clean:
 	find public/ -maxdepth 1 -name bundle.* -type f -exec rm {} \;
 	find ../html/public/ -maxdepth 1 -type f -exec rm {} \;
 
-clean-deps: 
+clean-deps:
 	rm -rf node_modules
 
 deploy:
@@ -45,8 +47,14 @@ webpack:
 dev:
 	@$(WEBPACK) -d
 
+dev-watch:
+	@$(WEBPACK) -d --watch
+
 watch:
-	while true; do \
-		$(WAITCOMMAND); \
-		make $(WATCHMAKE); \
-	done
+	./watch
+
+lint:
+	node_modules/eslint/bin/eslint.js src/*.jsx src/*.js server.js
+
+server:
+	node server.js
