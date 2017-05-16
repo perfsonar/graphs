@@ -55,6 +55,7 @@ watch:
 
 lint:
 	node_modules/eslint/bin/eslint.js src/*.jsx src/*.js server.js
+	node_modules/eslint/bin/eslint.js ../html/js/*.js
 
 server:
 	node server.js
