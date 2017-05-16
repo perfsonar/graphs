@@ -64,6 +64,7 @@
     "style-loader": "^0.13.0",
     "url-loader": "^0.5.7",
     "webpack": "^1.13.3",
+    "webpack-strip": "^0.1.0",
     "webpack-dev-server": "^1.14.1"
   }
 }
