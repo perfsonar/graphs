@@ -33944,6 +33944,7 @@
 	    mixins: [_reactTimeseriesCharts.Highlighter],
 	
 	    getInitialState: function getInitialState() {
+	        console.log("getting state!");
 	
 	        var startDate = new Date(this.props.start * 1000);
 	        var endDate = new Date(this.props.end * 1000);

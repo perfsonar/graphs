@@ -45,10 +45,10 @@ webpack:
 	@$(WEBPACK)
 
 dev:
-	@$(WEBPACK) -d
+	@dev=true $(WEBPACK) -d
 
 dev-watch:
-	@$(WEBPACK) -d --watch
+	@dev=true $(WEBPACK) -d --watch
 
 watch:
 	./watch

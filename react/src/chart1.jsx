@@ -281,6 +281,7 @@ export default React.createClass({
     mixins: [Highlighter],
 
     getInitialState() {
+        console.log("getting state!");
 
         let startDate = new Date( this.props.start * 1000 );
         let endDate = new Date( this.props.end * 1000 );

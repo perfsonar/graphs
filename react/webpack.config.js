@@ -17,6 +17,13 @@ if (process.env.COMPRESS) {
   );
 }
 
+var PRODUCTION = true;
+if ( process.env.dev > 0 || process.env.dev == "true" ) {
+    PRODUCTION = false;
+    console.log( "Initializing DEV build ..." );
+} else {
+    console.log( "Initializing PRODUCTION build ..." );
+}
 
 module.exports = {
  devServer: {
@@ -34,8 +41,8 @@ module.exports = {
     module: {
         loaders: [
             { test: /\.(js|jsx)$/,
-                //loader: 'babel?stage=0',
-                loader: 'babel-loader',
+                //loader: 'babel-loader',
+                loader: ( PRODUCTION ? 'babel-loader!webpack-strip?strip[]=console.log' : 'babel-loader' ),
                 exclude: [/node_modules/],
                 //query: {
                     //presets: ["es2015", "react", "stage-0"]
@@ -51,6 +58,12 @@ module.exports = {
             { test: /\.(ttf|eot|svg)(\?v=[0-9]\.[0-9]\.[0-9])?$/,
               loader: "file-loader?name=[name].[ext]" }
         ]
+            /*
+            ,
+        postLoaders: [
+            { test: /\.js$/, loader: "webpack-strip?strip[]=console.log" }
+        ]
+        */
     },
 
     externals: [
