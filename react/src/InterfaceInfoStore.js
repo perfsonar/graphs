@@ -68,7 +68,6 @@ module.exports = {
     retrieveInterfaceInfo: function( source_input, dest_input ) {
 
 
-        let url = "cgi-bin/graphData.cgi?action=hosts";
         let sources;
         let dests;
         if ( Array.isArray( source_input ) ) {
