@@ -25,6 +25,7 @@ case "$1" in
 
             apache2_invoke enmod cgi
             apache2_invoke enmod rewrite
+            apache2_invoke enmod headers
             apache2_invoke enconf apache-perfsonar-graphs
         fi
     ;;
