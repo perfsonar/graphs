@@ -75,6 +75,16 @@ else {
     error("Unknown action; must specify either data, tests, hosts, or interfaces", 400);
 }
 
+sub cgi_multi_param {
+    my ($param) = @_;
+
+    if ($cgi->can('multi_param')) {
+        return $cgi->multi_param($param);
+    } else {
+        return $cgi->param($param);
+    }
+}
+
 # Fallback proxy for esmond requests for esmond instances that don't have CORS enabled
 sub get_ma_data {
     my $url        = $cgi->param('url');
@@ -121,14 +131,14 @@ sub get_data {
     $summary_window = 3600;
     $summary_window = $window if (defined($window) && (grep {$_ eq $window} @valid_windows));
 
-    my @urls        = $cgi->param('url');
-    my @sources     = $cgi->param('src');
-    my @dests       = $cgi->param('dest');
-    my @ipversions  = $cgi->param('ipversion');
-    my @agents      = $cgi->param('agent');
-    my @tools       = $cgi->param('tool');
-    my @protocols   = $cgi->param('protocol');
-    my @filters     = $cgi->param('filter');
+    my @urls        = cgi_multi_param('url');
+    my @sources     = cgi_multi_param('src');
+    my @dests       = cgi_multi_param('dest');
+    my @ipversions  = cgi_multi_param('ipversion');
+    my @agents      = cgi_multi_param('agent');
+    my @tools       = cgi_multi_param('tool');
+    my @protocols   = cgi_multi_param('protocol');
+    my @filters     = cgi_multi_param('filter');
 
     my $start       = $cgi->param('start')   || error("Missing required parameter \"start\"", 400);
     my $end         = $cgi->param('end')     || error("Missing required parameter \"end\"", 400);
@@ -698,8 +708,8 @@ sub get_tests {
     # src=x.x.x.x;src=y.y.y.y;... or src=x.x.x.x;dest=z.z.z.z;src=y.y.y.y..., just watch the order.
     my @sources;
     my @dests;
-    @sources     = $cgi->param('src') if (defined $cgi->param('src'));
-    @dests       = $cgi->param('dest') if (defined $cgi->param('dest'));
+    @sources     = cgi_multi_param('src') if (defined cgi_multi_param('src'));
+    @dests       = cgi_multi_param('dest') if (defined cgi_multi_param('dest'));
     if ( (@sources or @dests) and @sources != @dests ) {
         error("get_tests: There must be an equal number of src and dest params, if any", 400);
     }
@@ -1010,9 +1020,9 @@ sub get_ls_hosts {
 }
 
 sub get_interfaces {
-    my @sources     = $cgi->param('source');
-    my @dests       = $cgi->param('dest'); 
-    my @ipversions  = $cgi->param('ipversion'); 
+    my @sources     = cgi_multi_param('source');
+    my @dests       = cgi_multi_param('dest');
+    my @ipversions  = cgi_multi_param('ipversion');
     my $ls_url      = $cgi->param('ls_url')    || error("Missing required parameter \"ls_url\"");
 
 
@@ -1113,9 +1123,9 @@ sub get_interfaces {
 }
 
 sub get_host_info {
-    my @sources   = $cgi->param('src');
-    my @dests     = $cgi->param('dest');
-    my @ipversions  = $cgi->param('ipversion');
+    my @sources    = cgi_multi_param('src');
+    my @dests      = cgi_multi_param('dest');
+    my @ipversions = cgi_multi_param('ipversion');
 
     # check for invalid sources
     if ( !is_ip_or_hostname( {address => \@sources} ) ) {
