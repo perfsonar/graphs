@@ -16,7 +16,6 @@ URL:			http://www.perfsonar.net
 Source0:		perfsonar-graphs-%{version}.%{relnum}.tar.gz
 BuildRoot:		%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildArch:		noarch
-BuildRequires: npm
 BuildRequires: nodejs
 Requires:		perl
 Requires:		perl(AnyEvent) >= 4.81
