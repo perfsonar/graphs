@@ -20,14 +20,18 @@ describe('Array', function() {
 
 describe('GraphUtilities', function() {
     describe('getTimezone', function() {
-        let date = new Date();
+        let date; // = new Date();
+        //let dateString = "Mon Jun 12 2017 15:28:38 GMT-0400 (EDT)";
+        //let dateString = "2017-06-12T20:24:03.916Z GMT-0400";
+        let dateString = "2017-06-12 20:24:03 GMT-0400";
+        //dateString = "2017-06-12T20:22:33.349Z";
+        date = new Date( dateString );
         console.log("date", date, typeof date);
-        //date = "Mon Jun 12 2017 15:28:38 GMT-0400 (EDT)";
         let zone = GraphUtilities.getTimezone( date );
         console.log("zone", zone);
         it('should return the correct value', function( done ) {
             assert.equal(zone, ' (GMT+0)');
-            assert.typeOf(zone, 'string');
+            //assert.typeOf(zone, 'string');
             done();
 
         });

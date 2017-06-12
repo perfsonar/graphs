@@ -24,7 +24,7 @@ module.exports = {
                 tz = tz[1];
                 let dateMoment = moment( date );
                 offset = dateMoment.utcOffset() / 60;
-                if ( offset >= 0 ) {
+                if ( typeof ( offset ) != "undefined" && offset >= 0 ) {
                     offset = "+" + offset;
                 }
             }
