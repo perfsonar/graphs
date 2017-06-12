@@ -95,7 +95,8 @@
 	(0, _reactDom.render)(_react2.default.createElement(
 	    _reactRouter.Router,
 	    { history: history },
-	    _react2.default.createElement(_reactRouter.Route, { path: "/", component: _chartLayout2.default })
+	    _react2.default.createElement(_reactRouter.Route, { path: "/", component: _chartLayout2.default }),
+	    _react2.default.createElement(_reactRouter.Route, { path: "/perfsonar-graphs/", component: _chartLayout2.default })
 	), document.getElementById("content"));
 
 /***/ }),
@@ -32621,7 +32622,11 @@
 	        var tracker = this.state.tracker;
 	        var dateFormat = "MM/DD/YYYY HH:mm:ss";
 	        var date = (0, _moment2.default)(tracker).format(dateFormat);
-	        var tz = _GraphUtilities2.default.getTimezone(tracker.toString());
+	        var trackerString = "";
+	        if (tracker !== null && typeof tracker != "undefined") {
+	            trackerString = tracker.toString();
+	        }
+	        var tz = _GraphUtilities2.default.getTimezone(trackerString);
 
 	        var display = "block";
 
@@ -108056,12 +108061,21 @@
 	        var startMoment = moment(startDate);
 	        var endMoment = moment(endDate);
 
-	        var startTZ = _GraphUtilities2.default.getTimezone(startDate.toString());
+	        var startDateString = "";
+	        if (startDate !== null && typeof startDate != "undefined") {
+	            startDateString = startDate.toString();
+	        }
+	        var endDateString = "";
+	        if (endDate !== null && typeof endDate != "undefined") {
+	            endDateString = endDate.toString();
+	        }
+
+	        var startTZ = _GraphUtilities2.default.getTimezone(startDateString);
 	        if (startTZ == "") {
 	            //console.log("unknown timezone; date: " , startDate.toString() );
 
 	        }
-	        var endTZ = _GraphUtilities2.default.getTimezone(endDate.toString());
+	        var endTZ = _GraphUtilities2.default.getTimezone(endDateString);
 
 	        var date = "ddd MM/DD/YYYY";
 	        var time = "HH:mm:ss";

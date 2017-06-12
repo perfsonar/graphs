@@ -33,5 +33,7 @@ render((
     <Router history={history}>
         <Route path="/" component={ChartLayout}>
         </Route>
+        <Route path="/perfsonar-graphs/" component={ChartLayout}>
+        </Route>
     </Router>
 ), document.getElementById("content"));
