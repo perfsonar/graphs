@@ -12,17 +12,18 @@ module.exports = {
 
         if ( ( typeof date == "undefined" ) || date == null ) {
             return;
-        } else if ( date.toString() == "Invalid Date" ) {
+        } else if ( date == "Invalid Date" ) {
             tz = "";
             out = "";
         } else {
-            tz = tzRe.exec( ( date ).toString() );
+            tz = tzRe.exec( date );
             if ( typeof tz == "undefined" || tz === null ) {
                 // timezone is unknown
                 return "";
             } else {
                 tz = tz[1];
-                let dateMoment = moment( date );
+                let dateObj = new Date( date );
+                let dateMoment = moment( dateObj );
                 offset = dateMoment.utcOffset() / 60;
                 if ( typeof ( offset ) != "undefined" && offset >= 0 ) {
                     offset = "+" + offset;

@@ -52,12 +52,12 @@ export default React.createClass({
         let startMoment = moment( startDate );
         let endMoment = moment( endDate );
 
-        let startTZ = GraphUtilities.getTimezone( startDate );
+        let startTZ = GraphUtilities.getTimezone( startDate.toString() );
         if ( startTZ == "" ) {
             //console.log("unknown timezone; date: " , startDate.toString() );
 
         }
-        let endTZ = GraphUtilities.getTimezone( endDate );
+        let endTZ = GraphUtilities.getTimezone( endDate.toString() );
 
         let date = "ddd MM/DD/YYYY";
         let time = "HH:mm:ss";

@@ -476,7 +476,7 @@ elem.addEventListener('mousemove', onMousemove, false);
         let tracker = this.state.tracker;
         let dateFormat = "MM/DD/YYYY HH:mm:ss";
         let date =  moment( tracker ).format(dateFormat);
-        let tz = GraphUtilities.getTimezone( tracker );
+        let tz = GraphUtilities.getTimezone( tracker.toString() );
 
         let display = "block";
 
