@@ -31,7 +31,6 @@ module.exports = {
             }
         }
 
-        //out = tz + " (GMT " + offset + ")";
         out = " (GMT" + offset + ")";
         return out;
 
