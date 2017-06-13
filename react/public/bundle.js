@@ -111258,6 +111258,28 @@
 	
 	var emitter = new EventEmitter();
 	
+	/*
+	var $;
+	require("node-jsdom").env("", function(err, window) {
+	    if (err) {
+	        console.error(err);
+	        return;
+	    }
+	
+	    $ = require("jquery")(window);
+	});
+	*/
+	//var $ = require("jquery");
+	
+	//var XMLHttpRequest = require('xmlhttprequest').XMLHttpRequest;
+	
+	/*
+	$.support.cors = true;
+	$.ajaxSettings.xhr = function() {
+	    return new XMLHttpRequest();
+	};
+	*/
+	
 	module.exports = {
 	
 	    /* Expects an object of hosts like this (keys must be src, dst (can be multiple -- number of sources and dests must match) ): 
@@ -111313,7 +111335,7 @@
 	            _loop(i);
 	        }
 	    },
-	    retrieveHostInfo: function retrieveHostInfo(source_input, dest_input) {
+	    retrieveHostInfo: function retrieveHostInfo(source_input, dest_input, callback) {
 	        var url = "cgi-bin/graphData.cgi?action=hosts";
 	        var sources = void 0;
 	        var dests = void 0;
@@ -111331,9 +111353,15 @@
 	            url += "&src=" + sources[i];
 	            url += "&dest=" + dests[i];
 	        }
-	        this.serverRequest = $.get(url, function (data) {
-	            this.handleHostInfoResponse(data);
-	        }.bind(this));
+	        console.log("hitting url", url);
+	        this.serverRequest = $.ajax({
+	            url: url,
+	            success: function (data) {
+	                if ($.isFunction(callback)) {
+	                    callback(null, data);
+	                }
+	                this.handleHostInfoResponse(data);
+	            }.bind(this) });
 	    },
 	    getHostInfoData: function getHostInfoData() {
 	        return this.hostInfo;

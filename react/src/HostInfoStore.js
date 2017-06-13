@@ -2,6 +2,30 @@ var EventEmitter = require('events').EventEmitter;
 
 var emitter = new EventEmitter();
 
+
+var $;
+require("node-jsdom").env("", function(err, window) {
+    if (err) {
+        console.error(err);
+        return;
+    }
+
+    $ = require("jquery")(window);
+});
+
+
+//var $ = globals.$
+//var $ = require("jquery");
+
+//var XMLHttpRequest = require('xmlhttprequest').XMLHttpRequest;
+
+/*
+$.support.cors = true;
+$.ajaxSettings.xhr = function() {
+    return new XMLHttpRequest();
+};
+*/
+
 module.exports = {
 
     /* Expects an object of hosts like this (keys must be src, dst (can be multiple -- number of sources and dests must match) ): 
@@ -55,7 +79,7 @@ module.exports = {
 
 
     },
-    retrieveHostInfo: function( source_input, dest_input ) {
+    retrieveHostInfo: function( source_input, dest_input, callback ) {
         let url = "cgi-bin/graphData.cgi?action=hosts";
         let sources;
         let dests;
@@ -74,9 +98,15 @@ module.exports = {
             url += "&dest=" + dests[i];
 
         }
-        this.serverRequest = $.get( url, function(data) {
-            this.handleHostInfoResponse( data );
-        }.bind(this));
+        console.log("hitting url", url);
+        this.serverRequest = $.get( 
+                url,
+                function(data) {
+                    if ( $.isFunction( callback ) ) {
+                        callback(null, data);
+                    }
+                    this.handleHostInfoResponse( data );
+                }.bind(this));
 
     },
     getHostInfoData: function( ) {

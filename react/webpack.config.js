@@ -26,14 +26,16 @@ if ( process.env.dev > 0 || process.env.dev == "true" ) {
 }
 
 module.exports = {
- devServer: {
-    hot: true,
-    host: 'perfsonar-dev.grnoc.iu.edu',
-    port: 8080,
-    open: 'src/main.jsx'
-  },
+    devServer: {
+        hot: true,
+        host: 'perfsonar-dev.grnoc.iu.edu',
+        port: 8080,
+        open: 'src/main.jsx'
+    },
     entry: "./src/main.jsx",
-
+    node: {
+        fs: "empty"
+    },
     output: {
         filename: './public/bundle.js'
     },
@@ -68,7 +70,8 @@ module.exports = {
 
     externals: [
         {
-            window: "window"
+            window: "window",
+            xmlhttprequest: '{XMLHttpRequest:XMLHttpRequest}'
         }
     ],
 
