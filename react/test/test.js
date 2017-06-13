@@ -1,12 +1,5 @@
-//var assert = require('assert');
-
-//import assert from 'chai';
-
 import chai from 'chai';
-
 var assert = chai.assert;
-
-//var GraphUtilities = require("GraphUtilities");
 import GraphUtilities from "../src/GraphUtilities";
 
 describe('Array', function() {
@@ -22,26 +15,18 @@ describe('GraphUtilities', function() {
     describe('getTimezone', function() {
         let date; // = new Date();
         let emptyDate = new Date();
+
         // infer local time offset from emptyDate
         let localOffset = emptyDate.getTimezoneOffset() / 60;
-        console.log("localOffset", localOffset);
-        console.log("empty date", emptyDate.toString());
         let dateString = emptyDate.toString();
-	// "Mon Jun 12 2017 15:28:38 GMT-0400 (EDT)";
-        //let dateString = "2017-06-12T20:24:03.916Z GMT-0400";
-        //let dateString = "2017-06-12 20:24:03 GMT-0400";
-        //let dateString = "2017-06-12T20:22:33.349Z";
-        //let dateString = "Tue Jun 13 2017 00:24:03 GMT-0400 (UTC)";
-      
-	let gmtMinus = false; 
-	if ( dateString.match(/GMT-/) ) {
-		gmtMinus = true;
-	}
-	
+
+        let gmtMinus = false;
+        if ( dateString.match(/GMT-/) ) {
+            gmtMinus = true;
+        }
+
         date = new Date( dateString );
-        console.log("dateString", dateString, typeof date, "timezoneOffset", date.getTimezoneOffset());
         let zone = GraphUtilities.getTimezone( dateString );
-        console.log("zone", zone);
         let expectedRet = ' (GMT';
         if ( gmtMinus ) {
             expectedRet += '-' + localOffset;

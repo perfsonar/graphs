@@ -5,7 +5,6 @@ import { TimeSeries, TimeRange, Event } from "pondjs";
 
 module.exports = {
     getTimezone: function( date ) {
-        console.log("getTimezone called with ", date );
         let tz;
         let tzRe = /\(([^)]+)\)/;
         let out;
