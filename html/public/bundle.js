@@ -78771,7 +78771,6 @@
 	
 	module.exports = {
 	    getTimezone: function getTimezone(date) {
-	        console.log("getTimezone called with ", date);
 	        var tz = void 0;
 	        var tzRe = /\(([^)]+)\)/;
 	        var out = void 0;
@@ -78798,7 +78797,6 @@
 	            }
 	        }
 	
-	        //out = tz + " (GMT " + offset + ")";
 	        out = " (GMT" + offset + ")";
 	        return out;
 	    },

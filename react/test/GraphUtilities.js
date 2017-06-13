@@ -75,9 +75,8 @@ describe('GraphUtilities', function() {
             "1m": { timeDiff: 2678400, summaryWindow: 3600 , timeframe: "1m" },
             "1y": { timeDiff: 31536000, summaryWindow: 86400, timeframe: "1y" }
         };
-        console.log("expectedValues", expectedValues);
+
         for(var key in expectedValues ) {
-            console.log("key", key);
             let expected = expectedValues[key];
             let values = GraphUtilities.getTimeVars( key );
 
