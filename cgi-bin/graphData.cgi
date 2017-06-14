@@ -852,6 +852,10 @@ sub get_tests {
         }
     }
 
+    # not used; just resetting the 'each' iterator
+    # eventually we should probably remove the 'each' calls
+    my $reset_keys = keys %results;
+
     # CONSOLIDATE BIDIRECTIONAL TESTS
     if (1) {
         while (my ($src, $values) = each %results) {
@@ -923,6 +927,10 @@ sub get_tests {
         }
     }
 
+    # not used; just resetting the 'each' iterator
+    # eventually we should probably remove the 'each' calls
+    $reset_keys = keys %results;
+
     # invert src/dst if dst is one of the local addresses
     if (1) {
         while (my ($src, $values) = each %results) {
@@ -967,6 +975,9 @@ sub get_tests {
         }
     }
 
+    # not used; just resetting the 'each' iterator
+    # eventually we should probably remove the 'each' calls
+    $reset_keys = keys %results;
 
     # FLATTEN DATASTRUCTURE
     my @results_arr;
