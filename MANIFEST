@@ -11,9 +11,6 @@ html/js/sorting.js
 html/js/TestResultUtils.js
 html/js/graphWidget_new.js
 cgi-bin/graphData.cgi
-cgi-bin/graphPage.cgi
-cgi-bin/graphWidget.cgi
-cgi-bin/psGraph.cgi
 html/css/dc/bootstrap.css
 html/css/dc/bootstrap.min.css
 html/css/dc/colorbrewer.css
@@ -39,13 +36,6 @@ html/js/dc.js
 html/js/graphWidget.js
 html/js/ps-dc.js
 html/js/psGraph.js
-templates/footer.tmpl
-templates/graphPage.tmpl
-templates/graphWidget.tmpl
-templates/header.tmpl
-templates/serviceTest.tmpl
-templates/serviceTest_new.tmpl
-templates/serviceTest_error.tmpl
 html/public/bundle.js
 html/public/jquery/2.0.3/jquery.js
 html/public/jquery/2.0.3/jquery.min.js
