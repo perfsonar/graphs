@@ -53,6 +53,9 @@ dev-watch:
 watch:
 	./watch
 
+test:
+	npm test
+
 lint:
 	node_modules/eslint/bin/eslint.js src/*.jsx src/*.js server.js
 	node_modules/eslint/bin/eslint.js ../html/js/*.js

@@ -5,6 +5,8 @@ var assert = chai.assert;
 
 import jsdom from "node-jsdom";
 
+var XMLHttpRequest = require('xmlhttprequest').XMLHttpRequest;
+
 
 var window;
 //var sinon;
@@ -35,6 +37,8 @@ var window;
 
 //var $ = require("jquery");
 
+
+
 var $;
 
 require("node-jsdom").env("", function(err, window) {
@@ -44,9 +48,11 @@ require("node-jsdom").env("", function(err, window) {
     }
 
     $ = require("jquery")(window);
-    console.log("$ inside jsdom", $);
+    //console.log("$ inside jsdom", $);
 
-console.log("$ document", $);
+//console.log("$ document", $);
+
+
 
 
 var sinon = require("sinon");
@@ -65,6 +71,7 @@ vc.on("jsdomError", function jsdomError(er) {
 */
 
 var window;
+
 /*
 before(function (done) {
     jsdom.env({
@@ -89,16 +96,18 @@ before(function (done) {
     });
 });
 */
-var server;
+
 var xhr, requests;
 
 var options = {
-    respondImmediately: true
+    //respondImmediately: true
     //autoRespond: true
 };
-before(function () { server = sinon.fakeServer.create( (options )); });
-//after(function () { server.restore(); });
 
+/*
+before(function () { server = sinon.fakeServer.create( (options )); });
+after(function () { server.restore(); });
+*/
 
 
 describe('Array', function() {
@@ -123,29 +132,73 @@ after(function () {
 
 */
 
+var server;
+var options = {
+    //respondImmediately: true
+    //autoRespond: true
+};
+var request = new XMLHttpRequest();
+before(function () { server = sinon.fakeServer.create(); });
+after(function () { server.restore(); });
+
 it("makes a GET request for host info", function () {
+
+
+//after(function () { server.restore(); });
+
+
     //getTodos(42, sinon.spy());
     let callback = sinon.spy();
 
  //sinon.stub($, 'ajax');
 
-    server.respondWith("GET", "cgi-bin/graphData.cgi?action=hosts&src=1.0.0.1&dest=2.0.0.2",
+
+    server.respondWith("GET", "http://perfsonar-dev8.grnoc.iu.edu/perfsonar-graphs/cgi-bin/graphData.cgi?action=hosts&src=1.0.0.1&dest=2.0.0.2",
             [200, { "Content-Type": "application/json" },
              '[{ "id": 12, "comment": "Hey there" }]']);
+
+/*
 
     server.respondWith("GET", "cgi-bin/graphData.cgi?action=hosts&src=1.0.0.1&dest=2.0.0.3",
             [200, { "Content-Type": "application/json" },
              '[{ "id": 13, "comment": "Dang" }]']);
+             */
+request.open('GET', 'http://perfsonar-dev8.grnoc.iu.edu/perfsonar-graphs/cgi-bin/graphData.cgi?action=hosts&src=1.0.0.1&dest=2.0.0.2', true);
 
+request.onload = function() {
+    console.log("request after request", request);
+    if (request.status >= 200 && request.status < 400) {
+        // Success!
+        console.log("got! request!");
+        var data = JSON.parse(request.responseText);
+    } else {
+        // We reached our target server, but it returned an error
+        console.log("error!");
+
+    }
+};
+
+request.onerror = function() {
+    // There was a connection error of some sort
+
+    console.log("there was a connection error of some sort");
+};
+
+request.send();
+
+
+/*
 
     $.ajax({ 
-                url: "cgi-bin/graphData.cgi?action=hosts&src=1.0.0.1&dest=2.0.0.2", 
-                success: function( data ) {
+        url: "http://perfsonar-dev8.grnoc.iu.edu/cgi-bin/graphData.cgi?action=hosts&src=1.0.0.1&dest=2.0.0.2", 
+    })
+                .done(function( data ) {
                     console.log("got!", data);
                     callback(null, data);
                 }
-            });
-
+            );
+            */
+/*
     $.ajax({ 
                 url: "cgi-bin/graphData.cgi?action=hosts&src=1.0.0.1&dest=2.0.0.3", 
                 success: function( data ) {
@@ -153,9 +206,11 @@ it("makes a GET request for host info", function () {
                     callback(null, data);
                 }
             });
+*/
+
     //HostInfoStore.retrieveHostInfo( "1.0.0.1", "2.0.0.2", callback );
-    console.log("server", server);
-    console.log("server.responses[1]", server.responses[1]);
+    //console.log("server", server);
+    //console.log("server.responses[0]", server.responses[0]);
     //server.respond();
 /*
     server.requests[0].respond(
@@ -165,12 +220,12 @@ it("makes a GET request for host info", function () {
     );
 */
 
-    console.log("$ it", $);
-    console.log("server", server);
+    //console.log("$ it", $);
+    //console.log("server", server);
     //assert(callback.calledOnce);
 
-    //assert.equal(server.requests.length, 1);
-    assert.equal(server.responses.length, 2);
+    assert.equal(server.requests.length, 0);
+    //assert.equal(server.responses.length, 2);
 
     //assert($.ajax.calledWithMatch({ url: '/todo/42/items' }));
 

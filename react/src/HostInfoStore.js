@@ -2,7 +2,8 @@ var EventEmitter = require('events').EventEmitter;
 
 var emitter = new EventEmitter();
 
-
+/*
+if ( typeof $ == "undefined" ) {
 var $;
 require("node-jsdom").env("", function(err, window) {
     if (err) {
@@ -13,7 +14,8 @@ require("node-jsdom").env("", function(err, window) {
     $ = require("jquery")(window);
 });
 
-
+}
+*/
 //var $ = globals.$
 //var $ = require("jquery");
 
@@ -104,6 +106,7 @@ module.exports = {
                 function(data) {
                     if ( $.isFunction( callback ) ) {
                         callback(null, data);
+                        console.log("data", data);
                     }
                     this.handleHostInfoResponse( data );
                 }.bind(this));
