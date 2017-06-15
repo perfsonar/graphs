@@ -103,7 +103,7 @@ module.exports = {
         this.serverRequest = $.get( 
                 url,
                 function(data) {
-                        console.log("data", data);
+                        //console.log("data", data);
                     this.handleHostInfoResponse( data );
                 }.bind(this));
 
@@ -139,7 +139,8 @@ module.exports = {
         emitter.on("get", callback);
     },
     unsubscribe: function( callback ) {
-        emitter.off("get", callback);
+        //emitter.off("get", callback);
+        emitter.removeListener("get", callback);
     },
 
 };
