@@ -2,96 +2,26 @@ import chai from 'chai';
 var assert = chai.assert;
 import HostInfoStore from "../src/HostInfoStore";
 
+HostInfoStore.serverURLBase = 'http://perfsonar-dev8.grnoc.iu.edu/perfsonar-graphs/';
+
+console.log( "serverURLBase", HostInfoStore.serverURLBase);
 
 import jsdom from "node-jsdom";
 
-//import sinon from 'sinon';
-
 var nock = require('nock');
 
-
-var window;
-
-/*
-var $;
-
-require("node-jsdom").env("", function(err, window) {
-    if (err) {
-        console.error(err);
-        return;
-    }
-
-    $ = require("jquery")(window);
-*/
-    //console.log("$ inside jsdom", $);
-
-    //console.log("$ document", $);
+var sinon = require('sinon');
+var EventEmitter = require('events').EventEmitter;
 
 
-
-
-    var sinon = require("sinon");
-
-    //var vc = new jsdom.VirtualConsole();
-    /*
-       var vc = jsdom.VirtualConsole();
-       vc.on("log", console.log.bind(console.log));
-       vc.on("jsdomError", function jsdomError(er) {
-       throw er;
-       });
-       */
-
-    var window;
-
-    var xhr, requests;
-
-    var options = {
-        //respondImmediately: true
-        //autoRespond: true
-    };
-
-    /*
-       before(function () { server = sinon.fakeServer.create( (options )); });
-       after(function () { server.restore(); });
-       */
-
-
-    /*
-       describe('Array', function() {
-       describe('#indexOf()', function() {
-       it('should return -1 when the value is not present', function() {
-       assert.equal(-1, [1,2,3].indexOf(4));
-       });
-       });
-       });
-       */
-
-    /*
-       before(function () {
-       console.log("usefakerequest");
-       xhr = sinon.useFakeXMLHttpRequest();
-       requests = [];
-       xhr.onCreate = function (req) { console.log("pusshing req", req );  requests.push(req); };
-       });
-       after(function () {
-    // Like before we must clean up when tampering with globals.
-    xhr.restore();
-    });
-
-*/
-
-
-
-    describe('HostInfoStore', function() {
+    describe('HostInfoStore', function( done ) {
         var options = {
             // respondImmediately: true
             //autoRespond: true
         };
-        var server;
-        var request = require('request');
 
         var scope = nock('http://perfsonar-dev8.grnoc.iu.edu')
-                        .get('cgi-bin/graphData.cgi?action=hosts&src=1.0.0.1&dest=2.0.0.2')
+                        .get('/perfsonar-graphs/cgi-bin/graphData.cgi?action=hosts&src=1.0.0.1&dest=2.0.0.2')
                         .reply(200,
                             [{"dest_host":"ANantes-651-1-49-2.w2-0.abo.wanadoo.fr","dest_ip":"2.0.0.2","source_host":null,"source_ip":"1.0.0.1ZZZZ"}]
                         );
@@ -102,6 +32,7 @@ require("node-jsdom").env("", function(err, window) {
                             [{"dest_host":"ANantes-651-1-49-2.w2-0.abo.wanadoo.fr","dest_ip":"2.0.0.2","source_host":null,"source_ip":"1.0.0.3ZZZZ"}]
                         );
         describe('Get Host Info', function() {
+                var emitter = new EventEmitter();
 
             //before(function () { server = sinon.fakeServer.create(); });
             /*
@@ -112,19 +43,18 @@ require("node-jsdom").env("", function(err, window) {
             after(function () { server.restore(); });
 
 */
-            it("makes a GET request for host info", function () {
+            it("Should return correct HostInfo data", function () {
 
 
 
 
-                var callback = sinon.spy();
 /*
-                
+
                    server.respondWith("GET", "http://perfsonar-dev8.grnoc.iu.edu/perfsonar-graphs/cgi-bin/graphData.cgi?action=hosts&src=1.0.0.1&dest=2.0.0.2",
                    [200, { "Content-Type": "application/json" },
                    '[{ "id": 12, "comment": "Hey there" }]']);
-                   
-                
+
+
 
                    server.respondWith("GET", "cgi-bin/graphData.cgi?action=hosts&src=1.0.0.1&dest=2.0.0.3",
                    [200, { "Content-Type": "application/json" },
@@ -152,16 +82,53 @@ require("node-jsdom").env("", function(err, window) {
 
                 var five = 5;
 
+                var spy = sinon.spy();
+                //emitter.on('get', spy);
+                emitter.on('get', function() { console.log("got 'get~!!!'!!!!11") } );
+
+                let subscriber = function( ) {
+                    console.log("got got got!!!!");
+                    emitter.emit('get');
+                    //spy();
+                    sinon.assert.calledOnce(spy);
+
+                    let outputData = HostInfoStore.getHostInfoData();
+                    console.log("outputData", outputData);
+
+                    let expectedResult =
+                        [ { dest_host: 'ANantes-651-1-49-2.w2-0.abo.wanadoo.fr',
+                            dest_ip: '2.0.0.2',
+                            source_host: null,
+                            source_ip: '1.0.0.1ZZZZ' }
+                        ];
+
+                    assert.equalDeep( expectedResult, outputData );
+                    done();
+                };
+
+                HostInfoStore.subscribe( subscriber );
+                //HostInfoStore.subscribe( spy );
 
 
                 HostInfoStore.retrieveHostInfo( "1.0.0.1", "2.0.0.2");
 
-                HostInfoStore.retrieveHostInfo( "1.0.0.1", "2.0.0.3");
+
+                //sinon.assert.calledOnce(spy);
+
+
+                //
+
+                //console.log("spy.calledOnce", spy.calledOnce);
+                //assert(spy.calledOnce);
+
+                //HostInfoStore.retrieveHostInfo( "1.0.0.1", "2.0.0.3");
+
+                //console.log("scope", scope);
 
                 //console.log("server.responses[0]", server.responses[0]);
                 //server.respond();
                 //done();
-                console.log("server", server);
+                //console.log("server", server);
 
                 //console.log("$ it", $);
                 //console.log("server", server);
@@ -174,7 +141,7 @@ require("node-jsdom").env("", function(err, window) {
 
                 //assert($.ajax.calledWithMatch({ url: '/todo/42/items' }));
 
-                assert.match(requests[0].url, "/todo/42/items");
+                //assert.match(requests[0].url, "/todo/42/items");
             });
         });
     });

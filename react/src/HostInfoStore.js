@@ -46,13 +46,7 @@ module.exports = {
     tracerouteReqs: 0,
     tracerouteReqsCompleted: 0,
     tracerouteInfo: [],
-    /*
-    getInitialState() {
-        return {
-        };
-
-    },
-    */
+    serverURLBase: "",
 
     retrieveTracerouteData: function ( sources, dests, ma_url ) {
         let baseUrl = "cgi-bin/graphData.cgi?action=has_traceroute_data";
@@ -83,7 +77,10 @@ module.exports = {
     },
     retrieveHostInfo: function( source_input, dest_input ) {
         // TODO: REVERT THIS URL!!!
-        let url = "cgi-bin/graphData.cgi?action=hosts";
+        console.log("serverURLBase IN STORE", this.serverURLBase );
+        let url = this.serverURLBase;
+        url += "cgi-bin/graphData.cgi?action=hosts";
+
         //let url = "http://perfsonar-dev8.grnoc.iu.edu/perfsonar-graphs/cgi-bin/graphData.cgi?action=hosts";
         let sources;
         let dests;
