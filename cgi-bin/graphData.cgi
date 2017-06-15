@@ -89,7 +89,7 @@ sub get_ma_data {
     # http://host/esmond/perfsonar/archive/[something]
     # this should be url encoded
     if ( $url =~ m|^https?://[^/]+/esmond/perfsonar/archive| ) {
-        my $req = HTTP::Request->new( 
+        my $req = HTTP::Request->new(
             GET => $url,
         );
 
@@ -764,10 +764,10 @@ sub get_tests {
             my $full_type   = $event_type->event_type();
             my $last_update = $event_type->time_updated(); 
 
-            # Currently, we hard-code the list of event types we will accept for our listing. If we retrieve all of them, 
+            # Currently, we hard-code the list of event types we will accept for our listing. If we retrieve all of them,
             # performance is too poor and we don't care about many of them.
             # Ideally, this would be configurable.
-            next unless ($full_type eq 'throughput' || $full_type eq 'packet-loss-rate' || 
+            next unless ($full_type eq 'throughput' || $full_type eq 'packet-loss-rate' ||
                          $full_type eq 'histogram-owdelay' || $full_type eq 'histogram-rtt');
 
             my $type = $full_type;
@@ -781,8 +781,8 @@ sub get_tests {
             $event_type->filters->time_end($now);
             $event_type->filters->source($src);
             $event_type->filters->destination($dst);
-           
-            # we only want to see point-to-point tests 
+
+            # we only want to see point-to-point tests
             $event_type->filters->subject_type('point-to-point');
 
             $start_time = [Time::HiRes::gettimeofday()];
@@ -839,7 +839,7 @@ sub get_tests {
             $total_data += Time::HiRes::tv_interval($start_time);
 
             error($event_type->error) if ($event_type->error);
-        
+
             if (defined($data) && @$data > 0 ) {
                 $results{$src}{$dst}{$type} = {last_update  => $last_update,
                     timeperiod_average => $average,
@@ -1011,8 +1011,8 @@ sub get_ls_hosts {
 
 sub get_interfaces {
     my @sources     = $cgi->param('source');
-    my @dests       = $cgi->param('dest'); 
-    my @ipversions  = $cgi->param('ipversion'); 
+    my @dests       = $cgi->param('dest');
+    my @ipversions  = $cgi->param('ipversion');
     my $ls_url      = $cgi->param('ls_url')    || error("Missing required parameter \"ls_url\"");
 
 
@@ -1057,8 +1057,8 @@ sub get_interfaces {
             push @ifaddrs,  @dest_ips;
             push @ifaddrs, $source_hostname;
             push @ifaddrs, $dest_hostname;
-        } 
-        elsif ($source) { 
+        }
+        elsif ($source) {
             push @ifaddrs, @source_ips;
             push @ifaddrs, $source_hostname;
         }
@@ -1093,7 +1093,7 @@ sub get_interfaces {
                             'source_addresses' => $addresses
                         }
                     );
-                } 
+                }
                 elsif ($dest && $dest_ip_map{$address} || $address eq $dest_hostname) {
                     push(@results, {'dest_capacity'  => $capacity,
                             'dest_mtu'       => $mtu,
@@ -1216,7 +1216,7 @@ sub select_summary_window {
             $next_smallest_window = $summary->{'summary-window'};
         } elsif ($next_largest_window == -1 || ($summary->{'summary-window'} > $window && $summary->{'summary-window'} < $next_largest_window)) {
            $next_largest_window = $summary->{'summary-window'};
-        } 
+        }
     }
     # if the requested window is 0 (base data) and we don't have a match,
     # this means we need to return -1 so the calling code can use base data instead

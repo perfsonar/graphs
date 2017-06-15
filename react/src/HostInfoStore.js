@@ -2,7 +2,7 @@ var EventEmitter = require('events').EventEmitter;
 
 var emitter = new EventEmitter();
 
-/*
+
 if ( typeof $ == "undefined" ) {
 var $;
 require("node-jsdom").env("", function(err, window) {
@@ -15,7 +15,7 @@ require("node-jsdom").env("", function(err, window) {
 });
 
 }
-*/
+
 //var $ = globals.$
 //var $ = require("jquery");
 
@@ -81,8 +81,10 @@ module.exports = {
 
 
     },
-    retrieveHostInfo: function( source_input, dest_input, callback ) {
+    retrieveHostInfo: function( source_input, dest_input ) {
+        // TODO: REVERT THIS URL!!!
         let url = "cgi-bin/graphData.cgi?action=hosts";
+        //let url = "http://perfsonar-dev8.grnoc.iu.edu/perfsonar-graphs/cgi-bin/graphData.cgi?action=hosts";
         let sources;
         let dests;
         if ( Array.isArray( source_input ) ) {
@@ -104,10 +106,7 @@ module.exports = {
         this.serverRequest = $.get( 
                 url,
                 function(data) {
-                    if ( $.isFunction( callback ) ) {
-                        callback(null, data);
                         console.log("data", data);
-                    }
                     this.handleHostInfoResponse( data );
                 }.bind(this));
 
