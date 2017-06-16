@@ -71,6 +71,7 @@
     "sinon": "^2.3.4",
     "style-loader": "^0.13.0",
     "url-loader": "^0.5.7",
+    "w3cjs": "^0.4.0",
     "webpack": "^1.13.3",
     "webpack-dev-server": "^1.14.1",
     "webpack-strip": "^0.1.0",

@@ -53,17 +53,9 @@ describe('HostInfoStore', function( doneParent ) {
 
 
 
-
-
-
-                var url = 'http://host.domain.org/perfsonar-graphs/cgi-bin/graphData.cgi?action=hosts&src=1.0.0.1&dest=2.0.0.2';
-                //console.log("url", url);
-
                 it("Should return correct HostInfo data test1", function ( done ) {
 
                 var spy = sinon.spy();
-                //emitter.on('get', spy);
-                //emitter.on('get', function() { console.log("got 'get~!!!'!!!!11") } );
 
                 var subscriber = function( ) {
                     var expectedResult =

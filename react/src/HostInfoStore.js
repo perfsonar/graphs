@@ -4,7 +4,6 @@ var emitter = new EventEmitter();
 
 if ( typeof window == "undefined" ) {
     var $;
-    console.log("$ before", $, typeof $);
     if ( typeof $ == "undefined" ) {
         require("node-jsdom").env("", function(err, window) {
             //var $;
@@ -14,7 +13,6 @@ if ( typeof window == "undefined" ) {
             }
 
             $ = require("jquery")(window);
-            console.log("$ inside ", $);
         });
     }
 
