@@ -2,7 +2,7 @@ var EventEmitter = require('events').EventEmitter;
 
 var emitter = new EventEmitter();
 
-
+//var sinon = require('sinon');
 if ( typeof $ == "undefined" ) {
 var $;
 require("node-jsdom").env("", function(err, window) {
@@ -75,13 +75,10 @@ module.exports = {
 
 
     },
-    retrieveHostInfo: function( source_input, dest_input ) {
-        // TODO: REVERT THIS URL!!!
-        console.log("serverURLBase IN STORE", this.serverURLBase );
+    retrieveHostInfo: function( source_input, dest_input, callback ) {
         let url = this.serverURLBase;
         url += "cgi-bin/graphData.cgi?action=hosts";
 
-        //let url = "http://perfsonar-dev8.grnoc.iu.edu/perfsonar-graphs/cgi-bin/graphData.cgi?action=hosts";
         let sources;
         let dests;
         if ( Array.isArray( source_input ) ) {
@@ -105,7 +102,27 @@ module.exports = {
                 function(data) {
                         //console.log("data", data);
                     this.handleHostInfoResponse( data );
-                }.bind(this));
+                }.bind(this))
+        .fail(function( jqXHR ) {
+            var responseText = jqXHR.responseText;
+            var statusText = jqXHR.statusText;
+            var errorThrown = jqXHR.status;
+
+            var errorObj = {
+                errorStatus: "error",
+                responseText: responseText,
+                statusText: statusText,
+                errorThrown: errorThrown
+            };
+
+            if ( $.isFunction( callback ) ) {
+                callback( errorObj );
+            }
+
+            emitter.emit("error");
+
+        } );
+            //console.log( this.serverRequest.error() );
 
     },
     getHostInfoData: function( ) {
@@ -139,8 +156,13 @@ module.exports = {
         emitter.on("get", callback);
     },
     unsubscribe: function( callback ) {
-        //emitter.off("get", callback);
         emitter.removeListener("get", callback);
+    },
+    subscribeError: function( callback ) {
+        emitter.on("error", callback);
+    },
+    unsubscribeError: function( callback ) {
+        emitter.removeListener("error", callback);
     },
 
 };
