@@ -57,6 +57,7 @@
     "eslint-plugin-react": "^3.9.0",
     "file-loader": "^0.8.5",
     "history": "^1.13.1",
+    "jsdom": "^11.0.0",
     "json-loader": "^0.5.4",
     "mocha": "^3.2.0",
     "nock": "^9.0.13",

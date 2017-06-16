@@ -2,31 +2,25 @@ var EventEmitter = require('events').EventEmitter;
 
 var emitter = new EventEmitter();
 
-//var sinon = require('sinon');
-if ( typeof $ == "undefined" ) {
-var $;
-require("node-jsdom").env("", function(err, window) {
-    if (err) {
-        console.error(err);
-        return;
+if ( typeof window == "undefined" ) {
+    var $;
+    console.log("$ before", $, typeof $);
+    if ( typeof $ == "undefined" ) {
+        require("node-jsdom").env("", function(err, window) {
+            //var $;
+            if (err) {
+                console.error(err);
+                return;
+            }
+
+            $ = require("jquery")(window);
+            console.log("$ inside ", $);
+        });
     }
 
-    $ = require("jquery")(window);
-});
-
+} else {
+    $ = jQuery;
 }
-
-//var $ = globals.$
-//var $ = require("jquery");
-
-//var XMLHttpRequest = require('xmlhttprequest').XMLHttpRequest;
-
-/*
-$.support.cors = true;
-$.ajaxSettings.xhr = function() {
-    return new XMLHttpRequest();
-};
-*/
 
 module.exports = {
 
@@ -75,9 +69,11 @@ module.exports = {
 
 
     },
+    _getURL( relative_url ) {
+        return this.serverURLBase + relative_url;
+    },
     retrieveHostInfo: function( source_input, dest_input, callback ) {
-        let url = this.serverURLBase;
-        url += "cgi-bin/graphData.cgi?action=hosts";
+        let url = this._getURL("cgi-bin/graphData.cgi?action=hosts");
 
         let sources;
         let dests;
@@ -96,32 +92,35 @@ module.exports = {
             url += "&dest=" + dests[i];
 
         }
-        console.log("hitting url", url);
         this.serverRequest = $.get( 
                 url,
                 function(data) {
-                        //console.log("data", data);
+                    //console.log("data", data);
                     this.handleHostInfoResponse( data );
-                }.bind(this))
-        .fail(function( jqXHR ) {
-            var responseText = jqXHR.responseText;
-            var statusText = jqXHR.statusText;
-            var errorThrown = jqXHR.status;
+                }.bind(this));
 
-            var errorObj = {
-                errorStatus: "error",
-                responseText: responseText,
-                statusText: statusText,
-                errorThrown: errorThrown
-            };
+        if ( typeof this.serverRequest != "undefined "  ) {
 
-            if ( $.isFunction( callback ) ) {
-                callback( errorObj );
-            }
+                this.serverRequest.fail(function( jqXHR ) {
+                    var responseText = jqXHR.responseText;
+                    var statusText = jqXHR.statusText;
+                    var errorThrown = jqXHR.status;
 
-            emitter.emit("error");
+                    var errorObj = {
+                        errorStatus: "error",
+                        responseText: responseText,
+                        statusText: statusText,
+                        errorThrown: errorThrown
+                    };
 
-        } );
+                    if ( $.isFunction( callback ) ) {
+                        callback( errorObj );
+                    }
+
+                    emitter.emit("error");
+
+                }.bind(this) );
+        }
             //console.log( this.serverRequest.error() );
 
     },
@@ -166,3 +165,5 @@ module.exports = {
     },
 
 };
+
+    

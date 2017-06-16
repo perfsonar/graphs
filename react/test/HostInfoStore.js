@@ -1,23 +1,31 @@
 import chai from 'chai';
 var assert = chai.assert;
+
 import HostInfoStore from "../src/HostInfoStore";
 
-HostInfoStore.serverURLBase = 'http://host.domain.org/perfsonar-graphs/';
-
-console.log( "serverURLBase", HostInfoStore.serverURLBase);
-
-import jsdom from "node-jsdom";
+import jsdom from "jsdom";
 
 var nock = require('nock');
 
 var sinon = require('sinon');
 var EventEmitter = require('events').EventEmitter;
 
-sinon.config = {
-      useFakeTimers: false
-};
-
 describe('HostInfoStore', function( doneParent ) {
+
+    describe('_getURL', function() {
+        it("should generate relative URLs correctly", function() {
+            HostInfoStore.serverURLBase = '';
+            var result =  HostInfoStore._getURL( 'test1/test2' );
+            assert.equal( result, 'test1/test2' );
+            HostInfoStore.serverURLBase = 'http://host.domain.org/perfsonar-graphs/';
+        });
+
+        it("should generate absolute URLs correctly", function() {
+            HostInfoStore.serverURLBase = 'http://host.domain.org/perfsonar-graphs/';
+            var result =  HostInfoStore._getURL( 'cgi-bin/script.cgi' );
+            assert.equal( result, 'http://host.domain.org/perfsonar-graphs/cgi-bin/script.cgi' );
+        });
+    });
 
         var scope = nock('http://host.domain.org')
                         .get('/perfsonar-graphs/cgi-bin/graphData.cgi?action=hosts&src=1.0.0.1&dest=2.0.0.2')
@@ -156,4 +164,5 @@ describe('HostInfoStore', function( doneParent ) {
 
 
         });
+
     });

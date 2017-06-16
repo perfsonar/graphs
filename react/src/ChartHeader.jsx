@@ -16,6 +16,8 @@ let emitter = new EventEmitter();
 
 let moment = require('moment-timezone');
 
+var $ = require('jquery');
+
 export default React.createClass({
     hostInfo: [],
     getInitialState() {
