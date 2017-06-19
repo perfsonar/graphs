@@ -1,5 +1,5 @@
 #!/usr/bin/perl -w
-# This test verifies the output of the get_metadata method
+# This test verifies the summary window selection
 
 use strict;
 use warnings;
@@ -11,56 +11,77 @@ Log::Log4perl->easy_init( {level => 'OFF'} );
 
 use Test::More tests => 3;
 
-use Config::General;
 use Data::Dumper;
 
-use perfSONAR_PS::NPToolkit::DataService::Host;
-use perfSONAR_PS::NPToolkit::UnitTests::Util qw( test_result );
+#use perfSONAR_PS::NPToolkit::UnitTests::Util qw( test_result );
+use perfSONAR_PS::Graphs::Functions qw(select_summary_window combine_data);
 
-my $basedir = 't';
-my $config_file = $basedir . '/etc/web_admin.conf';
-my $ls_file = $basedir . '/etc/lsregistrationdaemon.conf';
-my $conf_obj = Config::General->new( -ConfigFile => $config_file );
-my %conf = $conf_obj->getall;
+my $expected_window = 86400;
 
-my $data;
-my $params = {};
-$params->{'config_file'} = $config_file;
-$params->{'load_ls_registration'} = 1;
-$params->{'ls_config_file'} = $ls_file;
+my $summaries = _get_summaries();
 
-my $info = perfSONAR_PS::NPToolkit::DataService::Host->new( $params );
+my $selected_window = select_summary_window('packet-loss-rate', 'aggregation', 86400, $summaries );
 
-$data = $info->get_metadata();
+is( $expected_window, $selected_window, "Got expected summary window back (exact match)" );
 
-#warn "data:\n" . Dumper $data;
+# Test situation where a summary window that doesn't exist is requested, falling back to next lowest existing window
+$expected_window = 3600;
+$selected_window = select_summary_window('packet-loss-rate', 'aggregation', 3700, $summaries );
+is( $expected_window, $selected_window, "Got expected summary window back (inexact match)" );
 
-# check the metadata
+# Test summary window of 0 (base data)
+$expected_window = -1;
+$selected_window = select_summary_window('packet-loss-rate', 'aggregation', 0, $summaries );
+is( $expected_window, $selected_window, "Got expected summary window back (base data)" );
 
-my $expected_metadata = {
-    'communities' => [
-        'Indiana',
-        'perfSONAR',
-        'perfSONAR-PS'
-    ],
-    'administrator' => {
-        'email' => 'admin@test.com',
-        'name' => 'Node Admin',
-        'organization' => 'Test Org'
-    },
-    'location' => {
-        'country' => 'US',
-        'longitude' => '-28.23',
-        'city' => 'Bloomington',
-        'latitude' => '123.456',
-        'zipcode' => '47401',
-        'state' => 'IN'
-    },
-    'config' => {
-        'access_policy' => 'public',
-        'role' => 'test-host',
-        'access_policy_notes' => 'This is a unit test, but feel free to test to it if you like.'
-    }
-};
 
-test_result($data, $expected_metadata, "Metadata values are as expected");
+sub _get_summaries {
+
+#event type: packet-loss-rate; summary_type: aggregation; window: 86400; event:
+    my $summaries = {
+        'url' => 'https://perfsonar-dev8.grnoc.iu.edu/esmond/perfsonar/archive/',
+        'filters' => bless( {
+                'metadata_filters' => {
+                    'source' => '140.182.49.103',
+                    'destination' => '140.182.49.164',
+                    'subject-type' => 'point-to-point'
+
+                },
+                'time_filters' => {
+                    'time-end' => 1497886963,
+                    'time-range' => '604800',
+                    'time-start' => 1497282163
+                },
+                'timeout' => 60
+            }, 'perfSONAR_PS::Client::Esmond::ApiFilters' ),
+        'data' => {
+            'base-uri' => '/esmond/perfsonar/archive/f213bd554bba4ac59d99b5f211788341/packet-loss-rate/base',
+
+            'event-type' => 'packet-loss-rate',
+            'time-updated' => 1497886952,
+            'summaries' => [
+                {
+                    'summary-type' => 'aggregation',
+                    'summary-window' => '300',
+                    'time-updated' => 1497886952,
+                    'uri' => '/esmond/perfsonar/archive/f213bd554bba4ac59d99b5f211788341/packet-loss-rate/aggregations/300'
+
+                },
+                {
+                    'summary-type' => 'aggregation',
+                    'summary-window' => '3600',
+                    'time-updated' => 1497886952,
+                    'uri' => '/esmond/perfsonar/archive/f213bd554bba4ac59d99b5f211788341/packet-loss-rate/aggregations/3600'
+
+                },
+                {
+                    'summary-type' => 'aggregation',
+                    'summary-window' => '86400',
+                    'time-updated' => 1497886952,
+                    'uri' => '/esmond/perfsonar/archive/f213bd554bba4ac59d99b5f211788341/packet-loss-rate/aggregations/86400'
+                }
+            ]
+        }
+    };
+    return $summaries;
+}

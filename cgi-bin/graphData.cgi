@@ -30,6 +30,7 @@ use perfSONAR_PS::Client::Esmond::ApiConnect;
 
 # Lookup Service libraries
 use SimpleLookupService::Client::SimpleLS;
+use perfSONAR_PS::Graphs::Functions qw(select_summary_window combine_data);
 use perfSONAR_PS::Client::LS::PSRecords::PSService;
 use perfSONAR_PS::Client::LS::PSRecords::PSInterface;
 use perfSONAR_PS::Utils::LookupService qw(discover_lookup_services);
@@ -1196,55 +1197,3 @@ sub error {
     exit 1;
 }
 
-sub select_summary_window {
-    my $event_type = shift;
-    my $summary_type = shift;
-    my $window = shift;
-    my $event = shift;
-
-    my $ret_window = -1;
-    my $next_smallest_window = -1;
-    my $next_largest_window = -1;
-    my $summaries = $event->{data}->{summaries};
-    my $exact_match = 0;
-    foreach my $summary (@$summaries) {
-        if ($summary->{'summary-type'} eq $summary_type && $summary->{'summary-window'} == $window) {
-            $ret_window = $window;
-            $exact_match = 1;
-            last;
-        } elsif ($summary->{'summary-window'} < $window && $summary->{'summary-window'} > $next_smallest_window) {
-            $next_smallest_window = $summary->{'summary-window'};
-        } elsif ($next_largest_window == -1 || ($summary->{'summary-window'} > $window && $summary->{'summary-window'} < $next_largest_window)) {
-           $next_largest_window = $summary->{'summary-window'};
-        }
-    }
-    # if the requested window is 0 (base data) and we don't have a match,
-    # this means we need to return -1 so the calling code can use base data instead
-    if ($window == 0 && !$exact_match) {
-        $ret_window = -1;
-    } else {
-        # if there's no exact match, accept the closest lower value
-        $ret_window = $next_smallest_window if ($ret_window == -1 && !$exact_match);
-        # if there's no lower value, take the closest larger value
-        $ret_window = $next_largest_window if ($ret_window == -1 && !$exact_match);
-    }
-    return $ret_window;
-
-}
-
-sub combine_data {
-    my $data1 = shift;
-    my $data2 = shift;
-    my $combined = {};
-
-    while (my ($key, $val) = each %$data1) {
-        $combined->{$key} = $val;
-    }
-
-    while (my ($key, $val) = each %$data2) {
-        if(defined($val)) {
-            $combined->{$key} = $val;
-        }
-    }
-    return $combined;
-}
