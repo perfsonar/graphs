@@ -281,6 +281,7 @@ export default React.createClass({
     mixins: [Highlighter],
 
     getInitialState() {
+        console.log("getting state!");
 
         let startDate = new Date( this.props.start * 1000 );
         let endDate = new Date( this.props.end * 1000 );
@@ -475,7 +476,11 @@ elem.addEventListener('mousemove', onMousemove, false);
         let tracker = this.state.tracker;
         let dateFormat = "MM/DD/YYYY HH:mm:ss";
         let date =  moment( tracker ).format(dateFormat);
-        let tz = GraphUtilities.getTimezone( tracker );
+        let trackerString = "";
+        if ( tracker !== null && typeof tracker != "undefined" ) {
+            trackerString = tracker.toString();
+        } 
+        let tz = GraphUtilities.getTimezone( trackerString );
 
         let display = "block";
 

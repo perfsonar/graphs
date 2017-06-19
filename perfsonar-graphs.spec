@@ -16,6 +16,7 @@ URL:			http://www.perfsonar.net
 Source0:		perfsonar-graphs-%{version}.%{relnum}.tar.gz
 BuildRoot:		%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildArch:		noarch
+BuildRequires: nodejs
 Requires:		perl
 Requires:		perl(AnyEvent) >= 4.81
 Requires:		perl(AnyEvent::HTTP)
@@ -90,17 +91,13 @@ service httpd restart &> /dev/null || :
 %defattr(-,perfsonar,perfsonar,-)
 %config %{install_base}/etc/*
 %{install_base}/cgi-bin/*
-%{install_base}/templates/graphPage.tmpl
-%{install_base}/templates/graphWidget.tmpl
-%{install_base}/templates/serviceTest_error.tmpl
-%{install_base}/templates/serviceTest_new.tmpl
-%{install_base}/templates/serviceTest.tmpl
-%config %{install_base}/templates/header.tmpl
-%config %{install_base}/templates/footer.tmpl
 %{install_base}/html/*
 /etc/httpd/conf.d/*
 
 %changelog
+* Wed Jun 14 2017 mj82@grnoc.iu.edu 4.0.0.1-1
+- Removed old graph CGIs and templates
+
 * Thu Apr 19 2017 andy@es.net 4.0.0.1
 - Fixed issue where esmond caused combine http and https in graphs
 
