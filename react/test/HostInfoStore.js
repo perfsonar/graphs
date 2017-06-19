@@ -3,8 +3,6 @@ var assert = chai.assert;
 
 import HostInfoStore from "../src/HostInfoStore";
 
-import jsdom from "jsdom";
-
 var nock = require('nock');
 
 var sinon = require('sinon');

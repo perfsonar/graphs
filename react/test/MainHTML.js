@@ -3,8 +3,6 @@ var assert = chai.assert;
 
 import HostInfoStore from "../src/HostInfoStore";
 
-import jsdom from "jsdom";
-
 var w3cjs = require('w3cjs');
 
 var file = "public/index.html";
