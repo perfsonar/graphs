@@ -24,3 +24,5 @@ override_dh_auto_install:
 
 override_dh_install:
 	dh_install --exclude=dojo-release-ps-toolkit.tar.gz
+
+override_dh_auto_test:
