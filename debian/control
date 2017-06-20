@@ -2,7 +2,8 @@ Source: perfsonar-toolkit-graphs
 Section: net
 Priority: optional
 Maintainer: Valentin Vidic <Valentin.Vidic@CARNet.hr>
-Build-Depends: debhelper (>= 9.0.0), quilt, dh-exec
+Build-Depends: debhelper (>= 9.0.0), quilt, dh-exec,
+ perl, liblog-log4perl-perl
 Standards-Version: 3.9.8
 Homepage: http://www.perfsonar.net/
 Vcs-Git: git://github.com/perfsonar/graphs
