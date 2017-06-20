@@ -30,6 +30,7 @@ use perfSONAR_PS::Client::Esmond::ApiConnect;
 
 # Lookup Service libraries
 use SimpleLookupService::Client::SimpleLS;
+use perfSONAR_PS::Graphs::Functions qw(select_summary_window combine_data);
 use perfSONAR_PS::Client::LS::PSRecords::PSService;
 use perfSONAR_PS::Client::LS::PSRecords::PSInterface;
 use perfSONAR_PS::Utils::LookupService qw(discover_lookup_services);
@@ -75,6 +76,16 @@ else {
     error("Unknown action; must specify either data, tests, hosts, or interfaces", 400);
 }
 
+sub cgi_multi_param {
+    my ($param) = @_;
+
+    if ($cgi->can('multi_param')) {
+        return $cgi->multi_param($param);
+    } else {
+        return $cgi->param($param);
+    }
+}
+
 # Fallback proxy for esmond requests for esmond instances that don't have CORS enabled
 sub get_ma_data {
     my $url        = $cgi->param('url');
@@ -89,7 +100,7 @@ sub get_ma_data {
     # http://host/esmond/perfsonar/archive/[something]
     # this should be url encoded
     if ( $url =~ m|^https?://[^/]+/esmond/perfsonar/archive| ) {
-        my $req = HTTP::Request->new( 
+        my $req = HTTP::Request->new(
             GET => $url,
         );
 
@@ -121,14 +132,14 @@ sub get_data {
     $summary_window = 3600;
     $summary_window = $window if (defined($window) && (grep {$_ eq $window} @valid_windows));
 
-    my @urls        = $cgi->param('url');
-    my @sources     = $cgi->param('src');
-    my @dests       = $cgi->param('dest');
-    my @ipversions  = $cgi->param('ipversion');
-    my @agents      = $cgi->param('agent');
-    my @tools       = $cgi->param('tool');
-    my @protocols   = $cgi->param('protocol');
-    my @filters     = $cgi->param('filter');
+    my @urls        = cgi_multi_param('url');
+    my @sources     = cgi_multi_param('src');
+    my @dests       = cgi_multi_param('dest');
+    my @ipversions  = cgi_multi_param('ipversion');
+    my @agents      = cgi_multi_param('agent');
+    my @tools       = cgi_multi_param('tool');
+    my @protocols   = cgi_multi_param('protocol');
+    my @filters     = cgi_multi_param('filter');
 
     my $start       = $cgi->param('start')   || error("Missing required parameter \"start\"", 400);
     my $end         = $cgi->param('end')     || error("Missing required parameter \"end\"", 400);
@@ -698,8 +709,8 @@ sub get_tests {
     # src=x.x.x.x;src=y.y.y.y;... or src=x.x.x.x;dest=z.z.z.z;src=y.y.y.y..., just watch the order.
     my @sources;
     my @dests;
-    @sources     = $cgi->param('src') if (defined $cgi->param('src'));
-    @dests       = $cgi->param('dest') if (defined $cgi->param('dest'));
+    @sources     = cgi_multi_param('src') if (defined cgi_multi_param('src'));
+    @dests       = cgi_multi_param('dest') if (defined cgi_multi_param('dest'));
     if ( (@sources or @dests) and @sources != @dests ) {
         error("get_tests: There must be an equal number of src and dest params, if any", 400);
     }
@@ -764,10 +775,10 @@ sub get_tests {
             my $full_type   = $event_type->event_type();
             my $last_update = $event_type->time_updated(); 
 
-            # Currently, we hard-code the list of event types we will accept for our listing. If we retrieve all of them, 
+            # Currently, we hard-code the list of event types we will accept for our listing. If we retrieve all of them,
             # performance is too poor and we don't care about many of them.
             # Ideally, this would be configurable.
-            next unless ($full_type eq 'throughput' || $full_type eq 'packet-loss-rate' || 
+            next unless ($full_type eq 'throughput' || $full_type eq 'packet-loss-rate' ||
                          $full_type eq 'histogram-owdelay' || $full_type eq 'histogram-rtt');
 
             my $type = $full_type;
@@ -781,8 +792,8 @@ sub get_tests {
             $event_type->filters->time_end($now);
             $event_type->filters->source($src);
             $event_type->filters->destination($dst);
-           
-            # we only want to see point-to-point tests 
+
+            # we only want to see point-to-point tests
             $event_type->filters->subject_type('point-to-point');
 
             $start_time = [Time::HiRes::gettimeofday()];
@@ -839,7 +850,7 @@ sub get_tests {
             $total_data += Time::HiRes::tv_interval($start_time);
 
             error($event_type->error) if ($event_type->error);
-        
+
             if (defined($data) && @$data > 0 ) {
                 $results{$src}{$dst}{$type} = {last_update  => $last_update,
                     timeperiod_average => $average,
@@ -851,6 +862,10 @@ sub get_tests {
             }
         }
     }
+
+    # not used; just resetting the 'each' iterator
+    # eventually we should probably remove the 'each' calls
+    my $reset_keys = keys %results;
 
     # CONSOLIDATE BIDIRECTIONAL TESTS
     if (1) {
@@ -923,6 +938,10 @@ sub get_tests {
         }
     }
 
+    # not used; just resetting the 'each' iterator
+    # eventually we should probably remove the 'each' calls
+    $reset_keys = keys %results;
+
     # invert src/dst if dst is one of the local addresses
     if (1) {
         while (my ($src, $values) = each %results) {
@@ -967,6 +986,9 @@ sub get_tests {
         }
     }
 
+    # not used; just resetting the 'each' iterator
+    # eventually we should probably remove the 'each' calls
+    $reset_keys = keys %results;
 
     # FLATTEN DATASTRUCTURE
     my @results_arr;
@@ -1010,9 +1032,9 @@ sub get_ls_hosts {
 }
 
 sub get_interfaces {
-    my @sources     = $cgi->param('source');
-    my @dests       = $cgi->param('dest'); 
-    my @ipversions  = $cgi->param('ipversion'); 
+    my @sources     = cgi_multi_param('source');
+    my @dests       = cgi_multi_param('dest');
+    my @ipversions  = cgi_multi_param('ipversion');
     my $ls_url      = $cgi->param('ls_url')    || error("Missing required parameter \"ls_url\"");
 
 
@@ -1057,8 +1079,8 @@ sub get_interfaces {
             push @ifaddrs,  @dest_ips;
             push @ifaddrs, $source_hostname;
             push @ifaddrs, $dest_hostname;
-        } 
-        elsif ($source) { 
+        }
+        elsif ($source) {
             push @ifaddrs, @source_ips;
             push @ifaddrs, $source_hostname;
         }
@@ -1093,7 +1115,7 @@ sub get_interfaces {
                             'source_addresses' => $addresses
                         }
                     );
-                } 
+                }
                 elsif ($dest && $dest_ip_map{$address} || $address eq $dest_hostname) {
                     push(@results, {'dest_capacity'  => $capacity,
                             'dest_mtu'       => $mtu,
@@ -1113,9 +1135,9 @@ sub get_interfaces {
 }
 
 sub get_host_info {
-    my @sources   = $cgi->param('src');
-    my @dests     = $cgi->param('dest');
-    my @ipversions  = $cgi->param('ipversion');
+    my @sources    = cgi_multi_param('src');
+    my @dests      = cgi_multi_param('dest');
+    my @ipversions = cgi_multi_param('ipversion');
 
     # check for invalid sources
     if ( !is_ip_or_hostname( {address => \@sources} ) ) {
@@ -1196,55 +1218,3 @@ sub error {
     exit 1;
 }
 
-sub select_summary_window {
-    my $event_type = shift;
-    my $summary_type = shift;
-    my $window = shift;
-    my $event = shift;
-
-    my $ret_window = -1;
-    my $next_smallest_window = -1;
-    my $next_largest_window = -1;
-    my $summaries = $event->{data}->{summaries};
-    my $exact_match = 0;
-    foreach my $summary (@$summaries) {
-        if ($summary->{'summary-type'} eq $summary_type && $summary->{'summary-window'} == $window) {
-            $ret_window = $window;
-            $exact_match = 1;
-            last;
-        } elsif ($summary->{'summary-window'} < $window && $summary->{'summary-window'} > $next_smallest_window) {
-            $next_smallest_window = $summary->{'summary-window'};
-        } elsif ($next_largest_window == -1 || ($summary->{'summary-window'} > $window && $summary->{'summary-window'} < $next_largest_window)) {
-           $next_largest_window = $summary->{'summary-window'};
-        } 
-    }
-    # if the requested window is 0 (base data) and we don't have a match,
-    # this means we need to return -1 so the calling code can use base data instead
-    if ($window == 0 && !$exact_match) {
-        $ret_window = -1;
-    } else {
-        # if there's no exact match, accept the closest lower value
-        $ret_window = $next_smallest_window if ($ret_window == -1 && !$exact_match);
-        # if there's no lower value, take the closest larger value
-        $ret_window = $next_largest_window if ($ret_window == -1 && !$exact_match);
-    }
-    return $ret_window;
-
-}
-
-sub combine_data {
-    my $data1 = shift;
-    my $data2 = shift;
-    my $combined = {};
-
-    while (my ($key, $val) = each %$data1) {
-        $combined->{$key} = $val;
-    }
-
-    while (my ($key, $val) = each %$data2) {
-        if(defined($val)) {
-            $combined->{$key} = $val;
-        }
-    }
-    return $combined;
-}

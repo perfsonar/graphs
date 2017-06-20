@@ -16,6 +16,8 @@ let emitter = new EventEmitter();
 
 let moment = require('moment-timezone');
 
+var $ = require('jquery');
+
 export default React.createClass({
     hostInfo: [],
     getInitialState() {
@@ -52,12 +54,21 @@ export default React.createClass({
         let startMoment = moment( startDate );
         let endMoment = moment( endDate );
 
-        let startTZ = GraphUtilities.getTimezone( startDate );
+        let startDateString = "";
+        if ( startDate !== null && typeof startDate != "undefined" ) {
+            startDateString = startDate.toString();
+        } 
+        let endDateString = "";
+        if ( endDate !== null && typeof endDate != "undefined" ) {
+            endDateString = endDate.toString();
+        } 
+
+        let startTZ = GraphUtilities.getTimezone( startDateString );
         if ( startTZ == "" ) {
             //console.log("unknown timezone; date: " , startDate.toString() );
 
         }
-        let endTZ = GraphUtilities.getTimezone( endDate );
+        let endTZ = GraphUtilities.getTimezone( endDateString );
 
         let date = "ddd MM/DD/YYYY";
         let time = "HH:mm:ss";

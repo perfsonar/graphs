@@ -1,28 +1,5 @@
 var webpack = require('webpack');
 require('es6-promise').polyfill()
-/*
-module.exports = {
-  devtool: 'eval-source-map',
-  entry: './src/entry.jsx',
-  output: {
-    filename: './public/bundle.js'
-  },
-  module: {
-    loaders: [
-      { test: /\.json$/, loader: 'json-loader' },
-      { test: /\.jsx$/,
-        loader: 'babel-loader',
-        query: {
-          presets: ['es2015', 'react']
-        }
-      },
-      { test: /\.css$/,
-        loader: 'css-loader'
-      }
-    ]
-  }
-};
-*/
 
 var plugins = [
   new webpack.DefinePlugin({
@@ -40,21 +17,25 @@ if (process.env.COMPRESS) {
   );
 }
 
+var PRODUCTION = true;
+if ( process.env.dev > 0 || process.env.dev == "true" ) {
+    PRODUCTION = false;
+    console.log( "Initializing DEV build ..." );
+} else {
+    console.log( "Initializing PRODUCTION build ..." );
+}
 
 module.exports = {
- devServer: {
-    hot: true,
-    host: 'perfsonar-dev.grnoc.iu.edu',
-    port: 8080,
-    open: 'src/main.jsx'
-  },
-    entry: "./src/main.jsx",
-/*
-    entry: {
-        app: ["./src/main.jsx"]
+    devServer: {
+        hot: true,
+        host: 'perfsonar-dev.grnoc.iu.edu',
+        port: 8080,
+        open: 'src/main.jsx'
     },
-    */
-
+    entry: "./src/main.jsx",
+    node: {
+        fs: "empty"
+    },
     output: {
         filename: './public/bundle.js'
     },
@@ -62,8 +43,8 @@ module.exports = {
     module: {
         loaders: [
             { test: /\.(js|jsx)$/,
-                //loader: 'babel?stage=0',
-                loader: 'babel-loader',
+                //loader: 'babel-loader',
+                loader: ( PRODUCTION ? 'babel-loader!webpack-strip?strip[]=console.log' : 'babel-loader' ),
                 exclude: [/node_modules/],
                 //query: {
                     //presets: ["es2015", "react", "stage-0"]
@@ -79,11 +60,18 @@ module.exports = {
             { test: /\.(ttf|eot|svg)(\?v=[0-9]\.[0-9]\.[0-9])?$/,
               loader: "file-loader?name=[name].[ext]" }
         ]
+            /*
+            ,
+        postLoaders: [
+            { test: /\.js$/, loader: "webpack-strip?strip[]=console.log" }
+        ]
+        */
     },
 
     externals: [
         {
-            window: "window"
+            window: "window",
+            xmlhttprequest: '{XMLHttpRequest:XMLHttpRequest}'
         }
     ],
 
