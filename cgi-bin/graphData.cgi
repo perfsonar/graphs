@@ -863,14 +863,14 @@ sub get_tests {
         }
     }
 
-    # not used; just resetting the 'each' iterator
-    # eventually we should probably remove the 'each' calls
-    my $reset_keys = keys %results;
-
     # CONSOLIDATE BIDIRECTIONAL TESTS
     if (1) {
-        while (my ($src, $values) = each %results) {
-            while (my ($dst, $types) = each %$values) {
+        #while (my ($src, $values) = each %results) {
+        foreach my $src ( keys %results ) {
+            my $values = $results{ $src };
+            #while (my ($dst, $types) = each %$values) {
+            foreach my $dst ( keys %$values ) {
+                my $types = $values->{ $dst };
                 foreach my $type (@$all_types) {
                     my $bidirectional = 0;
                     my ($src_res, $src_average, $src_min, $src_max, $source_host);
@@ -913,7 +913,7 @@ sub get_tests {
                         $last_update = $src_res->{'last_update'} if (defined ($src_res->{'last_update'}) &&  $src_res->{'last_update'} > $last_update );
                         $protocol = $src_res->{'protocol'} if !defined $protocol;
                         $duration = $src_res->{'duration'} if !defined $duration;;
-    
+
                         delete $results{$dst}{$src}{$type};
                     }
                         $results{$src}{$dst}{$type}->{'timeperiod_max'} = $max;
@@ -937,10 +937,6 @@ sub get_tests {
             }
         }
     }
-
-    # not used; just resetting the 'each' iterator
-    # eventually we should probably remove the 'each' calls
-    $reset_keys = keys %results;
 
     # invert src/dst if dst is one of the local addresses
     if (1) {
@@ -985,10 +981,6 @@ sub get_tests {
             }
         }
     }
-
-    # not used; just resetting the 'each' iterator
-    # eventually we should probably remove the 'each' calls
-    $reset_keys = keys %results;
 
     # FLATTEN DATASTRUCTURE
     my @results_arr;
