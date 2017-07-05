@@ -865,10 +865,8 @@ sub get_tests {
 
     # CONSOLIDATE BIDIRECTIONAL TESTS
     if (1) {
-        #while (my ($src, $values) = each %results) {
         foreach my $src ( keys %results ) {
             my $values = $results{ $src };
-            #while (my ($dst, $types) = each %$values) {
             foreach my $dst ( keys %$values ) {
                 my $types = $values->{ $dst };
                 foreach my $type (@$all_types) {
