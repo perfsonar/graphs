@@ -14,7 +14,7 @@ describe('HostInfoStore', function( doneParent ) {
         it("should generate relative URLs correctly", function() {
             HostInfoStore.serverURLBase = '';
             var result =  HostInfoStore._getURL( 'test1/test2' );
-            assert.equal( result, 'test1/test2' );
+            assert.equal( result, 'test1/test3' ); // TODO: correct this
             HostInfoStore.serverURLBase = 'http://host.domain.org/perfsonar-graphs/';
         });
 
