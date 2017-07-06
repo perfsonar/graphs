@@ -16,7 +16,7 @@ use Data::Dumper;
 #use perfSONAR_PS::NPToolkit::UnitTests::Util qw( test_result );
 use perfSONAR_PS::Graphs::Functions qw(select_summary_window combine_data);
 
-my $expected_window = 86401; # TODO: FIX
+my $expected_window = 86400;
 
 my $summaries = _get_summaries();
 
