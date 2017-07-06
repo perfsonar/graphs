@@ -32,4 +32,5 @@ html/public/css/font-awesome/fonts/fontawesome-webfont.woff
 html/public/css/font-awesome/fonts/fontawesome-webfont.woff2
 html/public/css/foundation.min.css
 html/public/index.html
+lib/perfSONAR_PS/Graphs/Functions.pm
 
