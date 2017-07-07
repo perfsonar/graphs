@@ -96,7 +96,7 @@ service httpd restart &> /dev/null || :
 %config %{install_base}/etc/*
 %{install_base}/cgi-bin/*
 %{install_base}/html/*
-%{install_base}/lib/*
+%{install_base}/lib/perfSONAR_PS/Graphs/Functions.pm
 /etc/httpd/conf.d/*
 
 %changelog
