@@ -23,7 +23,7 @@ use Data::Validate::IP;
 use Log::Log4perl qw(get_logger :easy :levels);
 use URI;
 
-use lib "$RealBin/../lib";
+use lib ("$RealBin/../lib", "$RealBin/lib"  );
 
 use perfSONAR_PS::Client::Esmond::ApiFilters;
 use perfSONAR_PS::Client::Esmond::ApiConnect;
