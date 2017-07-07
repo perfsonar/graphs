@@ -76,10 +76,6 @@ mkdir -p %{buildroot}/etc/httpd/conf.d
 install -D -m 0644 etc/%{apacheconf} %{buildroot}/etc/httpd/conf.d/%{apacheconf}
 rm -f %{buildroot}/%{install_base}/etc/{apacheconf}
 
-mkdir -p %{buildroot}/var/log/perfsonar/graphs/lib/perfSONAR_PS/Graphs
-
-install -D -m 0644 lib/perfSONAR_PS/Graphs/Functions.pm  %{buildroot}/lib/perfSONAR_PS/Graphs/Functions.pm
-
 %clean
 rm -rf %{buildroot}
 
@@ -96,7 +92,7 @@ service httpd restart &> /dev/null || :
 %config %{install_base}/etc/*
 %{install_base}/cgi-bin/*
 %{install_base}/html/*
-%{install_base}/lib/perfSONAR_PS/Graphs/Functions.pm
+%{install_base}/lib/perfSONAR_PS/*
 /etc/httpd/conf.d/*
 
 %changelog
