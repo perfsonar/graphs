@@ -281,8 +281,6 @@ export default React.createClass({
     mixins: [Highlighter],
 
     getInitialState() {
-        console.log("getting state!");
-
         let startDate = new Date( this.props.start * 1000 );
         let endDate = new Date( this.props.end * 1000 );
         let startMoment = moment( startDate );
@@ -491,7 +489,7 @@ elem.addEventListener('mousemove', onMousemove, false);
 
         // Something here maybe, where we need to make sure "tracker" isn't null when locking the tooltip?
         if ( ( this.state.lockToolTip || tracker != null ) && typeof charts != "undefined" ) {
-            let data = this.getTrackerData();
+            var data = this.getTrackerData();
             if ( typeof data == "undefined" ||  data.length == 0 ) {
                 //return null;
                 display = "none";
@@ -505,8 +503,11 @@ elem.addEventListener('mousemove', onMousemove, false);
 
             let unique = GraphDataStore.getUniqueValues( {"ipversion": 1} );
             let ipversions = unique.ipversion;
+            console.log("ipversions!!", ipversions);
             let filters = {};
             const tooltipTypes = typesToChart.concat( subtypesToChart );
+
+            // Build the filters
 
             for( let i in ipversions ) {
                 for (let h in tooltipTypes) {
@@ -535,6 +536,10 @@ elem.addEventListener('mousemove', onMousemove, false);
 
             }
 
+            console.log("filters", filters, "ipversions", ipversions);
+
+
+            // Retrieve chart data for the tooltip
 
             let tooltipItems = {};
             tooltipItems["throughput"] = [];
@@ -542,13 +547,15 @@ elem.addEventListener('mousemove', onMousemove, false);
             tooltipItems["loss"] = [];
             tooltipItems["failures"] = [];
 
-            for( let j in ipversions ) {
+            let failureItems = [];
+
+
+            for( let k in ipversions ) {
                 let throughputItems = [];
                 let lossItems = [];
                 let latencyItems = [];
-                let failureItems = [];
 
-                let ipversion = ipversions[j];
+                let ipversion = ipversions[k];
                 let ipv = "ipv" + ipversion;
 
                 /*if ( typeof tooltipItems[ ipversion ] == "undefined" ) { 
@@ -717,7 +724,15 @@ elem.addEventListener('mousemove', onMousemove, false);
                 }
 
 
+                //console.log("failureItemsToHide", failureItemsToHide);
+                //console.log("filters", filters);
+
+                console.log("ipversion, data before failures", ipversion, data);
+                let filter = filters["failures"][ipversion];
+                console.log('filter', filter);
                 let failuresData = GraphDataStore.filterData( data, filters["failures"][ipversion], this.state.itemsToHide );
+                console.log("failuresData length + ipversion " + failuresData.length + " " + ipversion);
+                console.log("failuresData (ipv" + ipversion + ")", failuresData);
                 //failureData.sort(this.compareToolTipData);
                 if ( failuresData.length == 0 ) {
                     //failureItems = [];
@@ -727,7 +742,7 @@ elem.addEventListener('mousemove', onMousemove, false);
                         let row = failuresData[i];
                         let ts = row.ts;
                         let tool = this.getTool( row );
-                        let timeslip = 0.005;
+                        let timeslip = 0.006;
                         let duration = this.state.timerange.duration();
                         let range = duration * timeslip;
 
@@ -1234,6 +1249,7 @@ elem.addEventListener('mousemove', onMousemove, false);
                     if ( this.state.active["failures"] && ( failureData.results.length > 0 ) ) {
                         for(let j in failureData.results) {
                             let result = failureData.results[j];
+                            console.log("failure result", result);
                             //var failureSeries = result.failureValues;
                             var failureSeries = result.values;
                             let properties = result.properties;
