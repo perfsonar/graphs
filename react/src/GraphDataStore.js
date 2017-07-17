@@ -525,8 +525,7 @@ module.exports = {
                         let val = item[key];
                         let f = filters;
                         if ( filters.eventType == "failures"
-                                //&& item.eventType != "packet-loss-rate"
-                                //&& e.properties.mainEventType == filters.mainEventType 
+                                //&& e.properties.mainEventType == filters.mainEventType
                                 ) {
 
                             // hide failures if failures are hidden

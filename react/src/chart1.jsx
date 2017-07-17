@@ -487,11 +487,19 @@ elem.addEventListener('mousemove', onMousemove, false);
 
         }
 
+            // Retrieve chart data for the tooltip
+
+        let tooltipItems = {};
+        tooltipItems["throughput"] = [];
+        tooltipItems["latency"] = [];
+        tooltipItems["loss"] = [];
+        tooltipItems["failures"] = [];
+
+
         // Something here maybe, where we need to make sure "tracker" isn't null when locking the tooltip?
         if ( ( this.state.lockToolTip || tracker != null ) && typeof charts != "undefined" ) {
-            var data = this.getTrackerData();
+            let data = this.getTrackerData();
             if ( typeof data == "undefined" ||  data.length == 0 ) {
-                //return null;
                 display = "none";
             } else {
                 display = "block";
@@ -504,6 +512,7 @@ elem.addEventListener('mousemove', onMousemove, false);
             let unique = GraphDataStore.getUniqueValues( {"ipversion": 1} );
             let ipversions = unique.ipversion;
             console.log("ipversions!!", ipversions);
+            console.log("trackerData", data);
             let filters = {};
             const tooltipTypes = typesToChart.concat( subtypesToChart );
 
@@ -539,18 +548,9 @@ elem.addEventListener('mousemove', onMousemove, false);
             console.log("filters", filters, "ipversions", ipversions);
 
 
-            // Retrieve chart data for the tooltip
-
-            let tooltipItems = {};
-            tooltipItems["throughput"] = [];
-            tooltipItems["latency"] = [];
-            tooltipItems["loss"] = [];
-            tooltipItems["failures"] = [];
-
-            let failureItems = [];
-
 
             for( let k in ipversions ) {
+                let failureItems = [];
                 let throughputItems = [];
                 let lossItems = [];
                 let latencyItems = [];
@@ -558,6 +558,125 @@ elem.addEventListener('mousemove', onMousemove, false);
                 let ipversion = ipversions[k];
                 let ipv = "ipv" + ipversion;
 
+
+                // We need to use a different list of items to hide for failures, because
+                // normally we query on "eventType" but for this we need to check
+                // "mainEventType" (since "failures" is the "eventType" and 
+                // "mainEventType might be "throughput" or "latency" etc.)
+                let failureItemsToHide = [];
+                let eventTypeRe = /^eventType/;
+
+                for( let key in this.state.itemsToHide ) {
+                    let row = this.state.itemsToHide[ key ];
+                    let newObj = {};
+                    //let newKey = key.replace(eventTypeRe, "mainEventType");
+                    let newKey = key;
+                    if ( newKey ) {
+                        for( let subkey in row ) {
+                            let val = row[ subkey ];
+                            //let newSubkey = subkey.replace(eventTypeRe, "mainEventType");
+                            let newSubkey = subkey;
+                            if ( newSubkey ) {
+                                newObj[ newSubkey ] = val;
+                            }
+
+
+                        }
+
+                        //let newRow = {};
+                        //newRow[ newKey ] = newObj;
+                        failureItemsToHide.push( newObj );
+                    }
+
+                }
+
+
+                //console.log("failureItemsToHide", failureItemsToHide);
+                //console.log("filters", filters);
+
+                console.log("ipversion, data before failures", ipversion, data);
+                let filter = filters["failures"][ipversion];
+                console.log('filter', filter);
+                let failuresData = GraphDataStore.filterData( data, filters["failures"][ipversion], this.state.itemsToHide );
+                //let failuresData = GraphDataStore.getChartData( filters["failures"][ipversion], this.state.itemsToHide );
+                console.log("failuresData length + ipversion " + failuresData.length + " " + ipversion);
+                console.log("failuresData (ipv" + ipversion + ")", failuresData);
+                //failureData.sort(this.compareToolTipData);
+                if ( failuresData.length == 0 ) {
+                    //failureItems = [];
+                } else {
+                    FAILUREDATA:
+                    for(let i in failuresData) {
+                        let row = failuresData[i];
+                        let ts = row.ts;
+                        let tool = this.getTool( row );
+                        let timeslip = 0.008;
+                        let duration = this.state.timerange.duration();
+                        let range = duration * timeslip;
+
+                        if ( ( typeof ts == "undefined"  ) || !this.withinTime( ts.getTime(), tracker.getTime(), range ) ) {
+                            continue;
+                        }
+
+                        // TODO: we'll want to improve performance by filtering out
+                        // the mainEventType "undefined" values (which represent trace etc)
+                        // from the DATA, rather than display
+                        if ( typeof row.properties.mainEventType == "undefined" ) {
+                            continue;
+                        }
+
+                        let hide = false;
+                        FAILUREITEMS:
+                        for( let j in failureItemsToHide ) {
+                            let item = failureItemsToHide[j];
+                            hide = true;
+                            for( let criterion in item ) {
+                                if ( criterion == "eventType" ) {
+                                    if ( row.properties.mainEventType == item[ criterion ] 
+                                           && item[ criterion ] != "packet-loss-rate" ) {
+                                        hide = hide && true;
+                                    } else {
+                                        hide = false;
+                                        continue;
+                                    }
+                                } else {
+                                    if ( row.properties[criterion] == item[ criterion ] ) {
+                                        hide = hide && true;
+                                    } else {
+                                        hide = false;
+                                        continue;
+
+                                    }
+
+                                }
+
+
+                            }
+                            if ( hide ) {
+                                continue FAILUREDATA;
+
+                            }
+
+                        }
+
+                        let dir = "-\u003e"; // Unicode >
+                        if ( row.properties.direction == "reverse" ) {
+                            dir = "\u003c-"; // Unicode <
+                        }
+                        let prot = "";
+                        if ( typeof row.properties.protocol != "undefined" ) {
+                            prot = row.properties.protocol.toUpperCase();
+                            prot += " ";
+                        }
+                        let testType = row.properties.mainTestType;
+                        if ( !hide ) {
+                            failureItems.push(
+                                <li className={this.getTTItemClass("failures")}>{dir} [{testType}] {prot}{row.error} {tool}</li>
+                            );
+                        }
+
+                    }
+                }
                 /*if ( typeof tooltipItems[ ipversion ] == "undefined" ) { 
                     tooltipItems[ ipversion ] = [];
                 }
@@ -690,124 +809,6 @@ elem.addEventListener('mousemove', onMousemove, false);
 
                             );
 
-                }
-
-                // We need to use a different list of items to hide for failures, because
-                // normally we query on "eventType" but for this we need to check
-                // "mainEventType" (since "failures" is the "eventType" and 
-                // "mainEventType might be "throughput" or "latency" etc.)
-                let failureItemsToHide = [];
-                let eventTypeRe = /^eventType/;
-
-                for( let key in this.state.itemsToHide ) {
-                    let row = this.state.itemsToHide[ key ];
-                    let newObj = {};
-                    //let newKey = key.replace(eventTypeRe, "mainEventType");
-                    let newKey = key;
-                    if ( newKey ) {
-                        for( let subkey in row ) {
-                            let val = row[ subkey ];
-                            //let newSubkey = subkey.replace(eventTypeRe, "mainEventType");
-                            let newSubkey = subkey;
-                            if ( newSubkey ) {
-                                newObj[ newSubkey ] = val;
-                            }
-
-
-                        }
-
-                        //let newRow = {};
-                        //newRow[ newKey ] = newObj;
-                        failureItemsToHide.push( newObj );
-                    }
-
-                }
-
-
-                //console.log("failureItemsToHide", failureItemsToHide);
-                //console.log("filters", filters);
-
-                console.log("ipversion, data before failures", ipversion, data);
-                let filter = filters["failures"][ipversion];
-                console.log('filter', filter);
-                let failuresData = GraphDataStore.filterData( data, filters["failures"][ipversion], this.state.itemsToHide );
-                console.log("failuresData length + ipversion " + failuresData.length + " " + ipversion);
-                console.log("failuresData (ipv" + ipversion + ")", failuresData);
-                //failureData.sort(this.compareToolTipData);
-                if ( failuresData.length == 0 ) {
-                    //failureItems = [];
-                } else {
-                    FAILUREDATA:
-                    for(let i in failuresData) {
-                        let row = failuresData[i];
-                        let ts = row.ts;
-                        let tool = this.getTool( row );
-                        let timeslip = 0.006;
-                        let duration = this.state.timerange.duration();
-                        let range = duration * timeslip;
-
-                        if ( ( typeof ts == "undefined"  ) || !this.withinTime( ts.getTime(), tracker.getTime(), range ) ) {
-                            continue;
-                        }
-
-                        // TODO: we'll want to improve performance by filtering out
-                        // the mainEventType "undefined" values (which represent trace etc)
-                        // from the DATA, rather than display
-                        if ( typeof row.properties.mainEventType == "undefined" ) {
-                            continue;
-                        }
-
-                        let hide = false;
-                        FAILUREITEMS:
-                        for( let j in failureItemsToHide ) {
-                            let item = failureItemsToHide[j];
-                            hide = true;
-                            for( let criterion in item ) {
-                                if ( criterion == "eventType" ) {
-                                    if ( row.properties.mainEventType == item[ criterion ] 
-                                           && item[ criterion ] != "packet-loss-rate" ) {
-                                        hide = hide && true;
-                                    } else {
-                                        hide = false;
-                                        continue;
-                                    }
-                                } else {
-                                    if ( row.properties[criterion] == item[ criterion ] ) {
-                                        hide = hide && true;
-                                    } else {
-                                        hide = false;
-                                        continue;
-
-                                    }
-
-                                }
-
-
-                            }
-                            if ( hide ) {
-                                continue FAILUREDATA;
-
-                            }
-
-                        }
-
-                        let dir = "-\u003e"; // Unicode >
-                        if ( row.properties.direction == "reverse" ) {
-                            dir = "\u003c-"; // Unicode <
-                        }
-                        let prot = "";
-                        if ( typeof row.properties.protocol != "undefined" ) {
-                            prot = row.properties.protocol.toUpperCase();
-                            prot += " ";
-                        }
-                        let testType = row.properties.mainTestType;
-                        if ( !hide ) {
-                            failureItems.push(
-                                <li className={this.getTTItemClass("failures")}>{dir} [{testType}] {prot}{row.error} {tool}</li>
-                            );
-                        }
-
-                    }
                 }
 
                 if ( throughputItems.length > 0 ) {
@@ -1326,7 +1327,7 @@ elem.addEventListener('mousemove', onMousemove, false);
 
                     data = GraphDataStore.getChartData( failureFilter, this.state.itemsToHide );
                     if ( this.state.active[subType] && ( data.results.length > 0 ) ) {
-                        charts[subType].data = data.results;
+                        charts[subType].data = charts[subType].data.concat( data.results );
 
                     }
                 }
