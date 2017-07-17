@@ -95,7 +95,6 @@ const scheme = {
     ipv6: "#633", // brown
     throughput: "#0076b4", // blue
     throughputTCP: "#0076b4", // blue
-    //"packet-retransmits": "#56b4e9", // light blue
     "packet-retransmits": "#cc7dbe", // purple
     "packet-loss-rateLatency": "#2b9f78", // green
     "histogram-rtt": "#e5a11c", // yellow/orange
@@ -103,8 +102,6 @@ const scheme = {
     "packet-loss-rate": "#cc7dbe", // purple
     "packet-loss-rateThroughput": "#cc7dbe", // purple
     "packet-loss-ratePing": "#e5801c", // browny orangey
-    //"packet-loss-ratePing": "#f0e442", // yellow
-    //"packet-loss-rateThroughput": "#f0e54b" // yellos
     throughputUDP: "#d6641e" // vermillion
 };
 
@@ -185,7 +182,6 @@ function getChartStyle( options, column ) {
             } else {
                 color = scheme.throughputUDP;
             }
-            //color = scheme.throughput;
             break;
         case "histogram-owdelay":
             // owdelay is always UDP
@@ -200,9 +196,6 @@ function getChartStyle( options, column ) {
             } else {
                 color = scheme["packet-loss-rateLatency"];
             }
-
-            //color = scheme[options.mainEventType];
-
             break;
         case "packet-loss-rate-bidir":
             color = scheme["packet-loss-ratePing"];
@@ -308,8 +301,6 @@ export default React.createClass({
             chartSeries: null,
             timerange: timerange,
             initialTimerange: timerange,
-            //brushrange: TimeRange.lastDay(),
-            //brushrange: TimeRange.lastSevenDays(),
             brushrange: null,
             maxLatency: 1,
             maxThroughput: 1,
@@ -395,7 +386,6 @@ export default React.createClass({
 
         if ( typeof this.refs.tooltip == "undefined" ) {
             toolTipWidth = this.state.toolTipWidth;
-            //return;
         } else {
             toolTipWidth = this.refs.tooltip.clientWidth;
         }
@@ -440,10 +430,6 @@ export default React.createClass({
         return { posX: x_position, posY: y_position };
     },
 
-/*
-var elem = document.getElementById('container');
-elem.addEventListener('mousemove', onMousemove, false);
-*/
     getToolTipPos( ) {
 
 
@@ -453,7 +439,6 @@ elem.addEventListener('mousemove', onMousemove, false);
     handleClick(e, f, g) {
         this.setState({
             lockToolTip: !this.state.lockToolTip
-    //        highlight: point
         });
     },
 
@@ -479,12 +464,7 @@ elem.addEventListener('mousemove', onMousemove, false);
 
         let display = "block";
 
-        if ( this.state.lockToolTip ) {
-            //return tooltip;
-
-        }
-
-            // Retrieve chart data for the tooltip
+        // Retrieve chart data for the tooltip
 
         let tooltipItems = {};
         tooltipItems["throughput"] = [];
@@ -493,7 +473,6 @@ elem.addEventListener('mousemove', onMousemove, false);
         tooltipItems["failures"] = [];
 
 
-        // Something here maybe, where we need to make sure "tracker" isn't null when locking the tooltip?
         if ( ( this.state.lockToolTip || tracker != null ) && typeof charts != "undefined" ) {
             let data = this.getTrackerData();
             if ( typeof data == "undefined" ||  data.length == 0 ) {
@@ -562,12 +541,10 @@ elem.addEventListener('mousemove', onMousemove, false);
                 for( let key in this.state.itemsToHide ) {
                     let row = this.state.itemsToHide[ key ];
                     let newObj = {};
-                    //let newKey = key.replace(eventTypeRe, "mainEventType");
                     let newKey = key;
                     if ( newKey ) {
                         for( let subkey in row ) {
                             let val = row[ subkey ];
-                            //let newSubkey = subkey.replace(eventTypeRe, "mainEventType");
                             let newSubkey = subkey;
                             if ( newSubkey ) {
                                 newObj[ newSubkey ] = val;
@@ -576,8 +553,6 @@ elem.addEventListener('mousemove', onMousemove, false);
 
                         }
 
-                        //let newRow = {};
-                        //newRow[ newKey ] = newObj;
                         failureItemsToHide.push( newObj );
                     }
 
@@ -663,10 +638,6 @@ elem.addEventListener('mousemove', onMousemove, false);
 
                     }
                 }
-                /*if ( typeof tooltipItems[ ipversion ] == "undefined" ) { 
-                    tooltipItems[ ipversion ] = [];
-                }
-                */
                 let throughputData = GraphDataStore.filterData( data, filters.throughput[ipversion], this.state.itemsToHide );
                 throughputData.sort(this.compareToolTipData);
 
@@ -867,7 +838,6 @@ elem.addEventListener('mousemove', onMousemove, false);
                 display = "none";
                 return;
             } else {
-                //console.log("tooltipItems", tooltipItems);
 
             }
             let posX = this.state.posX;
@@ -1074,7 +1044,6 @@ elem.addEventListener('mousemove', onMousemove, false);
         // start for loop involving unique ipversion values here?
         let unique = GraphDataStore.getUniqueValues( {"ipversion": 1} );
         let ipversions = unique.ipversion;
-        //let self = this;
         if ( ( typeof ipversions ) != "undefined" ) {
             for (let h in typesToChart) {
                 let eventType = typesToChart[h];
@@ -1098,10 +1067,6 @@ elem.addEventListener('mousemove', onMousemove, false);
 
                     if ( ! ( type in brushCharts) ) {
                         brushCharts[type] = {};
-                        //brushCharts[type].stats = {};
-                    } else {
-                        //brushStats = brushCharts[type].stats;
-
                     }
 
                     // for now, we'll reuse 'stats' for brushCharts as well since they 
@@ -1132,7 +1097,6 @@ elem.addEventListener('mousemove', onMousemove, false);
 
                     let filter = {
                         eventType: esmondName,
-                        //testType: type,
                         ipversion: ipversion
                     };
 
@@ -1163,9 +1127,9 @@ elem.addEventListener('mousemove', onMousemove, false);
 
                     };
 
-                            charts[type].data.push( result );
+                    charts[type].data.push( result );
 
-                            // skip packet-count-lost and packet-count-sent
+                    // skip packet-count-lost and packet-count-sent
                             if ( esmondName != "packet-count-sent"
                                     && esmondName != "packet-count-lost"
                                     && esmondName != "packet-count-lost-bidir"
@@ -1187,8 +1151,6 @@ elem.addEventListener('mousemove', onMousemove, false);
                                         }
                                         stats.min = 1e-9;
                                     }
-                                    //var scaledSeries = GraphDataStore.scaleValues( series, stats.max );
-                                    //series = scaledSeries;
 
                                 }
 
@@ -1236,13 +1198,8 @@ elem.addEventListener('mousemove', onMousemove, false);
                     if ( this.state.active["failures"] && ( failureData.results.length > 0 ) ) {
                         for(let j in failureData.results) {
                             let result = failureData.results[j];
-                            //var failureSeries = result.failureValues;
                             var failureSeries = result.values;
                             let properties = result.properties;
-                            //stats.min = GraphDataStore.getMin( failureData.stats.min, stats.min );
-                            //stats.max = GraphDataStore.getMax( failureData.stats.max, stats.max );
-                            //stats.min = failureData.stats.min;
-                            //stats.max = failureData.stats.max, stats.max;
                             var scaledSeries = GraphDataStore.scaleValues( failureSeries, stats.max );
                             failureSeries = scaledSeries;
 
@@ -1301,11 +1258,9 @@ elem.addEventListener('mousemove', onMousemove, false);
 
                     let filter = {
                         eventType: subEsmondName,
-                        //testType: subType,
                         ipversion: subipversion
                     };
                     let failureFilter = {
-                        //eventType: "failures",
                         eventType: subEsmondName,
                         ipversion: subipversion
                     };
@@ -1344,7 +1299,6 @@ elem.addEventListener('mousemove', onMousemove, false);
                     var max = charts[type].stats.max;
 
                     if ( type == "latency" ) {
-                        //format = ".1f";
                         label += " ms";
                     } else if ( type == "loss" ) {
                         format = ".1f";
@@ -1357,8 +1311,6 @@ elem.addEventListener('mousemove', onMousemove, false);
                             format = ".2f";
                         }
 
-                    } else if ( type == "throughput" ) {
-                        //label += " bps"
                     }
 
                     // push the chartrows for the main charts
@@ -1610,15 +1562,7 @@ elem.addEventListener('mousemove', onMousemove, false);
 
     updateChartData: function() {
         let newChartSeries = GraphDataStore.getChartData();
-        //this.setState({loading: false, dataloaded: true});
 
-        if ( newChartSeries.results.length == 0 && ( this.state.initialLoading )  ) {
-            //this.setState({ initialLoading: false });
-            //return;
-
-        }
-
-        //this.setState({ chartSeries: newChartSeries, initialLoading: false, loading: false } );
         if ( this.state.initialLoading ) {
             this.setState({ chartSeries: newChartSeries, initialLoading: false, loading: true } );
         } else if ( this.state.loading && newChartSeries.results.length == 0 )  {
@@ -1659,7 +1603,6 @@ elem.addEventListener('mousemove', onMousemove, false);
 
     getDataFromMA: function(src, dst, start, end, ma_url, params, summaryWindow ) {
         this.setState({loading: true, dataloaded: false});
-        //let ma_url = this.props.ma_url || location.origin + "/esmond/perfsonar/archive/";
 
         GraphDataStore.subscribe(this.updateChartData);
 
@@ -1711,9 +1654,8 @@ elem.addEventListener('mousemove', onMousemove, false);
 
     },
     toggleType: function( options, event ) {
-        GraphDataStore.toggleType( options );
-
         //event.preventDefault();
+        GraphDataStore.toggleType( options );
 
     },
 
