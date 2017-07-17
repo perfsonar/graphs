@@ -116,7 +116,7 @@ module.exports = {
                             } else if ( val[i] == 6 ) {
                                 url += "&dns-match-rule=only-v6";
                             } else {
-                                console.log("INVALID IPVERSION " . val[i], "src", src);
+                                //console.log("INVALID IPVERSION " . val[i], "src", src);
 
                             }
                         } else if ( name == "agent" ) {
@@ -318,8 +318,6 @@ module.exports = {
                     let ipversion;
                     if ( ipaddr.isValid( source ) ) {
                         ipversion = addr.kind( source ).substring(3);
-                        console.log("ipversion in getData", ipversion, "address", source);
-
                     } else {
                         //console.log("invalid IP address");
 
@@ -401,13 +399,6 @@ module.exports = {
                     .fail(function( data ) {
                         console.log("get data failed; skipping this collection");
                         this.handleDataResponse(null);
-                        //completedDataReqs++;
-                        //dataReqCount--;
-                        /*
-                        if ( dataReqCount <= 0 ) {
-                            this.handleMetadataError( data );
-                        }
-                        */
                     }.bind(this));
 
 
@@ -569,16 +560,6 @@ module.exports = {
 
         }
 
-        for(let f in filteredResults ) {
-            if ( filteredResults[f].properties.eventType == "failures" && filteredResults[f].properties.ipversion == "4"  ) {
-                if ( typeof filteredResults[f].values != "undefined" ) {
-                    console.log("found " + ( filteredResults[f].values.count()  ) + " ipv" + filteredResults[f].properties.ipversion  + " failures!", filteredResults[f]);
-
-                }
-
-            }
-        }
-
         return filteredResults;
 
     },
@@ -679,7 +660,6 @@ module.exports = {
         let outputData = {};
         let output = [];
         let self = this;
-        //console.log("esmondToTimeSeries inputData", inputData);
         if ( ( typeof inputData == "undefined" ) || inputData.length == 0 ) {
             return [];
         }

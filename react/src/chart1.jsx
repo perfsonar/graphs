@@ -337,11 +337,8 @@ export default React.createClass({
         };
     },
     handleSelectionChanged(point) {
-        //console.log("selection changed", point);
         this.setState({
             selection: point
-            //highlight: point
-
         });
     },
 
@@ -477,7 +474,7 @@ elem.addEventListener('mousemove', onMousemove, false);
         let trackerString = "";
         if ( tracker !== null && typeof tracker != "undefined" ) {
             trackerString = tracker.toString();
-        } 
+        }
         let tz = GraphUtilities.getTimezone( trackerString );
 
         let display = "block";
@@ -511,8 +508,6 @@ elem.addEventListener('mousemove', onMousemove, false);
 
             let unique = GraphDataStore.getUniqueValues( {"ipversion": 1} );
             let ipversions = unique.ipversion;
-            console.log("ipversions!!", ipversions);
-            console.log("trackerData", data);
             let filters = {};
             const tooltipTypes = typesToChart.concat( subtypesToChart );
 
@@ -544,8 +539,6 @@ elem.addEventListener('mousemove', onMousemove, false);
 
 
             }
-
-            console.log("filters", filters, "ipversions", ipversions);
 
 
 
@@ -591,16 +584,9 @@ elem.addEventListener('mousemove', onMousemove, false);
                 }
 
 
-                //console.log("failureItemsToHide", failureItemsToHide);
-                //console.log("filters", filters);
 
-                console.log("ipversion, data before failures", ipversion, data);
                 let filter = filters["failures"][ipversion];
-                console.log('filter', filter);
                 let failuresData = GraphDataStore.filterData( data, filters["failures"][ipversion], this.state.itemsToHide );
-                //let failuresData = GraphDataStore.getChartData( filters["failures"][ipversion], this.state.itemsToHide );
-                console.log("failuresData length + ipversion " + failuresData.length + " " + ipversion);
-                console.log("failuresData (ipv" + ipversion + ")", failuresData);
                 //failureData.sort(this.compareToolTipData);
                 if ( failuresData.length == 0 ) {
                     //failureItems = [];
@@ -1250,7 +1236,6 @@ elem.addEventListener('mousemove', onMousemove, false);
                     if ( this.state.active["failures"] && ( failureData.results.length > 0 ) ) {
                         for(let j in failureData.results) {
                             let result = failureData.results[j];
-                            console.log("failure result", result);
                             //var failureSeries = result.failureValues;
                             var failureSeries = result.values;
                             let properties = result.properties;
