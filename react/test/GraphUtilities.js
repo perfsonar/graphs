@@ -68,12 +68,13 @@ describe('GraphUtilities', function() {
     describe('getTimeVars', function() {
         // create an array of hashes that contains the test values and expected results
         let expectedValues = {
-            "4h": { timeDiff: 14400, summaryWindow: 0, timeframe: "4h" } ,
-            "1d": { timeDiff: 86400, summaryWindow: 300, timeframe: "1d" },
-            "3d": { timeDiff: 259200, summaryWindow: 300, timeframe: "3d" },
-            "1w": { timeDiff: 604800, summaryWindow: 3600, timeframe: "1w" },
-            "1m": { timeDiff: 2678400, summaryWindow: 3600 , timeframe: "1m" },
-            "1y": { timeDiff: 31536000, summaryWindow: 86400, timeframe: "1y" }
+            "4h":  { timeDiff: 14400, summaryWindow: 0, timeframe: "4h" } ,
+            "12h": { timeDiff: 43200, summaryWindow: 0, timeframe: "12h" } ,
+            "1d":  { timeDiff: 86400, summaryWindow: 300, timeframe: "1d" },
+            "3d":  { timeDiff: 259200, summaryWindow: 300, timeframe: "3d" },
+            "1w":  { timeDiff: 604800, summaryWindow: 3600, timeframe: "1w" },
+            "1m":  { timeDiff: 2678400, summaryWindow: 3600 , timeframe: "1m" },
+            "1y":  { timeDiff: 31536000, summaryWindow: 86400, timeframe: "1y" }
         };
 
         for(var key in expectedValues ) {

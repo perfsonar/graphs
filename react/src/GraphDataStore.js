@@ -115,6 +115,9 @@ module.exports = {
                                 url += "&dns-match-rule=only-v4";
                             } else if ( val[i] == 6 ) {
                                 url += "&dns-match-rule=only-v6";
+                            } else {
+                                //console.log("INVALID IPVERSION " . val[i], "src", src);
+
                             }
                         } else if ( name == "agent" ) {
                             if ( typeof val[i] != "undefined" ) {
@@ -315,7 +318,6 @@ module.exports = {
                     let ipversion;
                     if ( ipaddr.isValid( source ) ) {
                         ipversion = addr.kind( source ).substring(3);
-
                     } else {
                         //console.log("invalid IP address");
 
@@ -397,13 +399,6 @@ module.exports = {
                     .fail(function( data ) {
                         console.log("get data failed; skipping this collection");
                         this.handleDataResponse(null);
-                        //completedDataReqs++;
-                        //dataReqCount--;
-                        /*
-                        if ( dataReqCount <= 0 ) {
-                            this.handleMetadataError( data );
-                        }
-                        */
                     }.bind(this));
 
 
@@ -477,10 +472,28 @@ module.exports = {
 
         }
 
+        //console.log("filterz", filters);
+        //console.log("itemzToHide", itemsToHide);
+/*
+                 for(let f in data ) {
+                    if ( data[f].properties.eventType == "failures" ) {
+                        console.log("found failures!", data[f]);
+
+                    }
+
+                }
+*/
         let results = $.grep( data, function( e, i ) {
             let found = true;
+
+            if ( e.properties.eventType == "failures" ) {
+                //console.log("found failures!", e, "ipversion", e.properties.ipversion);
+
+            }
+
             for (var key in filters ) {
                 let val = filters[key];
+
                 if ( ( key in e.properties ) && e.properties[key] == val ) {
                     found = found && true;
                 } else {
@@ -489,9 +502,12 @@ module.exports = {
             }
             return found;
         });
+
+
+        let filteredResults;
         // Filter out items in the itemsToHide array
         if ( typeof itemsToHide != "undefined" && Object.keys( itemsToHide ).length > 0 ) {
-            results = $.grep( results, function( e, i ) {
+            filteredResults = $.grep( results, function( e, i ) {
                 let show = false;
                 for ( var j in itemsToHide ) {
                     let found = 0;
@@ -500,8 +516,8 @@ module.exports = {
                         let val = item[key];
                         let f = filters;
                         if ( filters.eventType == "failures"
-                                //&& item.eventType != "packet-loss-rate"
-                                && e.properties.mainEventType == filters.mainEventType ) {
+                                //&& e.properties.mainEventType == filters.mainEventType
+                                ) {
 
                             // hide failures if failures are hidden
                             if ( key == "eventType" && val == "failures" ) {
@@ -539,9 +555,12 @@ module.exports = {
                 }
                 return show;
             });
+        } else {
+            filteredResults = results;
+
         }
 
-        return results;
+        return filteredResults;
 
     },
 
@@ -641,7 +660,6 @@ module.exports = {
         let outputData = {};
         let output = [];
         let self = this;
-        //console.log("esmondToTimeSeries inputData", inputData);
         if ( ( typeof inputData == "undefined" ) || inputData.length == 0 ) {
             return [];
         }
