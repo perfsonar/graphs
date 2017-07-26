@@ -2,6 +2,24 @@ var EventEmitter = require('events').EventEmitter;
 
 var emitter = new EventEmitter();
 
+if ( typeof window == "undefined" ) {
+    var $;
+    if ( typeof $ == "undefined" ) {
+        require("node-jsdom").env("", function(err, window) {
+            //var $;
+            if (err) {
+                console.error(err);
+                return;
+            }
+
+            $ = require("jquery")(window);
+        });
+    }
+
+} else {
+    $ = jQuery;
+}
+
 module.exports = {
 
     /* Expects an object of hosts like this (keys must be src, dst (can be multiple -- number of sources and dests must match) ): 
@@ -20,13 +38,7 @@ module.exports = {
     tracerouteReqs: 0,
     tracerouteReqsCompleted: 0,
     tracerouteInfo: [],
-    /*
-    getInitialState() {
-        return {
-        };
-
-    },
-    */
+    serverURLBase: "",
 
     retrieveTracerouteData: function ( sources, dests, ma_url ) {
         let baseUrl = "cgi-bin/graphData.cgi?action=has_traceroute_data";
@@ -55,8 +67,12 @@ module.exports = {
 
 
     },
-    retrieveHostInfo: function( source_input, dest_input ) {
-        let url = "cgi-bin/graphData.cgi?action=hosts";
+    _getURL( relative_url ) {
+        return this.serverURLBase + relative_url;
+    },
+    retrieveHostInfo: function( source_input, dest_input, callback ) {
+        let url = this._getURL("cgi-bin/graphData.cgi?action=hosts");
+
         let sources;
         let dests;
         if ( Array.isArray( source_input ) ) {
@@ -74,9 +90,36 @@ module.exports = {
             url += "&dest=" + dests[i];
 
         }
-        this.serverRequest = $.get( url, function(data) {
-            this.handleHostInfoResponse( data );
-        }.bind(this));
+        this.serverRequest = $.get( 
+                url,
+                function(data) {
+                    //console.log("data", data);
+                    this.handleHostInfoResponse( data );
+                }.bind(this));
+
+        if ( typeof this.serverRequest != "undefined "  ) {
+
+                this.serverRequest.fail(function( jqXHR ) {
+                    var responseText = jqXHR.responseText;
+                    var statusText = jqXHR.statusText;
+                    var errorThrown = jqXHR.status;
+
+                    var errorObj = {
+                        errorStatus: "error",
+                        responseText: responseText,
+                        statusText: statusText,
+                        errorThrown: errorThrown
+                    };
+
+                    if ( $.isFunction( callback ) ) {
+                        callback( errorObj );
+                    }
+
+                    emitter.emit("error");
+
+                }.bind(this) );
+        }
+            //console.log( this.serverRequest.error() );
 
     },
     getHostInfoData: function( ) {
@@ -110,7 +153,15 @@ module.exports = {
         emitter.on("get", callback);
     },
     unsubscribe: function( callback ) {
-        emitter.off("get", callback);
+        emitter.removeListener("get", callback);
+    },
+    subscribeError: function( callback ) {
+        emitter.on("error", callback);
+    },
+    unsubscribeError: function( callback ) {
+        emitter.removeListener("error", callback);
     },
 
 };
+
+    

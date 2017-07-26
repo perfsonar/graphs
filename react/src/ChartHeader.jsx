@@ -16,6 +16,8 @@ let emitter = new EventEmitter();
 
 let moment = require('moment-timezone');
 
+var $ = require('jquery');
+
 export default React.createClass({
     hostInfo: [],
     getInitialState() {
@@ -52,12 +54,21 @@ export default React.createClass({
         let startMoment = moment( startDate );
         let endMoment = moment( endDate );
 
-        let startTZ = GraphUtilities.getTimezone( startDate );
+        let startDateString = "";
+        if ( startDate !== null && typeof startDate != "undefined" ) {
+            startDateString = startDate.toString();
+        } 
+        let endDateString = "";
+        if ( endDate !== null && typeof endDate != "undefined" ) {
+            endDateString = endDate.toString();
+        } 
+
+        let startTZ = GraphUtilities.getTimezone( startDateString );
         if ( startTZ == "" ) {
             //console.log("unknown timezone; date: " , startDate.toString() );
 
         }
-        let endTZ = GraphUtilities.getTimezone( endDate );
+        let endTZ = GraphUtilities.getTimezone( endDateString );
 
         let date = "ddd MM/DD/YYYY";
         let time = "HH:mm:ss";
@@ -95,6 +106,7 @@ export default React.createClass({
                                 <i className="fa fa-arrow-left" aria-hidden="true"></i>
                                 </button>
                                <select className="no-margin" name="timeperiod" id="timeperiod" onChange={this.changeTimePeriod} value={this.state.timeframe}>
+                                    <option value="12h">12 hours</option>
                                     <option value="1d">1 day</option>
                                     <option value="3d">3 days</option>
                                     <option value="1w">1 week</option>
