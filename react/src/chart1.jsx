@@ -997,11 +997,6 @@ export default React.createClass({
 
                     let sortKey = eventType + protocol + direction;
 
-                    let out = {
-                        properties: row.properties,
-                        value: value,
-                        sortKey: sortKey
-                    };
 
                     let ipv = "ipv" + row.properties.ipversion;
                     sortKey += "tracker";
@@ -1017,13 +1012,19 @@ export default React.createClass({
                             points: [[time, +value]]
                     };
                     let timeseries =  new TimeSeries ( td );
-                    out = {
+                    let out = {
                         properties: row.properties,
                         data: timeseries,
                         sortKey: sortKey
                     };
 
                     trackerValues[type][ipv].push( out );
+
+                    out = {
+                        properties: row.properties,
+                        value: value,
+                        sortKey: sortKey
+                    };
 
                     let error = undefined;
                     if ( row.properties.eventType == "failures" ) {
