@@ -20,6 +20,7 @@ import "../css/spinner.css";
 let charts;
 let chartData;
 let tooltip = null;
+let trackerValues = {};
 
 const text = 'perfSONAR chart';
 
@@ -325,6 +326,9 @@ export default React.createClass({
                 failures: false
 
             },
+            showHoverDots: false,
+            showHoverTime: null,
+            //trackerValues: {}
         };
     },
     handleSelectionChanged(point) {
@@ -399,9 +403,13 @@ export default React.createClass({
         } else {
             posX -= (offsetX + toolTipWidth + 25);
         }
-        this.setState({posX: posX, toolTipWidth: toolTipWidth});
+
+        //this.setState({posX: posX, toolTipWidth: toolTipWidth});
+        //console.log("posX", posX);
+        this.setState({posX: posX, toolTipWidth: toolTipWidth, showHoverDots: true }); // TODO: Fix
 
     },
+
     getMousePos(e) {
         var m_posx = 0, m_posy = 0, e_posx = 0, e_posy = 0,
         obj = this;
@@ -949,11 +957,15 @@ export default React.createClass({
 
         if ( tracker != null && typeof charts != "undefined" ) {
 
+            //console.log("tracker", tracker, charts);
+            trackerValues = {};
+
             for ( let type in charts) {
                 let data = charts[type].data;
                 if ( data.length == 0 ) {
                     continue;
                 }
+                trackerValues[type] = {};
 
                 for(let i in data) {
                     let row = data[i];
@@ -991,6 +1003,28 @@ export default React.createClass({
                         sortKey: sortKey
                     };
 
+                    let ipv = "ipv" + row.properties.ipversion;
+                    sortKey += "tracker";
+                    let name = type + ipv + "tracker";
+                    //let time = new moment( tracker );
+                    let time = +tracker;
+                    if ( typeof trackerValues[type][ipv] == "undefined" ) {
+                        trackerValues[type][ipv] = [];
+                    }
+                    let td = {
+                            name: name,
+                            columns: ["time", "value"],
+                            points: [[time, +value]]
+                    };
+                    let timeseries =  new TimeSeries ( td );
+                    out = {
+                        properties: row.properties,
+                        data: timeseries,
+                        sortKey: sortKey
+                    };
+
+                    trackerValues[type][ipv].push( out );
+
                     let error = undefined;
                     if ( row.properties.eventType == "failures" ) {
                         error = valAtTime.value( "errorText" );
@@ -1010,6 +1044,11 @@ export default React.createClass({
 
 
             }
+
+            //trackerData = trackerValues;
+
+        } else {
+            this.setState({showHoverDots: false});
 
         }
         return trackerData;
@@ -1181,9 +1220,32 @@ export default React.createClass({
                                         style={getChartStyle( properties )} smooth={false} breakLine={true}
                                         min={0}
                                         //onSelectionChange={this.handleSelectionChanged}
+                                        //onMouseNear={this.handleMouseNear}
                                         onClick={this.handleClick}
                                         columns={[ "value" ]} />
                                         );
+
+                                if ( this.state.showHoverDots ) {
+                                    for(var d in trackerValues[type][ipv]) {
+                                        let trackerSeries = trackerValues[type][ipv][d].data;
+
+                                        charts[type][ipv].push(
+                                                <ScatterChart
+                                                key={type + "hover" + Math.floor( Math.random() )}
+                                                axis={"axis" + type}
+                                                series={trackerSeries}
+                                                style={getChartStyle( properties )} 
+                                                radius={4.0}
+                                                columns={ [ "value" ] }
+                                                //selected={this.state.selection}
+                                                //onMouseNear={this.handleMouseNear}
+                                                //onClick={this.handleClick}
+                                                //highlighted={this.state.highlight}
+                                                />
+                                                );
+                                    }
+
+                                    }
 
                             }
                         }
