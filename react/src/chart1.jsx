@@ -1055,7 +1055,6 @@ export default React.createClass({
 
         }
 
-        console.log("trackerValues", trackerValues);
         return trackerData;
 
     },
