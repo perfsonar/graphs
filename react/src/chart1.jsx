@@ -1208,9 +1208,6 @@ export default React.createClass({
                                             style={getChartStyle( properties )} smooth={false} breakLine={true}
                                             radius={4.0}
                                             columns={ [ "value" ] }
-                                            //selected={this.state.selection}
-                                            //onMouseNear={this.handleMouseNear}
-                                            //onClick={this.handleClick}
                                             highlighted={this.state.highlight}
                                         />
 
@@ -1223,8 +1220,6 @@ export default React.createClass({
                                         axis={"axis" + type} series={series}
                                         style={getChartStyle( properties )} smooth={false} breakLine={true}
                                         min={0}
-                                        //onSelectionChange={this.handleSelectionChanged}
-                                        //onMouseNear={this.handleMouseNear}
                                         onClick={this.handleClick}
                                         columns={[ "value" ]} />
                                         );
@@ -1245,10 +1240,6 @@ export default React.createClass({
                                                 style={getChartStyle( properties )} 
                                                 radius={4.0}
                                                 columns={ [ "value" ] }
-                                                //selected={this.state.selection}
-                                                //onMouseNear={this.handleMouseNear}
-                                                //onClick={this.handleClick}
-                                                //highlighted={this.state.highlight}
                                                 />
                                                 );
                                     }
