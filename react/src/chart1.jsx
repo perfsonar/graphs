@@ -1001,8 +1001,8 @@ export default React.createClass({
                     let ipv = "ipv" + row.properties.ipversion;
                     sortKey += "tracker";
                     let name = type + ipv + "tracker";
-                    //let time = new moment( tracker );
-                    let time = +tracker;
+                    //let time = +tracker;
+                    let time = valAtTime.timestamp();
                     if ( typeof trackerValues[type][ipv] == "undefined" ) {
                         trackerValues[type][ipv] = [];
                     }
@@ -1018,7 +1018,9 @@ export default React.createClass({
                         sortKey: sortKey
                     };
 
-                    trackerValues[type][ipv].push( out );
+                    if ( row.properties.eventType != "packet-retransmits" ) {
+                        trackerValues[type][ipv].push( out );
+                    }
 
                     out = {
                         properties: row.properties,
@@ -1052,6 +1054,8 @@ export default React.createClass({
             this.setState({showHoverDots: false});
 
         }
+
+        console.log("trackerValues", trackerValues);
         return trackerData;
 
     },
@@ -1228,6 +1232,10 @@ export default React.createClass({
 
                                 if ( this.state.showHoverDots ) {
                                     for(var d in trackerValues[type][ipv]) {
+                                        if (typeof trackerValues[type][ipv] == "undefined" ) {
+                                            continue;
+
+                                        }
                                         let trackerSeries = trackerValues[type][ipv][d].data;
 
                                         charts[type][ipv].push(
