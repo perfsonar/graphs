@@ -646,6 +646,8 @@ export default React.createClass({
 
                     }
                 }
+
+                // GET THROUGHPUT DATA
                 let throughputData = GraphDataStore.filterData( data, filters.throughput[ipversion], this.state.itemsToHide );
                 throughputData.sort(this.compareToolTipData);
 
@@ -689,6 +691,7 @@ export default React.createClass({
 
                 }
 
+                // GET LOSS DATA
                 let lossData = GraphDataStore.filterData( data, filters["loss"][ipversion], this.state.itemsToHide );
 
                 lossData = GraphDataStore.pairSentLost( lossData );
@@ -957,7 +960,7 @@ export default React.createClass({
 
         if ( tracker != null && typeof charts != "undefined" ) {
 
-            //console.log("tracker", tracker, charts);
+            console.log("trackerZ", tracker, charts);
             trackerValues = {};
 
             for ( let type in charts) {
@@ -1090,15 +1093,15 @@ export default React.createClass({
         if ( ( typeof ipversions ) != "undefined" ) {
             for (let h in typesToChart) {
                 let eventType = typesToChart[h];
-                let type = eventType.name;
+                var type = eventType.name;
                 let label = eventType.label;
                 let esmondName = eventType.esmondName || type;
                 let stats = {};
                 let brushStats = {};
 
                 for( var i in ipversions ) {
-                    let ipversion = ipversions[i];
-                    let ipv = "ipv" + ipversion;
+                    var ipversion = ipversions[i];
+                    var ipv = "ipv" + ipversion;
 
                     // Get throughput data and build charts
                     if ( ! ( type in charts ) ) {
@@ -1224,12 +1227,29 @@ export default React.createClass({
                                         columns={[ "value" ]} />
                                         );
 
+                                // Push additional layers to circle selected points
+
                                 if ( this.state.showHoverDots ) {
+                                    let hideDotTypes = [
+                                        "packet-count-sent",
+                                        "packet-count-lost"
+                                    ];
+                                    TRACKERVALUES:
                                     for(var d in trackerValues[type][ipv]) {
                                         if (typeof trackerValues[type][ipv] == "undefined" ) {
                                             continue;
 
                                         }
+                                        for( let m in hideDotTypes ) {
+                                            let hideType = hideDotTypes[m];
+
+
+                                            if ( trackerValues[type][ipv][d].properties.eventType == hideType ) {
+                                                continue TRACKERVALUES;
+
+                                            }
+                                        }
+
                                         let trackerSeries = trackerValues[type][ipv][d].data;
 
                                         charts[type][ipv].push(
@@ -1242,7 +1262,7 @@ export default React.createClass({
                                                 columns={ [ "value" ] }
                                                 />
                                                 );
-                                    }
+                                        }
 
                                     }
 
