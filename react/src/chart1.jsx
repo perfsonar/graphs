@@ -102,6 +102,7 @@ const scheme = {
     "histogram-owdelay": "#633", // brown
     "packet-loss-rate": "#cc7dbe", // purple
     "packet-loss-rateThroughput": "#cc7dbe", // purple
+    //"packet-loss-ratePing": "yellow", // bright orange
     "packet-loss-ratePing": "#e5801c", // browny orangey
     throughputUDP: "#d6641e" // vermillion
 };
@@ -200,6 +201,8 @@ function getChartStyle( options, column ) {
             break;
         case "packet-loss-rate-bidir":
             color = scheme["packet-loss-ratePing"];
+            opacity = 0.95;
+            width = 2;
             break;
         case "packet-retransmits":
             color = scheme["packet-retransmits"];
@@ -960,7 +963,6 @@ export default React.createClass({
 
         if ( tracker != null && typeof charts != "undefined" ) {
 
-            console.log("trackerZ", tracker, charts);
             trackerValues = {};
 
             for ( let type in charts) {
@@ -1232,11 +1234,14 @@ export default React.createClass({
                                 if ( this.state.showHoverDots ) {
                                     let hideDotTypes = [
                                         "packet-count-sent",
-                                        "packet-count-lost"
+                                        "packet-count-lost",
+                                        "packet-count-sent-bidir",
+                                        "packet-count-lost-bidir"
                                     ];
                                     TRACKERVALUES:
                                     for(var d in trackerValues[type][ipv]) {
-                                        if (typeof trackerValues[type][ipv] == "undefined" ) {
+                                        if (typeof trackerValues[type][ipv] == "undefined" 
+                                                || esmondName != trackerValues[type][ipv][d].properties.eventType ) {
                                             continue;
 
                                         }
@@ -1253,7 +1258,7 @@ export default React.createClass({
                                                 key={type + "hover" + Math.floor( Math.random() )}
                                                 axis={"axis" + type}
                                                 series={trackerSeries}
-                                                style={getChartStyle( properties )} 
+                                                style={getChartStyle( properties )}
                                                 radius={4.0}
                                                 columns={ [ "value" ] }
                                                 />
