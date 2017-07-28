@@ -1240,14 +1240,10 @@ export default React.createClass({
                                             continue;
 
                                         }
-                                        for( let m in hideDotTypes ) {
-                                            let hideType = hideDotTypes[m];
 
-
-                                            if ( trackerValues[type][ipv][d].properties.eventType == hideType ) {
+                                        if ( _.contains( hideDotTypes, trackerValues[type][ipv][d].properties.eventType ) ) {
                                                 continue TRACKERVALUES;
 
-                                            }
                                         }
 
                                         let trackerSeries = trackerValues[type][ipv][d].data;
