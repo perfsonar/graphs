@@ -333,12 +333,25 @@ module.exports = {
                             return summary["summary-type"] == summaryType && summary["summary-window"] == that.summaryWindow;
                         });
                         if ( win.length > 1 ) {
-                            //console.log("WEIRD: multiple summary windows found. This should not happen.");
+                            console.log("WEIRD: multiple summary windows found. This should not happen.");
                         } else if ( win.length == 1 ) {
                             uri = win[0].uri;
                             dataUrl = win[0].url;
                         } else {
-                            //console.log("no summary windows found");
+                            console.log("no summary windows found");
+                            if ( eventType == "histogram-rtt" ) {
+                                if ( that.summaryWindow == "300" ) {
+                                    let win = $.grep( summaries, function( summary, k ) {
+                                        return summary["summary-type"] == summaryType && summary["summary-window"] == "3600";
+                                    });
+                                    if ( win.length > 0 ) {
+                                        uri = win[0].uri;
+                                    }
+
+                                }
+
+                            }
+
                         }
 
                     } else {
