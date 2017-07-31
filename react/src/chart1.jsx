@@ -381,6 +381,18 @@ export default React.createClass({
 
     },
 
+    handleMouseEnter(event, point) {
+        this.setState({showHoverDots: true});
+
+    },
+
+    handleMouseLeave(event, point) {
+        if ( !this.state.lockToolTip ) {
+            this.setState({showHoverDots: false});
+        }
+
+    },
+
     handleMouseMove(event, point) {
         if ( this.state.lockToolTip ) {
             return;
@@ -407,9 +419,7 @@ export default React.createClass({
             posX -= (offsetX + toolTipWidth + 25);
         }
 
-        //this.setState({posX: posX, toolTipWidth: toolTipWidth});
-        //console.log("posX", posX);
-        this.setState({posX: posX, toolTipWidth: toolTipWidth, showHoverDots: true }); // TODO: Fix
+        this.setState({posX: posX, toolTipWidth: toolTipWidth});
 
     },
 
@@ -946,6 +956,12 @@ export default React.createClass({
         if ( !this.state.lockToolTip ) {
             this.setState({tracker: trackerVal});
         }
+        if ( trackerVal !== null ) {
+            this.setState({showHoverDots: true});
+        } else {
+            //this.setState({showHoverDots: false});
+
+        }
     },
 
     withinTime( ts1, ts2, range ) {
@@ -1056,7 +1072,7 @@ export default React.createClass({
             //trackerData = trackerValues;
 
         } else {
-            this.setState({showHoverDots: false});
+            //this.setState({showHoverDots: false});
 
         }
 
@@ -1238,31 +1254,34 @@ export default React.createClass({
                                         "packet-count-sent-bidir",
                                         "packet-count-lost-bidir"
                                     ];
-                                    TRACKERVALUES:
-                                    for(var d in trackerValues[type][ipv]) {
-                                        if (typeof trackerValues[type][ipv] == "undefined" 
-                                                || esmondName != trackerValues[type][ipv][d].properties.eventType ) {
-                                            continue;
+                                    if ( typeof trackerValues[type] != "undefined" 
+                                            && typeof trackerValues[type][ipv] != "undefined" ) {
+                                        TRACKERVALUES:
+                                        for(var d in trackerValues[type][ipv]) {
+                                            if (typeof trackerValues[type][ipv] == "undefined" 
+                                                    || esmondName != trackerValues[type][ipv][d].properties.eventType ) {
+                                                continue;
 
-                                        }
+                                            }
 
-                                        if ( _.contains( hideDotTypes, trackerValues[type][ipv][d].properties.eventType ) ) {
-                                                continue TRACKERVALUES;
+                                            if ( _.contains( hideDotTypes, trackerValues[type][ipv][d].properties.eventType ) ) {
+                                                    continue TRACKERVALUES;
 
-                                        }
+                                            }
 
-                                        let trackerSeries = trackerValues[type][ipv][d].data;
+                                            let trackerSeries = trackerValues[type][ipv][d].data;
 
-                                        charts[type][ipv].push(
-                                                <ScatterChart
-                                                key={type + "hover" + Math.floor( Math.random() )}
-                                                axis={"axis" + type}
-                                                series={trackerSeries}
-                                                style={getChartStyle( properties )}
-                                                radius={4.0}
-                                                columns={ [ "value" ] }
-                                                />
-                                                );
+                                            charts[type][ipv].push(
+                                                    <ScatterChart
+                                                    key={type + "hover" + Math.floor( Math.random() )}
+                                                    axis={"axis" + type}
+                                                    series={trackerSeries}
+                                                    style={getChartStyle( properties )}
+                                                    radius={4.0}
+                                                    columns={ [ "value" ] }
+                                                    />
+                                                    );
+                                            }
                                         }
 
                                     }
@@ -1475,6 +1494,8 @@ export default React.createClass({
         return (
             <div
                 onMouseMove={this.handleMouseMove}
+                onMouseEnter={this.handleMouseEnter}
+                onMouseLeave={this.handleMouseLeave}
                 ref="graphDiv"
             >
                 <Resizable>
