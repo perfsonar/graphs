@@ -348,6 +348,10 @@ module.exports = {
                                         uri = win[0].uri;
                                     }
 
+                                } else if ( that.summaryWindow == "0" ) {
+                                    console.log("summaryWindow is 0");
+                                    uri = null;
+
                                 }
 
                             }
