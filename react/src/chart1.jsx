@@ -994,12 +994,25 @@ export default React.createClass({
                         continue;
 
                     }
+
+                    let range = row.values.range();
+                    let begin = +range.begin();
+                    let end = +range.end();
+                    let slip = 0.05 * ( end - begin );
+                    // begin doesn't seem to need the slip, since it snaps left
+                    //begin = begin - slip;
+                    end = end + slip;
+                    if ( row.properties.eventType != "failures" &&
+                           ( begin > +tracker || end < +tracker ) ) {
+                        continue;
+                    }
+
                     let valAtTime = row.values.atTime( tracker );
                     let value;
                     if ( typeof valAtTime != "undefined" ) {
                         value = valAtTime.value();
                     } else {
-                        continue; // TODO: fix this so it actually removes the values?
+                        continue;
                     }
 
                     let eventType = row.properties.eventType;
@@ -1101,6 +1114,7 @@ export default React.createClass({
         charts = {};
         let brushCharts = {};
         chartData = {};
+
 
         let data;
         let failureData;
