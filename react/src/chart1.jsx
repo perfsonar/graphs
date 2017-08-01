@@ -1003,6 +1003,7 @@ export default React.createClass({
                     //begin = begin - slip;
                     end = end + slip;
                     if ( row.properties.eventType != "failures" &&
+                         row.properties.eventType != "packet-retransmits" &&
                            ( begin > +tracker || end < +tracker ) ) {
                         continue;
                     }
