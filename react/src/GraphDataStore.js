@@ -338,18 +338,17 @@ module.exports = {
                             uri = win[0].uri;
                             dataUrl = win[0].url;
                         } else {
-                            console.log("no summary windows found");
+                            //console.log("no summary windows found");
                             if ( eventType == "histogram-rtt" ) {
                                 if ( that.summaryWindow == "300" ) {
                                     let win = $.grep( summaries, function( summary, k ) {
-                                        return summary["summary-type"] == summaryType && summary["summary-window"] == "3600";
+                                        return summary["summary-type"] == summaryType && summary["summary-window"] == "0";
                                     });
                                     if ( win.length > 0 ) {
                                         uri = win[0].uri;
                                     }
 
                                 } else if ( that.summaryWindow == "0" ) {
-                                    console.log("summaryWindow is 0");
                                     uri = null;
 
                                 }
