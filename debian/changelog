@@ -1,9 +1,9 @@
-perfsonar-toolkit-graphs (4.0.1~1.rc1-1) perfsonar-jessie-staging; urgency=low
+perfsonar-toolkit-graphs (4.0.1-1) perfsonar-jessie-release; urgency=low
 
   * New upstream version.
   * Activating apache mod_headers.
 
- -- Antoine Delvaux <antoine.delvaux@man.poznan.pl>  Wed, 26 Jul 2017 14:31:39 +0200
+ -- Antoine Delvaux <antoine.delvaux@man.poznan.pl>  Tue, 15 Aug 2017 10:16:53 +0100
 
 perfsonar-toolkit-graphs (4.0.0.2-1) perfsonar-jessie-release; urgency=low
 
