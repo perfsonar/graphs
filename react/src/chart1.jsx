@@ -20,6 +20,7 @@ import "../css/spinner.css";
 let charts;
 let chartData;
 let tooltip = null;
+let trackerValues = {};
 
 const text = 'perfSONAR chart';
 
@@ -101,6 +102,7 @@ const scheme = {
     "histogram-owdelay": "#633", // brown
     "packet-loss-rate": "#cc7dbe", // purple
     "packet-loss-rateThroughput": "#cc7dbe", // purple
+    //"packet-loss-ratePing": "yellow", // bright orange
     "packet-loss-ratePing": "#e5801c", // browny orangey
     throughputUDP: "#d6641e" // vermillion
 };
@@ -199,6 +201,8 @@ function getChartStyle( options, column ) {
             break;
         case "packet-loss-rate-bidir":
             color = scheme["packet-loss-ratePing"];
+            opacity = 0.95;
+            width = 2;
             break;
         case "packet-retransmits":
             color = scheme["packet-retransmits"];
@@ -325,6 +329,9 @@ export default React.createClass({
                 failures: false
 
             },
+            showHoverDots: false,
+            showHoverTime: null,
+            //trackerValues: {}
         };
     },
     handleSelectionChanged(point) {
@@ -374,6 +381,18 @@ export default React.createClass({
 
     },
 
+    handleMouseEnter(event, point) {
+        this.setState({showHoverDots: true});
+
+    },
+
+    handleMouseLeave(event, point) {
+        if ( !this.state.lockToolTip ) {
+            this.setState({showHoverDots: false});
+        }
+
+    },
+
     handleMouseMove(event, point) {
         if ( this.state.lockToolTip ) {
             return;
@@ -399,9 +418,11 @@ export default React.createClass({
         } else {
             posX -= (offsetX + toolTipWidth + 25);
         }
+
         this.setState({posX: posX, toolTipWidth: toolTipWidth});
 
     },
+
     getMousePos(e) {
         var m_posx = 0, m_posy = 0, e_posx = 0, e_posy = 0,
         obj = this;
@@ -638,6 +659,8 @@ export default React.createClass({
 
                     }
                 }
+
+                // GET THROUGHPUT DATA
                 let throughputData = GraphDataStore.filterData( data, filters.throughput[ipversion], this.state.itemsToHide );
                 throughputData.sort(this.compareToolTipData);
 
@@ -681,6 +704,7 @@ export default React.createClass({
 
                 }
 
+                // GET LOSS DATA
                 let lossData = GraphDataStore.filterData( data, filters["loss"][ipversion], this.state.itemsToHide );
 
                 lossData = GraphDataStore.pairSentLost( lossData );
@@ -932,6 +956,12 @@ export default React.createClass({
         if ( !this.state.lockToolTip ) {
             this.setState({tracker: trackerVal});
         }
+        if ( trackerVal !== null ) {
+            this.setState({showHoverDots: true});
+        } else {
+            //this.setState({showHoverDots: false});
+
+        }
     },
 
     withinTime( ts1, ts2, range ) {
@@ -949,11 +979,14 @@ export default React.createClass({
 
         if ( tracker != null && typeof charts != "undefined" ) {
 
+            trackerValues = {};
+
             for ( let type in charts) {
                 let data = charts[type].data;
                 if ( data.length == 0 ) {
                     continue;
                 }
+                trackerValues[type] = {};
 
                 for(let i in data) {
                     let row = data[i];
@@ -961,12 +994,26 @@ export default React.createClass({
                         continue;
 
                     }
+
+                    let range = row.values.range();
+                    let begin = +range.begin();
+                    let end = +range.end();
+                    let slip = 0.05 * ( end - begin );
+                    // begin doesn't seem to need the slip, since it snaps left
+                    //begin = begin - slip;
+                    end = end + slip;
+                    if ( row.properties.eventType != "failures" &&
+                         row.properties.eventType != "packet-retransmits" &&
+                           ( begin > +tracker || end < +tracker ) ) {
+                        continue;
+                    }
+
                     let valAtTime = row.values.atTime( tracker );
                     let value;
                     if ( typeof valAtTime != "undefined" ) {
                         value = valAtTime.value();
                     } else {
-                        continue; // TODO: fix this so it actually removes the values?
+                        continue;
                     }
 
                     let eventType = row.properties.eventType;
@@ -985,7 +1032,32 @@ export default React.createClass({
 
                     let sortKey = eventType + protocol + direction;
 
+
+                    let ipv = "ipv" + row.properties.ipversion;
+                    sortKey += "tracker";
+                    let name = type + ipv + "tracker";
+                    //let time = +tracker;
+                    let time = valAtTime.timestamp();
+                    if ( typeof trackerValues[type][ipv] == "undefined" ) {
+                        trackerValues[type][ipv] = [];
+                    }
+                    let td = {
+                            name: name,
+                            columns: ["time", "value"],
+                            points: [[time, +value]]
+                    };
+                    let timeseries =  new TimeSeries ( td );
                     let out = {
+                        properties: row.properties,
+                        data: timeseries,
+                        sortKey: sortKey
+                    };
+
+                    if ( row.properties.eventType != "packet-retransmits" ) {
+                        trackerValues[type][ipv].push( out );
+                    }
+
+                    out = {
                         properties: row.properties,
                         value: value,
                         sortKey: sortKey
@@ -1011,7 +1083,13 @@ export default React.createClass({
 
             }
 
+            //trackerData = trackerValues;
+
+        } else {
+            //this.setState({showHoverDots: false});
+
         }
+
         return trackerData;
 
     },
@@ -1038,6 +1116,7 @@ export default React.createClass({
         let brushCharts = {};
         chartData = {};
 
+
         let data;
         let failureData;
 
@@ -1047,15 +1126,15 @@ export default React.createClass({
         if ( ( typeof ipversions ) != "undefined" ) {
             for (let h in typesToChart) {
                 let eventType = typesToChart[h];
-                let type = eventType.name;
+                var type = eventType.name;
                 let label = eventType.label;
                 let esmondName = eventType.esmondName || type;
                 let stats = {};
                 let brushStats = {};
 
                 for( var i in ipversions ) {
-                    let ipversion = ipversions[i];
-                    let ipv = "ipv" + ipversion;
+                    var ipversion = ipversions[i];
+                    var ipv = "ipv" + ipversion;
 
                     // Get throughput data and build charts
                     if ( ! ( type in charts ) ) {
@@ -1165,9 +1244,6 @@ export default React.createClass({
                                             style={getChartStyle( properties )} smooth={false} breakLine={true}
                                             radius={4.0}
                                             columns={ [ "value" ] }
-                                            //selected={this.state.selection}
-                                            //onMouseNear={this.handleMouseNear}
-                                            //onClick={this.handleClick}
                                             highlighted={this.state.highlight}
                                         />
 
@@ -1180,10 +1256,50 @@ export default React.createClass({
                                         axis={"axis" + type} series={series}
                                         style={getChartStyle( properties )} smooth={false} breakLine={true}
                                         min={0}
-                                        //onSelectionChange={this.handleSelectionChanged}
                                         onClick={this.handleClick}
                                         columns={[ "value" ]} />
                                         );
+
+                                // Push additional layers to circle selected points
+
+                                if ( this.state.showHoverDots ) {
+                                    let hideDotTypes = [
+                                        "packet-count-sent",
+                                        "packet-count-lost",
+                                        "packet-count-sent-bidir",
+                                        "packet-count-lost-bidir"
+                                    ];
+                                    if ( typeof trackerValues[type] != "undefined" 
+                                            && typeof trackerValues[type][ipv] != "undefined" ) {
+                                        TRACKERVALUES:
+                                        for(var d in trackerValues[type][ipv]) {
+                                            if (typeof trackerValues[type][ipv] == "undefined" 
+                                                    || esmondName != trackerValues[type][ipv][d].properties.eventType ) {
+                                                continue;
+
+                                            }
+
+                                            if ( _.contains( hideDotTypes, trackerValues[type][ipv][d].properties.eventType ) ) {
+                                                    continue TRACKERVALUES;
+
+                                            }
+
+                                            let trackerSeries = trackerValues[type][ipv][d].data;
+
+                                            charts[type][ipv].push(
+                                                    <ScatterChart
+                                                    key={type + "hover" + Math.floor( Math.random() )}
+                                                    axis={"axis" + type}
+                                                    series={trackerSeries}
+                                                    style={getChartStyle( properties )}
+                                                    radius={4.0}
+                                                    columns={ [ "value" ] }
+                                                    />
+                                                    );
+                                            }
+                                        }
+
+                                    }
 
                             }
                         }
@@ -1393,6 +1509,8 @@ export default React.createClass({
         return (
             <div
                 onMouseMove={this.handleMouseMove}
+                onMouseEnter={this.handleMouseEnter}
+                onMouseLeave={this.handleMouseLeave}
                 ref="graphDiv"
             >
                 <Resizable>
