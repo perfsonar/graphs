@@ -13,7 +13,7 @@ use LWP::UserAgent;
 use HTTP::Request;
 use Params::Validate qw(:all);
 use JSON qw(from_json);
-use FindBin qw($RealBin);
+use FindBin qw($Bin);
 use Time::HiRes;
 use Data::Dumper;
 use Socket;
@@ -23,11 +23,12 @@ use Data::Validate::IP;
 use Log::Log4perl qw(get_logger :easy :levels);
 use URI;
 
-#my $bin = "$RealBin";
-#warn "bin: $bin";
+my $bin = "$Bin";
+warn "bin [TODO: REMOVE]: " . Dumper $bin; #TODO: REMOVE
 
 #use lib ("$bin/../lib", "$bin/lib"  );
-use lib ("/usr/lib/perfsonar/lib", "/usr/lib/perfsonar/graphs/lib"  );
+use lib ( "/home/mj82/src/graphs/lib/" ); #TODO: FIX
+#use lib ("/usr/lib/perfsonar/lib", "/usr/lib/perfsonar/graphs/lib"  ); # TODO: reenable
 
 use perfSONAR_PS::Client::Esmond::ApiFilters;
 use perfSONAR_PS::Client::Esmond::ApiConnect;
@@ -37,7 +38,7 @@ use SimpleLookupService::Client::SimpleLS;
 use perfSONAR_PS::Graphs::Functions qw(select_summary_window combine_data);
 use perfSONAR_PS::Client::LS::PSRecords::PSService;
 use perfSONAR_PS::Client::LS::PSRecords::PSInterface;
-use perfSONAR_PS::Utils::LookupService qw(discover_lookup_services);
+use perfSONAR_PS::Utils::LookupService qw(discover_lookup_services discover_lookup_caches );
 use perfSONAR_PS::Utils::DNS qw(resolve_address reverse_dns);
 use SimpleLookupService::Client::Query;
 use SimpleLookupService::QueryObjects::Network::InterfaceQueryObject;
@@ -69,6 +70,9 @@ elsif ($action eq 'interfaces'){
 }
 elsif ($action eq 'ls_hosts'){
     get_ls_hosts();
+}
+elsif ($action eq 'ls_cache_hosts'){
+    get_ls_cache_hosts();
 }
 elsif ($action eq 'hosts'){
     get_host_info();
@@ -1025,6 +1029,32 @@ sub get_ls_hosts {
 
 }
 
+sub get_ls_cache_hosts {
+    print $cgi->header('text/json');
+
+    # TODO: fix cache locator URL to production one(s)
+    my @locator_urls = (
+        #"http://perfsonar-dev.es.net/lookup/activehosts.json",
+        "http://perfsonar-dev8.grnoc.iu.edu/activehosts.json"
+    );
+
+    # NOTE: for this, we want to find the "closest" cache host
+    # (lowest latency), so we handle a bit differently
+    my @cache_hosts = (); # = discover_lookup_services( { locator_urls => $locator_urls } );
+    my $connected = 0;
+
+        my @results = @{discover_lookup_caches( { 'locator_urls' => \@locator_urls } )};
+        #my @row = map { $_ } @results;
+        @cache_hosts = @results;
+ 
+
+    #print to_json( $tmp_hosts );
+    #my @ls_hosts = map { $_->{locator} } @{discover_lookup_services()};
+    # http://perfsonar-dev.es.net/lookup/activehosts.json
+    print to_json(\@cache_hosts);
+
+}
+
 sub get_interfaces {
     my @sources     = cgi_multi_param('source');
     my @dests       = cgi_multi_param('dest');
@@ -1070,7 +1100,7 @@ sub get_interfaces {
         # If source and dest are provided, query both. Otherwise only query source
         if ($source && $dest) {
             push @ifaddrs, @source_ips;
-            push @ifaddrs,  @dest_ips;
+            push @ifaddrs, @dest_ips;
             push @ifaddrs, $source_hostname;
             push @ifaddrs, $dest_hostname;
         }

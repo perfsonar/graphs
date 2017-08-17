@@ -2,7 +2,7 @@ let EventEmitter = require('events').EventEmitter;
 
 let emitter = new EventEmitter();
 
-const lsListURL = "cgi-bin/graphData.cgi?action=ls_hosts";
+const lsCacheHostsURL = "cgi-bin/graphData.cgi?action=ls_cache_hosts";
 const lsQueryURL = "cgi-bin/graphData.cgi?action=interfaces";
 
 
@@ -26,6 +26,7 @@ module.exports = {
     sources: [],
     dests: [],
     lsRequestCount: 0,
+    lsCacheURL: null,
     /*
     getInitialState() {
         return {
@@ -35,12 +36,28 @@ module.exports = {
     */
 
     retrieveLSList: function() {
-        this.serverRequest = $.get( lsListURL, function(data) {
+        this.serverRequest = $.get( lsCacheHostsURL, function(data) {
+            console.log("lscachehosts", data);
             this.handleLSListResponse( data );
         }.bind(this));
     },
     handleLSListResponse: function( data ) {
         this.lsURLs = data;
+        console.log("lsURLs", data);
+        if ( typeof data == "undefined" || ! Array.isArray( data ) ) {
+            console.log("LS cache host data is invalid/missing");
+        } else if ( data.length > 0  ) {
+            console.log("array of LS cache host data");
+            this.lsCacheURL = data[0].url;
+            if ( this.lsCacheURL === null ) {
+                console.log("no url found!");
+
+            }
+            console.log("selecting cache url: ", this.lsCacheURL);
+        } else {
+            console.log("no LS cache host data available");
+
+        }
         this.performLSCalls();
 
     },
