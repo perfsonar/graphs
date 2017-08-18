@@ -73,15 +73,15 @@ module.exports = {
         console.log("sources", sources);
         console.log("dests", dests);
 
-        //let hosts = sources.concat( dests );
-        let hosts = sources[0];
+        let hosts = sources.concat( dests );
+        hosts = this.unique( hosts );
 
         let query = {
               "query": {
                       "bool": {
                         "must": [
                               {"match": { "type": "interface" } },
-                              {"match": { "interface-addresses": hosts } }
+                              {"terms": { "interface-addresses": hosts } }
 
                         ]
                     }
@@ -164,6 +164,21 @@ module.exports = {
         console.log("data", data);
         this.addData( data );
         this.interfaceInfo = data;
+    },
+    unique: function (arr) {
+        var i,
+            len = arr.length,
+            out = [],
+            obj = { };
+
+        for (i = 0; i < len; i++) {
+            obj[arr[i]] = 0;
+        }
+        for (i in obj) {
+            out.push(i);
+        }
+        out = Object.keys( obj );
+        return out;
     },
     subscribe: function( callback ) {
         emitter.on("get", callback);
