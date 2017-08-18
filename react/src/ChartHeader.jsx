@@ -255,7 +255,6 @@ export default React.createClass({
 
         } else {
             addresses.push( details.addresses );
-
         }
             {/* GRAPH: Detailed Host Info*/}
             return (

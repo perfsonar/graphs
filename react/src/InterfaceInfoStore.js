@@ -58,9 +58,63 @@ module.exports = {
             console.log("no LS cache host data available");
 
         }
-        this.performLSCalls();
+        //this.performLSCalls();
+        this.retrieveLSHosts();
 
     },
+
+    retrieveLSHosts: function() {
+        let lsCacheURL = this.lsCacheURL;
+        lsCacheURL += "_search";
+        let sources = this.sources;
+        let dests = this.dests;
+
+        console.log("lsCacheURL", lsCacheURL);
+        console.log("sources", sources);
+        console.log("dests", dests);
+
+        //let hosts = sources.concat( dests );
+        let hosts = sources[0];
+
+        let query = {
+              "query": {
+                      "bool": {
+                        "must": [
+                              {"match": { "type": "interface" } },
+                              {"match": { "interface-addresses": hosts } }
+
+                        ]
+                    }
+              }
+        };
+
+        console.log("query", query);
+
+        query = JSON.stringify( query );
+
+        console.log("stringified query", query);
+
+        this.serverRequest = $.ajax({ 
+            url: lsCacheURL, 
+            data: query, 
+            dataType: 'json',
+            type: "POST",
+            success: function(data, textStatus, jqXHR) {
+                    console("data from posted request", data);
+                    this.lsRequestCount++;
+                    this.handleInterfaceInfoResponse( data );
+                }.bind(this),
+            fail: function(jqXHR, textStatus, errorThrown) {
+                    console.log('fail jqXHR, textStatus, errorThrown', jqXHR, textStatus, errorThrown);
+                }.bind(this)
+
+        });
+
+
+
+
+    },
+
     performLSCalls: function() {
         let lsURLs = this.lsURLs;
         let sources = this.sources;
@@ -107,6 +161,7 @@ module.exports = {
         return this.interfaceObj;
     },
     handleInterfaceInfoResponse: function( data ) {
+        console.log("data", data);
         this.addData( data );
         this.interfaceInfo = data;
     },
