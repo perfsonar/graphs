@@ -80,6 +80,9 @@ elsif ($action eq 'hosts'){
 elsif ($action eq 'ma_data'){
     get_ma_data();
 }
+elsif ($action eq 'ls_cache_data'){
+    get_ls_cache_data();
+}
 else {
     error("Unknown action; must specify either data, tests, hosts, or interfaces", 400);
 }
@@ -102,12 +105,50 @@ sub get_ma_data {
         error("No URL specified", 400);
     }
 
-    my $ua = LWP::UserAgent->new;
 
     # Make sure the URL looks like an esmond URL -- starts with http or https and looks like
     # http://host/esmond/perfsonar/archive/[something]
     # this should be url encoded
-    if ( $url =~ m|^https?://[^/]+/esmond/perfsonar/archive| ) {
+
+    my $pattern = "^https?://[^/]+/esmond/perfsonar/archive";
+
+    warn "pattern " . $pattern;
+    _get_data_proxy( $url, $pattern, "URL is not a valid Esmond archive" );
+
+}
+
+# Fallback proxy for ls cache requests for esmond instances that don't have CORS enabled
+sub get_ls_cache_data {
+    my $url        = $cgi->param('url');
+
+    if ( not defined $url ) {
+        error("No URL specified", 400);
+    }
+
+
+    # Make sure the URL looks like an esmond URL -- starts with http or https and looks like
+    # http://host/esmond/perfsonar/archive/[something]
+    # this should be url encoded
+
+    my $pattern = "^https?://[^/]+/perfsonar/_search";
+
+    warn "pattern " . $pattern;
+    _get_data_proxy( $url, $pattern, "URL is not a valid LS cache" );
+
+}
+
+sub _get_data_proxy {
+    my $url = shift;
+    my $pattern = shift;
+    my $description = shift;
+    if ( not defined $description || $description eq '') {
+        $description = "Invalid URL provided";
+    }
+
+    my $ua = LWP::UserAgent->new;
+
+    my $re = qr/$pattern/;
+    if ( $url =~ $re ) {
         my $req = HTTP::Request->new(
             GET => $url,
         );
@@ -126,8 +167,8 @@ sub get_ma_data {
         }
     } else {
         # url does not appear to be a valid esmond archive
-        warn "URL is not a valid esmond archive: $url";
-        error("URL is not a valid esmond archive");
+        warn "$description: $url";
+        error( $description );
     }
 
 }
