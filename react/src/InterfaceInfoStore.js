@@ -4,6 +4,9 @@ let emitter = new EventEmitter();
 
 const lsCacheHostsURL = "cgi-bin/graphData.cgi?action=ls_cache_hosts";
 const lsQueryURL = "cgi-bin/graphData.cgi?action=interfaces";
+const proxyURL = '/perfsonar-graphs/cgi-bin/graphData.cgi?action=ls_cache_data&url=';
+
+let lsCacheURL;
 
 
 module.exports = {
@@ -26,17 +29,10 @@ module.exports = {
     sources: [],
     dests: [],
     lsRequestCount: 0,
-    lsCacheURL: null,
-    /*
-    getInitialState() {
-        return {
-        };
-
-    },
-    */
+    useProxy: false,
 
     retrieveLSList: function() {
-        this.serverRequest = $.get( lsCacheHostsURL, function(data) {
+        $.get( lsCacheHostsURL, function(data) {
             console.log("lscachehosts", data);
             this.handleLSListResponse( data );
         }.bind(this));
@@ -48,12 +44,12 @@ module.exports = {
             console.log("LS cache host data is invalid/missing");
         } else if ( data.length > 0  ) {
             console.log("array of LS cache host data");
-            this.lsCacheURL = data[0].url;
-            if ( this.lsCacheURL === null ) {
+            lsCacheURL = data[0].url;
+            if ( lsCacheURL === null ) {
                 console.log("no url found!");
 
             }
-            console.log("selecting cache url: ", this.lsCacheURL);
+            console.log("selecting cache url: ", lsCacheURL);
         } else {
             console.log("no LS cache host data available");
 
@@ -64,7 +60,6 @@ module.exports = {
     },
 
     retrieveLSHosts: function() {
-        let lsCacheURL = this.lsCacheURL;
         lsCacheURL += "_search";
         let sources = this.sources;
         let dests = this.dests;
@@ -86,34 +81,126 @@ module.exports = {
                         ]
                     }
               }
+              //"action": "ls_cache_data",
+              //"url": lsCacheURL
         };
 
         console.log("query", query);
 
-        query = JSON.stringify( query );
+        let preparedQuery = JSON.stringify( query );
 
-        console.log("stringified query", query);
+        console.log("stringified query", preparedQuery);
 
-        this.serverRequest = $.ajax({ 
-            url: lsCacheURL, 
-            data: query, 
+        console.log("lsCacheURL", lsCacheURL);
+
+        $.ajax({
+            url: lsCacheURL,
+            data: preparedQuery,
             dataType: 'json',
-            type: "POST",
-            success: function(data, textStatus, jqXHR) {
+            type: "POST"
+        })
+        .done(function(data, textStatus, jqXHR) {
                     console("data from posted request", data);
                     this.lsRequestCount++;
                     this.handleInterfaceInfoResponse( data );
-                }.bind(this),
-            fail: function(jqXHR, textStatus, errorThrown) {
-                    console.log('fail jqXHR, textStatus, errorThrown', jqXHR, textStatus, errorThrown);
-                }.bind(this)
+        }.bind(this))
+        .fail(function(data) {
 
-        });
+                    // if we get an error, try the cgi instead 
+                    // and set a new flag, useProxy  and make
+                    // all requests through the proxy CGI
+                    if ( data.status == 404 ) {
+                        console.log("got here!");
+                        this.useProxy = true;
+                        let url = this.getProxyURL( lsCacheURL );
+                        console.log("proxy URL", url);
 
+                        //query.action = "ls_cache_data";
+                        //query.url = lsCacheURL;
+                        preparedQuery = JSON.stringify( query );
+
+                        let postData = {
+                            "query": preparedQuery,
+                            "action": "ls_cache_data",
+                            "url": lsCacheURL
+
+                        };
+
+                        $.ajax({
+                            url: url,
+                            data: postData,
+                            dataType: 'json',
+                            type: "POST"
+                        })
+                            .done (function(data, textStatus, jsXHR) {
+                                console.log("query data!", data);
+                                this.handleInterfaceInfoResponse(data);
+                            }.bind(this))
+                            .fail (function( data ) {
+                                  this.handleInterfaceInfoResponseError(data);
+                            }.bind(this));
+
+
+
+
+                        } else {
+                            console.log('fail jqXHR, textStatus, errorThrown', jqXHR, textStatus, errorThrown);
+                            this.handleInterfaceInfoError( data );
+
+                        }
+
+        }.bind(this));
 
 
 
     },
+    getProxyURL( url ) {
+
+        let proxy = this.parseUrl( proxyURL );
+
+        if ( this.useProxy ) {
+            url = encodeURIComponent( url );
+            url = proxyURL + url;
+        }
+        let urlObj = this.parseUrl( url );
+        url = urlObj.origin + urlObj.pathname + urlObj.search;
+        return url;
+
+    },
+
+    handleInterfaceInfoError: function( data ) {
+
+    },
+
+    parseUrl: (function () {
+        return function (url) {
+            var a = document.createElement('a');
+            a.href = url;
+
+            // Work around a couple issues:
+            // - don't show the port if it's 80 or 443 (Chrome didn''t do this, but IE did)
+            // - don't append a port if the port is an empty string ""
+            let port = "";
+            if ( typeof a.port != "undefined" ) {
+                if ( a.port != "80" && a.port != "443" && a.port != "" ) {
+                    port = ":" + a.port;
+                }
+            }
+
+            let host = a.host;
+            let ret = {
+                host: a.host,
+                hostname: a.hostname,
+                pathname: a.pathname,
+                port: a.port,
+                protocol: a.protocol,
+                search: a.search,
+                hash: a.hash,
+                origin: a.protocol + "//" + a.hostname + port
+            };
+            return ret;
+        }
+    })(),
 
     performLSCalls: function() {
         let lsURLs = this.lsURLs;
@@ -125,7 +212,7 @@ module.exports = {
             url += "&ls_url=" + encodeURI( lsURL );
             url += this.array2param("source", sources);
             url += this.array2param("dest", dests);
-            this.serverRequest = $.get( url, function(data) {
+            $.get( url, function(data) {
                 this.lsRequestCount++;
                 this.handleInterfaceInfoResponse( data );
             }.bind(this))

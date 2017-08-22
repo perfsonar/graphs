@@ -120,6 +120,7 @@ sub get_ma_data {
 # Fallback proxy for ls cache requests for esmond instances that don't have CORS enabled
 sub get_ls_cache_data {
     my $url        = $cgi->param('url');
+    my $query = $cgi->param('query');
 
     if ( not defined $url ) {
         error("No URL specified", 400);
@@ -132,8 +133,10 @@ sub get_ls_cache_data {
 
     my $pattern = "^https?://[^/]+/perfsonar/_search";
 
+    my $method = "POST";
     warn "pattern " . $pattern;
-    _get_data_proxy( $url, $pattern, "URL is not a valid LS cache" );
+
+    _get_data_proxy( $url, $pattern, "URL is not a valid LS cache", $method, $query );
 
 }
 
@@ -141,8 +144,14 @@ sub _get_data_proxy {
     my $url = shift;
     my $pattern = shift;
     my $description = shift;
+    my $method = shift;
+    my $query = shift;
+
     if ( not defined $description || $description eq '') {
         $description = "Invalid URL provided";
+    }
+    if ( not defined $method ) {
+        $method = "GET";
     }
 
     my $ua = LWP::UserAgent->new;
@@ -150,10 +159,15 @@ sub _get_data_proxy {
     my $re = qr/$pattern/;
     if ( $url =~ $re ) {
         my $req = HTTP::Request->new(
-            GET => $url,
+            $method => $url
         );
 
-        # perform http GET on the URL
+        if ( defined $query ) {
+            $req->content( $query );
+
+        }
+
+        # perform http $method request on the URL
         my $res = $ua->request($req);
 
         # success
