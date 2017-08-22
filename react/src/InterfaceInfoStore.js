@@ -81,8 +81,12 @@ module.exports = {
                         ]
                     }
               }
-              //"action": "ls_cache_data",
-              //"url": lsCacheURL
+              ,
+              "sort": [
+                  { "expires": { "order": "desc" } }
+
+              ]
+
         };
 
         console.log("query", query);
@@ -137,7 +141,7 @@ module.exports = {
                                 this.handleInterfaceInfoResponse(data);
                             }.bind(this))
                             .fail (function( data ) {
-                                  this.handleInterfaceInfoResponseError(data);
+                                  this.handleInterfaceInfoError(data);
                             }.bind(this));
 
 
@@ -249,9 +253,32 @@ module.exports = {
     },
     handleInterfaceInfoResponse: function( data ) {
         console.log("data", data);
+        data = this._parseInterfaceResults( data );
+        console.log("processed data", data);
         this.addData( data );
         this.interfaceInfo = data;
     },
+
+    _parseInterfaceResults: function( data ) {
+        let out = {};
+        for(let i in data.hits.hits ) {
+            let row = data.hits.hits[i]._source;
+            let addresses = row["interface-addresses"];
+            for(let j in addresses) {
+                let address = addresses[j];
+                if ( !( address in out ) ) {
+                    out[ address ] = row;
+
+                }
+
+            }
+
+
+
+        }
+        console.log("keyed on address", out);
+    },
+
     unique: function (arr) {
         var i,
             len = arr.length,
