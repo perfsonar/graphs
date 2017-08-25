@@ -2,6 +2,8 @@ var EventEmitter = require('events').EventEmitter;
 
 var emitter = new EventEmitter();
 
+import LSCacheStore from "./LSCacheStore.js";
+
 if ( typeof window == "undefined" ) {
     var $;
     if ( typeof $ == "undefined" ) {
@@ -19,6 +21,8 @@ if ( typeof window == "undefined" ) {
 } else {
     $ = jQuery;
 }
+
+
 
 module.exports = {
 
@@ -69,6 +73,99 @@ module.exports = {
     },
     _getURL( relative_url ) {
         return this.serverURLBase + relative_url;
+    },
+    retrieveHostLSData: function( hostUUIDs, lsCacheURL ) {
+        if ( !Array.isArray( hostUUIDs ) ) {
+            hostUUIDs = [ hostUUIDs ];
+        }
+
+
+        let query = {
+              "query": {
+                  "constant_score": {
+                        "filter": {
+                          "bool": {
+                            "must": [
+                                  {"match": { "type": "host" } },
+                                  {"terms": { "client-uuid": hostUUIDs } }
+
+                            ]
+                        }
+                        }
+                  }
+              }
+              ,
+              "sort": [
+                  { "expires": { "order": "desc" } }
+
+              ]
+
+        };
+        console.log("hostinfo query", query);
+
+        let preparedQuery = JSON.stringify( query );
+        console.log("hostinfo stringified query", preparedQuery);
+
+
+
+
+        $.ajax({
+            url: lsCacheURL,
+            data: preparedQuery,
+            dataType: 'json',
+            type: "POST"
+        })
+        .done(function(data, textStatus, jqXHR) {
+                    console("data from host request", data);
+                    //this.handleInterfaceInfoResponse( data );
+        }.bind(this))
+        .fail(function(data) {
+
+                    // if we get an error, try the cgi instead 
+                    // and set a new flag, useProxy  and make
+                    // all requests through the proxy CGI
+                    if ( data.status == 404 ) {
+                        console.log("got here!");
+                        this.useProxy = true;
+                        let url = this.getProxyURL( lsCacheURL );
+                        console.log("proxy URL", url);
+
+                        //query.action = "ls_cache_data";
+                        //query.url = lsCacheURL;
+                        preparedQuery = JSON.stringify( query );
+
+                        let postData = {
+                            "query": preparedQuery,
+                            "action": "ls_cache_data",
+                            "url": lsCacheURL
+
+                        };
+
+                        $.ajax({
+                            url: url,
+                            data: postData,
+                            dataType: 'json',
+                            type: "POST"
+                        })
+                            .done (function(data, textStatus, jsXHR) {
+                                console.log("query data!", data);
+                                this.handleInterfaceInfoResponse(data);
+                            }.bind(this))
+                            .fail (function( data ) {
+                                  this.handleInterfaceInfoError(data);
+                            }.bind(this));
+
+
+
+
+                        } else {
+                            console.log('fail jqXHR, textStatus, errorThrown', jqXHR, textStatus, errorThrown);
+                            this.handleInterfaceInfoError( data );
+
+                        }
+
+        }.bind(this));
+
     },
     retrieveHostInfo: function( source_input, dest_input, callback ) {
         let url = this._getURL("cgi-bin/graphData.cgi?action=hosts");
@@ -164,4 +261,4 @@ module.exports = {
 
 };
 
-    
+

@@ -1,44 +1,27 @@
-import LSCacheStore from "./LSCacheStore.js";
-import HostInfoStore from "./HostInfoStore";
-
 let EventEmitter = require('events').EventEmitter;
 let emitter = new EventEmitter();
 
-const lsCacheHostsURL = "cgi-bin/graphData.cgi?action=ls_cache_hosts"; // TODO: remove this line
-const lsQueryURL = "cgi-bin/graphData.cgi?action=interfaces"; // TODO: remove this line
+const lsCacheHostsURL = "cgi-bin/graphData.cgi?action=ls_cache_hosts";
+const lsQueryURL = "cgi-bin/graphData.cgi?action=interfaces";
 const proxyURL = '/perfsonar-graphs/cgi-bin/graphData.cgi?action=ls_cache_data&url=';
 
-let lsCacheURL;
 
+/*
+ * DESCRIPTION OF CLASS HERE
+*/
 
 module.exports = {
-
-    /* Expects an object of hosts like this (keys must be src, dst (can be multiple -- number of sources and dests must match) ): 
-     * {
-     *   src: "1.2.3.4,"
-     *   dst: "2.3.4.5",
-     * }
-     * Createes a cache keyed on ip addressas
-     * { 
-     *   {"ip"}: { addresses, mtu, capacity}
-     *   ...
-     *  }
-     */
-    interfaceInfo: [],
-    interfaceObj: {},
-    lsInterfaceResults: [],
-    lsURLs: [],
-    sources: [],
-    dests: [],
-    lsRequestCount: 0,
+    LSCachesRetrievedTag: "lsCaches",
     useProxy: false,
+    lsCacheURL: null,
 
-    retrieveLSList: function() e
+    retrieveLSList: function() {
         $.get( lsCacheHostsURL, function(data) {
             console.log("lscachehosts", data);
             this.handleLSListResponse( data );
         }.bind(this));
     },
+
     handleLSListResponse: function( data ) {
         this.lsURLs = data;
         console.log("lsURLs", data);
@@ -46,21 +29,33 @@ module.exports = {
             console.log("LS cache host data is invalid/missing");
         } else if ( data.length > 0  ) {
             console.log("array of LS cache host data");
-            lsCacheURL = data[0].url;
-            if ( lsCacheURL === null ) {
+            this.lsCacheURL = data[0].url;
+            if ( this.lsCacheURL === null ) {
                 console.log("no url found!");
 
             }
-            console.log("selecting cache url: ", lsCacheURL);
+            console.log("selecting cache url: ", this.lsCacheURL);
         } else {
             console.log("no LS cache host data available");
 
         }
-        //this.performLSCalls();
-        this.retrieveLSHosts();
+        //this.retrieveLSHosts();
+        emmiter.emit( LSCachesRetrievedTag );
 
     },
 
+    subscribeLSCaches: function( callback ) {
+        emitter.on( LSCachesRetrievedTag, callback );
+
+    },
+
+    unsubscribeLSCaches: function( callback ) {
+        emitter.removeListener( LSCachesRetrievedTag, callback );
+
+    },
+
+    // TODO: convert this function to a generic one that can take a query as a parameter
+    // and a callback
     retrieveLSHosts: function() {
         lsCacheURL += "_search";
         let sources = this.sources;
@@ -176,10 +171,6 @@ module.exports = {
 
     },
 
-    handleInterfaceInfoError: function( data ) {
-
-    },
-
     parseUrl: (function () {
         return function (url) {
             var a = document.createElement('a');
@@ -210,27 +201,6 @@ module.exports = {
         }
     })(),
 
-    performLSCalls: function() {
-        let lsURLs = this.lsURLs;
-        let sources = this.sources;
-        let dests = this.dests;
-        for(var i in lsURLs) {
-            let lsURL = lsURLs[i];
-            let url = lsQueryURL;
-            url += "&ls_url=" + encodeURI( lsURL );
-            url += this.array2param("source", sources);
-            url += this.array2param("dest", dests);
-            $.get( url, function(data) {
-                this.lsRequestCount++;
-                this.handleInterfaceInfoResponse( data );
-            }.bind(this))
-            .fail( function(jqXHR, textStatus, errorThrown) {
-                console.log('fail jqXHR, textStatus, errorThrown', jqXHR, textStatus, errorThrown);
-            }.bind(this));
-
-        }
-
-    },
     retrieveInterfaceInfo: function( source_input, dest_input ) {
 
 
@@ -249,7 +219,6 @@ module.exports = {
         this.sources = sources;
         this.dests = dests;
 
-        
         this.retrieveLSList();
 
     },
@@ -433,3 +402,5 @@ module.exports = {
         return {};
     }
 };
+
+module.exports.retrieveLSList();
