@@ -40,7 +40,7 @@ module.exports = {
 
         }
         //this.retrieveLSHosts();
-        emmiter.emit( LSCachesRetrievedTag );
+        emitter.emit( LSCachesRetrievedTag );
 
     },
 

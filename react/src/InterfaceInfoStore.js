@@ -33,7 +33,7 @@ module.exports = {
     lsRequestCount: 0,
     useProxy: false,
 
-    retrieveLSList: function() e
+    retrieveLSList: function() {
         $.get( lsCacheHostsURL, function(data) {
             console.log("lscachehosts", data);
             this.handleLSListResponse( data );
