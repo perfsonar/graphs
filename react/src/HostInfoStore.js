@@ -190,7 +190,7 @@ module.exports = {
         this.serverRequest = $.get( 
                 url,
                 function(data) {
-                    //console.log("data", data);
+                    console.log("hostInfo data", data);
                     this.handleHostInfoResponse( data );
                 }.bind(this));
 

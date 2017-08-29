@@ -1,3 +1,5 @@
+import GraphUtilities from "./GraphUtilities";
+
 let EventEmitter = require('events').EventEmitter;
 let emitter = new EventEmitter();
 
@@ -14,6 +16,7 @@ module.exports = {
     LSCachesRetrievedTag: "lsCaches",
     useProxy: false,
     lsCacheURL: null,
+    data: null,
 
     retrieveLSList: function() {
         $.get( lsCacheHostsURL, function(data) {
@@ -35,58 +38,41 @@ module.exports = {
 
             }
             console.log("selecting cache url: ", this.lsCacheURL);
+            emitter.emit( this.LSCachesRetrievedTag );
         } else {
             console.log("no LS cache host data available");
-
-        }
+        } 
+        //LSCacheStore.subscribe( 
         //this.retrieveLSHosts();
-        emitter.emit( LSCachesRetrievedTag );
 
     },
 
     subscribeLSCaches: function( callback ) {
-        emitter.on( LSCachesRetrievedTag, callback );
+        emitter.on( this.LSCachesRetrievedTag, callback );
 
     },
 
     unsubscribeLSCaches: function( callback ) {
-        emitter.removeListener( LSCachesRetrievedTag, callback );
+        emitter.removeListener( this.LSCachesRetrievedTag, callback );
+
+    },
+
+    subscribeTag: function( callback, tag ) {
+        emitter.on( tag, callback );
+
+    },
+
+    unsubscribeTag: function( callback, tag ) {
+        emitter.off( tag, callback );
 
     },
 
     // TODO: convert this function to a generic one that can take a query as a parameter
     // and a callback
-    retrieveLSHosts: function() {
-        lsCacheURL += "_search";
-        let sources = this.sources;
-        let dests = this.dests;
+    queryLSCache: function( query, message ) {
+        let lsCacheURL = this.lsCacheURL + "_search";
 
-        console.log("lsCacheURL", lsCacheURL);
-        console.log("sources", sources);
-        console.log("dests", dests);
-
-        let hosts = sources.concat( dests );
-        hosts = this.unique( hosts );
-
-        let query = {
-              "query": {
-                      "bool": {
-                        "must": [
-                              {"match": { "type": "interface" } },
-                              {"terms": { "interface-addresses": hosts } }
-
-                        ]
-                    }
-              }
-              ,
-              "sort": [
-                  { "expires": { "order": "desc" } }
-
-              ]
-
-        };
-
-        HostInfoStore.retrieveHostLSData( hosts, lsCacheURL );
+        //this.retrieveHostLSData( hosts, lsCacheURL );
 
         console.log("query", query);
 
@@ -96,6 +82,14 @@ module.exports = {
 
         console.log("lsCacheURL", lsCacheURL);
 
+        this.message = message;
+
+        let self = this;
+        let successCallback = function( data ) {
+            self.handleLSCacheDataResponse( data, message );
+
+        };
+
         $.ajax({
             url: lsCacheURL,
             data: preparedQuery,
@@ -103,9 +97,11 @@ module.exports = {
             type: "POST"
         })
         .done(function(data, textStatus, jqXHR) {
-                    console("data from posted request", data);
-                    this.lsRequestCount++;
-                    this.handleInterfaceInfoResponse( data );
+                    console.log("data from posted request FIRST DONE SECTIONz", data);
+                    //this.handleInterfaceInfoResponse( data );
+                    //this.handleLSCacheDataResponse( data, message );
+                    successCallback( data );
+
         }.bind(this))
         .fail(function(data) {
 
@@ -136,8 +132,10 @@ module.exports = {
                             type: "POST"
                         })
                             .done (function(data, textStatus, jsXHR) {
-                                console.log("query data!", data);
-                                this.handleInterfaceInfoResponse(data);
+                                console.log("query data! SECOND DONE SECTION", data);
+                                //this.handleInterfaceInfoResponse(data);
+                                //this.handleLSCacheDataResponse( data, message );
+                                successCallback( data );
                             }.bind(this))
                             .fail (function( data ) {
                                   this.handleInterfaceInfoError(data);
@@ -157,6 +155,17 @@ module.exports = {
 
 
     },
+    handleLSCacheDataResponse: function( data, message ) {
+        console.log("handling LS cache data response (data, message)", data, message);
+        this.data = data;
+        emitter.emit( this.message );
+    },
+
+    getResponseData: function() {
+        console.log("getting response data ...");
+        return this.data;
+    },
+
     getProxyURL( url ) {
 
         let proxy = this.parseUrl( proxyURL );
@@ -219,7 +228,7 @@ module.exports = {
         this.sources = sources;
         this.dests = dests;
 
-        this.retrieveLSList();
+        //this.retrieveLSList();
 
     },
     getInterfaceInfo: function( ) {
@@ -229,7 +238,7 @@ module.exports = {
         console.log("data", data);
         data = this._parseInterfaceResults( data );
         console.log("processed data", data);
-        this.addData( data );
+        //this.addData( data );
         this.interfaceInfo = data;
     },
 
@@ -255,21 +264,6 @@ module.exports = {
         return out;
     },
 
-    unique: function (arr) {
-        var i,
-            len = arr.length,
-            out = [],
-            obj = { };
-
-        for (i = 0; i < len; i++) {
-            obj[arr[i]] = 0;
-        }
-        for (i in obj) {
-            out.push(i);
-        }
-        out = Object.keys( obj );
-        return out;
-    },
     subscribe: function( callback ) {
         emitter.on("get", callback);
     },
@@ -281,89 +275,7 @@ module.exports = {
         var joiner = "&" + name + "=";
         return joiner + array.join(joiner);
     },
-    addData: function( data ) {
-        this.lsInterfaceResults.push( data );
-        if ( this.lsInterfaceResults.length == this.lsRequestCount ) {
-            this.combineData();
-        }
-    },
 
-    combineData: function( ) {
-        let sources = this.sources;
-        let dests = this.dests;
-        let rows = this.lsInterfaceResults;
-
-        let src_capacity = "Unknown";
-        let src_mtu = "Unknown";
-        let dest_capacity = "Unknown";
-        let dest_mtu = "Unknown";
-        let src_addresses;
-        let dest_addresses;
-
-        let newObj = {};
-        for(var i in rows) {
-            let results = rows[i];
-
-            let newRow = {};
-            for (var j in results){
-                let row = rows[i][j];
-
-                for (var k in sources){
-                    if (sources[k] == row.source_ip){
-                        if ( ! ( row.source_ip in newObj )) {
-                            newObj[row.source_ip] = {};
-                        }
-
-                        if (row.source_mtu) {
-                            src_mtu = row.source_mtu;
-                            newRow.src_mtu = src_mtu;
-                            newObj[row.source_ip].mtu = src_mtu;
-                        }
-                        if (row.source_addresses) {
-                            src_addresses = row.source_addresses;
-                            newRow.src_addresses = src_addresses;
-                            newObj[row.source_ip].addresses = src_addresses;
-                        }
-
-                        if (row.source_capacity) {
-                            src_capacity = row.source_capacity;
-                            newRow.src_capacity = src_capacity;
-                            newObj[row.source_ip].capacity = src_capacity;
-                        }
-
-
-
-                    }
-
-                    if(dests[k] == row.dest_ip){
-
-                        if (row.dest_mtu) {
-                            dest_mtu = row.dest_mtu;
-                        }
-                        if (row.dest_addresses) {
-                            dest_addresses = row.dest_addresses;
-                        }
-                        if (row.dest_capacity) {
-                            dest_capacity = row.dest_capacity;
-                        }
-                        newRow.dest_mtu = dest_mtu;
-                        newRow.dest_addresses = dest_addresses;
-                        newRow.dest_capacity = dest_capacity;
-
-                        newObj[row.dest_ip] = {};
-                        newObj[row.dest_ip].mtu = dest_mtu;
-                        newObj[row.dest_ip].addresses = dest_addresses;
-                        newObj[row.dest_ip].capacity = dest_capacity;
-                    }
-                }
-            }
-                if ( !  $.isEmptyObject( newRow ) ) {
-                    this.interfaceInfo.push( newRow );
-                }
-        }
-        this.interfaceObj = newObj;
-        emitter.emit("get");
-    },
     // Retrieves interface details for a specific ip and returns them
     // Currently keys on ip; could extend to search all addresses later if needed
     getInterfaceDetails: function( host ) {

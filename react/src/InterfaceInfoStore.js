@@ -1,15 +1,9 @@
 import LSCacheStore from "./LSCacheStore.js";
 import HostInfoStore from "./HostInfoStore";
+import GraphUtilities from "./GraphUtilities";
 
 let EventEmitter = require('events').EventEmitter;
 let emitter = new EventEmitter();
-
-const lsCacheHostsURL = "cgi-bin/graphData.cgi?action=ls_cache_hosts"; // TODO: remove this line
-const lsQueryURL = "cgi-bin/graphData.cgi?action=interfaces"; // TODO: remove this line
-const proxyURL = '/perfsonar-graphs/cgi-bin/graphData.cgi?action=ls_cache_data&url=';
-
-let lsCacheURL;
-
 
 module.exports = {
 
@@ -27,51 +21,49 @@ module.exports = {
     interfaceInfo: [],
     interfaceObj: {},
     lsInterfaceResults: [],
-    lsURLs: [],
     sources: [],
     dests: [],
     lsRequestCount: 0,
-    useProxy: false,
 
-    retrieveLSList: function() {
-        $.get( lsCacheHostsURL, function(data) {
-            console.log("lscachehosts", data);
-            this.handleLSListResponse( data );
-        }.bind(this));
+    _init: function() {
+        //LSCacheStore.subscribe( LSCacheStore.LSCachesRetrievedTag, this.handleLSCachesRetrieved );
+
     },
-    handleLSListResponse: function( data ) {
-        this.lsURLs = data;
-        console.log("lsURLs", data);
-        if ( typeof data == "undefined" || ! Array.isArray( data ) ) {
-            console.log("LS cache host data is invalid/missing");
-        } else if ( data.length > 0  ) {
-            console.log("array of LS cache host data");
-            lsCacheURL = data[0].url;
-            if ( lsCacheURL === null ) {
-                console.log("no url found!");
 
-            }
-            console.log("selecting cache url: ", lsCacheURL);
-        } else {
-            console.log("no LS cache host data available");
+    handleLSCachesRetrieved: function() {
+
+
+    },
+
+    handleInterfaceInfoError: function( data ) {
+
+    },
+
+    // This function actually queries the LS cache (using LSCacheStore)
+    retrieveInterfaceInfo: function( sources, dests ) {
+
+        //let sources = this.sources;
+        //let dests = this.dests;
+
+        if ( typeof sources == "undefined" || typeof dests == "undefined" ) {
+            console.log("sources and/or dests undefined; aborting");
+                    return;
 
         }
-        //this.performLSCalls();
-        this.retrieveLSHosts();
+        if ( !Array.isArray( sources ) ) {
+            sources = [ sources ];
+        }
+        if ( !Array.isArray( dests ) ) {
+            dests = [ dests ];
+        }
+        this.sources = sources;
+        this.dests = dests;
 
-    },
-
-    retrieveLSHosts: function() {
-        lsCacheURL += "_search";
-        let sources = this.sources;
-        let dests = this.dests;
-
-        console.log("lsCacheURL", lsCacheURL);
-        console.log("sources", sources);
+        console.log("retrieveInterfaceInfo sources", sources);
         console.log("dests", dests);
 
         let hosts = sources.concat( dests );
-        hosts = this.unique( hosts );
+        hosts = GraphUtilities.unique( hosts );
 
         let query = {
               "query": {
@@ -90,217 +82,58 @@ module.exports = {
               ]
 
         };
-
-        HostInfoStore.retrieveHostLSData( hosts, lsCacheURL );
-
-        console.log("query", query);
-
-        let preparedQuery = JSON.stringify( query );
-
-        console.log("stringified query", preparedQuery);
-
-        console.log("lsCacheURL", lsCacheURL);
-
-        $.ajax({
-            url: lsCacheURL,
-            data: preparedQuery,
-            dataType: 'json',
-            type: "POST"
-        })
-        .done(function(data, textStatus, jqXHR) {
-                    console("data from posted request", data);
-                    this.lsRequestCount++;
-                    this.handleInterfaceInfoResponse( data );
-        }.bind(this))
-        .fail(function(data) {
-
-                    // if we get an error, try the cgi instead 
-                    // and set a new flag, useProxy  and make
-                    // all requests through the proxy CGI
-                    if ( data.status == 404 ) {
-                        console.log("got here!");
-                        this.useProxy = true;
-                        let url = this.getProxyURL( lsCacheURL );
-                        console.log("proxy URL", url);
-
-                        //query.action = "ls_cache_data";
-                        //query.url = lsCacheURL;
-                        preparedQuery = JSON.stringify( query );
-
-                        let postData = {
-                            "query": preparedQuery,
-                            "action": "ls_cache_data",
-                            "url": lsCacheURL
-
-                        };
-
-                        $.ajax({
-                            url: url,
-                            data: postData,
-                            dataType: 'json',
-                            type: "POST"
-                        })
-                            .done (function(data, textStatus, jsXHR) {
-                                console.log("query data!", data);
-                                this.handleInterfaceInfoResponse(data);
-                            }.bind(this))
-                            .fail (function( data ) {
-                                  this.handleInterfaceInfoError(data);
-                            }.bind(this));
-
-
-
-
-                        } else {
-                            console.log('fail jqXHR, textStatus, errorThrown', jqXHR, textStatus, errorThrown);
-                            this.handleInterfaceInfoError( data );
-
-                        }
-
-        }.bind(this));
-
-
-
-    },
-    getProxyURL( url ) {
-
-        let proxy = this.parseUrl( proxyURL );
-
-        if ( this.useProxy ) {
-            url = encodeURIComponent( url );
-            url = proxyURL + url;
-        }
-        let urlObj = this.parseUrl( url );
-        url = urlObj.origin + urlObj.pathname + urlObj.search;
-        return url;
+        let tag = "interfaceInfo";
+        LSCacheStore.queryLSCache( query, tag );
+        LSCacheStore.subscribeTag( this.handleInterfaceInfoResponse.bind(this), tag );
 
     },
 
-    handleInterfaceInfoError: function( data ) {
-
-    },
-
-    parseUrl: (function () {
-        return function (url) {
-            var a = document.createElement('a');
-            a.href = url;
-
-            // Work around a couple issues:
-            // - don't show the port if it's 80 or 443 (Chrome didn''t do this, but IE did)
-            // - don't append a port if the port is an empty string ""
-            let port = "";
-            if ( typeof a.port != "undefined" ) {
-                if ( a.port != "80" && a.port != "443" && a.port != "" ) {
-                    port = ":" + a.port;
-                }
-            }
-
-            let host = a.host;
-            let ret = {
-                host: a.host,
-                hostname: a.hostname,
-                pathname: a.pathname,
-                port: a.port,
-                protocol: a.protocol,
-                search: a.search,
-                hash: a.hash,
-                origin: a.protocol + "//" + a.hostname + port
-            };
-            return ret;
-        }
-    })(),
-
-    performLSCalls: function() {
-        let lsURLs = this.lsURLs;
-        let sources = this.sources;
-        let dests = this.dests;
-        for(var i in lsURLs) {
-            let lsURL = lsURLs[i];
-            let url = lsQueryURL;
-            url += "&ls_url=" + encodeURI( lsURL );
-            url += this.array2param("source", sources);
-            url += this.array2param("dest", dests);
-            $.get( url, function(data) {
-                this.lsRequestCount++;
-                this.handleInterfaceInfoResponse( data );
-            }.bind(this))
-            .fail( function(jqXHR, textStatus, errorThrown) {
-                console.log('fail jqXHR, textStatus, errorThrown', jqXHR, textStatus, errorThrown);
-            }.bind(this));
-
-        }
-
-    },
-    retrieveInterfaceInfo: function( source_input, dest_input ) {
-
-
-        let sources;
-        let dests;
-        if ( Array.isArray( source_input ) ) {
-            sources = source_input;
-        } else {
-            sources = [ source_input ];
-        }
-        if ( Array.isArray( dest_input ) ) {
-            dests = dest_input
-        } else {
-            dests = [ dest_input ];
-        }
-        this.sources = sources;
-        this.dests = dests;
-
-        
-        this.retrieveLSList();
-
-    },
     getInterfaceInfo: function( ) {
         return this.interfaceObj;
     },
-    handleInterfaceInfoResponse: function( data ) {
+
+    handleInterfaceInfoResponse: function( ) {
+        let data = LSCacheStore.getResponseData();
         console.log("data", data);
         data = this._parseInterfaceResults( data );
         console.log("processed data", data);
-        this.addData( data );
-        this.interfaceInfo = data;
+        //this.combineData();
+
+        let interfaceObj =  this.interfaceObj
+        console.log("combined data", interfaceObj);
+
+        this.interfaceInfo = interfaceObj;
+
+        emitter.emit("get");
     },
 
     _parseInterfaceResults: function( data ) {
-        let out = {};
+        let out = [];
+        let obj = {};
+        let cache = {};
         for(let i in data.hits.hits ) {
             let row = data.hits.hits[i]._source;
             let addresses = row["interface-addresses"];
+            let uuid = row["client-uuid"];
             for(let j in addresses) {
                 let address = addresses[j];
-                if ( !( address in out ) ) {
-                    out[ address ] = row;
+                if ( !( address in obj ) ) {
+                    //cache[ uuid ] = true;
                     console.log("client uuid: ", row["client-uuid"] );
-
+                    out.push( row );
+                    this.lsInterfaceResults.push( row );
+                    obj[ address ] = row;
+                    continue;
                 }
 
             }
 
-
-
         }
+        this.interfaceObj = obj;
         console.log("keyed on address", out);
         return out;
     },
 
-    unique: function (arr) {
-        var i,
-            len = arr.length,
-            out = [],
-            obj = { };
-
-        for (i = 0; i < len; i++) {
-            obj[arr[i]] = 0;
-        }
-        for (i in obj) {
-            out.push(i);
-        }
-        out = Object.keys( obj );
-        return out;
-    },
     subscribe: function( callback ) {
         emitter.on("get", callback);
     },
@@ -311,12 +144,6 @@ module.exports = {
     array2param: function( name, array ) {
         var joiner = "&" + name + "=";
         return joiner + array.join(joiner);
-    },
-    addData: function( data ) {
-        this.lsInterfaceResults.push( data );
-        if ( this.lsInterfaceResults.length == this.lsRequestCount ) {
-            this.combineData();
-        }
     },
 
     combineData: function( ) {
@@ -333,64 +160,63 @@ module.exports = {
 
         let newObj = {};
         for(var i in rows) {
-            let results = rows[i];
-
             let newRow = {};
-            for (var j in results){
-                let row = rows[i][j];
+            let row = rows[i];
 
-                for (var k in sources){
-                    if (sources[k] == row.source_ip){
-                        if ( ! ( row.source_ip in newObj )) {
-                            newObj[row.source_ip] = {};
-                        }
-
-                        if (row.source_mtu) {
-                            src_mtu = row.source_mtu;
-                            newRow.src_mtu = src_mtu;
-                            newObj[row.source_ip].mtu = src_mtu;
-                        }
-                        if (row.source_addresses) {
-                            src_addresses = row.source_addresses;
-                            newRow.src_addresses = src_addresses;
-                            newObj[row.source_ip].addresses = src_addresses;
-                        }
-
-                        if (row.source_capacity) {
-                            src_capacity = row.source_capacity;
-                            newRow.src_capacity = src_capacity;
-                            newObj[row.source_ip].capacity = src_capacity;
-                        }
-
-
-
+            for (var k in sources){
+                let src = sources[k];
+                if (sources[k] in row["interface-addresses"]){
+                    if ( ! ( sources[k] in newObj )) {
+                        newObj[sources[k]] = {};
+                    } else {
+                        continue;
                     }
 
-                    if(dests[k] == row.dest_ip){
-
-                        if (row.dest_mtu) {
-                            dest_mtu = row.dest_mtu;
-                        }
-                        if (row.dest_addresses) {
-                            dest_addresses = row.dest_addresses;
-                        }
-                        if (row.dest_capacity) {
-                            dest_capacity = row.dest_capacity;
-                        }
-                        newRow.dest_mtu = dest_mtu;
-                        newRow.dest_addresses = dest_addresses;
-                        newRow.dest_capacity = dest_capacity;
-
-                        newObj[row.dest_ip] = {};
-                        newObj[row.dest_ip].mtu = dest_mtu;
-                        newObj[row.dest_ip].addresses = dest_addresses;
-                        newObj[row.dest_ip].capacity = dest_capacity;
+                    if (row["interface-mtu"]) {
+                        let src_mtu = row["interface-mtu"];
+                        newRow["interface-mtu"] = src_mtu;
+                        newObj[src].mtu = src_mtu;
                     }
+                    if (row["interface-addresses"]) {
+                        let src_addresses = row["interface-addresses"];
+                        newRow.src_addresses = src_addresses;
+                        newObj[src].addresses = src_addresses;
+                    }
+
+                    if (row["interface-capacity"]) {
+                        src_capacity = row["interface-capacity"];
+                        newRow.src_capacity = src_capacity;
+                        newObj[src].capacity = src_capacity;
+                    }
+
+
+
+                }
+
+                if(dests[k] == row.dest_ip){
+
+                    if (row.dest_mtu) {
+                        dest_mtu = row.dest_mtu;
+                    }
+                    if (row.dest_addresses) {
+                        dest_addresses = row.dest_addresses;
+                    }
+                    if (row.dest_capacity) {
+                        dest_capacity = row.dest_capacity;
+                    }
+                    newRow.dest_mtu = dest_mtu;
+                    newRow.dest_addresses = dest_addresses;
+                    newRow.dest_capacity = dest_capacity;
+
+                    newObj[row.dest_ip] = {};
+                    newObj[row.dest_ip].mtu = dest_mtu;
+                    newObj[row.dest_ip].addresses = dest_addresses;
+                    newObj[row.dest_ip].capacity = dest_capacity;
                 }
             }
-                if ( !  $.isEmptyObject( newRow ) ) {
-                    this.interfaceInfo.push( newRow );
-                }
+            if ( !  $.isEmptyObject( newRow ) ) {
+                this.interfaceInfo.push( newRow );
+            }
         }
         this.interfaceObj = newObj;
         emitter.emit("get");
@@ -399,9 +225,12 @@ module.exports = {
     // Currently keys on ip; could extend to search all addresses later if needed
     getInterfaceDetails: function( host ) {
         let details = this.interfaceObj || {};
+        console.log("getInterfaceDetails details", details);
         if ( host in details ) {
+            console.log("found details for ", host, details[host]);
             return details[host];
         } else {
+            console.log("host details not found; searching");
             for(let i in details ) {
                 let row = details[i];
 

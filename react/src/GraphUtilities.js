@@ -68,7 +68,26 @@ module.exports = {
         };
         return timeRange;
 
-    }
+    },
+
+    // Returns the UNIQUE values of an array
+    unique: function (arr) {
+        var i,
+            len = arr.length,
+            out = [],
+            obj = { };
+
+        for (i = 0; i < len; i++) {
+            obj[arr[i]] = 0;
+        }
+        /*
+        for (i in obj) {
+            out.push(i);
+        }
+        */
+        out = Object.keys( obj );
+        return out;
+    },
 
 };
 

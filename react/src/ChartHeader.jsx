@@ -1,5 +1,7 @@
 import React from "react";
 
+import LSCacheStore from "./LSCacheStore";
+
 import HostInfoStore from "./HostInfoStore";
 
 import InterfaceInfoStore from "./InterfaceInfoStore";
@@ -20,6 +22,8 @@ var $ = require('jquery');
 
 export default React.createClass({
     hostInfo: [],
+    sources: null,
+    dests: null,
     getInitialState() {
         return {
             showHostSelectors: false,
@@ -209,15 +213,28 @@ export default React.createClass({
                );
         } else {
             let hostInfo = this.hostInfo;
+            let interfaceInfo = this.interfaceInfo || [];
             let hosts = [];
-            if ( hostInfo.length > 0 ) {
+            if ( hostInfo.length > 0 || Object.keys(interfaceInfo).length > 0 ) {
                 for( var i in hostInfo ) {
                     let row = hostInfo[i];
-                    hosts.push( 
+                    console.log("row something hostinfo", row);
+                    console.log("type", type);
+                    hosts.push(
                             <div className="hostname" key={"hostname"+label+i}>{row[ type + "_host"]}</div>,
                             <div className="address" key={"ip"+label+i}>{row[ type + "_ip"]}</div>,
                             <div key={"detailedInfo"+label+i}>{this.showDetailedHostInfo( row[type + "_ip" ], i )}</div>
                             );
+
+                }
+
+                for(var i in interfaceInfo) {
+                    let row = interfaceInfo[i];
+                    hosts.push(
+                        <div className="address" key={"ip"+label+i}>{row["interface-addresses"]}</div>
+                        );
+
+
 
                 }
             } else {
@@ -234,6 +251,8 @@ export default React.createClass({
                    );
         }
     },
+
+    // "host" is actually an IP
     showDetailedHostInfo: function( host, i ) {
         let trace = this.state.traceInfo;
         let display = "hiddenTrace";
@@ -244,7 +263,14 @@ export default React.createClass({
             }
 
         }
-        let details = InterfaceInfoStore.getInterfaceDetails( host );
+        //
+        //let details = InterfaceInfoStore.getInterfaceDetails( host );
+        let details = this.state.interfaceInfo;
+
+        console.log("interface details", details);
+        if ( details === null ) {
+            return [];
+        }
         let addresses = [];
         if ( $.isArray( details.addresses ) ) {
             for(var i in details.addresses) {
@@ -292,11 +318,22 @@ export default React.createClass({
         HostInfoStore.subscribeTrace(this.updateTrace);
         HostInfoStore.retrieveTracerouteData( this.props.sources, this.props.dests, this.props.ma_url );
         InterfaceInfoStore.subscribe( this.handleInterfaceData );
-        InterfaceInfoStore.retrieveInterfaceInfo( this.props.sources, this.props.dests );
+
+        console.log("sources/dests props", this.props.sources, this.props.dests );
+        //InterfaceInfoStore.retrieveInterfaceInfo( this.props.sources, this.props.dests );
+        this.sources = this.props.sources;
+        this.dests = this.props.dests;
+        let sources = this.sources;
+        let dests = this.dests;
+        let callback = function() {
+            InterfaceInfoStore.retrieveInterfaceInfo( sources, dests );
+        };
+        LSCacheStore.subscribeLSCaches( callback );
 
     },
     handleInterfaceData: function() {
         let interfaceInfo = InterfaceInfoStore.getInterfaceInfo();
+        console.log("handle interface data interfaceInfo", interfaceInfo);
         this.setState({ interfaceInfo: interfaceInfo });
 
         this.updateChartHeader();
@@ -314,7 +351,9 @@ export default React.createClass({
     },
     updateChartHeader: function() {
         let hostInfo = HostInfoStore.getHostInfoData();
+        let interfaceInfo = InterfaceInfoStore.getInterfaceInfo();
         this.hostInfo = hostInfo;
+        this.interfaceInfo = interfaceInfo;
         this.forceUpdate();
 
     },
