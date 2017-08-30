@@ -213,7 +213,7 @@ export default React.createClass({
                );
         } else {
             let hostInfo = this.hostInfo;
-            let interfaceInfo = this.interfaceInfo || {};
+            let interfaceInfo = this.state.interfaceInfo || {};
             let hosts = [];
             if ( hostInfo.length > 0 || Object.keys(interfaceInfo).length > 0 ) {
                 for( var i in hostInfo ) {
@@ -223,7 +223,7 @@ export default React.createClass({
                     hosts.push(
                             <div className="hostname" key={"hostname"+label+i}>{row[ type + "_host"]}</div>,
                             <div className="address" key={"ip"+label+i}>{row[ type + "_ip"]}</div>,
-                            <div key={"detailedInfo"+label+i}>{this.showDetailedHostInfo( row[type + "_ip" ], i )}</div>
+                            <div key={"detailedInfo"+label+i}>{this.showDetailedHostInfo( row[type + "_ip" ].split(",")[0], i )}</div>
                             );
 
                 }
@@ -262,11 +262,13 @@ export default React.createClass({
             return [];
         }
         let addresses = [];
+        let interfaces = [];
         if ( $.isArray( details["interface-addresses"] ) ) {
             for(var i in details["interface-addresses"]) {
                 let address = details["interface-addresses"][i];
                 addresses.push(<div>{address}</div>);
-
+                let intf = details["interface-name"][i];
+                interfaces.push(<div>{intf}</div>);
             }
         }
             {/* GRAPH: Detailed Host Info*/}
@@ -276,8 +278,12 @@ export default React.createClass({
 
             <div className="sidebar-popover sidebar-popover--overview">
                 <a className="sidebar-popover__close js-sidebar-popover-close">Close &nbsp;<i className="fa fa-close"></i></a>
-                <h4 className="sidebar-popover__heading">Host details</h4>
+                <h4 className="sidebar-popover__heading">Interface details</h4>
                 <ul className="sidebar-popover__list">
+                    <li className="sidebar-popover__item">
+                        <span className="sidebar-popover__param">Interfaces:</span>
+                        <span className="sidebar-popover__value">{interfaces}</span>
+                    </li>
                     <li className="sidebar-popover__item">
                         <span className="sidebar-popover__param">Addresses:</span>
                         <span className="sidebar-popover__value">{addresses}</span>
@@ -297,6 +303,7 @@ export default React.createClass({
             </div>
         </div>
         );
+        //<h4 className="sidebar-popover__heading">Host details</h4>
 
     },
     componentDidMount: function() {
@@ -310,12 +317,6 @@ export default React.createClass({
         //InterfaceInfoStore.retrieveInterfaceInfo( this.props.sources, this.props.dests );
         this.sources = this.props.sources;
         this.dests = this.props.dests;
-        let sources = this.sources;
-        let dests = this.dests;
-        let callback = function() {
-            InterfaceInfoStore.retrieveInterfaceInfo( sources, dests );
-        };
-        LSCacheStore.subscribeLSCaches( callback );
 
     },
     handleInterfaceData: function() {
@@ -340,7 +341,22 @@ export default React.createClass({
         let hostInfo = HostInfoStore.getHostInfoData();
         let interfaceInfo = InterfaceInfoStore.getInterfaceInfo();
         this.hostInfo = hostInfo;
-        this.interfaceInfo = interfaceInfo;
+        //this.interfaceInfo = interfaceInfo;
+        //this.setState({ interfaceInfo: interfaceInfo });
+        let source_ips = [];
+        let dest_ips = [];
+        for(var i in hostInfo) {
+            source_ips.push( hostInfo[i].source_ip.split(",")[0] );
+            dest_ips.push( hostInfo[i].dest_ip.split(",")[0] );
+
+        }
+        console.log("this.sources/this.dests", this.sources, this.dests);
+        console.log("sources/dest IPs", source_ips, dest_ips);
+        let callback = function() {
+            InterfaceInfoStore.retrieveInterfaceInfo( source_ips, dest_ips );
+        };
+        LSCacheStore.subscribeLSCaches( callback );
+
         this.forceUpdate();
 
     },
