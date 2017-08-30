@@ -31,7 +31,7 @@ export default React.createClass({
             end: this.props.end,
             timeframe: this.props.timeframe,
             summaryWindow: 3600,
-            interfaceInfo: null,
+            interfaceInfo: {},
             traceInfo: [],
             pageURL: window.location.href
         };
@@ -213,7 +213,7 @@ export default React.createClass({
                );
         } else {
             let hostInfo = this.hostInfo;
-            let interfaceInfo = this.interfaceInfo || [];
+            let interfaceInfo = this.interfaceInfo || {};
             let hosts = [];
             if ( hostInfo.length > 0 || Object.keys(interfaceInfo).length > 0 ) {
                 for( var i in hostInfo ) {
@@ -225,16 +225,6 @@ export default React.createClass({
                             <div className="address" key={"ip"+label+i}>{row[ type + "_ip"]}</div>,
                             <div key={"detailedInfo"+label+i}>{this.showDetailedHostInfo( row[type + "_ip" ], i )}</div>
                             );
-
-                }
-
-                for(var i in interfaceInfo) {
-                    let row = interfaceInfo[i];
-                    hosts.push(
-                        <div className="address" key={"ip"+label+i}>{row["interface-addresses"]}</div>
-                        );
-
-
 
                 }
             } else {
@@ -265,22 +255,19 @@ export default React.createClass({
         }
         //
         //let details = InterfaceInfoStore.getInterfaceDetails( host );
-        let details = this.state.interfaceInfo;
+        let details = this.state.interfaceInfo[host];
 
         console.log("interface details", details);
-        if ( details === null ) {
+        if ( typeof details == "undefined" || details === null ) {
             return [];
         }
         let addresses = [];
-        if ( $.isArray( details.addresses ) ) {
-            for(var i in details.addresses) {
-                let address = details.addresses[i];
+        if ( $.isArray( details["interface-addresses"] ) ) {
+            for(var i in details["interface-addresses"]) {
+                let address = details["interface-addresses"][i];
                 addresses.push(<div>{address}</div>);
 
             }
-
-        } else {
-            addresses.push( details.addresses );
         }
             {/* GRAPH: Detailed Host Info*/}
             return (
@@ -297,11 +284,11 @@ export default React.createClass({
                     </li>
                     <li className="sidebar-popover__item">
                         <span className="sidebar-popover__param">Capacity:</span>
-                        <span className="sidebar-popover__value"><SIValue value={details.capacity} /></span>
+                        <span className="sidebar-popover__value"><SIValue value={details["interface-capacity"] } /></span>
                     </li>
                     <li className="sidebar-popover__item">
                         <span className="sidebar-popover__param">MTU:</span>
-                        <span className="sidebar-popover__value">{details.mtu}</span>
+                        <span className="sidebar-popover__value">{GraphUtilities.formatUnknown( details["interface-mtu"] )}</span>
                     </li>
                     <li className={"sidebar-popover__item " + display}>
                         <span className="sidebar-popover__param"><a href={traceURL} target="_blank">View traceroute graph</a></span>

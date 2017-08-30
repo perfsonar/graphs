@@ -80,14 +80,23 @@ module.exports = {
         for (i = 0; i < len; i++) {
             obj[arr[i]] = 0;
         }
-        /*
-        for (i in obj) {
-            out.push(i);
-        }
-        */
         out = Object.keys( obj );
         return out;
     },
+
+    formatUnknown: function( str, unknownText ) {
+        if ( typeof unknownText == "undefined" || unknownText === null ) {
+            unknownText = "unknown";
+        }
+        if ( typeof str == "undefined" || str === null || str == "" ) {
+            return unknownText;
+        } else {
+            return str;
+
+        }
+
+
+    }
 
 };
 
