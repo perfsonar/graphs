@@ -42,7 +42,7 @@ setup:
 	npm install webpack
 
 webpack:
-	@$(WEBPACK)
+	@$(WEBPACK) --optimize-minimize
 
 dev:
 	@dev=true $(WEBPACK) -d
