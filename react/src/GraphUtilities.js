@@ -84,6 +84,49 @@ module.exports = {
         return out;
     },
 
+    formatBool: function( input, unknownText ) {
+        let out;
+        if ( input === true || input === 1 || input == "1" ) {
+            out = "Yes";
+        } else if ( input === false || input === 0 || input == "0" ) {
+            out = "No";
+        }
+        out = this.formatUnknown( out, unknownText );
+        return out;
+
+    },
+
+    formatSItoSI: function( value, Y ) {
+        console.log("value", value);
+        let out = value;
+        let re = /^(\d+\.?\d*)\s?([KMGT])(\w*)/;
+        let results = value.match( re );
+        if ( results !== null ) {
+            let values = {};
+            values.K = 1024;
+            values.M = 1024 * 1024;
+            values.G = 1024 * 1024 * 1024;
+            console.log("values", values);
+            console.log("value, re, results", value, re, results);
+
+            out = results[1];
+
+            if ( results[2].toUpperCase() in values ) {
+                let X = results[2]
+                out = out * values[ results[2] ];
+                // convert to Y
+                out = out / values[Y];
+                out = Math.round( out * 10) / 10;
+                out += " " + Y + results[3];
+            };
+        }
+        console.log("outvalue", out);
+
+
+        return out;
+
+    },
+
     formatUnknown: function( str, unknownText ) {
         if ( typeof unknownText == "undefined" || unknownText === null ) {
             unknownText = "unknown";

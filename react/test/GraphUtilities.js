@@ -93,3 +93,29 @@ describe('GraphUtilities', function() {
 
     });
 });
+
+// Unit tests for GraphUtilities.getTimeVars() function
+describe('GraphUtilities', function() {
+    describe('formatSItoSI', function() {
+        // create an array of hashes that contains the test values and expected results
+        let expectedValues = {
+            "1GB":  [ "1 GB", "M" ] 
+        };
+
+        for(var val in expectedValues ) {
+            let expected = val; //expectedValues[key];
+            let params = expectedValues[val];
+            let values = GraphUtilities.formatSItoSI( params[0], params[1] );
+
+            it('should return the correct values for ' + val, function( done ) {
+                assert.deepEqual(values, expected);
+                done();
+            });
+
+
+
+        }
+
+
+    });
+});

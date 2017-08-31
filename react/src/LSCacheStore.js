@@ -7,6 +7,25 @@ const lsCacheHostsURL = "cgi-bin/graphData.cgi?action=ls_cache_hosts";
 const lsQueryURL = "cgi-bin/graphData.cgi?action=interfaces";
 const proxyURL = '/perfsonar-graphs/cgi-bin/graphData.cgi?action=ls_cache_data&url=';
 
+if ( typeof window == "undefined" ) {
+    var $;
+    if ( typeof $ == "undefined" ) {
+        require("node-jsdom").env("", function(err, window) {
+            //var $;
+            if (err) {
+                console.error(err);
+                return;
+            }
+
+            $ = require("jquery")(window);
+        });
+    }
+
+} else {
+    $ = jQuery;
+}
+
+
 
 /*
  * DESCRIPTION OF CLASS HERE

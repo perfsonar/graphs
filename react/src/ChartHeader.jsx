@@ -273,14 +273,13 @@ export default React.createClass({
         }
 
         let uuid = details["client-uuid"][0];
-        let hostDetails = {};
+        let hostDetails;
         let hostObj = this.state.hostLSInfoObj;
-        console.log("details", details);
-        console.log("uuid, hostObj", uuid, hostObj);
         if ( uuid in hostObj ) {
             hostDetails = hostObj[ uuid ];
             console.log("hostDetails", hostDetails);
         }
+        let hostDetailsLayout = this.showHostLSDetails( hostDetails );
             {/* GRAPH: Detailed Host Info*/}
             return (
         <div>
@@ -291,12 +290,12 @@ export default React.createClass({
                 <h4 className="sidebar-popover__heading">Interface details</h4>
                 <ul className="sidebar-popover__list">
                     <li className="sidebar-popover__item">
-                        <span className="sidebar-popover__param">Interfaces:</span>
-                        <span className="sidebar-popover__value">{interfaces}</span>
+                        <span className="sidebar-popover__param">Interface:</span>
+                        <span className="sidebar-popover__value">{GraphUtilities.formatUnknown(interfaces)}</span>
                     </li>
                     <li className="sidebar-popover__item">
                         <span className="sidebar-popover__param">Addresses:</span>
-                        <span className="sidebar-popover__value">{addresses}</span>
+                        <span className="sidebar-popover__value">{GraphUtilities.formatUnknown(addresses)}</span>
                     </li>
                     <li className="sidebar-popover__item">
                         <span className="sidebar-popover__param">Capacity:</span>
@@ -310,33 +309,57 @@ export default React.createClass({
                         <span className="sidebar-popover__param"><a href={traceURL} target="_blank">View traceroute graph</a></span>
                     </li>
                 </ul>
-                <h4 className="sidebar-popover__heading">Host details</h4>
-                <ul className="sidebar-popover__list">
-                    <li className="sidebar-popover__item">
-                        <span className="sidebar-popover__param">OS:</span>
-                        <span className="sidebar-popover__value">{hostDetails["host-os-name"] + " " + hostDetails["host-os-version"]}</span>
-                    </li>
-                    <li className="sidebar-popover__item">
-                        <span className="sidebar-popover__param">VM:</span>
-                        <span className="sidebar-popover__value">{hostDetails["host-vm"]}</span>
-                    </li>
-                    <li className="sidebar-popover__item">
-                        <span className="sidebar-popover__param">pS Bundle and Version:</span>
-                        <span className="sidebar-popover__value">{hostDetails["pshost-bundle"] + " " + hostDetails["pshost-bundle-version"]}</span>
-                    </li>
-                    <li className="sidebar-popover__item">
-                        <span className="sidebar-popover__param">CPU Speed (cores)</span>
-                        <span className="sidebar-popover__value">{hostDetails["host-hardware-processorspeed"] + " (" + hostDetails["host-hardware-processorcore"] + ")"}</span>
-                    </li>
-                    <li className="sidebar-popover__item">
-                        <span className="sidebar-popover__param">RAM</span>
-                        <span className="sidebar-popover__value">{hostDetails["host-hardware-memory"]}</span>
-                    </li>
-                </ul>
+                {hostDetailsLayout}
             </div>
         </div>
         );
-        //<h4 className="sidebar-popover__heading">Host details</h4>
+    },
+    showHostLSDetails: function( hostDetails ) {
+        let hasHostDetails = true;
+        if ( typeof hostDetails == "undefined" ) {
+            hasHostDetails = false;
+        }
+
+        if ( !hasHostDetails ) {
+            return (
+                <div>
+                    <h4 className="sidebar-popover__heading">Host details</h4>
+                    <div>No host details were found in the lookup service for this host.</div>
+                </div>
+                );
+
+        } else {
+
+            return (
+                <div>
+                    <h4 className="sidebar-popover__heading">Host details</h4>
+                    <ul className="sidebar-popover__list">
+                        <li className="sidebar-popover__item">
+                            <span className="sidebar-popover__param">OS:</span>
+                            <span className="sidebar-popover__value">{hostDetails["host-os-name"] + " " + hostDetails["host-os-version"]}</span>
+                        </li>
+                        <li className="sidebar-popover__item">
+                            <span className="sidebar-popover__param">VM:</span>
+                            <span className="sidebar-popover__value">{GraphUtilities.formatBool(hostDetails["host-vm"] )}</span>
+                        </li>
+                        <li className="sidebar-popover__item">
+                            <span className="sidebar-popover__param">pS Bundle and Version:</span>
+                            <span className="sidebar-popover__value">{hostDetails["pshost-bundle"] + " " + hostDetails["pshost-bundle-version"]}</span>
+                        </li>
+                        <li className="sidebar-popover__item">
+                            <span className="sidebar-popover__param">CPU Speed (cores)</span>
+                            <span className="sidebar-popover__value">{GraphUtilities.formatSItoSI(hostDetails["host-hardware-processorspeed"][0], "G") + " (" + hostDetails["host-hardware-processorcore"][0] + ")"}</span>
+                        </li>
+                        <li className="sidebar-popover__item">
+                            <span className="sidebar-popover__param">RAM</span>
+                            <span className="sidebar-popover__value">{GraphUtilities.formatSItoSI(hostDetails["host-hardware-memory"][0], "G")}</span>
+                        </li>
+                    </ul>
+                </div>
+
+
+            );
+        }
 
     },
     componentDidMount: function() {
