@@ -1,9 +1,6 @@
 # Uncorrect JS detection by lintian, already reported to lintian devs.
 # see https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=744972
 # and https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=808756
-perfsonar-toolkit-graphs source: source-is-missing html/js/dygraph-combined.js
-perfsonar-toolkit-graphs source: source-is-missing html/js/d3.v3.min.js
-perfsonar-toolkit-graphs source: source-is-missing html/js/crossfilter.min.js
+perfsonar-toolkit-graphs source: source-is-missing react/public/bundle.js
 # These files are part of perfsonar-toolkit and a dependency to this package exists
 perfsonar-toolkit-graphs source: source-contains-unsafe-symlink react/css/font-awesome
-perfsonar-toolkit-graphs source: source-contains-unsafe-symlink html/css/font-awesome
