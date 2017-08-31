@@ -39,6 +39,7 @@ module.exports = {
      *  }
      */
     hostInfo: [],
+    hostLSInfo: [],
     tracerouteReqs: 0,
     tracerouteReqsCompleted: 0,
     tracerouteInfo: [],
@@ -74,7 +75,7 @@ module.exports = {
     _getURL( relative_url ) {
         return this.serverURLBase + relative_url;
     },
-    retrieveHostLSData: function( hostUUIDs, lsCacheURL ) {
+    retrieveHostLSInfo: function( hostUUIDs ) {
         if ( !Array.isArray( hostUUIDs ) ) {
             hostUUIDs = [ hostUUIDs ];
         }
@@ -103,68 +104,11 @@ module.exports = {
         };
         console.log("hostinfo query", query);
 
-        let preparedQuery = JSON.stringify( query );
-        console.log("hostinfo stringified query", preparedQuery);
+        let message = "hostInfoLS";
+        LSCacheStore.subscribeTag( this.handleHostLSInfoResponse.bind(this) , message );
+        LSCacheStore.queryLSCache( query, message );
 
 
-
-
-        $.ajax({
-            url: lsCacheURL,
-            data: preparedQuery,
-            dataType: 'json',
-            type: "POST"
-        })
-        .done(function(data, textStatus, jqXHR) {
-                    console("data from host request", data);
-                    //this.handleInterfaceInfoResponse( data );
-        }.bind(this))
-        .fail(function(data) {
-
-                    // if we get an error, try the cgi instead 
-                    // and set a new flag, useProxy  and make
-                    // all requests through the proxy CGI
-                    if ( data.status == 404 ) {
-                        console.log("got here!");
-                        this.useProxy = true;
-                        let url = this.getProxyURL( lsCacheURL );
-                        console.log("proxy URL", url);
-
-                        //query.action = "ls_cache_data";
-                        //query.url = lsCacheURL;
-                        preparedQuery = JSON.stringify( query );
-
-                        let postData = {
-                            "query": preparedQuery,
-                            "action": "ls_cache_data",
-                            "url": lsCacheURL
-
-                        };
-
-                        $.ajax({
-                            url: url,
-                            data: postData,
-                            dataType: 'json',
-                            type: "POST"
-                        })
-                            .done (function(data, textStatus, jsXHR) {
-                                console.log("query data!", data);
-                                this.handleInterfaceInfoResponse(data);
-                            }.bind(this))
-                            .fail (function( data ) {
-                                  this.handleInterfaceInfoError(data);
-                            }.bind(this));
-
-
-
-
-                        } else {
-                            console.log('fail jqXHR, textStatus, errorThrown', jqXHR, textStatus, errorThrown);
-                            this.handleInterfaceInfoError( data );
-
-                        }
-
-        }.bind(this));
 
     },
     retrieveHostInfo: function( source_input, dest_input, callback ) {
@@ -222,9 +166,19 @@ module.exports = {
     getHostInfoData: function( ) {
         return this.hostInfo;
     },
+    getHostLSInfo: function( ) {
+        return this.hostLSInfo;
+    },
     handleHostInfoResponse: function( data ) {
         this.hostInfo = data;
         emitter.emit("get");
+    },
+    handleHostLSInfoResponse: function( ) {
+        let data = LSCacheStore.getResponseData();
+        let message = "hostInfoLS";
+        console.log("message, host ls info response", message, data);
+        this.hostLSInfo = data;
+        emitter.emit( message );
     },
     handleTracerouteResponse: function( data, i ) {
         this.tracerouteReqsCompleted++;
@@ -248,6 +202,12 @@ module.exports = {
     },
     subscribe: function( callback ) {
         emitter.on("get", callback);
+    },
+    subscribeLSInfo: function( callback ) {
+        emitter.on("hostInfoLS", callback);
+    },
+    unsubscribeLSInfo: function( callback ) {
+        emitter.off("hostInfoLS", callback);
     },
     unsubscribe: function( callback ) {
         emitter.removeListener("get", callback);

@@ -33,6 +33,8 @@ export default React.createClass({
             summaryWindow: 3600,
             interfaceInfo: {},
             traceInfo: [],
+            hostLSInfo: [],
+            hostLSInfoObj: {},
             pageURL: window.location.href
         };
     },
@@ -218,8 +220,6 @@ export default React.createClass({
             if ( hostInfo.length > 0 || Object.keys(interfaceInfo).length > 0 ) {
                 for( var i in hostInfo ) {
                     let row = hostInfo[i];
-                    console.log("row something hostinfo", row);
-                    console.log("type", type);
                     hosts.push(
                             <div className="hostname" key={"hostname"+label+i}>{row[ type + "_host"]}</div>,
                             <div className="address" key={"ip"+label+i}>{row[ type + "_ip"]}</div>,
@@ -271,6 +271,16 @@ export default React.createClass({
                 interfaces.push(<div>{intf}</div>);
             }
         }
+
+        let uuid = details["client-uuid"][0];
+        let hostDetails = {};
+        let hostObj = this.state.hostLSInfoObj;
+        console.log("details", details);
+        console.log("uuid, hostObj", uuid, hostObj);
+        if ( uuid in hostObj ) {
+            hostDetails = hostObj[ uuid ];
+            console.log("hostDetails", hostDetails);
+        }
             {/* GRAPH: Detailed Host Info*/}
             return (
         <div>
@@ -300,6 +310,29 @@ export default React.createClass({
                         <span className="sidebar-popover__param"><a href={traceURL} target="_blank">View traceroute graph</a></span>
                     </li>
                 </ul>
+                <h4 className="sidebar-popover__heading">Host details</h4>
+                <ul className="sidebar-popover__list">
+                    <li className="sidebar-popover__item">
+                        <span className="sidebar-popover__param">OS:</span>
+                        <span className="sidebar-popover__value">{hostDetails["host-os-name"] + " " + hostDetails["host-os-version"]}</span>
+                    </li>
+                    <li className="sidebar-popover__item">
+                        <span className="sidebar-popover__param">VM:</span>
+                        <span className="sidebar-popover__value">{hostDetails["host-vm"]}</span>
+                    </li>
+                    <li className="sidebar-popover__item">
+                        <span className="sidebar-popover__param">pS Bundle and Version:</span>
+                        <span className="sidebar-popover__value">{hostDetails["pshost-bundle"] + " " + hostDetails["pshost-bundle-version"]}</span>
+                    </li>
+                    <li className="sidebar-popover__item">
+                        <span className="sidebar-popover__param">CPU Speed (cores)</span>
+                        <span className="sidebar-popover__value">{hostDetails["host-hardware-processorspeed"] + " (" + hostDetails["host-hardware-processorcore"] + ")"}</span>
+                    </li>
+                    <li className="sidebar-popover__item">
+                        <span className="sidebar-popover__param">RAM</span>
+                        <span className="sidebar-popover__value">{hostDetails["host-hardware-memory"]}</span>
+                    </li>
+                </ul>
             </div>
         </div>
         );
@@ -314,7 +347,6 @@ export default React.createClass({
         InterfaceInfoStore.subscribe( this.handleInterfaceData );
 
         console.log("sources/dests props", this.props.sources, this.props.dests );
-        //InterfaceInfoStore.retrieveInterfaceInfo( this.props.sources, this.props.dests );
         this.sources = this.props.sources;
         this.dests = this.props.dests;
 
@@ -322,9 +354,43 @@ export default React.createClass({
     handleInterfaceData: function() {
         let interfaceInfo = InterfaceInfoStore.getInterfaceInfo();
         console.log("handle interface data interfaceInfo", interfaceInfo);
+
+        let uuidObj = {};
+        for(var i in interfaceInfo) {
+            let row = interfaceInfo[i];
+            uuidObj[ row["client-uuid"] ] = true;
+        }
+        let uuids = Object.keys( uuidObj );
+
+        console.log("uuids!", uuids);
+
+
+        let callback = function() {
+            this.handleHostLSData( uuids );
+        }.bind(this);
+        //let message = "hostInfoLS";
+
+        HostInfoStore.subscribeLSInfo( callback );
+        HostInfoStore.retrieveHostLSInfo( uuids );
+
+
         this.setState({ interfaceInfo: interfaceInfo });
 
         this.updateChartHeader();
+
+    },
+    handleHostLSData: function() {
+        let hostLSInfo = HostInfoStore.getHostLSInfo();
+        let obj = {};
+        for(let i in hostLSInfo.hits.hits) {
+            let row = hostLSInfo.hits.hits[i]._source;
+            let uuid = row["client-uuid"];
+            obj[ uuid ] = row;
+
+        }
+        console.log("hostLSInfo", hostLSInfo);
+        console.log("hostLSInfoObj", obj);
+        this.setState({ hostLSInfo: hostLSInfo, hostLSInfoObj: obj });
 
     },
     componentWillUnmount: function() {
@@ -356,6 +422,7 @@ export default React.createClass({
             InterfaceInfoStore.retrieveInterfaceInfo( source_ips, dest_ips );
         };
         LSCacheStore.subscribeLSCaches( callback );
+
 
         this.forceUpdate();
 

@@ -81,6 +81,7 @@ module.exports = {
         console.log("stringified query", preparedQuery);
 
         console.log("lsCacheURL", lsCacheURL);
+        console.log("message", message);
 
         this.message = message;
 
@@ -97,7 +98,7 @@ module.exports = {
             type: "POST"
         })
         .done(function(data, textStatus, jqXHR) {
-                    console.log("data from posted request FIRST DONE SECTIONz", data);
+                    console.log("data from posted request FIRST DONE SECTION", data);
                     //this.handleInterfaceInfoResponse( data );
                     //this.handleLSCacheDataResponse( data, message );
                     successCallback( data );
