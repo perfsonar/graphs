@@ -18,7 +18,7 @@ let emitter = new EventEmitter();
 
 let moment = require('moment-timezone');
 
-var $ = require('jquery');
+import _ from "underscore";
 
 export default React.createClass({
     hostInfo: [],
@@ -263,7 +263,7 @@ export default React.createClass({
         }
         let addresses = [];
         let interfaces = [];
-        if ( $.isArray( details["interface-addresses"] ) ) {
+        if ( _.isArray( details["interface-addresses"] ) ) {
             for(var i in details["interface-addresses"]) {
                 let address = details["interface-addresses"][i];
                 addresses.push(<div>{address}</div>);

@@ -51,7 +51,7 @@ my $basedir = "$FindBin::Bin";
 
 my $cgi = new CGI;
 
-my $action = $cgi->param('action') || error("Missing required parameter \"action\", must specify data or tests", 400);
+my $action = $cgi->param('action') || error("Missing required parameter \"action\", must specify data, tests, etc.", 400);
 
 if ($action eq 'data'){
     get_data();

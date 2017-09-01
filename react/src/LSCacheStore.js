@@ -2,6 +2,7 @@ import GraphUtilities from "./GraphUtilities";
 
 let EventEmitter = require("events").EventEmitter;
 let emitter = new EventEmitter();
+let querystring = require('querystring');
 
 let axios = require("./axios-instance-config.js");
 
@@ -95,10 +96,10 @@ module.exports = {
         };
 
         axios({
-            url: lsCacheURL,
-            data: preparedQuery,
-            dataType: 'json',
-            method: "POST"
+            "url": lsCacheURL,
+            "data": preparedQuery,
+            "dataType": 'json',
+            "method": "POST"
         })
         .then(function( response ) {
             let data = response.data;
@@ -132,24 +133,25 @@ module.exports = {
                         let url = this.getProxyURL( lsCacheURL );
                         console.log("proxy URL", url);
 
-                        //query.action = "ls_cache_data";
-                        //query.url = lsCacheURL;
                         preparedQuery = JSON.stringify( query );
 
                         let postData = {
                             "query": preparedQuery,
                             "action": "ls_cache_data",
+                            "dataType": 'json',
                             "url": lsCacheURL
 
                         };
 
+                        let preparedData = JSON.stringify( postData );
+
                         axios({
                             url: url,
-                            data: postData,
-                            dataType: 'json',
+                            data: querystring.stringify(postData),
+//dataType: 'json',
                             method: "POST"
                         })
-                            .then(function(response) {
+                        .then(function(response) {
                                 let data = response.data;
                                 console.log("query data! SECOND DONE SECTIONz", data);
                                 //this.handleInterfaceInfoResponse(data);
