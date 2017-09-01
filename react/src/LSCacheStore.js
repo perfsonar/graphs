@@ -1,31 +1,13 @@
 import GraphUtilities from "./GraphUtilities";
 
-let EventEmitter = require('events').EventEmitter;
+let EventEmitter = require("events").EventEmitter;
 let emitter = new EventEmitter();
+
+let axios = require("./axios-instance-config.js");
 
 const lsCacheHostsURL = "cgi-bin/graphData.cgi?action=ls_cache_hosts";
 const lsQueryURL = "cgi-bin/graphData.cgi?action=interfaces";
-const proxyURL = '/perfsonar-graphs/cgi-bin/graphData.cgi?action=ls_cache_data&url=';
-
-if ( typeof window == "undefined" ) {
-    var $;
-    if ( typeof $ == "undefined" ) {
-        require("node-jsdom").env("", function(err, window) {
-            //var $;
-            if (err) {
-                console.error(err);
-                return;
-            }
-
-            $ = require("jquery")(window);
-        });
-    }
-
-} else {
-    $ = jQuery;
-}
-
-
+const proxyURL = "/perfsonar-graphs/cgi-bin/graphData.cgi?action=ls_cache_data&url=";
 
 /*
  * DESCRIPTION OF CLASS HERE
@@ -38,9 +20,11 @@ module.exports = {
     data: null,
 
     retrieveLSList: function() {
-        $.get( lsCacheHostsURL, function(data) {
-            console.log("lscachehosts", data);
-            this.handleLSListResponse( data );
+        axios.get( lsCacheHostsURL )
+             .then(function(response){
+                let data = response.data;
+                console.log("lscachehosts", data);
+                this.handleLSListResponse( data );
         }.bind(this));
     },
 
@@ -48,7 +32,7 @@ module.exports = {
         this.lsURLs = data;
         console.log("lsURLs", data);
         if ( typeof data == "undefined" || ! Array.isArray( data ) ) {
-            console.log("LS cache host data is invalid/missing");
+            console.log("LS cache host data is invalid/missingZ");
         } else if ( data.length > 0  ) {
             console.log("array of LS cache host data");
             this.lsCacheURL = data[0].url;
@@ -110,25 +94,39 @@ module.exports = {
 
         };
 
-        $.ajax({
+        axios({
             url: lsCacheURL,
             data: preparedQuery,
             dataType: 'json',
-            type: "POST"
+            method: "POST"
         })
-        .done(function(data, textStatus, jqXHR) {
-                    console.log("data from posted request FIRST DONE SECTION", data);
-                    //this.handleInterfaceInfoResponse( data );
-                    //this.handleLSCacheDataResponse( data, message );
-                    successCallback( data );
+        .then(function( response ) {
+            let data = response.data;
+            console.log("data from posted request FIRST DONE SECTION", data);
+            //this.handleInterfaceInfoResponse( data );
+            //this.handleLSCacheDataResponse( data, message );
+            successCallback( data );
 
         }.bind(this))
-        .fail(function(data) {
+        .catch(function(error) {
+            console.log("error", error);
 
-                    // if we get an error, try the cgi instead 
+            if (error.response) {
+                // The request was made and the server responded with a status code
+                // that falls out of the range of 2xx
+                console.log("response error", error.response.data);
+                console.log(error.response.status);
+                console.log(error.response.headers);
+            } else if (error.request) {
+                // The request was made but no response was received
+                // `error.request` is an instance of XMLHttpRequest in the browser and an instance of
+                // http.ClientRequest in node.js
+                console.log("request error", error.request);
+                    // if we get an error, try the cgi instead
                     // and set a new flag, useProxy  and make
                     // all requests through the proxy CGI
-                    if ( data.status == 404 ) {
+                    let request = error.request;
+                    if ( request.status == 0 ) {
                         console.log("got here!");
                         this.useProxy = true;
                         let url = this.getProxyURL( lsCacheURL );
@@ -145,22 +143,27 @@ module.exports = {
 
                         };
 
-                        $.ajax({
+                        axios({
                             url: url,
                             data: postData,
                             dataType: 'json',
-                            type: "POST"
+                            method: "POST"
                         })
-                            .done (function(data, textStatus, jsXHR) {
-                                console.log("query data! SECOND DONE SECTION", data);
+                            .then(function(response) {
+                                let data = response.data;
+                                console.log("query data! SECOND DONE SECTIONz", data);
                                 //this.handleInterfaceInfoResponse(data);
                                 //this.handleLSCacheDataResponse( data, message );
                                 successCallback( data );
                             }.bind(this))
-                            .fail (function( data ) {
-                                  this.handleInterfaceInfoError(data);
+                            .catch (function( data ) {
+                                  //this.handleInterfaceInfoError(data);
                             }.bind(this));
-
+            } else {
+                // Something happened in setting up the request that triggered an Error
+                console.log('Error', error.message);
+            }
+            console.log(error.config);
 
 
 

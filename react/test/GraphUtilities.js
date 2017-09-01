@@ -99,7 +99,10 @@ describe('GraphUtilities', function() {
     describe('formatSItoSI', function() {
         // create an array of hashes that contains the test values and expected results
         let expectedValues = {
-            "1GB":  [ "1 GB", "M" ] 
+            "1024 MB":   [ "1 GB", "M" ],
+            "1024 KHz":  [ "1 MHz", "K" ],
+            "0.5 MHz":   [ "512 KHz", "M" ],
+            "512 Mbps":  [ "0.5 Gbps", "M"] 
         };
 
         for(var val in expectedValues ) {
