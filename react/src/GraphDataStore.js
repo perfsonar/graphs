@@ -948,6 +948,7 @@ module.exports = {
 
                             // handle the throughput/retrans values
                             let newEvents = [];
+                            let newEventsTT = [];
                             for ( let reEvent of self.row.values.events() ) {
                                 if ( typeof reEvent == "undefined" || reEvent === null ) {
                                     return null;
@@ -962,8 +963,15 @@ module.exports = {
 
                                 let tputVal = tpItem.values.atTime( reEvent.timestamp() ).value();
 
-                                let newEvent = new Event(reEvent.timestamp(), { value: tputVal, retrans: retransVal }); 
+                                let eventValues = {
+                                    value: tputVal
+                                };
+                                if ( retransVal >= 1 ) {
+                                    eventValues.retrans = retransVal;
+                                }
+                                let newEvent = new Event( reEvent.timestamp(), eventValues );
                                 newEvents.push( newEvent );
+
                             }
                             const series = new TimeSeries({
                                 name: "Retransmits",
