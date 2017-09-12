@@ -2,27 +2,9 @@ var EventEmitter = require('events').EventEmitter;
 
 var emitter = new EventEmitter();
 
+import _ from "underscore";
+
 import LSCacheStore from "./LSCacheStore.js";
-
-if ( typeof window == "undefined" ) {
-    var $;
-    if ( typeof $ == "undefined" ) {
-        require("node-jsdom").env("", function(err, window) {
-            //var $;
-            if (err) {
-                console.error(err);
-                return;
-            }
-
-            $ = require("jquery")(window);
-        });
-    }
-
-} else {
-    $ = jQuery;
-}
-
-
 
 module.exports = {
 
@@ -48,10 +30,10 @@ module.exports = {
     retrieveTracerouteData: function ( sources, dests, ma_url ) {
         let baseUrl = "cgi-bin/graphData.cgi?action=has_traceroute_data";
         baseUrl += "&url=" + ma_url;
-        if ( !$.isArray( sources ) ) {
+        if ( !_.isArray( sources ) ) {
             sources = [ sources ];
         }
-        if ( !$.isArray( dests ) ) {
+        if ( !_.isArray( dests ) ) {
             dests = [ dests ];
         }
         for( let i in sources ) {
@@ -152,7 +134,7 @@ module.exports = {
                         errorThrown: errorThrown
                     };
 
-                    if ( $.isFunction( callback ) ) {
+                    if ( _.isFunction( callback ) ) {
                         callback( errorObj );
                     }
 
