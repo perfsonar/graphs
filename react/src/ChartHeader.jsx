@@ -1,12 +1,12 @@
 import React from "react";
 
-import LSCacheStore from "./LSCacheStore";
+import LSCacheStore from "./shared/LSCacheStore";
 
-import HostInfoStore from "./HostInfoStore";
+import HostInfoStore from "./shared/HostInfoStore";
 
-import InterfaceInfoStore from "./InterfaceInfoStore";
+import InterfaceInfoStore from "./shared/InterfaceInfoStore";
 
-import GraphUtilities from "./GraphUtilities";
+import GraphUtilities from "./shared/GraphUtilities";
 
 import SIValue from "./SIValue";
 

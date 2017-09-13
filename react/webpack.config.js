@@ -1,10 +1,21 @@
 var webpack = require('webpack');
 require('es6-promise').polyfill()
+var SplitByPathPlugin = require('webpack-split-by-path');
+
 
 var plugins = [
   new webpack.DefinePlugin({
     'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV)
-  })
+  }),
+  new SplitByPathPlugin([
+      {
+        name: 'ps-shared',
+        path: __dirname + '/src/shared'
+      },
+      {
+      manifest: 'app-entry'
+      }
+    ])
 ];
 
 if (process.env.COMPRESS) {
@@ -32,12 +43,22 @@ module.exports = {
         port: 8080,
         open: 'src/main.jsx'
     },
-    entry: "./src/main.jsx",
+
+    //entry: "./src/main.jsx",
+
+    entry: {
+            bundle: './src/main.jsx',
+            //'shared': './src/shared.js',
+            },
+
     node: {
         fs: "empty"
     },
     output: {
-        filename: './public/bundle.js'
+        //filename: './public/bundle.js'
+        path: __dirname + '/public',
+        filename: "[name].js",
+        chunkFilename: "[name].js"
     },
 
     module: {
@@ -77,5 +98,7 @@ module.exports = {
 
     resolve: {
         extensions: ["", ".js", ".jsx", ".json"]
-    }
+    },
+
+    plugins: plugins
 };

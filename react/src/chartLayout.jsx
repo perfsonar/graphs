@@ -3,8 +3,8 @@ import _ from "underscore";
 
 import Chart1 from "./chart1.jsx";
 import ChartHeader from "./ChartHeader";
-import HostInfoStore from "./HostInfoStore";
-import GraphUtilities from "./GraphUtilities";
+import HostInfoStore from "./shared/HostInfoStore";
+import GraphUtilities from "./shared/GraphUtilities";
 //import GraphDataStore from "./GraphDataStore";
 
 import "../css/graphs.css";

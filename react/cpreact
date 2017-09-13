@@ -1,2 +1,4 @@
 #!/bin/bash
-cp -R public/* ../html/public/
+cp -Rf public/* ../html/public/
+cp -f public/index.html ../html/
+

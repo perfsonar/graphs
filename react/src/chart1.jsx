@@ -3,13 +3,12 @@ import _ from "underscore";
 import moment from "moment";
 import Markdown from "react-markdown";
 import GraphDataStore from "./GraphDataStore";
-import GraphUtilities from "./GraphUtilities";
+import GraphUtilities from "./shared/GraphUtilities";
 import d3 from "d3";
 
 import { AreaChart, Brush, Charts, ChartContainer, ChartRow, YAxis, LineChart, ScatterChart, Highlighter, Resizable, Legend, styler } from "react-timeseries-charts";
 
 import { TimeSeries, TimeRange, Event } from "pondjs";
-import { Pipeline } from "pondjs";
 
 import SIValue from "./SIValue";
 import "./chart1.css";
