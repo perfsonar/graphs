@@ -23,6 +23,7 @@ html/images/uparrow.png
 html/public/bundle.js
 html/public/ps-shared.js
 html/public/manifest.js
+html/public/vendor.js
 html/public/jquery/2.0.3/jquery.js
 html/public/jquery/2.0.3/jquery.min.js
 html/public/css/font-awesome/css/font-awesome.min.css

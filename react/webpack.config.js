@@ -13,6 +13,10 @@ var plugins = [
         path: __dirname + '/src/shared'
       },
       {
+        name: 'vendor',
+        path: __dirname + '/node_modules'
+      },
+      {
       manifest: 'app-entry'
       }
     ])
