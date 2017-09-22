@@ -1,6 +1,6 @@
 import chai from 'chai';
 var assert = chai.assert;
-import GraphUtilities from "../src/GraphUtilities";
+import GraphUtilities from "../js-shared/lib/Utils/GraphUtilities";
 
 // Unit tests for GraphUtilities.getTimezone() function
 describe('GraphUtilities', function() {

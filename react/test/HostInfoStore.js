@@ -1,7 +1,7 @@
 import chai from 'chai';
 var assert = chai.assert;
 
-import HostInfoStore from "../src/HostInfoStore";
+import HostInfoStore from "../js-shared/lib/DataStores/HostInfoStore";
 
 var nock = require('nock');
 

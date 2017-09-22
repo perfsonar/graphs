@@ -1,6 +1,7 @@
 var webpack = require('webpack');
 require('es6-promise').polyfill()
 var SplitByPathPlugin = require('webpack-split-by-path');
+var path = require("path");
 
 
 var plugins = [
@@ -10,7 +11,7 @@ var plugins = [
   new SplitByPathPlugin([
       {
         name: 'ps-shared',
-        path: __dirname + '/src/shared'
+        path: __dirname + '/js-shared'
       },
       {
         name: 'vendor',
@@ -71,6 +72,7 @@ module.exports = {
                 //loader: 'babel-loader',
                 loader: ( PRODUCTION ? 'babel-loader!webpack-strip?strip[]=console.log' : 'babel-loader' ),
                 exclude: [/node_modules/],
+                //include: includePaths
                 //query: {
                     //presets: ["es2015", "react", "stage-0"]
                 //}
@@ -102,6 +104,16 @@ module.exports = {
 
     resolve: {
         extensions: ["", ".js", ".jsx", ".json"]
+        ,
+        symlinks: false,
+        resolveLoader: {
+              root: path.join(__dirname, 'node_modules')
+        }
+
+        , modules: [    path.resolve(__dirname) + "/node_modules",
+                        path.resolve(__dirname) + '/js-shared' 
+                    ]
+
     },
 
     plugins: plugins

@@ -4,3 +4,6 @@
 [submodule "toolkit"]
 	path = toolkit
 	url = https://github.com/perfsonar/toolkit
+[submodule "js-shared"]
+	path = js-shared
+	url = https://github.com/perfsonar/js-shared
