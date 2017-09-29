@@ -40,9 +40,11 @@ module.exports = {
     tracerouteInfo: [],
     serverURLBase: "",
 
-    retrieveTracerouteData: function ( sources, dests, ma_url ) {
+    retrieveTracerouteData: function ( sources, dests, ma_urls ) {
         let baseUrl = "cgi-bin/graphData.cgi?action=has_traceroute_data";
-        baseUrl += "&url=" + ma_url;
+        if ( !$.isArray( ma_urls ) ) {
+            ma_urls = [ ma_urls ];
+        }
         if ( !$.isArray( sources ) ) {
             sources = [ sources ];
         }
@@ -50,10 +52,13 @@ module.exports = {
             dests = [ dests ];
         }
         for( let i in sources ) {
+            let ma = ma_urls[i];
             let src = sources[i];
             let dst = dests[i];
 
-            let url = baseUrl + "&source=" + src;
+            let url = baseUrl;
+            url += "&url=" + ma;
+            url += "&source=" + src;
             url += "&dest=" + dst
 
             this.tracerouteReqs = sources.length;

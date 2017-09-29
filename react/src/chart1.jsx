@@ -9,6 +9,7 @@ import d3 from "d3";
 import { AreaChart, Brush, Charts, ChartContainer, ChartRow, YAxis, LineChart, ScatterChart, Highlighter, Resizable, Legend, styler } from "react-timeseries-charts";
 
 import { TimeSeries, TimeRange, Event } from "pondjs";
+import { Pipeline } from "pondjs";
 
 import SIValue from "./SIValue";
 import "./chart1.css";
@@ -684,12 +685,18 @@ export default React.createClass({
                     let retransVal = "";
                     if ( retransData.length > 0 ) {
                         retransVal = retransData[0].value;
+                    } else {
+                        retransVal = "";
 
                     }
 
                     let retransLabel = "";
-                    if ( ( typeof retransVal != "undefined" ) && retransVal != "" ) {
+                    if ( ( typeof retransVal ) != "undefined" && retransVal != "" && retransVal != null ) {
                         retransLabel += "; retrans: " + retransVal;
+
+                    } else {
+                        retransVal = "";
+                        retransLabel = "";
 
                     }
 
@@ -990,9 +997,13 @@ export default React.createClass({
 
                 for(let i in data) {
                     let row = data[i];
-                    if ( typeof( row ) == "undefined" || typeof ( row.values ) == "undefined" ) {
-                        continue;
+                    if ( typeof( row ) == "undefined" || 
+                         typeof ( row.values ) == "undefined" || 
+                         typeof( row.values.range() ) == "undefined" || 
+                         typeof( row.values.range().begin() ) == "undefined" 
+                       ) {
 
+                           continue;
                     }
 
                     let range = row.values.range();
@@ -1002,9 +1013,9 @@ export default React.createClass({
                     // begin doesn't seem to need the slip, since it snaps left
                     //begin = begin - slip;
                     end = end + slip;
-                    if ( row.properties.eventType != "failures" &&
-                         row.properties.eventType != "packet-retransmits" &&
-                           ( begin > +tracker || end < +tracker ) ) {
+                    if ( ( row.properties.eventType != "failures" ) &&
+                         ( row.properties.eventType != "packet-retransmits" ) &&
+                         ( begin > +tracker || end < +tracker ) ) {
                         continue;
                     }
 
@@ -1013,7 +1024,8 @@ export default React.createClass({
                     if ( typeof valAtTime != "undefined" ) {
                         value = valAtTime.value();
                     } else {
-                        continue;
+                        //continue;
+                        value = 0;
                     }
 
                     let eventType = row.properties.eventType;
@@ -1024,9 +1036,13 @@ export default React.createClass({
                         protocol = "";
                     }
 
+                    let time = valAtTime.timestamp();
                     if ( eventType == "packet-retransmits" ) {
                         // retrieve the trans instead of value
                         value = valAtTime.value("retrans");
+                        if ( Math.abs( time - tracker ) > slip / 2 ) {
+                            continue;
+                        }
 
                     }
 
@@ -1037,7 +1053,6 @@ export default React.createClass({
                     sortKey += "tracker";
                     let name = type + ipv + "tracker";
                     //let time = +tracker;
-                    let time = valAtTime.timestamp();
                     if ( typeof trackerValues[type][ipv] == "undefined" ) {
                         trackerValues[type][ipv] = [];
                     }
@@ -1236,6 +1251,7 @@ export default React.createClass({
                             }
 
                             if ( esmondName == "packet-retransmits" ) {
+
                                 charts[type][ipv].push(
                                         <ScatterChart
                                             key={type + "retrans" + Math.floor( Math.random() )}
