@@ -21,8 +21,8 @@ html/images/header.gif
 html/images/logo.png
 html/images/uparrow.png
 html/public/bundle.js
-html/public/jquery/2.0.3/jquery.js
-html/public/jquery/2.0.3/jquery.min.js
+html/public/jquery/dist/jquery.js
+html/public/jquery/dist/jquery.min.js
 html/public/css/font-awesome/css/font-awesome.min.css
 html/public/css/font-awesome/fonts/FontAwesome.otf
 html/public/css/font-awesome/fonts/fontawesome-webfont.eot
