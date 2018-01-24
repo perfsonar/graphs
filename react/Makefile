@@ -37,6 +37,7 @@ clean-deps:
 
 deploy:
 	find public/ -maxdepth 1 -type f -exec cp "{}" ../html/public/ \;
+	cp -R public/jquery ../html/public
 
 setup:
 	npm install webpack
