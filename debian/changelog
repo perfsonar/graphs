@@ -1,8 +1,14 @@
-perfsonar-toolkit-graphs (4.0.2.1-1~bpo70+1) perfsonar-wheezy-release; urgency=low
+perfsonar-toolkit-graphs (4.0.2.1-2~bpo70+1) perfsonar-wheezy-release; urgency=low
 
   * Backport to Wheezy.
 
- -- Antoine Delvaux <antoine.delvaux@man.poznan.pl>  Tue, 06 Feb 2018 22:33:22 +0000
+ -- Antoine Delvaux <antoine.delvaux@man.poznan.pl>  Tue, 13 Feb 2018 11:43:50 +0000
+
+perfsonar-toolkit-graphs (4.0.2.1-2) perfsonar-jessie-release; urgency=low
+
+  * Correcting jQuery packaging.
+
+ -- Antoine Delvaux <antoine.delvaux@man.poznan.pl>  Tue, 13 Feb 2018 11:41:49 +0000
 
 perfsonar-toolkit-graphs (4.0.2.1-1) perfsonar-jessie-release; urgency=low
 
