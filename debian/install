@@ -2,3 +2,4 @@ etc/apache-perfsonar-graphs.conf etc/apache2/conf-available/
 etc/*.yml usr/lib/perfsonar/graphs/etc
 cgi-bin usr/lib/perfsonar/graphs
 html usr/lib/perfsonar/graphs
+react/public/jquery usr/lib/perfsonar/graphs/html/public
