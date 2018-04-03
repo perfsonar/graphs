@@ -4,10 +4,10 @@
 # cron/apache entries are located in the 'etc' directory
 %define apacheconf apache-perfsonar-graphs.conf 
 
-%define relnum   1 
+%define relnum   0.0.a1 
 
 Name:			perfsonar-graphs
-Version:		4.0.2.1
+Version:		4.1
 Release:		%{relnum}%{?dist}
 Summary:		perfSONAR Graphs
 License:		Distributable, see LICENSE
@@ -47,7 +47,6 @@ Requires:		httpd
 Requires:		libperfsonar-perl
 Requires:		libperfsonar-esmond-perl
 Requires:		libperfsonar-sls-perl
-Requires:		libperfsonar-toolkit-perl
 Requires:		perfsonar-traceroute-viewer
 Obsoletes:		perl-perfSONAR_PS-serviceTest
 Obsoletes:		perl-perfSONAR-graphs
