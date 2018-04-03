@@ -128,7 +128,6 @@ module.exports = {
                     }
                 }
 
-                //url += "&time-start=" + start + "&time-end=" + end; //TODO: add this back?
 
                 url = this.getMAURL( url );
 
@@ -313,7 +312,7 @@ module.exports = {
 
                     let addr = ipaddr.parse( source );
 
-                    let url = this.parseUrl( maURL ).origin + datum.uri;
+                    let url = this.parseUrl( maURL ).origin;
 
                     let ipversion;
                     if ( ipaddr.isValid( source ) ) {
@@ -363,9 +362,6 @@ module.exports = {
                         let win = $.grep( summaries, function( summary, k ) {
                             return summary["summary-type"] == summaryType && summary["summary-window"] == that.summaryWindow;
                         });
-
-                        // TODO: add ability to use aggregates
-                        // HERE NOW!
 
                         // TODO: allow lower summary windows
                         if ( win.length > 1 ) {
