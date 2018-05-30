@@ -10,7 +10,7 @@ Name:			perfsonar-graphs
 Version:		4.1
 Release:		%{relnum}%{?dist}
 Summary:		perfSONAR Graphs
-License:		Distributable, see LICENSE
+License:		ASL 2.0
 Group:			Development/Libraries
 URL:			http://www.perfsonar.net
 Source0:		perfsonar-graphs-%{version}.%{relnum}.tar.gz
@@ -88,6 +88,7 @@ service httpd restart &> /dev/null || :
 
 %files
 %defattr(-,perfsonar,perfsonar,-)
+%license LICENSE
 %config %{install_base}/etc/*
 %{install_base}/cgi-bin/*
 %{install_base}/html/*
