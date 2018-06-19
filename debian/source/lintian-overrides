@@ -2,5 +2,6 @@
 # see https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=744972
 # and https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=808756
 perfsonar-toolkit-graphs source: source-is-missing react/public/bundle.js*
+perfsonar-toolkit-graphs source: source-is-missing html/public/bundle.js*
 # These files are part of perfsonar-toolkit and a dependency to this package exists
 perfsonar-toolkit-graphs source: source-contains-unsafe-symlink react/css/font-awesome
