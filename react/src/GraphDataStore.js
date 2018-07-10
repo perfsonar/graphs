@@ -56,18 +56,27 @@ module.exports = {
 
     },
 
-    getHostPairMetadata: function ( sources, dests, startInput, endInput, ma_url, params, summaryWindow ) {
+    getHostPairMetadata: function ( sources, dests,  displaysetsrc, displaysetdest, startInput, endInput, ma_url, params, summaryWindow ) {
         start = startInput;
         end = endInput;
-
+        let src_is_displayset = 0;
+        let dest_is_displayset = 0;
+        
         this.initVars();
 
         this.summaryWindow = summaryWindow;
-
-        if ( !$.isArray( sources ) ) {
+        
+        if ( displaysetsrc !== null && typeof displaysetsrc != "undefined" ) {
+            sources = [ displaysetsrc ];
+            src_is_displayset = 1;
+        }else if ( !$.isArray( sources ) ) {
             sources = [ sources ];
         }
-        if ( !$.isArray( dests ) ) {
+        
+        if ( displaysetdest !== null && typeof displaysetdest != "undefined" ) {
+            dests = [ displaysetdest ];
+            dest_is_displayset = 1;
+        }else if ( !$.isArray( dests ) ) {
             dests = [ dests ];
         }
 
@@ -88,14 +97,27 @@ module.exports = {
 
 
         for( let i in sources ) {
-            let directions = [ [ sources[i], dests[i] ],
-                [ dests[i], sources[i] ] ];
+            let directions = [ [ sources[i], dests[i], src_is_displayset,  dest_is_displayset],
+                [ dests[i], sources[i], dest_is_displayset, src_is_displayset] ];
             let direction = [ "forward", "reverse" ];
             for( let j in directions ) {
                 let src = directions[j][0];
                 let dst = directions[j][1];
-
-                let url = ma_url[i] + "?source=" + src + "&destination=" + dst;
+                let use_displaysetsrc = directions[j][2];
+                let use_displaysetdest = directions[j][3];
+                
+                let url = ma_url[i];
+                if(use_displaysetsrc){
+                    url += "?displaysetsrc=" + src;
+                }else{
+                    url += "?source=" + src;
+                }
+                if(use_displaysetdest){
+                    url += "displaysetdest=" + dst;
+                }else{
+                    url += "&destination=" + dst;
+                }
+                console.log("url=" + url);
 
                 if ( params !== null && typeof params != "undefined" ) {
                     for(let name in params) {

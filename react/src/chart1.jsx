@@ -1717,7 +1717,9 @@ export default React.createClass({
         let tool = this.props.tool;
         let ipversion = this.props.ipversion;
         let agent = this.props.agent;
-
+        let displaysetsrc = this.props.displaysetsrc;
+        let displaysetdest = this.props.displaysetdest;
+        
         let summaryWindow = this.props.summaryWindow;
 
         let params = {
@@ -1727,7 +1729,7 @@ export default React.createClass({
         };
         this.setState({params: params, loading: true, initialLoading: true});
         let ma_url = this.props.ma_url || location.origin + "/esmond/perfsonar/archive/";
-        this.getDataFromMA(src, dst, start, end, ma_url, params, summaryWindow);
+        this.getDataFromMA(src, dst, displaysetsrc, displaysetdest, start, end, ma_url, params, summaryWindow);
 
     },
 
@@ -1735,7 +1737,7 @@ export default React.createClass({
 
     },
 
-    getDataFromMA: function(src, dst, start, end, ma_url, params, summaryWindow ) {
+    getDataFromMA: function(src, dst, start, displaysetsrc, displaysetdest, end, ma_url, params, summaryWindow ) {
         this.setState({loading: true, dataloaded: false});
 
         GraphDataStore.subscribe(this.updateChartData);
@@ -1747,7 +1749,7 @@ export default React.createClass({
         // If there are no parameters, we haven't filled them in yet so we don't make the call
 
         if ( typeof params != "undefined" ) {
-            GraphDataStore.getHostPairMetadata( src, dst, start, end, ma_url, params, summaryWindow );
+            GraphDataStore.getHostPairMetadata( src, dst, displaysetsrc, displaysetdest, start, end, ma_url, params, summaryWindow );
         }
     },
     dataError: function() {

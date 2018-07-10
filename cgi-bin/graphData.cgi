@@ -129,7 +129,6 @@ sub get_ma_data {
 }
 
 sub get_data {
-
     my $summary_window;
     my $window = $cgi->param('window');
     my @valid_windows = (0, 60, 300, 3600, 86400);
@@ -144,23 +143,30 @@ sub get_data {
     my @tools       = cgi_multi_param('tool');
     my @protocols   = cgi_multi_param('protocol');
     my @filters     = cgi_multi_param('filter');
-
+    
     my $start       = $cgi->param('start')   || error("Missing required parameter \"start\"", 400);
     my $end         = $cgi->param('end')     || error("Missing required parameter \"end\"", 400);
-
-    if (@sources == 0 || @sources != @dests || @sources != @urls){
-	error("There must be an equal non-zero amount of src, dest, and url options passed.", 400);
+    my $displayset_source = $cgi->param('displaysetsrc');
+    my $displayset_dest   = $cgi->param('displaysetdest');
+    
+    if (!$displayset_source && !$displayset_dest && (@sources == 0 || @sources != @dests || @sources != @urls)){
+	    error("There must be an equal non-zero amount of src, dest, and url options passed.", 400);
+    }elsif($displayset_source && !$displayset_dest && (@sources != 0 || @dests != 1)){
+        error("There must be no source parameter and a single dest or displaysetdest parameter when using displaysetsrc.", 400);
+    }elsif($displayset_dest && !$displayset_source && (@dests != 0 || @sources != 1)){
+        error("There must be no dest parameter and a single source or displaysetsrc parameter when using displaysetdest.", 400);
     }
+
 
     if ( !is_web_url( { address => \@urls} ) ) {
         error("Invalid URL specified", 400);
     }
 
-    if ( !is_ip_or_hostname( {address => \@sources} ) ) {
+    if ( !$displayset_source && !is_ip_or_hostname( {address => \@sources} ) ) {
         error("Invalid source ip address specified", 400);
     }
 
-    if ( !is_ip_or_hostname( {address => \@dests} ) ) {
+    if ( !$displayset_dest && !is_ip_or_hostname( {address => \@dests} ) ) {
         error("Invalid destination ip address specified", 400);
     }
 
@@ -176,47 +182,95 @@ sub get_data {
     my %types_to_ignore = ();
 
     my @threads;
+    
+    if($displayset_source || $displayset_dest){
+        my $test_src = @sources > 0 ? $sources[0] : undef;
+        my $test_dest = @dests > 0 ? $dests[0] : undef;
+        my $thread = threads->create(\&_get_test_data,
+            $test_src,
+            $test_dest,
+            $displayset_source,
+            $displayset_dest,
+            $start,
+            $end,
+            $summary_window,
+            $urls[0],
+            $ipversions[0],
+            $agents[0],
+            $tools[0],
+            $protocols[0],
+            $filters[0],
+            \@base_event_types,
+            \@mapped_event_types,
+            \%types_to_ignore
+        );
+        push(@threads, $thread);
+        
+        my $thread_rev = threads->create(\&_get_test_data,
+            $test_dest,
+            $test_src,
+            $displayset_dest,
+            $displayset_source,
+            $start,
+            $end,
+            $summary_window,
+            $urls[0],
+            $ipversions[0],
+            $agents[0],
+            $tools[0],
+            $protocols[0],
+            $filters[0],
+            \@base_event_types,
+            \@mapped_event_types,
+            \%types_to_ignore
+        );
+        push(@threads, $thread_rev);
+    }else{
+        for (my $j = 0; $j < @sources; $j++){
+            foreach my $ordered ([$sources[$j], $dests[$j]], [$dests[$j], $sources[$j]]){
+                my ($test_src, $test_dest) = @$ordered;
 
-    for (my $j = 0; $j < @sources; $j++){
-        foreach my $ordered ([$sources[$j], $dests[$j]], [$dests[$j], $sources[$j]]){
-            my ($test_src, $test_dest) = @$ordered;
+                my $thread = threads->create(\&_get_test_data,
+                    $test_src,
+                    $test_dest,
+                    undef,
+                    undef,
+                    $start,
+                    $end,
+                    $summary_window,
+                    $urls[$j],
+                    $ipversions[$j],
+                    $agents[$j],
+                    $tools[$j],
+                    $protocols[$j],
+                    $filters[$j],
+                    \@base_event_types,
+                    \@mapped_event_types,
+                    \%types_to_ignore
+                );
 
-            my $thread = threads->create(\&_get_test_data,
-                $test_src,
-                $test_dest,
-                $start,
-                $end,
-                $summary_window,
-                $urls[$j],
-                $ipversions[$j],
-                $agents[$j],
-                $tools[$j],
-                $protocols[$j],
-                $filters[$j],
-                \@base_event_types,
-                \@mapped_event_types,
-                \%types_to_ignore
-            );
-
-            push(@threads, $thread);
+                push(@threads, $thread);
+            }
         }
     }
-
+    
+    my $displayset_map = {};
     foreach my $thread (@threads){
     	my $ret_array = $thread->join();
     	#error("Error fetching data") if (! $ret_array);	#do not throw error if a thread fails.
-
+        
     	foreach my $ret (@$ret_array){
 
-            my $test_src        = $ret->{'test_src'};
-            my $test_dest       = $ret->{'test_dest'};
+            my $test_src        = $ret->{'test_src'} ? $ret->{'test_src'} : $ret->{'input_source'};
+            my $test_dest       = $ret->{'test_dest'} ? $ret->{'test_dest'} : $ret->{'input_dest'};
             my $multiple_values = $ret->{'multiple_values'};
             my $remapped_name   = $ret->{'remapped_name'};
             my @data_points     = @{$ret->{'data'}};
             my @summary_fields  = @{$ret->{'summary_fields'}};
             my %additional_data = %{$ret->{'additional_data'}};
-
-
+            $displayset_map->{$test_src} = $ret->{'displayset_src'} if($ret->{'displayset_src'});
+            $displayset_map->{$test_dest} = $ret->{'displayset_dest'} if($ret->{'displayset_dest'});
+            
             if (!$multiple_values) {
                 if (exists($results{$test_src}{$test_dest}{$remapped_name}) && @{$results{$test_src}{$test_dest}{$remapped_name}} > 0) { 
                     my @existing_data_points = @{$results{$test_src}{$test_dest}{$remapped_name}};
@@ -237,23 +291,27 @@ sub get_data {
                     }
                 }
             }
-
-
-
     	}
     }
-
+    
     # CONSOLIDATE ALL TESTS IN ONE DATASTRUCTURE
     my %consolidated;
-
     while (my ($src, $values) = each %results) {
         while (my ($dst, $result_types) = each %$values) {
 
             foreach my $type (@mapped_event_types) {
                 next if $types_to_ignore{$type};
 
-                my $src_was_orig_src = grep {$_ eq $src} @sources;
-                my $dst_was_orig_src = grep {$_ eq $dst} @sources;
+                my $src_was_orig_src = 0;
+                my $dst_was_orig_src = 0;
+                if($displayset_source){
+                    $src_was_orig_src = $displayset_map->{$src} eq $displayset_source ? 1 : 0;
+                    $dst_was_orig_src = $displayset_map->{$dst} eq $displayset_source ? 1 : 0;
+                }else{
+                    $src_was_orig_src = grep {$_ eq $src} @sources;
+                    $dst_was_orig_src = grep {$_ eq $dst} @sources;
+                }
+                 
 
                 my $data_set;
                 my $key_prefix;
@@ -302,6 +360,8 @@ sub get_data {
 sub _get_test_data {
     my $test_src           = shift;
     my $test_dest          = shift;
+    my $displayset_src     = shift;
+    my $displayset_dest    = shift;
     my $start              = shift;
     my $end                = shift;
     my $summary_window     = shift;
@@ -318,8 +378,16 @@ sub _get_test_data {
     my @mapped_event_types = @$mapped_event_types;
 
     my $filter = new perfSONAR_PS::Client::Esmond::ApiFilters();
-    $filter->source($test_src);
-    $filter->destination($test_dest);
+    if($displayset_src){
+        $filter->{metadata_filters}->{'pscheduler-reference-display-set-source'} = $displayset_src;
+    }else{
+        $filter->source($test_src);
+    }
+    if($displayset_dest){
+        $filter->{metadata_filters}->{'pscheduler-reference-display-set-dest'} = $displayset_dest;
+    }else{
+        $filter->destination($test_dest);
+    }
     $filter->measurement_agent($agent) if($agent);
     $filter->tool_name($tool) if($tool);
     $filter->time_start($start) if ($start);
@@ -341,7 +409,6 @@ sub _get_test_data {
         }
     }
 
-
     my $client = new perfSONAR_PS::Client::Esmond::ApiConnect(url     => $url,
 							      filters => $filter);
 
@@ -353,7 +420,8 @@ sub _get_test_data {
     }
 
     my @return_values;
-
+    
+    
     foreach my $metadatum (@$metadata) {
         for (my $i = 0; $i < @$base_event_types; $i++){
             my $event_type = $base_event_types->[$i];
@@ -404,8 +472,7 @@ sub _get_test_data {
                 $multiple_values = 1;
                 @summary_fields = ('error', 'error_tool');
                 $data = $event->get_data();
-            }
-            else {
+            } else {
                 if ($event_type eq 'packet-loss-rate') {
                     $summary_type = 'aggregation';
                     my $req_summary_window = select_summary_window($event_type, $summary_type, $summary_window, $event);
@@ -468,6 +535,10 @@ sub _get_test_data {
             push(@return_values,  {
                     test_src           => $test_src,
                     test_dest          => $test_dest,
+                    displayset_src     => $displayset_src,
+                    displayset_dest    => $displayset_dest,
+                    input_source       => $source_host,
+                    input_dest         => $destination_host,
                     data               => \@data_points,
                     multiple_values    => $multiple_values,
                     remapped_name      => $remapped_name,
