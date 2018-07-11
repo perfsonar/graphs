@@ -142,6 +142,8 @@ export default React.createClass({
             title: text,
             src: newState.src,
             dst: newState.dst,
+            displaysetsrc: newState.displaysetsrc,
+            displaysetdest: newState.displaysetdest,
             start: newState.start,
             end: newState.end,
             timeframe: newState.timeframe,
@@ -341,6 +343,8 @@ export default React.createClass({
                                     <Chart1
                                         src={this.state.src}
                                         dst={this.state.dst}
+                                        displaysetsrc={this.state.displaysetsrc}
+                                        displaysetdest={this.state.displaysetdest}
                                         start={this.state.start}
                                         end={this.state.end}
                                         summaryWindow={this.state.summaryWindow}
@@ -449,6 +453,8 @@ export default React.createClass({
 
         let src = qs.source;
         let dst = qs.dest;
+        let displaysetsrc = qs.displaysetsrc;
+        let displaysetdest = qs.displaysetdest;
         let start = defaults.start;
         let end = defaults.end;
         let timeframe = defaults.timeframe;
@@ -584,6 +590,8 @@ export default React.createClass({
         const newState = {
             src:    src,
             dst:    dst,
+            displaysetsrc:    displaysetsrc,
+            displaysetdest:    displaysetdest,
             start:  start,
             end:    end,
             ma_url: ma_urls,

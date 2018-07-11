@@ -108,16 +108,15 @@ module.exports = {
                 
                 let url = ma_url[i];
                 if(use_displaysetsrc){
-                    url += "?displaysetsrc=" + src;
+                    url += "?pscheduler-reference-display-set-source=" + src;
                 }else{
                     url += "?source=" + src;
                 }
                 if(use_displaysetdest){
-                    url += "displaysetdest=" + dst;
+                    url += "&pscheduler-reference-display-set-dest=" + dst;
                 }else{
                     url += "&destination=" + dst;
                 }
-                console.log("url=" + url);
 
                 if ( params !== null && typeof params != "undefined" ) {
                     for(let name in params) {

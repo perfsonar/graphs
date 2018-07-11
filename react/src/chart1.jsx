@@ -1737,7 +1737,7 @@ export default React.createClass({
 
     },
 
-    getDataFromMA: function(src, dst, start, displaysetsrc, displaysetdest, end, ma_url, params, summaryWindow ) {
+    getDataFromMA: function(src, dst, displaysetsrc, displaysetdest, start, end, ma_url, params, summaryWindow ) {
         this.setState({loading: true, dataloaded: false});
 
         GraphDataStore.subscribe(this.updateChartData);

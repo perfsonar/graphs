@@ -146,15 +146,15 @@ sub get_data {
     
     my $start       = $cgi->param('start')   || error("Missing required parameter \"start\"", 400);
     my $end         = $cgi->param('end')     || error("Missing required parameter \"end\"", 400);
-    my $displayset_source = $cgi->param('displaysetsrc');
-    my $displayset_dest   = $cgi->param('displaysetdest');
+    my $displayset_source = $cgi->param('pscheduler-reference-display-set-source');
+    my $displayset_dest   = $cgi->param('pscheduler-reference-display-set-dest');
     
     if (!$displayset_source && !$displayset_dest && (@sources == 0 || @sources != @dests || @sources != @urls)){
 	    error("There must be an equal non-zero amount of src, dest, and url options passed.", 400);
     }elsif($displayset_source && !$displayset_dest && (@sources != 0 || @dests != 1)){
-        error("There must be no source parameter and a single dest or displaysetdest parameter when using displaysetsrc.", 400);
+        error("There must be no source parameter and a single dest or pscheduler-reference-display-set-dest parameter when using pscheduler-reference-display-set-source.", 400);
     }elsif($displayset_dest && !$displayset_source && (@dests != 0 || @sources != 1)){
-        error("There must be no dest parameter and a single source or displaysetsrc parameter when using displaysetdest.", 400);
+        error("There must be no dest parameter and a single source or pscheduler-reference-display-set-source parameter when using pscheduler-reference-display-set-dest.", 400);
     }
 
 
@@ -184,6 +184,7 @@ sub get_data {
     my @threads;
     
     if($displayset_source || $displayset_dest){
+        # If one of the displayset options given, we will use that to query
         my $test_src = @sources > 0 ? $sources[0] : undef;
         my $test_dest = @dests > 0 ? $dests[0] : undef;
         my $thread = threads->create(\&_get_test_data,
