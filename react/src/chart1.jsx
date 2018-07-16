@@ -1729,7 +1729,8 @@ export default React.createClass({
         };
         this.setState({params: params, loading: true, initialLoading: true});
         let ma_url = this.props.ma_url || location.origin + "/esmond/perfsonar/archive/";
-        this.getDataFromMA(src, dst, displaysetsrc, displaysetdest, start, end, ma_url, params, summaryWindow);
+        let ma_url_reverse = this.props.ma_url_reverse || ma_url;
+        this.getDataFromMA(src, dst, displaysetsrc, displaysetdest, start, end, ma_url, ma_url_reverse, params, summaryWindow);
 
     },
 
@@ -1737,7 +1738,7 @@ export default React.createClass({
 
     },
 
-    getDataFromMA: function(src, dst, displaysetsrc, displaysetdest, start, end, ma_url, params, summaryWindow ) {
+    getDataFromMA: function(src, dst, displaysetsrc, displaysetdest, start, end, ma_url, ma_url_reverse, params, summaryWindow ) {
         this.setState({loading: true, dataloaded: false});
 
         GraphDataStore.subscribe(this.updateChartData);
@@ -1747,9 +1748,8 @@ export default React.createClass({
         GraphDataStore.subscribeEmpty(this.dataEmpty);
 
         // If there are no parameters, we haven't filled them in yet so we don't make the call
-
         if ( typeof params != "undefined" ) {
-            GraphDataStore.getHostPairMetadata( src, dst, displaysetsrc, displaysetdest, start, end, ma_url, params, summaryWindow );
+            GraphDataStore.getHostPairMetadata( src, dst, displaysetsrc, displaysetdest, start, end, ma_url, ma_url_reverse, params, summaryWindow );
         }
     },
     dataError: function() {
@@ -1772,7 +1772,7 @@ export default React.createClass({
         if ( nextProps.start != this.state.start
                 || nextProps.end != this.state.end ) {
             this.setState({start: nextProps.start, end: nextProps.end, chartSeries: null, timerange: timerange, brushrange: null, initialTimerange: timerange, summaryWindow: nextProps.summaryWindow , loading: true, dataloaded: false, initialLoading: false, dataError: false, lockToolTip: false});
-            this.getDataFromMA(nextProps.src, nextProps.dst, nextProps.start, nextProps.end, nextProps.ma_url, this.state.params, nextProps.summaryWindow);
+            this.getDataFromMA(nextProps.src, nextProps.dst, nextProps.start, nextProps.end, nextProps.ma_url, nextProps.ma_url_reverse, this.state.params, nextProps.summaryWindow);
         } else {
             GraphDataStore.toggleType( nextProps.itemsToHide) ;
 

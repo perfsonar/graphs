@@ -136,6 +136,7 @@ sub get_data {
     $summary_window = $window if (defined($window) && (grep {$_ eq $window} @valid_windows));
 
     my @urls        = cgi_multi_param('url');
+    my @rev_urls    = cgi_multi_param('reverseurl');
     my @sources     = cgi_multi_param('src');
     my @dests       = cgi_multi_param('dest');
     my @ipversions  = cgi_multi_param('ipversion');
@@ -151,12 +152,13 @@ sub get_data {
     
     if (!$displayset_source && !$displayset_dest && (@sources == 0 || @sources != @dests || @sources != @urls)){
 	    error("There must be an equal non-zero amount of src, dest, and url options passed.", 400);
-    }elsif($displayset_source && !$displayset_dest && (@sources != 0 || @dests != 1)){
-        error("There must be no source parameter and a single dest or pscheduler-reference-display-set-dest parameter when using pscheduler-reference-display-set-source.", 400);
-    }elsif($displayset_dest && !$displayset_source && (@dests != 0 || @sources != 1)){
-        error("There must be no dest parameter and a single source or pscheduler-reference-display-set-source parameter when using pscheduler-reference-display-set-dest.", 400);
+    }elsif($displayset_source && !$displayset_dest && (@sources > 1 || @dests != 1)){
+        error("There must be at most one source parameter and a single dest or pscheduler-reference-display-set-dest parameter when using pscheduler-reference-display-set-source.", 400);
+    }elsif($displayset_dest && !$displayset_source && (@dests > 1 || @sources != 1)){
+        error("There must be at most one dest parameter and a single source or pscheduler-reference-display-set-source parameter when using pscheduler-reference-display-set-dest.", 400);
+    }elsif(@rev_urls > 0 && @rev_urls != @urls){
+        error("When specifying a reverseurl, you must provide the same amount of reverseurl options as url options");
     }
-
 
     if ( !is_web_url( { address => \@urls} ) ) {
         error("Invalid URL specified", 400);
@@ -215,7 +217,7 @@ sub get_data {
             $start,
             $end,
             $summary_window,
-            $urls[0],
+            @rev_urls > 0 ? $rev_urls[0] : $urls[0],
             $ipversions[0],
             $agents[0],
             $tools[0],
@@ -228,6 +230,7 @@ sub get_data {
         push(@threads, $thread_rev);
     }else{
         for (my $j = 0; $j < @sources; $j++){
+            my $is_reverse = 0;
             foreach my $ordered ([$sources[$j], $dests[$j]], [$dests[$j], $sources[$j]]){
                 my ($test_src, $test_dest) = @$ordered;
 
@@ -239,7 +242,7 @@ sub get_data {
                     $start,
                     $end,
                     $summary_window,
-                    $urls[$j],
+                    ($is_reverse && @rev_urls > $j) ? $rev_urls[$j] : $urls[$j],
                     $ipversions[$j],
                     $agents[$j],
                     $tools[$j],
@@ -251,6 +254,7 @@ sub get_data {
                 );
 
                 push(@threads, $thread);
+                $is_reverse++;
             }
         }
     }

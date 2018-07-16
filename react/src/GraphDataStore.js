@@ -20,6 +20,7 @@ let end; // = Math.ceil( Date.now() / 1000 );
 let chartMetadata = [];
 let chartData = [];
 let maURLs = [];
+let maURLsReverse = [];
 
 let metadataURLs = {};
 let dataURLs = {};
@@ -36,6 +37,7 @@ module.exports = {
         chartMetadata = [];
         chartData = [];
         maURLs = [];
+        maURLsReverse = [];
         metadataURLs = {};
         dataURLs = {};
         reqCount = 0;
@@ -56,7 +58,7 @@ module.exports = {
 
     },
 
-    getHostPairMetadata: function ( sources, dests,  displaysetsrc, displaysetdest, startInput, endInput, ma_url, params, summaryWindow ) {
+    getHostPairMetadata: function ( sources, dests,  displaysetsrc, displaysetdest, startInput, endInput, ma_url, ma_url_reverse, params, summaryWindow ) {
         start = startInput;
         end = endInput;
         let src_is_displayset = 0;
@@ -85,7 +87,7 @@ module.exports = {
         }
 
         maURLs = ma_url;
-
+        maURLsReverse = ma_url_reverse;
 
         if ( ! end ) {
             //end = Math.ceil( Date.now() / 1000 ); 
@@ -106,7 +108,9 @@ module.exports = {
                 let use_displaysetsrc = directions[j][2];
                 let use_displaysetdest = directions[j][3];
                 
-                let url = ma_url[i];
+                let base_url = ( direction[j] == "forward" ? ma_url[i] : ma_url_reverse[i]);
+                let url = base_url;
+                
                 if(use_displaysetsrc){
                     url += "?pscheduler-reference-display-set-source=" + src;
                 }else{
@@ -163,7 +167,7 @@ module.exports = {
                 }
 
                 this.serverRequest = $.get( url, function(data) {
-                    this.handleMetadataResponse(data, direction[j], ma_url[i] );
+                    this.handleMetadataResponse(data, direction[j], base_url );
                 }.bind(this))
                 .fail(function( data ) {
                     // if we get an error, try the cgi instead 
@@ -173,7 +177,7 @@ module.exports = {
                         this.useProxy = true;
                         url = this.getMAURL( url );
                         this.serverRequest = $.get( url, function(data) {
-                            this.handleMetadataResponse(data, direction[j], ma_url[i] );
+                            this.handleMetadataResponse(data, direction[j], base_url );
                         }.bind(this))
                         .fail(function( data ) {
                             this.handleMetadataError( data );
@@ -329,11 +333,16 @@ module.exports = {
                     let summaries = eventTypeObj["summaries"];
                     let summaryType = defaultSummaryType;
 
+                    let url = this.parseUrl( datum.url ).origin;
+                    if(url == null){
+                        //not sure we need this, a fallback if something is strange
+                        //could cause missing data if polling results from multiple archives
+                        url = this.parseUrl( maURL ).origin;
+                    }
+                
                     let source = datum.source;
 
                     let addr = ipaddr.parse( source );
-
-                    let url = this.parseUrl( maURL ).origin;
 
                     let ipversion;
                     if ( ipaddr.isValid( source ) ) {
@@ -344,7 +353,6 @@ module.exports = {
                     }
 
                     let uri = null;
-                    let dataUrl = null;
 
                     if ( $.inArray( eventType, multipleTypes ) >= 0 ) {
                         summaryType = "statistics";
@@ -356,7 +364,6 @@ module.exports = {
                             console.log("WEIRD: multiple summary windows found. This should not happen.");
                         } else if ( win.length == 1 ) {
                             uri = win[0].uri;
-                            dataUrl = win[0].url;
                         } else {
                             //console.log("no summary windows found");
                             if ( eventType == "histogram-rtt" ) {
@@ -389,7 +396,6 @@ module.exports = {
                             //console.log("WEIRD: multiple summary windows found. This should not happen.", win);
                         } else if ( win.length == 1 ) {
                             uri = win[0].uri;
-                            dataUrl = win[0].url;
                         } else {
                             //console.log("no summary windows found", summaryWindow, eventType, win);
                         }
@@ -401,9 +407,6 @@ module.exports = {
                         uri = eventTypeObj["base-uri"];
                     }
                     uri += "?time-start=" + start + "&time-end=" + end;
-                    dataUrl += "?time-start=" + start + "&time-end=" + end;
-                    //let url = baseURL + uri;
-                    //let url = dataUrl;
                     url += uri;
 
                     // If using CORS proxy
