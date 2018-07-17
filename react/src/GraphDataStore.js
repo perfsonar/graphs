@@ -20,6 +20,7 @@ let end; // = Math.ceil( Date.now() / 1000 );
 let chartMetadata = [];
 let chartData = [];
 let maURLs = [];
+let maURLsReverse = [];
 
 let metadataURLs = {};
 let dataURLs = {};
@@ -36,6 +37,7 @@ module.exports = {
         chartMetadata = [];
         chartData = [];
         maURLs = [];
+        maURLsReverse = [];
         metadataURLs = {};
         dataURLs = {};
         reqCount = 0;
@@ -56,18 +58,27 @@ module.exports = {
 
     },
 
-    getHostPairMetadata: function ( sources, dests, startInput, endInput, ma_url, params, summaryWindow ) {
+    getHostPairMetadata: function ( sources, dests,  displaysetsrc, displaysetdest, startInput, endInput, ma_url, ma_url_reverse, params, summaryWindow ) {
         start = startInput;
         end = endInput;
-
+        let src_is_displayset = 0;
+        let dest_is_displayset = 0;
+        
         this.initVars();
 
         this.summaryWindow = summaryWindow;
-
-        if ( !$.isArray( sources ) ) {
+        
+        if ( displaysetsrc !== null && typeof displaysetsrc != "undefined" ) {
+            sources = [ displaysetsrc ];
+            src_is_displayset = 1;
+        }else if ( !$.isArray( sources ) ) {
             sources = [ sources ];
         }
-        if ( !$.isArray( dests ) ) {
+        
+        if ( displaysetdest !== null && typeof displaysetdest != "undefined" ) {
+            dests = [ displaysetdest ];
+            dest_is_displayset = 1;
+        }else if ( !$.isArray( dests ) ) {
             dests = [ dests ];
         }
 
@@ -76,7 +87,7 @@ module.exports = {
         }
 
         maURLs = ma_url;
-
+        maURLsReverse = ma_url_reverse;
 
         if ( ! end ) {
             //end = Math.ceil( Date.now() / 1000 ); 
@@ -88,14 +99,28 @@ module.exports = {
 
 
         for( let i in sources ) {
-            let directions = [ [ sources[i], dests[i] ],
-                [ dests[i], sources[i] ] ];
+            let directions = [ [ sources[i], dests[i], src_is_displayset,  dest_is_displayset],
+                [ dests[i], sources[i], dest_is_displayset, src_is_displayset] ];
             let direction = [ "forward", "reverse" ];
             for( let j in directions ) {
                 let src = directions[j][0];
                 let dst = directions[j][1];
-
-                let url = ma_url[i] + "?source=" + src + "&destination=" + dst;
+                let use_displaysetsrc = directions[j][2];
+                let use_displaysetdest = directions[j][3];
+                
+                let base_url = ( direction[j] == "forward" ? ma_url[i] : ma_url_reverse[i]);
+                let url = base_url;
+                
+                if(use_displaysetsrc){
+                    url += "?pscheduler-reference-display-set-source=" + src;
+                }else{
+                    url += "?source=" + src;
+                }
+                if(use_displaysetdest){
+                    url += "&pscheduler-reference-display-set-dest=" + dst;
+                }else{
+                    url += "&destination=" + dst;
+                }
 
                 if ( params !== null && typeof params != "undefined" ) {
                     for(let name in params) {
@@ -142,7 +167,7 @@ module.exports = {
                 }
 
                 this.serverRequest = $.get( url, function(data) {
-                    this.handleMetadataResponse(data, direction[j], ma_url[i] );
+                    this.handleMetadataResponse(data, direction[j], base_url );
                 }.bind(this))
                 .fail(function( data ) {
                     // if we get an error, try the cgi instead 
@@ -152,7 +177,7 @@ module.exports = {
                         this.useProxy = true;
                         url = this.getMAURL( url );
                         this.serverRequest = $.get( url, function(data) {
-                            this.handleMetadataResponse(data, direction[j], ma_url[i] );
+                            this.handleMetadataResponse(data, direction[j], base_url );
                         }.bind(this))
                         .fail(function( data ) {
                             this.handleMetadataError( data );
@@ -308,11 +333,16 @@ module.exports = {
                     let summaries = eventTypeObj["summaries"];
                     let summaryType = defaultSummaryType;
 
+                    let url = this.parseUrl( datum.url ).origin;
+                    if(url == null){
+                        //not sure we need this, a fallback if something is strange
+                        //could cause missing data if polling results from multiple archives
+                        url = this.parseUrl( maURL ).origin;
+                    }
+                
                     let source = datum.source;
 
                     let addr = ipaddr.parse( source );
-
-                    let url = this.parseUrl( maURL ).origin;
 
                     let ipversion;
                     if ( ipaddr.isValid( source ) ) {
@@ -323,7 +353,6 @@ module.exports = {
                     }
 
                     let uri = null;
-                    let dataUrl = null;
 
                     if ( $.inArray( eventType, multipleTypes ) >= 0 ) {
                         summaryType = "statistics";
@@ -335,7 +364,6 @@ module.exports = {
                             console.log("WEIRD: multiple summary windows found. This should not happen.");
                         } else if ( win.length == 1 ) {
                             uri = win[0].uri;
-                            dataUrl = win[0].url;
                         } else {
                             //console.log("no summary windows found");
                             if ( eventType == "histogram-rtt" ) {
@@ -368,7 +396,6 @@ module.exports = {
                             //console.log("WEIRD: multiple summary windows found. This should not happen.", win);
                         } else if ( win.length == 1 ) {
                             uri = win[0].uri;
-                            dataUrl = win[0].url;
                         } else {
                             //console.log("no summary windows found", summaryWindow, eventType, win);
                         }
@@ -380,9 +407,6 @@ module.exports = {
                         uri = eventTypeObj["base-uri"];
                     }
                     uri += "?time-start=" + start + "&time-end=" + end;
-                    dataUrl += "?time-start=" + start + "&time-end=" + end;
-                    //let url = baseURL + uri;
-                    //let url = dataUrl;
                     url += uri;
 
                     // If using CORS proxy

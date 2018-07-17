@@ -142,10 +142,13 @@ export default React.createClass({
             title: text,
             src: newState.src,
             dst: newState.dst,
+            displaysetsrc: newState.displaysetsrc,
+            displaysetdest: newState.displaysetdest,
             start: newState.start,
             end: newState.end,
             timeframe: newState.timeframe,
             ma_url: newState.ma_url,
+            ma_url_reverse: newState.ma_url_reverse,
             agent: newState.agent,
             summaryWindow: newState.summaryWindow,
             itemsToHide: newState.itemsToHide,
@@ -341,10 +344,13 @@ export default React.createClass({
                                     <Chart1
                                         src={this.state.src}
                                         dst={this.state.dst}
+                                        displaysetsrc={this.state.displaysetsrc}
+                                        displaysetdest={this.state.displaysetdest}
                                         start={this.state.start}
                                         end={this.state.end}
                                         summaryWindow={this.state.summaryWindow}
                                         ma_url={this.state.ma_url}
+                                        ma_url_reverse={this.state.ma_url_reverse}
                                         agent={this.state.agent}
                                         tool={this.state.tool}
                                         ipversion={this.state.ipversion}
@@ -449,6 +455,8 @@ export default React.createClass({
 
         let src = qs.source;
         let dst = qs.dest;
+        let displaysetsrc = qs.displaysetsrc;
+        let displaysetdest = qs.displaysetdest;
         let start = defaults.start;
         let end = defaults.end;
         let timeframe = defaults.timeframe;
@@ -520,6 +528,24 @@ export default React.createClass({
                 ma_urls[i] = new_url;
             }
         }
+        
+        //reverse URLs
+        let ma_urls_reverse = qs.reverseurl || ma_urls;
+        if ( !$.isArray( ma_urls_reverse ) ) {
+            ma_urls_reverse = [ ma_urls_reverse ];
+        }
+        for(let i in ma_urls_reverse ) {
+            let ma_url_reverse = ma_urls_reverse[i];
+            let found = ma_url_reverse.match( localhostRe );
+            let host = location.host;
+            if ( found !== null ) {
+
+                // replace 'localhost' with the local hostname
+                let new_url = ma_url_reverse.replace( localhostRe,  host );
+
+                ma_url_reverse[i] = new_url;
+            }
+        }
 
         // Get itemsToHide/"active" items
         let re = /^hide_(.+)$/;
@@ -584,9 +610,12 @@ export default React.createClass({
         const newState = {
             src:    src,
             dst:    dst,
+            displaysetsrc:    displaysetsrc,
+            displaysetdest:    displaysetdest,
             start:  start,
             end:    end,
             ma_url: ma_urls,
+            ma_url_reverse: ma_urls_reverse,
             active: active,
             itemsToHide: itemsToHide,
             summaryWindow: summaryWindow,
