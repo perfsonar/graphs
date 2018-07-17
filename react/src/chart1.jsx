@@ -729,13 +729,13 @@ export default React.createClass({
                     }
                     let label = "latency";
                     if ( row.properties.mainEventType == "histogram-rtt" ) {
-                        label = "ping";
+                        label = "rtt";
                     } else if ( row.properties.eventType == "packet-count-lost-bidir" ) {
                         label = "ping count";
                     } else if ( row.properties.mainEventType == "throughput" ) {
-                        label = "UDP"
+                        label = "UDP";
                     } else if ( row.properties.mainEventType == "histogram-owdelay" ) {
-                        label = "owamp";
+                        label = "owd";
                     }
 
                     let tool = this.getTool( row );
@@ -778,9 +778,9 @@ export default React.createClass({
                         dir = "\u003c-"; // Unicode <
 
                     }
-                    let label = "(owamp)";
+                    let label = "(owd)";
                     if ( latRow.properties.mainEventType == "histogram-rtt" ) {
-                        label = "(ping)";
+                        label = "(rtt)";
                     }
 
                     let tool = this.getTool( latRow );
