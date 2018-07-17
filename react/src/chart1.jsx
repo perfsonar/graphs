@@ -1719,7 +1719,7 @@ export default React.createClass({
         let agent = this.props.agent;
         let displaysetsrc = this.props.displaysetsrc;
         let displaysetdest = this.props.displaysetdest;
-        
+
         let summaryWindow = this.props.summaryWindow;
 
         let params = {
@@ -1769,10 +1769,11 @@ export default React.createClass({
     componentWillReceiveProps( nextProps ) {
         let timerange = new TimeRange([nextProps.start * 1000, nextProps.end * 1000 ]);
         this.setState({itemsToHide: nextProps.itemsToHide, initialLoading: false});
-        if ( nextProps.start != this.state.start
-                || nextProps.end != this.state.end ) {
+        if ( nextProps.start != this.state.start || nextProps.end != this.state.end ) {
+            let displaysetsrc = this.props.displaysetsrc;
+            let displaysetdest = this.props.displaysetdest;
             this.setState({start: nextProps.start, end: nextProps.end, chartSeries: null, timerange: timerange, brushrange: null, initialTimerange: timerange, summaryWindow: nextProps.summaryWindow , loading: true, dataloaded: false, initialLoading: false, dataError: false, lockToolTip: false});
-            this.getDataFromMA(nextProps.src, nextProps.dst, nextProps.start, nextProps.end, nextProps.ma_url, nextProps.ma_url_reverse, this.state.params, nextProps.summaryWindow);
+            this.getDataFromMA(nextProps.src, nextProps.dst, displaysetsrc, displaysetdest, nextProps.start, nextProps.end, nextProps.ma_url, nextProps.ma_url_reverse, this.state.params, nextProps.summaryWindow);
         } else {
             GraphDataStore.toggleType( nextProps.itemsToHide) ;
 
