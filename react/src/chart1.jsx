@@ -705,7 +705,7 @@ export default React.createClass({
                         dir = "\u003c-"; // Unicode <
                     }
                     throughputItems.push(
-                            <li className={this.getTTItemClass("throughput")}>{dir} <SIValue value={this._formatZero( row.value )} digits={3} />bits/s{protocol}{retransLabel}{tool}</li>
+                            <li className={this.getTTItemClass("throughput")}>{dir} <SIValue value={this._formatZero( row.value )} digits={2} />bits/s{protocol}{retransLabel}{tool}</li>
 
                             );
 
@@ -729,13 +729,13 @@ export default React.createClass({
                     }
                     let label = "latency";
                     if ( row.properties.mainEventType == "histogram-rtt" ) {
-                        label = "ping";
+                        label = "rtt";
                     } else if ( row.properties.eventType == "packet-count-lost-bidir" ) {
                         label = "ping count";
                     } else if ( row.properties.mainEventType == "throughput" ) {
-                        label = "UDP"
+                        label = "UDP";
                     } else if ( row.properties.mainEventType == "histogram-owdelay" ) {
-                        label = "owamp";
+                        label = "one way";
                     }
 
                     let tool = this.getTool( row );
@@ -743,7 +743,7 @@ export default React.createClass({
 
                 if ( row.properties.eventType == "packet-loss-rate" 
                      || row.properties.eventType == "packet-loss-rate-bidir" ) {
-                    value = this._formatToolTipLossValue( value, "float" );
+                    value = this._formatToolTipLossValue( value, "floatshort" );
                     row.lostValue = this._formatToolTipLossValue( row.lostValue, "integer" );
                     row.sentValue = this._formatToolTipLossValue( row.sentValue, "integer" );
                 }  else {
@@ -778,9 +778,9 @@ export default React.createClass({
                         dir = "\u003c-"; // Unicode <
 
                     }
-                    let label = "(owamp)";
+                    let label = "(one way)";
                     if ( latRow.properties.mainEventType == "histogram-rtt" ) {
-                        label = "(ping)";
+                        label = "(rtt)";
                     }
 
                     let tool = this.getTool( latRow );
@@ -921,7 +921,9 @@ export default React.createClass({
             if ( format == "integer" ) {
                 value = Math.floor( value );
             } else if ( format == "percent" ) {
-                value = parseFloat( (value * 100).toPrecision(5) );
+                value = parseFloat( (value * 100).toPrecision(4) );
+            } else if ( format == "floatshort" ) {
+                value = parseFloat( value.toPrecision(4) );
             } else {
                 value = parseFloat( value.toPrecision(6) );
 

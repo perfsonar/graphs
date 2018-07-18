@@ -248,10 +248,10 @@ export default React.createClass({
                                     <a href="#" onClick={this.toggleType.bind(this, {eventType: "packet-loss-rate", mainTestType: "throughput"})}>Loss (UDP)</a>
                                 </li>
                                 <li className={"graph-filter__item graph-filter__item loss-latency " + this.getActiveClass( this.state.active["eventType_packet-loss-rate_mainEventType_histogram-owdelay_"] )}>
-                                    <a href="#" onClick={this.toggleType.bind(this, {eventType: "packet-loss-rate", mainEventType: "histogram-owdelay"})}>Loss (owamp)</a>
+                                    <a href="#" onClick={this.toggleType.bind(this, {eventType: "packet-loss-rate", mainEventType: "histogram-owdelay"})}>Loss (one way)</a>
                                 </li>
                                 <li className={"graph-filter__item graph-filter__item loss-ping " + this.getActiveClass( this.state.active["eventType_packet-loss-rate-bidir_"] )}>
-                                    <a href="#" onClick={this.toggleType.bind(this, {eventType: "packet-loss-rate-bidir"})}>Loss (ping)</a>
+                                    <a href="#" onClick={this.toggleType.bind(this, {eventType: "packet-loss-rate-bidir"})}>Loss (rtt)</a>
                                 </li>
 
                                 <li className={"graph-filter__item graph-filter__item packet-retransmits " + this.getActiveClass( this.state.active["eventType_packet-retransmits_"] )}>
@@ -263,10 +263,10 @@ export default React.createClass({
                                 </li>
 
                                 <li className={"graph-filter__item ipv6 " + this.getActiveClass( this.state.active["eventType_histogram-owdelay_"] )}>
-                                    <a href="#" onClick={this.toggleType.bind(this, {eventType: "histogram-owdelay"})}>Latency</a>
+                                    <a href="#" onClick={this.toggleType.bind(this, {eventType: "histogram-owdelay"})}>Latency (one way)</a>
                                 </li>
                                 <li className={"graph-filter__item ipv4 " + this.getActiveClass( this.state.active["eventType_histogram-rtt_"])} >
-                                    <a href="#" onClick={this.toggleType.bind(this, {eventType: "histogram-rtt"})}>Latency (ping)</a>
+                                    <a href="#" onClick={this.toggleType.bind(this, {eventType: "histogram-rtt"})}>Latency (rtt)</a>
                                 </li>
                             </ul>
                         </div>

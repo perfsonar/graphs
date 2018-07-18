@@ -77,7 +77,7 @@ export default React.createClass({
 
     <div>
         <div className="chartTitleBar">
-            <span>perfSONAR test results</span>
+            <span>perfSONAR test results</span> - <a href="http://docs.perfsonar.net/using_graphs.html" target="_blank">documentation</a>
             <span className="chartShareLinkContainer">
                 <a href={this.state.pageURL} target="_blank">
                     <i className="fa fa-share-square-o" aria-hidden="true"></i> Share/open in new window
