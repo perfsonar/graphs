@@ -705,7 +705,7 @@ export default React.createClass({
                         dir = "\u003c-"; // Unicode <
                     }
                     throughputItems.push(
-                            <li className={this.getTTItemClass("throughput")}>{dir} <SIValue value={this._formatZero( row.value )} digits={3} />bits/s{protocol}{retransLabel}{tool}</li>
+                            <li className={this.getTTItemClass("throughput")}>{dir} <SIValue value={this._formatZero( row.value )} digits={2} />bits/s{protocol}{retransLabel}{tool}</li>
 
                             );
 
@@ -729,13 +729,13 @@ export default React.createClass({
                     }
                     let label = "latency";
                     if ( row.properties.mainEventType == "histogram-rtt" ) {
-                        label = "ping";
+                        label = "rtt";
                     } else if ( row.properties.eventType == "packet-count-lost-bidir" ) {
                         label = "ping count";
                     } else if ( row.properties.mainEventType == "throughput" ) {
-                        label = "UDP"
+                        label = "UDP";
                     } else if ( row.properties.mainEventType == "histogram-owdelay" ) {
-                        label = "owamp";
+                        label = "one way";
                     }
 
                     let tool = this.getTool( row );
@@ -743,7 +743,7 @@ export default React.createClass({
 
                 if ( row.properties.eventType == "packet-loss-rate" 
                      || row.properties.eventType == "packet-loss-rate-bidir" ) {
-                    value = this._formatToolTipLossValue( value, "float" );
+                    value = this._formatToolTipLossValue( value, "floatshort" );
                     row.lostValue = this._formatToolTipLossValue( row.lostValue, "integer" );
                     row.sentValue = this._formatToolTipLossValue( row.sentValue, "integer" );
                 }  else {
@@ -778,9 +778,9 @@ export default React.createClass({
                         dir = "\u003c-"; // Unicode <
 
                     }
-                    let label = "(owamp)";
+                    let label = "(one way)";
                     if ( latRow.properties.mainEventType == "histogram-rtt" ) {
-                        label = "(ping)";
+                        label = "(rtt)";
                     }
 
                     let tool = this.getTool( latRow );
@@ -921,7 +921,9 @@ export default React.createClass({
             if ( format == "integer" ) {
                 value = Math.floor( value );
             } else if ( format == "percent" ) {
-                value = parseFloat( (value * 100).toPrecision(5) );
+                value = parseFloat( (value * 100).toPrecision(4) );
+            } else if ( format == "floatshort" ) {
+                value = parseFloat( value.toPrecision(4) );
             } else {
                 value = parseFloat( value.toPrecision(6) );
 
@@ -1717,6 +1719,8 @@ export default React.createClass({
         let tool = this.props.tool;
         let ipversion = this.props.ipversion;
         let agent = this.props.agent;
+        let displaysetsrc = this.props.displaysetsrc;
+        let displaysetdest = this.props.displaysetdest;
 
         let summaryWindow = this.props.summaryWindow;
 
@@ -1727,7 +1731,8 @@ export default React.createClass({
         };
         this.setState({params: params, loading: true, initialLoading: true});
         let ma_url = this.props.ma_url || location.origin + "/esmond/perfsonar/archive/";
-        this.getDataFromMA(src, dst, start, end, ma_url, params, summaryWindow);
+        let ma_url_reverse = this.props.ma_url_reverse || ma_url;
+        this.getDataFromMA(src, dst, displaysetsrc, displaysetdest, start, end, ma_url, ma_url_reverse, params, summaryWindow);
 
     },
 
@@ -1735,7 +1740,7 @@ export default React.createClass({
 
     },
 
-    getDataFromMA: function(src, dst, start, end, ma_url, params, summaryWindow ) {
+    getDataFromMA: function(src, dst, displaysetsrc, displaysetdest, start, end, ma_url, ma_url_reverse, params, summaryWindow ) {
         this.setState({loading: true, dataloaded: false});
 
         GraphDataStore.subscribe(this.updateChartData);
@@ -1745,9 +1750,8 @@ export default React.createClass({
         GraphDataStore.subscribeEmpty(this.dataEmpty);
 
         // If there are no parameters, we haven't filled them in yet so we don't make the call
-
         if ( typeof params != "undefined" ) {
-            GraphDataStore.getHostPairMetadata( src, dst, start, end, ma_url, params, summaryWindow );
+            GraphDataStore.getHostPairMetadata( src, dst, displaysetsrc, displaysetdest, start, end, ma_url, ma_url_reverse, params, summaryWindow );
         }
     },
     dataError: function() {
@@ -1767,10 +1771,11 @@ export default React.createClass({
     componentWillReceiveProps( nextProps ) {
         let timerange = new TimeRange([nextProps.start * 1000, nextProps.end * 1000 ]);
         this.setState({itemsToHide: nextProps.itemsToHide, initialLoading: false});
-        if ( nextProps.start != this.state.start
-                || nextProps.end != this.state.end ) {
+        if ( nextProps.start != this.state.start || nextProps.end != this.state.end ) {
+            let displaysetsrc = this.props.displaysetsrc;
+            let displaysetdest = this.props.displaysetdest;
             this.setState({start: nextProps.start, end: nextProps.end, chartSeries: null, timerange: timerange, brushrange: null, initialTimerange: timerange, summaryWindow: nextProps.summaryWindow , loading: true, dataloaded: false, initialLoading: false, dataError: false, lockToolTip: false});
-            this.getDataFromMA(nextProps.src, nextProps.dst, nextProps.start, nextProps.end, nextProps.ma_url, this.state.params, nextProps.summaryWindow);
+            this.getDataFromMA(nextProps.src, nextProps.dst, displaysetsrc, displaysetdest, nextProps.start, nextProps.end, nextProps.ma_url, nextProps.ma_url_reverse, this.state.params, nextProps.summaryWindow);
         } else {
             GraphDataStore.toggleType( nextProps.itemsToHide) ;
 

@@ -4,7 +4,7 @@ CONFIGPATH=${ROOTPATH}/etc
 LIBPATH=/usr/lib/perfsonar/lib
 GRAPHLIBPATH=/usr/lib/perfsonar/graphs/lib
 VERSION=4.1
-RELEASE=0.1.b1
+RELEASE=0.2.b1
 
 default:
 	@echo No need to build the package. Just run \"make install\"
