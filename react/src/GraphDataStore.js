@@ -68,14 +68,14 @@ module.exports = {
 
         this.summaryWindow = summaryWindow;
         
-        if ( displaysetsrc !== null && typeof displaysetsrc != "undefined" ) {
+        if ( displaysetsrc ) {
             sources = [ displaysetsrc ];
             src_is_displayset = 1;
         }else if ( !$.isArray( sources ) ) {
             sources = [ sources ];
         }
         
-        if ( displaysetdest !== null && typeof displaysetdest != "undefined" ) {
+        if ( displaysetdest ) {
             dests = [ displaysetdest ];
             dest_is_displayset = 1;
         }else if ( !$.isArray( dests ) ) {
