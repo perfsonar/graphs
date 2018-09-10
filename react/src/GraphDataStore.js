@@ -425,6 +425,7 @@ module.exports = {
                     }
                     let row = pruneDatum( datum );
                     row.protocol = datum["ip-transport-protocol"];
+                    row.bucketwidth = datum["sample-bucket-width"];
                     row.ipversion = ipversion;
 
                     dataReqCount++;
@@ -446,6 +447,7 @@ module.exports = {
         if ( data !== null ) {
             let direction = datum.direction;
             let protocol = datum.protocol;
+            let bucketwidth = datum.bucketwidth;
             let row = datum;
             row.eventType = eventType;
             row.data = data;
@@ -712,6 +714,7 @@ module.exports = {
             let eventType = datum.eventType;
             let direction = datum.direction;
             let protocol = datum.protocol;
+            let bucketwidth = datum.bucketwidth;
             if ( eventType == "failures" ) {
                 return true;
             }
@@ -755,6 +758,9 @@ module.exports = {
                 let value = val["val"];
                 if ( eventType == 'histogram-owdelay') {
                     value = val["val"].minimum;
+                    if(bucketwidth){
+                        value = value * bucketwidth / 0.001; //convert to milliseconds
+                    }
                 } else if ( eventType == 'histogram-rtt' ) {
                     value = val["val"].minimum;
                 } else if ( eventType == 'packet-count-lost' ) {
