@@ -173,7 +173,8 @@ module.exports = {
                     // if we get an error, try the cgi instead 
                     // and set a new flag, useProxy  and make
                     // all requests through the proxy CGI
-                    if ( data.status == 404 ) {
+                    console.log("data.status", data.status);
+                    if ( data.status == 404 ||  data.status == 0 ) {
                         this.useProxy = true;
                         url = this.getMAURL( url );
                         this.serverRequest = $.get( url, function(data) {
