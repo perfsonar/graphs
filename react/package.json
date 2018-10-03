@@ -61,7 +61,6 @@
     "json-loader": "^0.5.4",
     "mocha": "^3.2.0",
     "nock": "^9.0.13",
-    "node-jsdom": "^3.1.5",
     "raw-loader": "^0.5.1",
     "react-docgen": "^2.4.0",
     "react-dom": "^0.14.3",

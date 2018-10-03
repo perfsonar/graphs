@@ -2,23 +2,7 @@ var EventEmitter = require('events').EventEmitter;
 
 var emitter = new EventEmitter();
 
-if ( typeof window == "undefined" ) {
-    var $;
-    if ( typeof $ == "undefined" ) {
-        require("node-jsdom").env("", function(err, window) {
-            //var $;
-            if (err) {
-                console.error(err);
-                return;
-            }
-
-            $ = require("jquery")(window);
-        });
-    }
-
-} else {
-    $ = jQuery;
-}
+$ = jQuery;
 
 module.exports = {
 
