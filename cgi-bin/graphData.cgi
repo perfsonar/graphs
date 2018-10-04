@@ -52,6 +52,24 @@ my $cgi = new CGI;
 
 my $action = $cgi->param('action') || error("Missing required parameter \"action\", must specify data or tests", 400);
 
+#json file reader for reading ssl certificate flag from the configuration file
+my $sslcertjson;
+my $certfile = "/etc/perfsonar/graphs-ssl.json";
+#flag set to 1 only if the certificate config file exists
+my $flag = 0;
+my $enable;
+if(-e $certfile){
+  local $/;
+  open my $fh, "<", $certfile;
+  $sslcertjson = <$fh>;
+  close $fh;
+
+  $flag = 1;
+  $enable = decode_json($sslcertjson);
+}
+
+######
+
 if ($action eq 'data'){
     get_data();
 }
@@ -90,6 +108,9 @@ sub cgi_multi_param {
     }
 }
 
+#######
+
+######
 # Fallback proxy for esmond requests for esmond instances that don't have CORS enabled
 sub get_ma_data {
     my $url        = $cgi->param('url');
@@ -98,8 +119,23 @@ sub get_ma_data {
         error("No URL specified", 400);
     }
 
+    
     my $ua = LWP::UserAgent->new;
+    
+    #if the flag is set, the certificate config file exists
+    if($flag){
+	#if ssl certificate ignore is set from etc/perfsonar/graphs-ssl.json file
+	if($enable->{'ssl_cert_ignore'}){
+    	$ua->ssl_opts( "verify_hostname" => 0);
+    	}
 
+    	#else{
+    	#$ua->ssl_opts( "verify_hostname" => 1);
+    	#}
+    }
+    
+    	
+    		
     # Make sure the URL looks like an esmond URL -- starts with http or https and looks like
     # http://host/esmond/perfsonar/archive/[something]
     # this should be url encoded
@@ -107,7 +143,7 @@ sub get_ma_data {
         my $req = HTTP::Request->new(
             GET => $url,
         );
-
+	
         # perform http GET on the URL
         my $res = $ua->request($req);
 
