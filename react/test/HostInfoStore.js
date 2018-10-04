@@ -1,6 +1,10 @@
 import chai from 'chai';
 var assert = chai.assert;
 
+//const jQuery = require('jquery');
+
+//var $ = require('jquery');
+
 import HostInfoStore from "../src/HostInfoStore";
 
 var nock = require('nock');
