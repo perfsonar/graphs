@@ -32,6 +32,7 @@ module.exports = {
     tracerouteReqsCompleted: 0,
     tracerouteInfo: [],
     serverURLBase: "",
+    //serverURLBase: "http://asdf.example.com/perfsonar-graphs/",
 
     retrieveTracerouteData: function ( sources, dests, ma_urls ) {
         let baseUrl = "cgi-bin/graphData.cgi?action=has_traceroute_data";
@@ -96,6 +97,7 @@ module.exports = {
     },
     retrieveHostInfo: function( source_input, dest_input, callback ) {
         let url = this._getURL("cgi-bin/graphData.cgi?action=hosts");
+        console.log("retrieveHostInfoURL", url);
 
         let sources;
         let dests;

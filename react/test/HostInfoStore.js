@@ -1,5 +1,8 @@
 import chai from 'chai';
 var assert = chai.assert;
+import moxios from 'moxios';
+//const integration = require('mocha-axios');
+
 
 //const jQuery = require('jquery');
 
@@ -8,9 +11,19 @@ var assert = chai.assert;
 import HostInfoStore from "../src/HostInfoStore";
 
 var nock = require('nock');
+var http = require('http');
+//var axios = require('axios');
+
 
 var sinon = require('sinon');
 var EventEmitter = require('events').EventEmitter;
+
+export const BASE_URL = 'http://asdf.example.com/perfsonar-graphs'
+/*
+export default axios.create({
+      baseURL: BASE_URL
+})
+*/
 
 describe('HostInfoStore', function( doneParent ) {
 
@@ -29,6 +42,7 @@ describe('HostInfoStore', function( doneParent ) {
         });
     });
 
+    /*
         var scope = nock('http://host.domain.org')
                         .get('/perfsonar-graphs/cgi-bin/graphData.cgi?action=hosts&src=1.0.0.1&dest=2.0.0.2')
                         .reply(200,
@@ -50,16 +64,47 @@ describe('HostInfoStore', function( doneParent ) {
                         .get('/perfsonar-graphs/cgi-bin/graphData.cgi?action=hosts&src=3.0.0.3&dest=4.0.0.4')
                         .reply(404, "not found"
                         );
+                        */
         describe('Get Host Info', function() {
                 var emitter = new EventEmitter();
 
+                    beforeEach(function () {
+                        // import and pass your custom axios instance to this method
+                        moxios.install();
+                    })
+                    afterEach(function () {
+                        // import and pass your custom axios instance to this method
+                        moxios.uninstall();
+                    })
 
 
-                it("Should return correct HostInfo data test1", function ( done ) {
 
-                var spy = sinon.spy();
+                it("Should return correct HostInfo data test1", function( done ) {
+                    moxios.withMock(function () {
+
+                    var expected = [{"dest_host":"ANantes-651-1-49-2.w2-0.abo.wanadoo.fr","dest_ip":"2.0.0.2","source_host":null,"source_ip":"1.0.0.1ZZZZ"}];
+
+                    moxios.stubRequest('cgi-bin/graphData.cgi?action=hosts&src=1.0.0.1&dest=2.0.0.2', {
+                        
+                        status: 200,
+                        responseText: expected
+                    });
+
+                    var spy = sinon.spy();
+                    //axios.get(BASE_URL + '/cgi-bin/graphData.cgi?action=hosts&src=1.0.0.1&dest=2.0.0.2').then(spy);
+                    moxios.wait(function () {
+                        const request = moxios.requests.mostRecent();
+                        request.respondWith({ status: 200, response: expected })
+                        //console.log('spy.getCall(0).args[0].data', spy.getCall(0).args[0].data);
+                        //equal(spy.getCall(0).args[0].data, expected)
+                        //done()
+                    })
+
+                });
+
 
                 var subscriber = function( ) {
+                    console.log("GOT RESULT" );
                     var expectedResult =
                         [ { dest_host: 'ANantes-651-1-49-2.w2-0.abo.wanadoo.fr',
                             dest_ip: '2.0.0.2',
@@ -81,9 +126,9 @@ describe('HostInfoStore', function( doneParent ) {
 
 
                 HostInfoStore.retrieveHostInfo( "1.0.0.1", "2.0.0.2");
-
                 });
-
+                });
+/*
                 it("Should return correct HostInfo data test2", function ( done ) {
 
                     var spy = sinon.spy();
@@ -154,9 +199,9 @@ describe('HostInfoStore', function( doneParent ) {
                     HostInfoStore.retrieveHostInfo( "3.0.0.3", "4.0.0.4", spy);
 
                 });
+                */
 
 
 
-        });
 
     });
