@@ -97,7 +97,6 @@ module.exports = {
     },
     retrieveHostInfo: function( source_input, dest_input, callback ) {
         let url = this._getURL("cgi-bin/graphData.cgi?action=hosts");
-        console.log("retrieveHostInfoURL", url);
 
         let sources;
         let dests;
@@ -116,6 +115,7 @@ module.exports = {
             url += "&dest=" + dests[i];
 
         }
+        console.log("retrieveHostInfoURL", url);
 
         /*
         var xhr = this._createXhr();
@@ -136,6 +136,11 @@ module.exports = {
                 })
                 .catch(function(err) {
                     console.log("Error retrieving HOST data:", err);
+                    emitter.emit("error");
+                    if ( _.isFunction( callback ) ) {
+                        callback( errorObj );
+                    }
+
 
                 });
 

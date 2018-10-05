@@ -1,6 +1,6 @@
 import chai from 'chai';
 var assert = chai.assert;
-import moxios from 'moxios';
+var moxios = require('moxios');
 //const integration = require('mocha-axios');
 
 
@@ -25,20 +25,26 @@ export default axios.create({
 })
 */
 
-describe('HostInfoStore', function( doneParent ) {
+describe('HostInfoStore', function( ) {
 
     describe('_getURL', function() {
-        it("should generate relative URLs correctly", function() {
+        afterEach( function(done) {
+            HostInfoStore.serverURLBase = "";
+            done();
+        });
+        it("should generate relative URLs correctly", function(done) {
             HostInfoStore.serverURLBase = '';
             var result =  HostInfoStore._getURL( 'test1/test2' );
             assert.equal( result, 'test1/test2' );
             HostInfoStore.serverURLBase = 'http://host.domain.org/perfsonar-graphs/';
+            done();
         });
 
-        it("should generate absolute URLs correctly", function() {
+        it("should generate absolute URLs correctly", function(done) {
             HostInfoStore.serverURLBase = 'http://host.domain.org/perfsonar-graphs/';
             var result =  HostInfoStore._getURL( 'cgi-bin/script.cgi' );
             assert.equal( result, 'http://host.domain.org/perfsonar-graphs/cgi-bin/script.cgi' );
+            done();
         });
     });
 
@@ -66,100 +72,121 @@ describe('HostInfoStore', function( doneParent ) {
                         );
                         */
         describe('Get Host Info', function() {
-                var emitter = new EventEmitter();
 
-                    beforeEach(function () {
+                    beforeEach(function (done) {
                         // import and pass your custom axios instance to this method
                         moxios.install();
+                        done();
                     })
-                    afterEach(function () {
+                    afterEach(function (done) {
                         // import and pass your custom axios instance to this method
                         moxios.uninstall();
+                        done();
                     })
 
 
+                    it("Should return correct HostInfo data test1", function( done ) {
+                        moxios.withMock(function () {
+                            //var emitter = new EventEmitter();
 
-                it("Should return correct HostInfo data test1", function( done ) {
-                    moxios.withMock(function () {
+                            var expected = [{"dest_host":"ANantes-651-1-49-2.w2-0.abo.wanadoo.fr","dest_ip":"2.0.0.2","source_host":null,"source_ip":"1.0.0.1ZZZZ"}];
 
-                    var expected = [{"dest_host":"ANantes-651-1-49-2.w2-0.abo.wanadoo.fr","dest_ip":"2.0.0.2","source_host":null,"source_ip":"1.0.0.1ZZZZ"}];
+                            moxios.stubRequest('cgi-bin/graphData.cgi?action=hosts&src=1.0.0.1&dest=2.0.0.2', {
 
-                    moxios.stubRequest('cgi-bin/graphData.cgi?action=hosts&src=1.0.0.1&dest=2.0.0.2', {
-                        
-                        status: 200,
-                        responseText: expected
+                                status: 200,
+                                responseText: expected
+                            });
+
+                            var spy = sinon.spy();
+                            //axios.get(BASE_URL + '/cgi-bin/graphData.cgi?action=hosts&src=1.0.0.1&dest=2.0.0.2').then(spy);
+                            moxios.wait(function () {
+                                const request = moxios.requests.mostRecent();
+                                request.respondWith({ status: 200, response: expected })
+                                //console.log('spy.getCall(0).args[0].data', spy.getCall(0).args[0].data);
+                                //equal(spy.getCall(0).args[0].data, expected)
+                                //done()
+                            })
+
+
+
+                        var subscriber = function( ) {
+                            console.log("GOT RESULT" );
+                            var expectedResult =
+                                [ { dest_host: 'ANantes-651-1-49-2.w2-0.abo.wanadoo.fr',
+                                    dest_ip: '2.0.0.2',
+                                    source_host: null,
+                                    source_ip: '1.0.0.1ZZZZ' } ];
+
+                            //emitter.emit('get');
+
+                            var outputData = HostInfoStore.getHostInfoData();
+
+                            HostInfoStore.unsubscribe( subscriber );
+                            assert.deepEqual( expectedResult, outputData );
+                            //sinon.assert.calledOnce(spy);
+                            done();
+                        };
+
+                        HostInfoStore.subscribe( subscriber );
+                        //HostInfoStore.subscribe( spy );
+
+
+                        HostInfoStore.retrieveHostInfo( "1.0.0.1", "2.0.0.2");
+                        });
                     });
 
-                    var spy = sinon.spy();
-                    //axios.get(BASE_URL + '/cgi-bin/graphData.cgi?action=hosts&src=1.0.0.1&dest=2.0.0.2').then(spy);
-                    moxios.wait(function () {
-                        const request = moxios.requests.mostRecent();
-                        request.respondWith({ status: 200, response: expected })
-                        //console.log('spy.getCall(0).args[0].data', spy.getCall(0).args[0].data);
-                        //equal(spy.getCall(0).args[0].data, expected)
-                        //done()
-                    })
+                    
 
-                });
-
-
-                var subscriber = function( ) {
-                    console.log("GOT RESULT" );
-                    var expectedResult =
-                        [ { dest_host: 'ANantes-651-1-49-2.w2-0.abo.wanadoo.fr',
-                            dest_ip: '2.0.0.2',
-                            source_host: null,
-                            source_ip: '1.0.0.1ZZZZ' } ];
-
-                    emitter.emit('get');
-
-                    var outputData = HostInfoStore.getHostInfoData();
-
-                    HostInfoStore.unsubscribe( subscriber );
-                    assert.deepEqual( expectedResult, outputData );
-                    //sinon.assert.calledOnce(spy);
-                    done();
-                };
-
-                HostInfoStore.subscribe( subscriber );
-                //HostInfoStore.subscribe( spy );
-
-
-                HostInfoStore.retrieveHostInfo( "1.0.0.1", "2.0.0.2");
-                });
-                });
-/*
                 it("Should return correct HostInfo data test2", function ( done ) {
+                    moxios.withMock(function () {
+                            //var emitter = new EventEmitter();
+                            var expected = [{
+                                "dest_host": "l0.cambridge1-sr3.bbnplanet.net",
+                                "dest_ip": "4.0.0.4",
+                                "source_host": "n003-000-000-000.static.ge.com",
+                                "source_ip": "3.0.0.3"
+                            }];
 
-                    var spy = sinon.spy();
-                    //emitter.on('get', spy);
+                            moxios.stubRequest('cgi-bin/graphData.cgi?action=hosts&src=3.0.0.3&dest=4.0.0.4', {
 
-                    var subscriber2 = function( ) {
-                        var expectedResult = [{
-                            "dest_host": "l0.cambridge1-sr3.bbnplanet.net",
-                            "dest_ip": "4.0.0.4",
-                            "source_host": "n003-000-000-000.static.ge.com",
-                            "source_ip": "3.0.0.3"
-                        }];
-                        emitter.emit('get');
-                        //spy();
-                        //sinon.assert.calledOnce(spy);
+                                status: 200,
+                                responseText: expected
+                            });
 
-                        var outputData = HostInfoStore.getHostInfoData();
+                        //var spy = sinon.spy();
+                        //emitter.on('get', spy);
 
-                        HostInfoStore.unsubscribe( subscriber2 );
+                        var subscriber = function( ) {
+                            console.log("SUBSCRIBER2");
+                            var expectedResult = [{
+                                "dest_host": "l0.cambridge1-sr3.bbnplanet.net",
+                                "dest_ip": "4.0.0.4",
+                                "source_host": "n003-000-000-000.static.ge.com",
+                                "source_ip": "3.0.0.3"
+                            }];
+                            //emitter.emit('get');
+                            //spy();
+                            //sinon.assert.calledOnce(spy);
 
-                        assert.deepEqual( expectedResult, outputData );
-                        done();
-                    };
+                            var outputData = HostInfoStore.getHostInfoData();
 
-                    HostInfoStore.subscribe( subscriber2 );
-                    //HostInfoStore.subscribe( spy );
+                            HostInfoStore.unsubscribe( subscriber2 );
 
+                            assert.deepEqual( expectedResult, outputData );
+                            done2();
+                        };
 
-                    HostInfoStore.retrieveHostInfo( "3.0.0.3", "4.0.0.4");
+                        HostInfoStore.subscribe( subscriber );
+                        //HostInfoStore.subscribe( spy );
 
-                });
+console.log('calling retrieveHOstInfO');
+                        HostInfoStore.retrieveHostInfo( "3.0.0.3", "4.0.0.4");
+                        
+
+                    });
+            })
+
+/*
 
                 it("Should handle a 404 error from HostInfo data correctly", function ( done ) {
 
@@ -205,3 +232,4 @@ describe('HostInfoStore', function( doneParent ) {
 
 
     });
+});
