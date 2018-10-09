@@ -73,15 +73,15 @@ describe('HostInfoStore', function( ) {
                         */
         describe('Get Host Info', function() {
 
-                    beforeEach(function (done) {
+                    beforeEach(function (doneBefore) {
                         // import and pass your custom axios instance to this method
                         moxios.install();
-                        done();
+                        doneBefore();
                     })
-                    afterEach(function (done) {
+                    afterEach(function (doneAfter) {
                         // import and pass your custom axios instance to this method
                         moxios.uninstall();
-                        done();
+                        doneAfter();
                     })
 
 
@@ -137,7 +137,7 @@ describe('HostInfoStore', function( ) {
 
                     
 
-                it("Should return correct HostInfo data test2", function ( done ) {
+                it("Should return correct HostInfo data test2", function ( done2 ) {
                     moxios.withMock(function () {
                             //var emitter = new EventEmitter();
                             var expected = [{
@@ -153,10 +153,18 @@ describe('HostInfoStore', function( ) {
                                 responseText: expected
                             });
 
-                        //var spy = sinon.spy();
+                        var spy = sinon.spy();
                         //emitter.on('get', spy);
+                        
+                            moxios.wait(function () {
+                                const request = moxios.requests.mostRecent();
+                                request.respondWith({ status: 200, response: expected })
+                                //console.log('spy.getCall(0).args[0].data', spy.getCall(0).args[0].data);
+                                //equal(spy.getCall(0).args[0].data, expected)
+                                //done()
+                            })
 
-                        var subscriber = function( ) {
+                        var subscriber2 = function( ) {
                             console.log("SUBSCRIBER2");
                             var expectedResult = [{
                                 "dest_host": "l0.cambridge1-sr3.bbnplanet.net",
@@ -176,7 +184,7 @@ describe('HostInfoStore', function( ) {
                             done2();
                         };
 
-                        HostInfoStore.subscribe( subscriber );
+                        HostInfoStore.subscribe( subscriber2 );
                         //HostInfoStore.subscribe( spy );
 
 console.log('calling retrieveHOstInfO');

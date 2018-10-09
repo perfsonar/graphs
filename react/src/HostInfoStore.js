@@ -176,6 +176,7 @@ module.exports = {
         return this.hostInfo;
     },
     handleHostInfoResponse: function( data ) {
+        this.hostInfo = [];
         this.hostInfo = data;
         emitter.emit("get");
     },
