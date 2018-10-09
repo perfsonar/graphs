@@ -28,6 +28,7 @@ module.exports = {
      *  }
      */
     hostInfo: [],
+    hostError: {},
     tracerouteReqs: 0,
     tracerouteReqsCompleted: 0,
     tracerouteInfo: [],
@@ -61,7 +62,6 @@ module.exports = {
             var self = this;
             axios.get(url)
                 .then(function(data) {
-                    console.log('axios data', data);
                     self.handleTracerouteResponse( data.data, self.i );
 
                 })
@@ -115,65 +115,29 @@ module.exports = {
             url += "&dest=" + dests[i];
 
         }
-        console.log("retrieveHostInfoURL", url);
 
-        /*
-        var xhr = this._createXhr();
-        this.serverRequest = xhr.open( "GET",  url );
-                    
-        xhr.onload = function(data) { 
-            this.handleHostInfoResponse( data );
+        var self = this;
+        axios.get(url)
+            .then(function(data) {
+                self.handleHostInfoResponse( data.data );
 
-        }.bind(this);
-         xhr.send();
-         */
-            var self = this;
-            axios.get(url)
-                .then(function(data) {
-                    console.log('axios HOST data', data);
-                    self.handleHostInfoResponse( data.data );
-
-                })
-                .catch(function(err) {
-                    console.log("Error retrieving HOST data:", err);
-                    emitter.emit("error");
+            })
+            .catch(function(err) {
+                    self.hostError = err;
                     if ( _.isFunction( callback ) ) {
-                        callback( errorObj );
+                        callback( err );
                     }
-
-
-                });
-
-                /*
-
-        if ( typeof this.serverRequest != "undefined "  ) {
-
-                this.serverRequest.fail(function( jqXHR ) {
-                    var responseText = jqXHR.responseText;
-                    var statusText = jqXHR.statusText;
-                    var errorThrown = jqXHR.status;
-
-                    var errorObj = {
-                        errorStatus: "error",
-                        responseText: responseText,
-                        statusText: statusText,
-                        errorThrown: errorThrown
-                    };
-
-                    if ( _.isFunction( callback ) ) {
-                        callback( errorObj );
-                    }
-
                     emitter.emit("error");
 
-                }.bind(this) );
-        }
-                */
-            //console.log( this.serverRequest.error() );
+
+            });
 
     },
     getHostInfoData: function( ) {
         return this.hostInfo;
+    },
+    getHostInfoError: function( ) {
+        return this.hostError;
     },
     handleHostInfoResponse: function( data ) {
         this.hostInfo = [];

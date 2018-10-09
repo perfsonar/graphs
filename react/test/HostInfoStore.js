@@ -98,19 +98,14 @@ describe('HostInfoStore', function( ) {
                             });
 
                             var spy = sinon.spy();
-                            //axios.get(BASE_URL + '/cgi-bin/graphData.cgi?action=hosts&src=1.0.0.1&dest=2.0.0.2').then(spy);
                             moxios.wait(function () {
                                 const request = moxios.requests.mostRecent();
                                 request.respondWith({ status: 200, response: expected })
-                                //console.log('spy.getCall(0).args[0].data', spy.getCall(0).args[0].data);
-                                //equal(spy.getCall(0).args[0].data, expected)
-                                //done()
                             })
 
 
 
                         var subscriber = function( ) {
-                            console.log("GOT RESULT" );
                             var expectedResult =
                                 [ { dest_host: 'ANantes-651-1-49-2.w2-0.abo.wanadoo.fr',
                                     dest_ip: '2.0.0.2',
@@ -159,13 +154,9 @@ describe('HostInfoStore', function( ) {
                             moxios.wait(function () {
                                 const request = moxios.requests.mostRecent();
                                 request.respondWith({ status: 200, response: expected })
-                                //console.log('spy.getCall(0).args[0].data', spy.getCall(0).args[0].data);
-                                //equal(spy.getCall(0).args[0].data, expected)
-                                //done()
                             })
 
                         var subscriber2 = function( ) {
-                            console.log("SUBSCRIBER2");
                             var expectedResult = [{
                                 "dest_host": "l0.cambridge1-sr3.bbnplanet.net",
                                 "dest_ip": "4.0.0.4",
@@ -187,19 +178,32 @@ describe('HostInfoStore', function( ) {
                         HostInfoStore.subscribe( subscriber2 );
                         //HostInfoStore.subscribe( spy );
 
-console.log('calling retrieveHOstInfO');
                         HostInfoStore.retrieveHostInfo( "3.0.0.3", "4.0.0.4");
                         
 
                     });
             })
 
-/*
 
                 it("Should handle a 404 error from HostInfo data correctly", function ( done ) {
+                        moxios.withMock(function () {
 
                     var spy = sinon.spy();
                     var successSpy = sinon.spy();
+                    var hostErr;
+
+
+                    //axios.get(BASE_URL + '/cgi-bin/graphData.cgi?action=hosts&src=1.0.0.1&dest=2.0.0.2').then(spy);
+                    var expectedResult = {
+                        errorStatus: 'error',
+                        responseText: 'not found',
+                        statusText: 'error',
+                        errorThrown: 404
+                    };
+                    moxios.wait(function () {
+                        const request = moxios.requests.mostRecent();
+                        request.reject(expectedResult);
+                    })
 
                     var errorSubscriber3 = function( ) {
                         var expectedResult = {
@@ -209,21 +213,30 @@ console.log('calling retrieveHOstInfO');
                             errorThrown: 404
                         };
 
-                        var errorData = spy.args[0][0];
+                        var errorData =  HostInfoStore.getHostInfoError();
 
                         HostInfoStore.unsubscribe( errorSubscriber3 );
-
-                        // Correct response data is returned
-                        assert.deepEqual( expectedResult, errorData );
 
                         // Make sure we've been called once (for "error" events)
                         sinon.assert.calledOnce(spy);
 
+                        // Correct response data is returned
+                        assert.deepEqual( expectedResult, errorData );
+
+
                         // Make sure "success" subscriber was not called, since 
                         // there was an error
+
                         sinon.assert.notCalled(successSpy);
+
                         done();
                     };
+                    moxios.stubRequest('cgi-bin/graphData.cgi?action=hosts&src=1.0.0.1&dest=2.0.0.2', {
+
+                        status: 404,
+                        responseText: expectedResult
+                    });
+
 
                     HostInfoStore.subscribeError( errorSubscriber3 );
 
@@ -234,10 +247,9 @@ console.log('calling retrieveHOstInfO');
                     HostInfoStore.retrieveHostInfo( "3.0.0.3", "4.0.0.4", spy);
 
                 });
-                */
 
 
-
+            });
 
     });
 });
