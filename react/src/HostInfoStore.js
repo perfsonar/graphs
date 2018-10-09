@@ -6,13 +6,6 @@ const axios = require('axios');
 
 const _ = require('underscore');
 
-/*
-if ( (typeof jQuery) != "undefined" ) {
-    $ = jQuery;
-} else {
-    $ = require('jquery');
-}
-*/
 module.exports = {
 
     /* Expects an object of hosts like this (keys must be src, dst (can be multiple -- number of sources and dests must match) ): 
@@ -33,7 +26,6 @@ module.exports = {
     tracerouteReqsCompleted: 0,
     tracerouteInfo: [],
     serverURLBase: "",
-    //serverURLBase: "http://asdf.example.com/perfsonar-graphs/",
 
     retrieveTracerouteData: function ( sources, dests, ma_urls ) {
         let baseUrl = "cgi-bin/graphData.cgi?action=has_traceroute_data";
@@ -70,20 +62,7 @@ module.exports = {
 
                 });
 
-            /*
-            var xhr = this._createXhr();
-
-            this.serverRequest = xhr.open( "GET",  url );
-                    
-            xhr.onload = (function(data) {
-                    this.handleTracerouteResponse( data, i );
-            }).bind(this);
-
-            }
-            xhr.send();
-            */
     }
-
 
 
     },
