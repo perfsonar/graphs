@@ -37,37 +37,50 @@ module.exports = {
     },
 
     getTimeVars: function (period) {
-        let timeDiff;
-        let summaryWindow;
-        if (period == '4h') {
-            timeDiff = 60*60 * 4;
-            summaryWindow = 0;
-        } else if (period == '12h') {
-            timeDiff = 60*60 * 12;
-            summaryWindow = 0;
-        } else if (period == '1d') {
-            timeDiff = 86400;
-            summaryWindow = 300;
-        } else if (period == '3d') {
-            timeDiff = 86400 * 3;
-            summaryWindow = 300;
-        } else if (period == '1w') {
-            timeDiff = 86400*7;
-            summaryWindow = 3600;
-        } else if (period == '1m') {
-            timeDiff = 86400*31;
-            summaryWindow = 3600;
-        } else if (period == '1y') {
-            timeDiff = 86400*365;
-            summaryWindow = 86400;
+     
+	let timeframe = period.toString(); 
+	if(timeframe.endsWith("h")||timeframe.endsWith("d")||timeframe.endsWith("w")||timeframe.endsWith("m")||timeframe.endsWith("y"))
+        {
+                var ch = timeframe.substring(0, timeframe.length - 1);
+                var dmy = timeframe.charAt(timeframe.length - 1);
+                timeframe = parseFloat(ch);
+                switch(dmy){
+                        case 'h': timeframe*= 60*60; break;
+                        case 'd': timeframe*= 86400; break;
+                        case 'w': timeframe*= 86400*7; break;
+                        case 'm': timeframe*= 86400*31; break;
+                        case 'y': timeframe*= 86400*365;
+                }
+                timeframe = Math.round(timeframe);
+                console.log(timeframe);
         }
+        else{
+                timeframe = parseFloat(timeframe);
+                timeframe = Math.round(timeframe);
+        }
+ 	
+	let timeDiff = timeframe;
+        let summaryWindow;
+	if(timeDiff< 86400){
+		summaryWindow = 0;	
+	}
+	else if((timeDiff >= 86400) && (timeDiff<= 86400*3)){
+		summaryWindow = 300;	
+	}
+	else if((timeDiff > 86400*3) && (timeDiff<= 86400*31)){
+                summaryWindow = 3600;
+        }
+	else{
+                summaryWindow = 86400;
+        }        
+        //period = timeframe;
         let timeRange = {
             timeDiff: timeDiff,
             summaryWindow: summaryWindow,
             timeframe: period
         };
         return timeRange;
-
+		
     }
 
 };

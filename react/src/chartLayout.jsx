@@ -471,20 +471,32 @@ export default React.createClass({
             timeframe = hashObj.timeframe;
 
         }
-
-        let timeVars = GraphUtilities.getTimeVars( timeframe );
-
-        if ( typeof hashObj.start != "undefined" ) {
-            start = hashObj.start;
-        } else if ( typeof hashObj.start_ts != "undefined" ) {
-            start = hashObj.start_ts;
+	//console.log("start undefined or null");
+	console.log(typeof hashObj.start);
+        	
+	////////
+	/*	*/
+	let timeVars = GraphUtilities.getTimeVars( timeframe );
+	timeframe = Math.round(timeVars.timeDiff);	
+	//console.log("after math");
+        //console.log(timeframe);
+	if((typeof hashObj.start == "undefined") && (typeof hashObj.end == "undefined")){
+                start = parseInt(start);
+                end = parseInt(end);
+                timeframe = end - start;
         }
 
-        if ( typeof hashObj.end != "undefined" ) {
-            end = hashObj.end;
-        } else if ( typeof hashObj.end_ts != "undefined" ) {
-            end = hashObj.end_ts;
+        else if(typeof hashObj.start == "undefined"){
+                start = parseInt(hashObj.end) - timeframe;
         }
+
+        else if(typeof hashObj.end == "undefined"){
+                end = parseInt(hashObj.start) + timeframe;
+        }
+        else{
+                timeframe = parseInt(hashObj.end) - parseInt(hashObj.start);
+        }	
+
 
         if ( typeof qs.ipversion != "undefined" ) {
             ipversion = qs.ipversion;
@@ -493,7 +505,7 @@ export default React.createClass({
         if ( typeof hashObj.summaryWindow != "undefined" ) {
             summaryWindow = hashObj.summaryWindow;
         }
-
+	
         if ( typeof summaryWindow == "undefined" ) {
             //summaryWindow = 3600;
             summaryWindow = timeVars.summaryWindow;
