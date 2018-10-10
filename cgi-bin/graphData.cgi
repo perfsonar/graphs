@@ -54,18 +54,18 @@ my $action = $cgi->param('action') || error("Missing required parameter \"action
 
 #json file reader for reading ssl certificate flag from the configuration file
 my $sslcertjson;
-my $certfile = "/etc/perfsonar/graphs-ssl.json";
+my $configfile = "/etc/perfsonar/graphs.json";
 #flag set to 1 only if the certificate config file exists
 my $flag = 0;
-my $enable;
-if(-e $certfile){
+my $config;
+if(-e $configfile){
   local $/;
-  open my $fh, "<", $certfile;
+  open my $fh, "<", $configfile;
   $sslcertjson = <$fh>;
   close $fh;
 
   $flag = 1;
-  $enable = decode_json($sslcertjson);
+  $config = decode_json($sslcertjson);
 }
 
 ######
@@ -125,7 +125,7 @@ sub get_ma_data {
     #if the flag is set, the certificate config file exists
     if($flag){
 	#if ssl certificate ignore is set from etc/perfsonar/graphs-ssl.json file
-	if($enable->{'ssl_cert_ignore'}){
+	if($config->{'ssl_cert_ignore'}){
     	$ua->ssl_opts( "verify_hostname" => 0);
     	}
 
