@@ -7,7 +7,7 @@
 %define relnum   1 
 
 Name:			perfsonar-graphs
-Version:		4.1.2
+Version:		4.1.3
 Release:		%{relnum}%{?dist}
 Summary:		perfSONAR Graphs
 License:		ASL 2.0
