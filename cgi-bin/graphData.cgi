@@ -847,6 +847,7 @@ sub get_tests {
 
         my $protocol = $metadatum->get_field('ip-transport-protocol');
         my $duration = $metadatum->get_field('time-duration');
+        my $bucket_width = $metadatum->get_field('sample-bucket-width');
         my $source_ip = $src;
         my $destination_ip = $dst;
 
@@ -896,6 +897,12 @@ sub get_tests {
                             $total += $datum->val->{mean};
                             $max = $datum->val->{maximum} if !defined($max) || $datum->val->{maximum} > $max;
                             $min = $datum->val->{minimum} if !defined($min) || $datum->val->{minimum} < $min;
+                        }
+                        if($bucket_width){
+                            #if bucketwidth is defined, normalize to milliseconds
+                            $total = ($total * $bucket_width)/0.001;
+                            $max = ($max * $bucket_width)/0.001;
+                            $min = ($min * $bucket_width)/0.001;
                         }
                         $average = $total / @$data;
                     }

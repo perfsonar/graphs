@@ -1756,7 +1756,7 @@ export default React.createClass({
     },
     dataError: function() {
         let data = GraphDataStore.getErrorData();
-        console.log("dataError", data);
+        console.log("Request failed, status code:", data.status, data.responseText, data.statusText);
         this.setState({dataError: data, loading: false});
 
     },
