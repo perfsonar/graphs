@@ -3,7 +3,7 @@ ROOTPATH=/usr/lib/perfsonar/graphs
 CONFIGPATH=${ROOTPATH}/etc
 LIBPATH=/usr/lib/perfsonar/lib
 GRAPHLIBPATH=/usr/lib/perfsonar/graphs/lib
-VERSION=4.1
+VERSION=4.1.3
 RELEASE=1
 
 default:

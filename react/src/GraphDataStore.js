@@ -173,14 +173,17 @@ module.exports = {
                     // if we get an error, try the cgi instead 
                     // and set a new flag, useProxy  and make
                     // all requests through the proxy CGI
-                    if ( data.status == 404 ) {
+                    console.log("status error code", data.status);
+                    if ( data.status == 404 ||  data.status == 0 ) {
                         this.useProxy = true;
+                        console.log("CORS attempt failed; using CGI fallback proxy (performance will be impacted)");
                         url = this.getMAURL( url );
                         this.serverRequest = $.get( url, function(data) {
                             this.handleMetadataResponse(data, direction[j], base_url );
                         }.bind(this))
                         .fail(function( data ) {
                             this.handleMetadataError( data );
+                            console.log("Proxy failed");
                         }.bind(this)
                         )
 
@@ -425,6 +428,7 @@ module.exports = {
                     }
                     let row = pruneDatum( datum );
                     row.protocol = datum["ip-transport-protocol"];
+                    row.bucketwidth = datum["sample-bucket-width"];
                     row.ipversion = ipversion;
 
                     dataReqCount++;
@@ -446,6 +450,7 @@ module.exports = {
         if ( data !== null ) {
             let direction = datum.direction;
             let protocol = datum.protocol;
+            let bucketwidth = datum.bucketwidth;
             let row = datum;
             row.eventType = eventType;
             row.data = data;
@@ -712,6 +717,7 @@ module.exports = {
             let eventType = datum.eventType;
             let direction = datum.direction;
             let protocol = datum.protocol;
+            let bucketwidth = datum.bucketwidth;
             if ( eventType == "failures" ) {
                 return true;
             }
@@ -755,6 +761,9 @@ module.exports = {
                 let value = val["val"];
                 if ( eventType == 'histogram-owdelay') {
                     value = val["val"].minimum;
+                    if(bucketwidth){
+                        value = value * bucketwidth / 0.001; //convert to milliseconds
+                    }
                 } else if ( eventType == 'histogram-rtt' ) {
                     value = val["val"].minimum;
                 } else if ( eventType == 'packet-count-lost' ) {
