@@ -133,7 +133,9 @@ sub get_ma_data {
     	#$ua->ssl_opts( "verify_hostname" => 1);
     	#}
     }
-    
+    else{
+	$ua->ssl_opts( "verify_hostname" => 0);
+    } 
     	
     		
     # Make sure the URL looks like an esmond URL -- starts with http or https and looks like
