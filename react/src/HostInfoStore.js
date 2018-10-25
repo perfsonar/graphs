@@ -2,7 +2,7 @@ var EventEmitter = require('events').EventEmitter;
 
 var emitter = new EventEmitter();
 
-if ( typeof window == "undefined" ) {
+/*if ( typeof window == "undefined" ) {
     var $;
     if ( typeof $ == "undefined" ) {
         require("node-jsdom").env("", function(err, window) {
@@ -18,7 +18,7 @@ if ( typeof window == "undefined" ) {
 
 } else {
     $ = jQuery;
-}
+}*/
 
 module.exports = {
 
