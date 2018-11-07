@@ -1,4 +1,5 @@
 {
-	"#comment" : "setting the value to true ignores the ssl certificate check",
-	"ssl_cert_ignore" : true 
+        "#comment" : "setting ssl_cert_ignore to false makes sure that ssl certificate is valid, any invalid syntax would ignore the certificate check",
+        "ssl_cert_ignore" : true
 }
+

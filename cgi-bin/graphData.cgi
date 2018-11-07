@@ -22,7 +22,7 @@ use Socket6;
 use Data::Validate::IP;
 use Log::Log4perl qw(get_logger :easy :levels);
 use URI;
-
+use Try::Tiny;
 #my $bin = "$RealBin";
 #warn "bin: $bin";
 
@@ -48,6 +48,9 @@ use perfSONAR_PS::Utils::Host qw( discover_primary_address get_ethernet_interfac
 
 my $basedir = "$FindBin::Bin";
 
+my $ua = LWP::UserAgent->new;
+$ua->ssl_opts( "verify_hostname" => 0);
+
 my $cgi = new CGI;
 
 my $action = $cgi->param('action') || error("Missing required parameter \"action\", must specify data or tests", 400);
@@ -56,7 +59,7 @@ my $action = $cgi->param('action') || error("Missing required parameter \"action
 my $sslcertjson;
 my $configfile = "/etc/perfsonar/graphs.json";
 #flag set to 1 only if the certificate config file exists
-my $flag = 0;
+my $config_set = 0;
 my $config;
 if(-e $configfile){
   local $/;
@@ -64,8 +67,15 @@ if(-e $configfile){
   $sslcertjson = <$fh>;
   close $fh;
 
-  $flag = 1;
-  $config = decode_json($sslcertjson);
+  $config_set = 1;
+  
+  try{
+	$config = decode_json($sslcertjson);
+  }  catch{
+	print 'The json file used is invalid, please consider using correct json syntax while editing graphs.json';
+  }
+
+
 }
 
 ######
@@ -120,22 +130,15 @@ sub get_ma_data {
     }
 
     
-    my $ua = LWP::UserAgent->new;
-    
-    #if the flag is set, the certificate config file exists
-    if($flag){
-	#if ssl certificate ignore is set from etc/perfsonar/graphs-ssl.json file
-	if($config->{'ssl_cert_ignore'}){
-    	$ua->ssl_opts( "verify_hostname" => 0);
+    #if config_set is set to 1, the certificate config file exists
+    if($config_set){
+	#if ssl certificate ignore is set to false in etc/perfsonar/graphs-ssl.json file
+	if(($config->{'ssl_cert_ignore'}) eq 'false' ){
+    	$ua->ssl_opts( "verify_hostname" => 1);
     	}
-
-    	#else{
-    	#$ua->ssl_opts( "verify_hostname" => 1);
-    	#}
+    
     }
-    else{
-	$ua->ssl_opts( "verify_hostname" => 0);
-    } 
+     
     	
     		
     # Make sure the URL looks like an esmond URL -- starts with http or https and looks like

@@ -41,6 +41,7 @@ Requires:		perl(Statistics::Descriptive)
 Requires:		perl(Template)
 Requires:		perl(Time::HiRes)
 Requires:		perl(Time::Local)
+Requires:               perl(Try::Tiny)
 Requires:		perl(XML::LibXML) >= 1.60
 Requires:		perl(YAML::Syck)
 Requires:		httpd
