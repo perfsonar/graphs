@@ -22,7 +22,7 @@ use Socket6;
 use Data::Validate::IP;
 use Log::Log4perl qw(get_logger :easy :levels);
 use URI;
-
+use Try::Tiny;
 #my $bin = "$RealBin";
 #warn "bin: $bin";
 
@@ -48,9 +48,37 @@ use perfSONAR_PS::Utils::Host qw( discover_primary_address get_ethernet_interfac
 
 my $basedir = "$FindBin::Bin";
 
+my $ua = LWP::UserAgent->new;
+$ua->ssl_opts( "verify_hostname" => 0);
+
 my $cgi = new CGI;
 
 my $action = $cgi->param('action') || error("Missing required parameter \"action\", must specify data or tests", 400);
+
+#json file reader for reading ssl certificate flag from the configuration file
+my $sslcertjson;
+my $configfile = "/etc/perfsonar/graphs.json";
+#flag set to 1 only if the certificate config file exists
+my $config_set = 0;
+my $config;
+if(-e $configfile){
+  local $/;
+  open my $fh, "<", $configfile;
+  $sslcertjson = <$fh>;
+  close $fh;
+
+  $config_set = 1;
+  
+  try{
+	$config = decode_json($sslcertjson);
+  }  catch{
+	warn 'The json file used is invalid, please use correct json syntax while editing ' . $configfile ;
+  }
+
+
+}
+
+######
 
 if ($action eq 'data'){
     get_data();
@@ -90,15 +118,28 @@ sub cgi_multi_param {
     }
 }
 
+#######
+
+######
 # Fallback proxy for esmond requests for esmond instances that don't have CORS enabled
 sub get_ma_data {
-    my $url        = $cgi->param('url');
+    my $url = $cgi->param('url');
 
     if ( not defined $url ) {
         error("No URL specified", 400);
     }
 
-    my $ua = LWP::UserAgent->new;
+
+    #if config_set is set to 1, the certificate config file exists
+    if($config_set){
+        #if ssl certificate ignore is set to false in etc/perfsonar/graphs.json file
+        if( defined($config->{'ssl_cert_ignore'}) &&   $config->{'ssl_cert_ignore'} eq 'false' ){
+            $ua->ssl_opts( "verify_hostname" => 1);
+        }
+
+    }
+
+
 
     # Make sure the URL looks like an esmond URL -- starts with http or https and looks like
     # http://host/esmond/perfsonar/archive/[something]
