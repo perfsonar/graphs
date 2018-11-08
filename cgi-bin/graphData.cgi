@@ -72,7 +72,7 @@ if(-e $configfile){
   try{
 	$config = decode_json($sslcertjson);
   }  catch{
-	print 'The json file used is invalid, please consider using correct json syntax while editing graphs.json';
+	warn 'The json file used is invalid, please use correct json syntax while editing ' . $configfile ;
   }
 
 
@@ -123,24 +123,24 @@ sub cgi_multi_param {
 ######
 # Fallback proxy for esmond requests for esmond instances that don't have CORS enabled
 sub get_ma_data {
-    my $url        = $cgi->param('url');
+    my $url = $cgi->param('url');
 
     if ( not defined $url ) {
         error("No URL specified", 400);
     }
 
-    
+
     #if config_set is set to 1, the certificate config file exists
     if($config_set){
-	#if ssl certificate ignore is set to false in etc/perfsonar/graphs-ssl.json file
-	if(($config->{'ssl_cert_ignore'}) eq 'false' ){
-    	$ua->ssl_opts( "verify_hostname" => 1);
-    	}
-    
+        #if ssl certificate ignore is set to false in etc/perfsonar/graphs.json file
+        if( defined($config->{'ssl_cert_ignore'}) &&   $config->{'ssl_cert_ignore'} eq 'false' ){
+            $ua->ssl_opts( "verify_hostname" => 1);
+        }
+
     }
-     
-    	
-    		
+
+
+
     # Make sure the URL looks like an esmond URL -- starts with http or https and looks like
     # http://host/esmond/perfsonar/archive/[something]
     # this should be url encoded
@@ -148,7 +148,7 @@ sub get_ma_data {
         my $req = HTTP::Request->new(
             GET => $url,
         );
-	
+
         # perform http GET on the URL
         my $res = $ua->request($req);
 

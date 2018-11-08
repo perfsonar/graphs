@@ -17,7 +17,7 @@ etc/config2.yml
 etc/config3.yml
 etc/config_bwctl.yml
 etc/config_owamp.yml
-etc/graphs-ssl.json
+etc/graphs.json
 html/images/downarrow.png
 html/images/header.gif
 html/images/logo.png

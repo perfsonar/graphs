@@ -1,5 +1,6 @@
 {
-        "#comment" : "setting ssl_cert_ignore to false makes sure that ssl certificate is valid, any invalid syntax would ignore the certificate check",
+        "#comment" : "ssl_cert_ignore specifies whether to validate SSL certs of remote MAs",
+        "#comment" : "set ssl_cert_ignore to false to validate SSL certs",
         "ssl_cert_ignore" : true
 }
 

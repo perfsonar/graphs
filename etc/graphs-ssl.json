@@ -1,4 +1,0 @@
-{
-	"_comment" : "setting the value to true ignores the ssl certificate check",
-	"ssl_cert_ignore" : true 
-}

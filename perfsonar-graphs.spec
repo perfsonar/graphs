@@ -2,9 +2,9 @@
 %define config_base %{install_base}/etc
 
 # cron/apache entries are located in the 'etc' directory
-%define apacheconf apache-perfsonar-graphs.conf 
+%define apacheconf apache-perfsonar-graphs.conf
 
-%define relnum   1 
+%define relnum   1
 
 Name:			perfsonar-graphs
 Version:		4.1.2
@@ -41,7 +41,7 @@ Requires:		perl(Statistics::Descriptive)
 Requires:		perl(Template)
 Requires:		perl(Time::HiRes)
 Requires:		perl(Time::Local)
-Requires:               perl(Try::Tiny)
+Requires:       perl(Try::Tiny)
 Requires:		perl(XML::LibXML) >= 1.60
 Requires:		perl(YAML::Syck)
 Requires:		httpd
