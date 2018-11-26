@@ -7,7 +7,7 @@
 %define relnum   1 
 
 Name:			perfsonar-graphs
-Version:		4.1.3
+Version:		4.1.4
 Release:		%{relnum}%{?dist}
 Summary:		perfSONAR Graphs
 License:		ASL 2.0
@@ -29,7 +29,6 @@ Requires:		perl(HTML::Template)
 Requires:		perl(IO::File)
 Requires:		perl(JSON)
 Requires:		perl(JSON::XS)
-Requires:		perl(LWP::UserAgent)
 Requires:		perl(Log::Log4perl)
 Requires:		perl(Mouse)
 Requires:		perl(NetAddr::IP)
