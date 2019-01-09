@@ -59,7 +59,6 @@ test:
 
 lint:
 	node_modules/eslint/bin/eslint.js src/*.jsx src/*.js server.js test/*.js 
-	node_modules/eslint/bin/eslint.js js-shared/lib/*.js js-shared/lib/DataStores/*.js js-shared/lib/Utils/*.js 
 
 server:
 	node server.js
