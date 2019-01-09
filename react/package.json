@@ -37,8 +37,10 @@
     "react-timeseries-charts": "^0.10.2",
     "underscore": "^1.7.0"
   },
-  "peerDependencies": {},
+  "peerDependencies": {
+  },
   "devDependencies": {
+    "acorn": "^6.0.0",
     "babel-cli": "^6.5.1",
     "babel-core": "^6.5.2",
     "babel-eslint": "^9.0.0",
@@ -65,7 +67,7 @@
     "react-markdown": "^1.0.5",
     "react-router": "^1.0.0",
     "scroll-behavior": "^0.3.0",
-    "sinon": "^2.3.4",
+    "sinon": "^7.2.2",
     "style-loader": "^0.13.0",
     "url-loader": "^0.5.7",
     "w3cjs": "^0.4.0",
