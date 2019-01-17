@@ -1,4 +1,6 @@
-#Ignore mac hidden file
+# Ignore jquery (may want to reconsider)
+html/public/jquery
+# Ignore mac hidden file
 .DS_Store
 # Ignore quilt cache directory
 .pc/
