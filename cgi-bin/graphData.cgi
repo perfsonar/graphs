@@ -46,6 +46,9 @@ use SimpleLookupService::QueryObjects::Network::InterfaceQueryObject;
 # library for getting host information
 use perfSONAR_PS::Utils::Host qw( discover_primary_address get_ethernet_interfaces get_interface_addresses_by_type is_ip_or_hostname is_web_url );
 
+# variable to act as dns cache for dns lookups
+my %dns_cache;
+
 my $basedir = "$FindBin::Bin";
 
 my $ua = LWP::UserAgent->new;
@@ -1295,15 +1298,31 @@ sub host_info {
         # if $host is IP address, do DNS lookup
         if (is_ipv4($host) || is_ipv6($host)) {
             $results->{$key . '_ip'} = $host;
-
-            my ( @names ) = reverse_dns( $host, 1 );
-            $results->{$key . '_host'} = $names[0];
+	
+	    if(exists($dns_cache{$host . ' '. 'name'})){
+                $results->{$key . '_host'} = $dns_cache{$host . ' '. 'name'}[0];
+            }
+            else{
+                my ( @names ) = reverse_dns( $host, 1 );
+                $dns_cache{$host . ' '. 'name'} = [@names];
+                $results->{$key . '_host'} = $names[0];
+            }
+	                      
 
         } else {
             $results->{$key . '_host'} = $host;
             $results->{$key . '_ip'} = '';
-            my @addresses = resolve_address($host);
-            my $ip_count = 0;
+            
+	    my @addresses;
+            if(exists($dns_cache{$host})){
+                @addresses = @{$dns_cache{$host}};
+            }
+            else{
+                @addresses = resolve_address($host);
+                $dns_cache{$host} = [@addresses];
+            }
+            
+	    my $ip_count = 0;
             foreach my $address(@addresses){
                 if($ipversion && $ipversion == 4){
                     next unless(is_ipv4($address));
