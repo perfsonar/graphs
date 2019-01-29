@@ -47,6 +47,7 @@ Requires:		libperfsonar-perl
 Requires:		libperfsonar-esmond-perl
 Requires:		libperfsonar-sls-perl
 Requires:		perfsonar-traceroute-viewer
+Requires:		perfsonar-tracetree
 Obsoletes:		perl-perfSONAR_PS-serviceTest
 Obsoletes:		perl-perfSONAR-graphs
 Provides:		perl-perfSONAR-graphs
