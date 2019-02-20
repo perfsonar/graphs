@@ -141,6 +141,16 @@
 
 }
 
+.checkboxes {
+      text-align:center;
+}
+
+.divider{
+    width:50px;
+    height:auto;
+    display: inline-block;
+}
+
 .graph-header {
     border-bottom: 1px solid #ccc;
     margin-top: 1em;
