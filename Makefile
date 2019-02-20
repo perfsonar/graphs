@@ -3,8 +3,10 @@ ROOTPATH=/usr/lib/perfsonar/graphs
 CONFIGPATH=${ROOTPATH}/etc
 LIBPATH=/usr/lib/perfsonar/lib
 GRAPHLIBPATH=/usr/lib/perfsonar/graphs/lib
-VERSION=4.1.3
-RELEASE=1
+PERFSONAR_AUTO_VERSION=4.1.4
+PERFSONAR_AUTO_RELNUM=1
+VERSION=${PERFSONAR_AUTO_VERSION}
+RELEASE=${PERFSONAR_AUTO_RELNUM}
 
 default:
 	@echo No need to build the package. Just run \"make install\"

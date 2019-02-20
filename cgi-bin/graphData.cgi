@@ -9,8 +9,6 @@ use threads::shared;
 use CGI;
 use Config::General;
 use JSON;
-use LWP::UserAgent;
-use HTTP::Request;
 use Params::Validate qw(:all);
 use JSON qw(from_json);
 use FindBin qw($RealBin);
@@ -31,6 +29,7 @@ use lib ("/usr/lib/perfsonar/lib", "/usr/lib/perfsonar/graphs/lib"  );
 
 use perfSONAR_PS::Client::Esmond::ApiFilters;
 use perfSONAR_PS::Client::Esmond::ApiConnect;
+use perfSONAR_PS::Client::Utils qw/send_http_request/;
 
 # Lookup Service libraries
 use SimpleLookupService::Client::SimpleLS;
@@ -142,23 +141,20 @@ sub get_ma_data {
 
     }
 
-
-
     # Make sure the URL looks like an esmond URL -- starts with http or https and looks like
     # http://host/esmond/perfsonar/archive/[something]
     # this should be url encoded
     if ( $url =~ m|^https?://[^/]+/esmond/perfsonar/archive| ) {
-        my $req = HTTP::Request->new(
-            GET => $url,
-        );
-
         # perform http GET on the URL
-        my $res = $ua->request($req);
+        my $res = send_http_request(connection_type => 'GET',
+                url => $url,
+                timeout => 60
+            );
 
         # success
         if ( $res->is_success ) {
             print $cgi->header('application/json');
-            my $message = $res->decoded_content;
+            my $message = $res->body;
             print $message;
         } else {
             # if there is an error, return the error message and code
