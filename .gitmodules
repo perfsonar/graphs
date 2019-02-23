@@ -1,6 +1,9 @@
-[submodule "shared"]
-	path = shared
-	url = https://github.com/perfsonar/perl-shared
 [submodule "toolkit"]
 	path = toolkit
 	url = https://github.com/perfsonar/toolkit
+[submodule "shared"]
+	path = shared
+	url = https://github.com/perfsonar/perl-shared
+[submodule "distribution"]
+	path = distribution
+	url = https://github.com/perfsonar/distribution.git
