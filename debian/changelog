@@ -1,0 +1,91 @@
+perfsonar-toolkit-graphs (4.1.6-1) perfsonar-release; urgency=low
+
+  * New upstream version.
+
+ -- Antoine Delvaux <antoine.delvaux@man.poznan.pl>  Sat, 23 Feb 2019 14:30:28 +0000
+
+perfsonar-toolkit-graphs (4.1.3-1) perfsonar-release; urgency=low
+
+  * New upstream version.
+
+ -- Antoine Delvaux <antoine.delvaux@man.poznan.pl>  Tue, 16 Oct 2018 10:09:31 -0400
+
+perfsonar-toolkit-graphs (4.1.2-1) perfsonar-release; urgency=low
+
+  * New upstream version.
+
+ -- Antoine Delvaux <antoine.delvaux@man.poznan.pl>  Thu, 13 Sep 2018 07:34:14 +0200
+
+perfsonar-toolkit-graphs (4.1-1) perfsonar-release; urgency=low
+
+  * New upstream version.
+
+ -- Antoine Delvaux <antoine.delvaux@man.poznan.pl>  Mon, 13 Aug 2018 18:23:27 +0000
+
+perfsonar-toolkit-graphs (4.0.2.1-2) perfsonar-jessie-release; urgency=low
+
+  * Correcting jQuery packaging.
+
+ -- Antoine Delvaux <antoine.delvaux@man.poznan.pl>  Tue, 13 Feb 2018 11:41:49 +0000
+
+perfsonar-toolkit-graphs (4.0.2.1-1) perfsonar-jessie-release; urgency=low
+
+  * New upstream version.
+
+ -- Antoine Delvaux <antoine.delvaux@man.poznan.pl>  Tue, 06 Feb 2018 22:31:57 +0000
+
+perfsonar-toolkit-graphs (4.0.2-1) perfsonar-jessie-release; urgency=low
+
+  * New upstream version.
+  * Updating lintian-overrides
+
+ -- Antoine Delvaux <antoine.delvaux@man.poznan.pl>  Wed, 01 Nov 2017 17:51:44 +0000
+
+perfsonar-toolkit-graphs (4.0.1-1) perfsonar-jessie-release; urgency=low
+
+  * New upstream version.
+  * Activating apache mod_headers.
+
+ -- Antoine Delvaux <antoine.delvaux@man.poznan.pl>  Tue, 15 Aug 2017 10:16:53 +0100
+
+perfsonar-toolkit-graphs (4.0.0.2-1) perfsonar-jessie-release; urgency=low
+
+  * New upstream version.
+
+ -- Antoine Delvaux <antoine.delvaux@man.poznan.pl>  Fri, 05 May 2017 12:22:27 +0000
+
+perfsonar-toolkit-graphs (4.0.0.1-1) perfsonar-jessie-release; urgency=low
+
+  * New upstream version.
+
+ -- Antoine Delvaux <antoine.delvaux@man.poznan.pl>  Thu, 20 Apr 2017 12:27:02 +0000
+
+perfsonar-toolkit-graphs (4.0-1) perfsonar-jessie-release; urgency=low
+
+  * New upstream version.
+  * Removed apache configuration patch that is merged upstream.
+  * Activating apache mod_rewrite.
+  * Adding libcgi-pm-perl, libperfsonar-sls-perl and
+    perfsonar-traceroute-viewer dependencies
+  * Adding autopkgtests
+
+ -- Antoine Delvaux <antoine.delvaux@man.poznan.pl>  Thu, 13 Apr 2017 16:47:01 +0000
+
+perfsonar-toolkit-graphs (3.5.1.3~beta-1) perfsonar-jessie-release; urgency=low
+
+  * New upstream version.
+  * Corrected apache configuration for CGI.
+
+ -- Antoine Delvaux <adelvaux@man.poznan.pl>  Fri, 06 May 2016 13:21:26 +0000
+
+perfsonar-toolkit-graphs (3.5.1.2~beta-1) perfsonar-jessie-release; urgency=low
+
+  * New upstream version.
+
+ -- Antoine Delvaux <adelvaux@man.poznan.pl>  Tue, 29 Mar 2016 15:13:14 +0000
+
+perfsonar-toolkit-graphs (3.5.1~beta-1) perfsonar-jessie-release; urgency=low
+
+  * Initial release.
+
+ -- Valentin Vidic <Valentin.Vidic@CARNet.hr>  Fri, 04 Mar 2016 14:44:33 +0100
