@@ -1,0 +1,6 @@
+#!/bin/sh
+
+set -e
+
+curl -s http://localhost/perfsonar-graphs/cgi-bin/graphData.cgi?action=ls_hosts \
+  | grep -C 10 '^\['
