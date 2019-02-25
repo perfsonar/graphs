@@ -106,13 +106,15 @@ export default React.createClass({
                                 <i className="fa fa-arrow-left" aria-hidden="true"></i>
                                 </button>
                                <select className="no-margin" name="timeperiod" id="timeperiod" onChange={this.changeTimePeriod} value={this.state.timeframe}>
-                                    <option value="12h">12 hours</option>
+                                    <option value="1h">1 hour</option>
+				    <option value="12h">12 hours</option>
                                     <option value="1d">1 day</option>
                                     <option value="3d">3 days</option>
                                     <option value="1w">1 week</option>
-                                    <option value="1m">1 month</option>
+                                    <option value="2w">2 weeks</option>
+				    <option value="3w">3 weeks</option>
+				    <option value="30d">30 days</option>
                                     <option value="1y">1 year</option>
-
                                 </select>
                                 <button className="button-quiet button-timechange" onClick={this.handlePageChange.bind(this, "next")}>
                                 <i className="fa fa-arrow-right" aria-hidden="true"></i>

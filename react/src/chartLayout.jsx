@@ -22,7 +22,7 @@ const defaults = {
     summaryWindow: 3600,
     start: now - 86400*7,
     end: now,
-    timeframe: "1w",
+    timeframe: "30d",
 };
 
 const scheme = {
@@ -467,11 +467,17 @@ export default React.createClass({
 
     getQueryString: function() {
         var qs = this.props.location.query;
-
-        // get hash values
+	// get hash values
         let hash = this.props.location.hash;
         let hashRe = /^#/;
-        hash = hash.replace( hashRe, "");
+	let timeFlag = 0;
+	let timeframe = defaults.timeframe
+        if((qs.timeframe != undefined) && (qs.timeframe.length != 0)){
+		timeframe = qs.timeframe;
+	}
+	//console.log(qs);
+	//console.log(timeframe);	
+	hash = hash.replace( hashRe, "");
 
         let hashPairs = hash.split("&");
         let hashObj = {};
@@ -494,7 +500,7 @@ export default React.createClass({
         let displaysetdest = qs.displaysetdest;
         let start = defaults.start;
         let end = defaults.end;
-        let timeframe = defaults.timeframe;
+        //let timeframe = defaults.timeframe;
         let tool = qs.tool;
         let agent = qs.agent || [];
         let summaryWindow = qs.summaryWindow;

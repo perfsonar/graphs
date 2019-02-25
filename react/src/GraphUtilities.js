@@ -39,8 +39,8 @@ module.exports = {
     getTimeVars: function (period) {
         let timeDiff;
         let summaryWindow;
-        if (period == '4h') {
-            timeDiff = 60*60 * 4;
+        if (period == '1h') {
+            timeDiff = 60*60 * 1;
             summaryWindow = 0;
         } else if (period == '12h') {
             timeDiff = 60*60 * 12;
@@ -53,6 +53,15 @@ module.exports = {
             summaryWindow = 300;
         } else if (period == '1w') {
             timeDiff = 86400*7;
+            summaryWindow = 3600;
+        } else if (period == '2w') {
+            timeDiff = 86400*14;
+            summaryWindow = 3600;
+        } else if (period == '3w') {
+            timeDiff = 86400*21;
+            summaryWindow = 3600;
+        }else if (period == '30d') {
+            timeDiff = 86400*30;
             summaryWindow = 3600;
         } else if (period == '1m') {
             timeDiff = 86400*31;
