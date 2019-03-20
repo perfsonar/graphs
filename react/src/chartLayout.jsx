@@ -2,6 +2,7 @@ import React from "react";
 import _ from "underscore";
 
 import Chart1 from "./chart1.jsx";
+import AdvSet from "./AdvSet.jsx";
 import ChartHeader from "./ChartHeader";
 import HostInfoStore from "./HostInfoStore";
 import GraphUtilities from "./GraphUtilities";
@@ -155,7 +156,8 @@ export default React.createClass({
             tool: newState.tool,
             ipversion: newState.ipversion,
             hashValues: newState.hashValues,
-            active: newState.active
+	    showPopup: newState.showPopup,
+	    active: newState.active
         };
     },
     contextTypes: {
@@ -201,7 +203,13 @@ export default React.createClass({
 
         //return false;
     },
+	
 
+    togglePopup() {
+    	this.setState({
+      	showPopup: !this.state.showPopup
+    	});
+    },
 
     getActiveClass: function ( value ) {
         if ( value === true ) {
@@ -270,6 +278,8 @@ export default React.createClass({
                                 </li>
                             </ul>
                         </div>
+			
+
 
                         <div className="graph-filter right hidden">
                               <a href="#" className="graph-settings sidebar-popover-toggle js-sidebar-popover-toggle"><i className="fa fa-gear"></i></a>
@@ -311,7 +321,19 @@ export default React.createClass({
 
                         <div className="graph-filter right">
                             <ul className=" graph-filter__list">
-                                <li className={"graph-filter__item graph-filter__item--forward " + this.getActiveClass( this.state.active["direction_forward_"] ) }>
+                                <li className="graph-filter__item graph-filter__item--forward active">
+					<a href="#" onClick={this.togglePopup.bind(this)}><i className="fa fa-cog fa-fw" aria-hidden="true"></i>&nbsp; Adv. Settings
+					</a>
+					{this.state.showPopup ? 
+          					<AdvSet
+            					text='Close Me'
+            					closePopup={this.togglePopup.bind(this)}
+          					/>
+
+          					: null
+        				}
+				</li>
+				<li className={"graph-filter__item graph-filter__item--forward " + this.getActiveClass( this.state.active["direction_forward_"] ) }>
                                     <a href="#" onClick={this.toggleType.bind(this, {direction: "forward"})}>Forward
                                     <svg width="18" height="4" className="direction-label">
                                           <line x1="0" y1="2" x2="18" y2="2" stroke="white" strokeWidth="3" />
@@ -624,6 +646,7 @@ export default React.createClass({
             ipversion: ipversion,
             timeframe: timeframe,
             hashValues: hashObj,
+	    showPopup: false,
         };
 
         this.updateURLHash( hashObj );

@@ -34,8 +34,8 @@
     "moment-duration-format": "^1.3.0",
     "moment-timezone": "~0.5.10",
     "paths-js": "^0.3.4",
-    "pondjs": "^0.7.0",
-    "react": "^0.14.3",
+    "pondjs": "^0.7.2",
+    "react": "^0.14.9",
     "react-timeseries-charts": "^0.10.2",
     "underscore": "^1.7.0"
   },
