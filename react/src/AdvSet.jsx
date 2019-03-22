@@ -10,9 +10,9 @@ export default React.createClass({
 
 	  
 	  <div className="pop_cell">
-	  <input type="checkbox"/> Summary Window<br/><br/>
+	  <input type="checkbox"/> Log scale<br/><br/>
           <input type="checkbox"/> Interpolation<br/><br/>
-          <input type="checkbox"/> Log scale
+	  <b>Summary Window: {this.props.summaryWindow}</b>
 	  </div>
 	  
         </div>

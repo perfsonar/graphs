@@ -322,12 +322,13 @@ export default React.createClass({
                         <div className="graph-filter right">
                             <ul className=" graph-filter__list">
                                 <li className="graph-filter__item graph-filter__item--forward active">
-					<a href="#" onClick={this.togglePopup.bind(this)}><i className="fa fa-cog fa-fw" aria-hidden="true"></i>&nbsp; Adv. Settings
+					<a href="#" onClick={this.togglePopup.bind(this)}><i className="fa fa-cog fa-fw" aria-hidden="true"></i>&nbsp; Settings
 					</a>
 					{this.state.showPopup ? 
           					<AdvSet
             					text='Close Me'
-            					closePopup={this.togglePopup.bind(this)}
+            					summaryWindow={this.state.summaryWindow}
+						closePopup={this.togglePopup.bind(this)}
           					/>
 
           					: null
