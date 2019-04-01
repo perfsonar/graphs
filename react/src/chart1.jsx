@@ -1261,7 +1261,7 @@ export default React.createClass({
                                             series={series}
                                             style={getChartStyle( properties )} smooth={false} breakLine={true}
                                             radius={4.0}
-                                            columns={ [ "value" ] }
+					    columns={ [ "value" ] }
                                             highlighted={this.state.highlight}
                                         />
 
