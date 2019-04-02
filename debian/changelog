@@ -1,8 +1,8 @@
-perfsonar-toolkit-graphs (4.2~0-1) perfsonar-release; urgency=low
+perfsonar-toolkit-graphs (4.2.0~0-1) perfsonar-minor-patch; urgency=low
 
   * New upstream version.
 
- -- Antoine Delvaux <antoine.delvaux@man.poznan.pl>  Sat, 23 Feb 2019 15:24:47 +0000
+ -- Antoine Delvaux <antoine.delvaux@man.poznan.pl>  Tue, 02 Apr 2019 22:22:47 +0000
 
 perfsonar-toolkit-graphs (4.1.6-1) perfsonar-release; urgency=low
 
