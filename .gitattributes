@@ -1,7 +1,4 @@
 react/public/bundle.js* -diff
-html/public/bundle.js* -diff
 
-# Ignore those files when creating a tarball with `git archive`
-debian/         export-ignore
-distribution/   export-ignore
+html/public/bundle.js* -diff
 
