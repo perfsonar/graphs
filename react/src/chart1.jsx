@@ -607,7 +607,7 @@ export default React.createClass({
                         if ( typeof row.properties.mainEventType == "undefined" ) {
                             continue;
                         }
-
+						
                         let hide = false;
                         FAILUREITEMS:
                         for( let j in failureItemsToHide ) {
@@ -672,7 +672,13 @@ export default React.createClass({
                     let tool = this.getTool( row );
                     let protocol = this.getProtocol( row );
 
-                    // get retrans values
+		    //get test params
+		    let bwParallel = this.getTestParam(row, "bw-parallel-streams");
+		    let bwTarget = this.getTestParam(row, "bw-target-bandwidth");                    
+		    let ipTransport = this.getTestParam(row, "ip-transport-protocol");
+		    let timeDuration = this.getTestParam(row, "time-duration");
+
+		    // get retrans values
                     let retransFilter = {
                         eventType: "packet-retransmits",
                         ipversion: ipversion,
@@ -708,7 +714,29 @@ export default React.createClass({
                             <li className={this.getTTItemClass("throughput")}>{dir} <SIValue value={this._formatZero( row.value )} digits={2} />bits/s{protocol}{retransLabel}{tool}</li>
 
                             );
+		    if (bwParallel != ""){
+			throughputItems.push(
+                            <li className={this.getTTItemClass("throughput")}> &nbsp;&nbsp;&nbsp;&nbsp;bw-parallel-streams: {bwParallel}</li>
+                            );	
+		    }
+			
+		    if (bwTarget != ""){
+                        throughputItems.push(
+                            <li className={this.getTTItemClass("throughput")}> &nbsp;&nbsp;&nbsp;&nbsp;bw-target-bandwidth: {bwTarget} bits/s</li>
+                            );
+                    }
+		    
+		    if (timeDuration != ""){
+                        throughputItems.push(
+                            <li className={this.getTTItemClass("throughput")}> &nbsp;&nbsp;&nbsp;&nbsp;time-duration: {timeDuration} s</li>
+                            );
+                    }
 
+		    if (ipTransport != ""){
+                        throughputItems.push(
+                            <li className={this.getTTItemClass("throughput")}> &nbsp;&nbsp;&nbsp;&nbsp;ip-transport-protocol: {ipTransport}</li>
+                            );
+                    }
                 }
 
                 // GET LOSS DATA
@@ -785,6 +813,14 @@ export default React.createClass({
 
                     let tool = this.getTool( latRow );
 
+		    //get test parameters
+		    let sampleSize = this.getTestParam(latRow, "sample-size");
+                    let ipPacket = this.getTestParam(latRow, "ip-packet-padding");
+                    let timeProbe = this.getTestParam(latRow, "time-probe-interval");
+                    let sampleBucket = this.getTestParam(latRow, "sample-bucket-width");
+		    let ipTransport = this.getTestParam(latRow, "ip-transport-protocol");
+                    let timeDuration = this.getTestParam(latRow, "time-duration");
+			
                     let owampVal = latRow.value.toFixed(1);
                     if ( Math.abs( owampVal ) < 1 ) {
                         owampVal = latRow.value.toFixed(2);
@@ -796,7 +832,42 @@ export default React.createClass({
                             <li className={this.getTTItemClass("latency")}>{dir} {owampVal} ms {label}{tool}</li>
 
                             );
+		    if(sampleSize != ""){
+			latencyItems.push(
+				<li className={this.getTTItemClass("latency")}> &nbsp;&nbsp;&nbsp;&nbsp;sample-size: {sampleSize} bytes</li>
+			);
+		    }
+		    
+		    if(ipPacket != ""){
+                        latencyItems.push(
+                                <li className={this.getTTItemClass("latency")}>&nbsp;&nbsp;&nbsp;&nbsp;ip-packet-padding: {ipPacket} bytes</li>
+                        );
+                    }
+        	        	
+		    if(timeProbe != ""){
+                        latencyItems.push(
+                                <li className={this.getTTItemClass("latency")}>&nbsp;&nbsp;&nbsp;&nbsp;time-probe-interval: {timeProbe} s</li>
+                        );
+                    }
+			
+		    if(sampleBucket != ""){
+                        latencyItems.push(
+                                <li className={this.getTTItemClass("latency")}>&nbsp;&nbsp;&nbsp;&nbsp;sample-bucket-width: {sampleBucket} s</li>
+                        );
+                    }
 
+		    if(ipTransport != ""){
+                        latencyItems.push(
+                                <li className={this.getTTItemClass("latency")}>&nbsp;&nbsp;&nbsp;&nbsp;ip-transport-protocol: {ipTransport}</li>
+                        );
+                    }
+
+		    if(timeDuration != ""){
+                        latencyItems.push(
+                                <li className={this.getTTItemClass("latency")}>&nbsp;&nbsp;&nbsp;&nbsp;time-duration: {timeDuration} s</li>
+                        );
+                    }
+		    
                 }
 
                 if ( throughputItems.length > 0 ) {
@@ -1818,6 +1889,18 @@ export default React.createClass({
 
         return tool;
     },
+
+    getTestParam( row, test ) {
+        let testParam;
+	testParam = row.properties[test];
+
+        if ( typeof testParam == "undefined" || testParam == "" ) {
+            testParam = "";
+        }
+
+        return testParam;
+    },
+
 
     getProtocol( row ) {
         let protocol = "";
