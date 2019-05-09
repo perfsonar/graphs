@@ -14,7 +14,7 @@ Package: perfsonar-toolkit-graphs
 Architecture: all
 Depends: apache2, perfsonar-traceroute-viewer,
  perl, libperfsonar-perl, libperfsonar-sls-perl,
- libcgi-pm-perl, ${misc:Depends}
+ libcgi-pm-perl, libwww-perl, ${misc:Depends}
 Description: pS-Performance Toolkit graphs
  A series of simple web-based GUIs that interact with the perfSONAR Information
  Services (IS) to locate and display remote datasets.
