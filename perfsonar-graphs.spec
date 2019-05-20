@@ -59,7 +59,7 @@ The perfSONAR Graphs package is a series of simple web-based GUIs that
 interact with the perfSONAR services to locate and display datasets.
 
 %pre
-/usr/sbin/groupadd perfsonar 2> /dev/null || :
+/usr/sbin/groupadd -r perfsonar 2> /dev/null || :
 /usr/sbin/useradd -g perfsonar -r -s /sbin/nologin -c "perfSONAR User" -d /tmp perfsonar 2> /dev/null || :
 
 %prep
