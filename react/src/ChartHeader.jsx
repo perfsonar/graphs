@@ -132,18 +132,18 @@ export default React.createClass({
                             </div>
 
                             {/* GRAPH: Reporting range */}
-                            
+
 			    <style>
                                         {`.graph-temp {
                                         	display: flex;
-                                        
+
                                         }
-					
+
 					.flowflex{
 						flex-flow: row wrap;
-							
+
 					}
-					
+
 					.box-range{
                                                 flex-shrink:2;
                                          } `}
@@ -157,8 +157,8 @@ export default React.createClass({
                                 <i className="fa fa-arrow-left" aria-hidden="true"></i>
                                 </button>
 				</div>
-				
-				
+
+
 				<style>
           				{`.react-datepicker__time-container .react-datepicker__time .react-datepicker__time-box ul.react-datepicker__time-list {
             				padding-left: 0;
@@ -174,10 +174,11 @@ export default React.createClass({
 					timeFormat="HH:mm"
     					timeIntervals={15}
     					dateFormat="YYYY-MM-DD HH:mm"
-    					timeCaption="time" 
+    					timeCaption="time"
+                        className="qwerty"
 				/>
 				</div>		
-			        <div className="box-range">                        
+			        <div className="box-range">
 				<DatePicker
                                         selected={this.state.endDate}
                                         onChange={this.handleEnd}
@@ -187,12 +188,13 @@ export default React.createClass({
                                         timeIntervals={15}
                                         dateFormat="YYYY-MM-DD HH:mm"
                                         timeCaption="Time"
+                        className="qwerty"
                                 />
 				</div>
 
 				<div className="box-range">
 				<button className="button-quiet button-timechange" onClick={this.changeTimePeriod}>
-                               <b> Submit</b>
+                               <b> Go </b>
                                 </button>
 				</div>
 				<div className="box-range">
@@ -202,26 +204,26 @@ export default React.createClass({
 				</div>
                                 </div>
 				<div>
-				
+
                                 <span className="timerange_holder">
-                                    
+
 				    { (new Date(this.state.start * 1000)).toUTCString() } 
                                     <br />
-                                    
+
                                  </span>
                                  <span className="timerange_holder">
                                          to
                                 </span>
                                 <span className="timerange_holder">
-                                    
+
                                     { (new Date(this.state.end * 1000)).toUTCString() }
 				    <br />
-                                    
-                                </span> 
+
+                                </span>
                                 </div>
 
                             </div>
-				
+
                         </div> 
 				{/* End row */}
                     </div> 

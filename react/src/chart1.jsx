@@ -1789,7 +1789,7 @@ export default React.createClass({
         data.responseJSON = {};
         data.responseJSON.detail = "No data found in the measurement archive";
         this.setState({dataError: data, loading: false});
-        console.log("Handling empty data");
+        //console.log("Handling empty data");
 
     },
     componentWillReceiveProps( nextProps ) {
