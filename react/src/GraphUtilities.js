@@ -52,7 +52,6 @@ module.exports = {
                         case 'y': timeframe*= 86400*365;
                 }
                 timeframe = Math.round(timeframe);
-                console.log(timeframe);
         }
         else{
                 timeframe = parseFloat(timeframe);

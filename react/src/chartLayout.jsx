@@ -471,13 +471,11 @@ export default React.createClass({
             timeframe = hashObj.timeframe;
 
         }
-	//console.log("start undefined or null");
-	console.log(typeof hashObj.start);
-        	
+
 	////////
 	/*	*/
 	let timeVars = GraphUtilities.getTimeVars( timeframe );
-	timeframe = Math.round(timeVars.timeDiff);	
+	timeframe = Math.round(timeVars.timeDiff);
 	//console.log("after math");
         //console.log(timeframe);
 	if((typeof hashObj.start == "undefined") && (typeof hashObj.end == "undefined")){
