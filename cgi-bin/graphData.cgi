@@ -9,8 +9,6 @@ use threads::shared;
 use CGI;
 use Config::General;
 use JSON;
-use LWP::UserAgent;
-use HTTP::Request;
 use Params::Validate qw(:all);
 use JSON qw(from_json);
 use FindBin qw($RealBin);
@@ -22,7 +20,8 @@ use Socket6;
 use Data::Validate::IP;
 use Log::Log4perl qw(get_logger :easy :levels);
 use URI;
-
+use Try::Tiny;
+use LWP::UserAgent;
 #my $bin = "$RealBin";
 #warn "bin: $bin";
 
@@ -31,6 +30,7 @@ use lib ("/usr/lib/perfsonar/lib", "/usr/lib/perfsonar/graphs/lib"  );
 
 use perfSONAR_PS::Client::Esmond::ApiFilters;
 use perfSONAR_PS::Client::Esmond::ApiConnect;
+use perfSONAR_PS::Client::Utils qw/send_http_request/;
 
 # Lookup Service libraries
 use SimpleLookupService::Client::SimpleLS;
@@ -46,11 +46,42 @@ use SimpleLookupService::QueryObjects::Network::InterfaceQueryObject;
 # library for getting host information
 use perfSONAR_PS::Utils::Host qw( discover_primary_address get_ethernet_interfaces get_interface_addresses_by_type is_ip_or_hostname is_web_url );
 
+# variable to act as dns cache for dns lookups
+my %dns_cache;
+
 my $basedir = "$FindBin::Bin";
+
+my $ua = LWP::UserAgent->new;
+$ua->ssl_opts( "verify_hostname" => 0);
 
 my $cgi = new CGI;
 
 my $action = $cgi->param('action') || error("Missing required parameter \"action\", must specify data or tests", 400);
+
+#json file reader for reading ssl certificate flag from the configuration file
+my $sslcertjson;
+my $configfile = "/etc/perfsonar/graphs.json";
+#flag set to 1 only if the certificate config file exists
+my $config_set = 0;
+my $config;
+if(-e $configfile){
+  local $/;
+  open my $fh, "<", $configfile;
+  $sslcertjson = <$fh>;
+  close $fh;
+
+  $config_set = 1;
+  
+  try{
+	$config = decode_json($sslcertjson);
+  }  catch{
+	warn 'The json file used is invalid, please use correct json syntax while editing ' . $configfile ;
+  }
+
+
+}
+
+######
 
 if ($action eq 'data'){
     get_data();
@@ -90,31 +121,41 @@ sub cgi_multi_param {
     }
 }
 
+#######
+
+######
 # Fallback proxy for esmond requests for esmond instances that don't have CORS enabled
 sub get_ma_data {
-    my $url        = $cgi->param('url');
+    my $url = $cgi->param('url');
 
     if ( not defined $url ) {
         error("No URL specified", 400);
     }
 
-    my $ua = LWP::UserAgent->new;
+
+    #if config_set is set to 1, the certificate config file exists
+    if($config_set){
+        #if ssl certificate ignore is set to false in etc/perfsonar/graphs.json file
+        if( defined($config->{'ssl_cert_ignore'}) &&   $config->{'ssl_cert_ignore'} eq 'false' ){
+            $ua->ssl_opts( "verify_hostname" => 1);
+        }
+
+    }
 
     # Make sure the URL looks like an esmond URL -- starts with http or https and looks like
     # http://host/esmond/perfsonar/archive/[something]
     # this should be url encoded
     if ( $url =~ m|^https?://[^/]+/esmond/perfsonar/archive| ) {
-        my $req = HTTP::Request->new(
-            GET => $url,
-        );
-
         # perform http GET on the URL
-        my $res = $ua->request($req);
+        my $res = send_http_request(connection_type => 'GET',
+                url => $url,
+                timeout => 60
+            );
 
         # success
         if ( $res->is_success ) {
             print $cgi->header('application/json');
-            my $message = $res->decoded_content;
+            my $message = $res->body;
             print $message;
         } else {
             # if there is an error, return the error message and code
@@ -847,6 +888,7 @@ sub get_tests {
 
         my $protocol = $metadatum->get_field('ip-transport-protocol');
         my $duration = $metadatum->get_field('time-duration');
+        my $bucket_width = $metadatum->get_field('sample-bucket-width');
         my $source_ip = $src;
         my $destination_ip = $dst;
 
@@ -896,6 +938,12 @@ sub get_tests {
                             $total += $datum->val->{mean};
                             $max = $datum->val->{maximum} if !defined($max) || $datum->val->{maximum} > $max;
                             $min = $datum->val->{minimum} if !defined($min) || $datum->val->{minimum} < $min;
+                        }
+                        if($bucket_width){
+                            #if bucketwidth is defined, normalize to milliseconds
+                            $total = ($total * $bucket_width)/0.001;
+                            $max = ($max * $bucket_width)/0.001;
+                            $min = ($min * $bucket_width)/0.001;
                         }
                         $average = $total / @$data;
                     }
@@ -1247,15 +1295,31 @@ sub host_info {
         # if $host is IP address, do DNS lookup
         if (is_ipv4($host) || is_ipv6($host)) {
             $results->{$key . '_ip'} = $host;
-
-            my ( @names ) = reverse_dns( $host, 1 );
-            $results->{$key . '_host'} = $names[0];
+	
+	    if(exists($dns_cache{$host . ' '. 'name'})){
+                $results->{$key . '_host'} = $dns_cache{$host . ' '. 'name'}[0];
+            }
+            else{
+                my ( @names ) = reverse_dns( $host, 1 );
+                $dns_cache{$host . ' '. 'name'} = [@names];
+                $results->{$key . '_host'} = $names[0];
+            }
+	                      
 
         } else {
             $results->{$key . '_host'} = $host;
             $results->{$key . '_ip'} = '';
-            my @addresses = resolve_address($host);
-            my $ip_count = 0;
+            
+	    my @addresses;
+            if(exists($dns_cache{$host})){
+                @addresses = @{$dns_cache{$host}};
+            }
+            else{
+                @addresses = resolve_address($host);
+                $dns_cache{$host} = [@addresses];
+            }
+            
+	    my $ip_count = 0;
             foreach my $address(@addresses){
                 if($ipversion && $ipversion == 4){
                     next unless(is_ipv4($address));
