@@ -1,4 +1,6 @@
 {
-	"#comment" : "setting the value to true ignores the ssl certificate check",
-	"ssl_cert_ignore" : true 
+        "#comment" : "ssl_cert_ignore specifies whether to validate SSL certs of remote MAs",
+        "#comment" : "set ssl_cert_ignore to false to validate SSL certs",
+        "ssl_cert_ignore" : true
 }
+

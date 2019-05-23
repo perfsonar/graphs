@@ -2,23 +2,9 @@ var EventEmitter = require('events').EventEmitter;
 
 var emitter = new EventEmitter();
 
-/*if ( typeof window == "undefined" ) {
-    var $;
-    if ( typeof $ == "undefined" ) {
-        require("node-jsdom").env("", function(err, window) {
-            //var $;
-            if (err) {
-                console.error(err);
-                return;
-            }
+const axios = require('axios');
 
-            $ = require("jquery")(window);
-        });
-    }
-
-} else {
-    $ = jQuery;
-}*/
+const _ = require('underscore');
 
 module.exports = {
 
@@ -35,6 +21,7 @@ module.exports = {
      *  }
      */
     hostInfo: [],
+    hostError: {},
     tracerouteReqs: 0,
     tracerouteReqsCompleted: 0,
     tracerouteInfo: [],
@@ -42,13 +29,13 @@ module.exports = {
 
     retrieveTracerouteData: function ( sources, dests, ma_urls ) {
         let baseUrl = "cgi-bin/graphData.cgi?action=has_traceroute_data";
-        if ( !$.isArray( ma_urls ) ) {
+        if ( !_.isArray( ma_urls ) ) {
             ma_urls = [ ma_urls ];
         }
-        if ( !$.isArray( sources ) ) {
+        if ( !_.isArray( sources ) ) {
             sources = [ sources ];
         }
-        if ( !$.isArray( dests ) ) {
+        if ( !_.isArray( dests ) ) {
             dests = [ dests ];
         }
         for( let i in sources ) {
@@ -62,17 +49,29 @@ module.exports = {
             url += "&dest=" + dst
 
             this.tracerouteReqs = sources.length;
+            this.i = i;
 
-            this.serverRequest = $.get( url, function(data) {
-                    this.handleTracerouteResponse( data, i );
-                }.bind(this));
+            var self = this;
+            axios.get(url)
+                .then(function(data) {
+                    self.handleTracerouteResponse( data.data, self.i );
 
-        }
+                })
+                .catch(function(err) {
+                    console.log("Error retrieving traceroute data:", err);
 
+                });
+
+    }
 
 
     },
-    _getURL( relative_url ) {
+
+    _createXhr: function () {
+        return new XMLHttpRequest();
+    },
+
+    _getURL: function( relative_url ) {
         return this.serverURLBase + relative_url;
     },
     retrieveHostInfo: function( source_input, dest_input, callback ) {
@@ -95,42 +94,32 @@ module.exports = {
             url += "&dest=" + dests[i];
 
         }
-        this.serverRequest = $.get( 
-                url,
-                function(data) {
-                    //console.log("data", data);
-                    this.handleHostInfoResponse( data );
-                }.bind(this));
 
-        if ( typeof this.serverRequest != "undefined "  ) {
+        var self = this;
+        axios.get(url)
+            .then(function(data) {
+                self.handleHostInfoResponse( data.data );
 
-                this.serverRequest.fail(function( jqXHR ) {
-                    var responseText = jqXHR.responseText;
-                    var statusText = jqXHR.statusText;
-                    var errorThrown = jqXHR.status;
-
-                    var errorObj = {
-                        errorStatus: "error",
-                        responseText: responseText,
-                        statusText: statusText,
-                        errorThrown: errorThrown
-                    };
-
-                    if ( $.isFunction( callback ) ) {
-                        callback( errorObj );
+            })
+            .catch(function(err) {
+                    self.hostError = err;
+                    if ( _.isFunction( callback ) ) {
+                        callback( err );
                     }
-
                     emitter.emit("error");
 
-                }.bind(this) );
-        }
-            //console.log( this.serverRequest.error() );
+
+            });
 
     },
     getHostInfoData: function( ) {
         return this.hostInfo;
     },
+    getHostInfoError: function( ) {
+        return this.hostError;
+    },
     handleHostInfoResponse: function( data ) {
+        this.hostInfo = [];
         this.hostInfo = data;
         emitter.emit("get");
     },

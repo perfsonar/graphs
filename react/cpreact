@@ -1,4 +1,6 @@
 #!/bin/bash
+echo "Copying files ..."
+date
 mkdir -p ../html/jquery
 cp -R node_modules/jquery/dist ../html/public/jquery
 cp -R public/* ../html/public/

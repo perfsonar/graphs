@@ -173,14 +173,17 @@ module.exports = {
                     // if we get an error, try the cgi instead 
                     // and set a new flag, useProxy  and make
                     // all requests through the proxy CGI
-                    if ( data.status == 404 ) {
+                    console.log("status error code", data.status);
+                    if ( data.status == 404 ||  data.status == 0 ) {
                         this.useProxy = true;
+                        console.log("CORS attempt failed; using CGI fallback proxy (performance will be impacted)");
                         url = this.getMAURL( url );
                         this.serverRequest = $.get( url, function(data) {
                             this.handleMetadataResponse(data, direction[j], base_url );
                         }.bind(this))
                         .fail(function( data ) {
                             this.handleMetadataError( data );
+                            console.log("Proxy failed");
                         }.bind(this)
                         )
 
@@ -523,11 +526,6 @@ module.exports = {
 */
         let results = $.grep( data, function( e, i ) {
             let found = true;
-
-            if ( e.properties.eventType == "failures" ) {
-                //console.log("found failures!", e, "ipversion", e.properties.ipversion);
-
-            }
 
             for (var key in filters ) {
                 let val = filters[key];
