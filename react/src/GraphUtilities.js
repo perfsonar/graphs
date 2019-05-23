@@ -37,7 +37,6 @@ module.exports = {
     },
 
     getTimeVars: function (period) {
-     
 	let timeframe = period.toString(); 
 	if(timeframe.endsWith("h")||timeframe.endsWith("d")||timeframe.endsWith("w")||timeframe.endsWith("m")||timeframe.endsWith("y"))
         {
@@ -79,7 +78,6 @@ module.exports = {
             timeframe: period
         };
         return timeRange;
-		
     }
 
 };

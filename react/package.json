@@ -36,6 +36,7 @@
     "paths-js": "^0.3.4",
     "pondjs": "^0.7.0",
     "react": "^0.14.3",
+    "react-datepicker": "^0.55.0",
     "react-timeseries-charts": "^0.10.2",
     "underscore": "^1.7.0"
   },
