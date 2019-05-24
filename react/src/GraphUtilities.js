@@ -59,14 +59,36 @@ module.exports = {
  	
 	let timeDiff = timeframe;
         let summaryWindow;
-	if(timeDiff< 86400){
-		summaryWindow = 0;	
-	}
-	else if((timeDiff >= 86400) && (timeDiff<= 86400*3)){
-		summaryWindow = 300;	
-	}
-	else if((timeDiff > 86400*3) && (timeDiff<= 86400*31)){
-                summaryWindow = 3600;
+        if (period == '1h') {
+            timeDiff = 60*60 * 1;
+            summaryWindow = 0;
+        } else if (period == '12h') {
+            timeDiff = 60*60 * 12;
+            summaryWindow = 0;
+        } else if (period == '1d') {
+            timeDiff = 86400;
+            summaryWindow = 300;
+        } else if (period == '3d') {
+            timeDiff = 86400 * 3;
+            summaryWindow = 300;
+        } else if (period == '1w') {
+            timeDiff = 86400*7;
+            summaryWindow = 3600;
+        } else if (period == '2w') {
+            timeDiff = 86400*14;
+            summaryWindow = 3600;
+        } else if (period == '3w') {
+            timeDiff = 86400*21;
+            summaryWindow = 3600;
+        }else if (period == '30d') {
+            timeDiff = 86400*30;
+            summaryWindow = 3600;
+        } else if (period == '1m') {
+            timeDiff = 86400*31;
+            summaryWindow = 3600;
+        } else if (period == '1y') {
+            timeDiff = 86400*365;
+            summaryWindow = 86400;
         }
 	else{
                 summaryWindow = 86400;

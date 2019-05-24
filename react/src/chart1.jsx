@@ -4,7 +4,7 @@ import moment from "moment";
 import Markdown from "react-markdown";
 import GraphDataStore from "./GraphDataStore";
 import GraphUtilities from "./GraphUtilities";
-import d3 from "d3";
+
 
 import { AreaChart, Brush, Baseline, Charts, ChartContainer, ChartRow, YAxis, LineChart, ScatterChart, Highlighter, Resizable, Legend, styler } from "react-timeseries-charts";
 
@@ -81,7 +81,6 @@ const typesToChart = [
         unit: "ms",
     }
 ];
-
 const subtypesToChart = [
     {
         name: "failures",
@@ -346,7 +345,7 @@ export default React.createClass({
             initialLoading: true,
             lockToolTip: false,
             toolTipWidth: null,
-            ttCollapse: {
+	    ttCollapse: {
                 throughput: false,
                 loss: false,
                 latency: false,
@@ -358,6 +357,7 @@ export default React.createClass({
             //trackerValues: {}
         };
     },
+    
     handleSelectionChanged(point) {
         this.setState({
             selection: point
@@ -821,8 +821,15 @@ export default React.createClass({
                             );
 
                 }
-
-                if ( throughputItems.length > 0 ) {
+		//console.log(this.props.showTpt);
+                var showT = true;
+		if(this.props.showTpt == null){
+			showT = true;
+		}
+		else{
+			showT = this.props.showTpt;
+		} 
+		if ( (throughputItems.length > 0) && (showT) ) {
                     tooltipItems["throughput"].push(
                                     <li className="graph-values-popover__item">
                                         <ul>
@@ -836,7 +843,14 @@ export default React.createClass({
                     );
 
                 }
-                if ( lossItems.length > 0 ) {
+		var showP = true;
+                if(this.props.showPac == null){
+                        showP = true;
+                }
+                else{
+                        showP = this.props.showPac;
+                }
+                if ( (lossItems.length > 0) && (showP)) {
                     tooltipItems["loss"].push(
                                         <li className="graph-values-popover__item">
                                             <ul>
@@ -850,7 +864,14 @@ export default React.createClass({
                             );
 
                 }
-                if ( latencyItems.length > 0 ) {
+		var showL = true;
+                if(this.props.showLat == null){
+                        showL = true;
+                }
+                else{
+                        showL = this.props.showLat;
+                }
+                if ( (latencyItems.length > 0) && (showL)) {
                     tooltipItems["latency"].push(
                                         <li className="graph-values-popover__item">
                                             <ul>
@@ -1469,26 +1490,36 @@ export default React.createClass({
                         }
 
                     }
-
-                    // push the chartrows for the main charts
-                    charts[type].chartRows.push(
-                            <ChartRow height={chartRow.height} debug={false}>
-                            <YAxis
-                                key={"axis" + type}
-                                id={"axis" + type}
-                                label={label + " (" + ipv + ")"}
-                                style={axisLabelStyle}
-                                labelOffset={offsets.label}
-                                className="yaxis-label"
-                                format={format}
-                                min={0}
-                                max={max}
-                                width={80} type="linear" align="left" />
-                            <Charts>
-			    {charts[type][ipv]}
-		            <Baseline axis={"axis" + type} style={baselineStyle} value={max} position="right"/>
-			    </Charts>
-                            </ChartRow>
+			//console.log(this.props.showTpt);
+		
+		     	var visibleType = true;
+			if(type == "latency"){
+				visibleType = this.props.showLat;
+			}
+			else if(type == "loss"){
+				visibleType = this.props.showPac;
+			}
+  			else{
+				visibleType = this.props.showTpt;
+			}
+			charts[type].chartRows.push(
+                           <ChartRow height={chartRow.height} debug={false} visible={visibleType}>
+                                <YAxis
+                                    key={"axis" + type}
+                                    id={"axis" + type}
+                                    label={label + " (" + ipv + ")"}
+                                    style={axisLabelStyle}
+                                    labelOffset={offsets.label}
+                                    className="yaxis-label"
+                                    format={format}
+                                    min={0}
+                                    max={max}
+                                    width={80} type="linear" align="left" />
+                                <Charts>
+                                {charts[type][ipv]}
+                                <Baseline axis={"axis" + type} style={baselineStyle} value={max} position="right"/>
+                                </Charts>
+                           </ChartRow>
 		            );
 
                     if ( this.state.showBrush === true ) {
@@ -1687,7 +1718,7 @@ export default React.createClass({
             this.setState({timerange: this.state.initialTimerange, brushrange: null});
         }
     },
-
+   
     handleCloseTooltipClick( event ) {
         event.preventDefault();
         this.setState({ lockToolTip: false, tracker: null });
@@ -1745,8 +1776,7 @@ export default React.createClass({
         let agent = this.props.agent;
         let displaysetsrc = this.props.displaysetsrc;
         let displaysetdest = this.props.displaysetdest;
-
-        let summaryWindow = this.props.summaryWindow;
+	let summaryWindow = this.props.summaryWindow;
 
         let params = {
             tool: tool,
