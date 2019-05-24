@@ -50,6 +50,16 @@ body {
 
 #graphContainer .button-timechange {
     min-width:37px;
+    float:left;
+    margin:0 0.2em;
 
 }
 
+#headerTimePrevious.button-timechange {
+    float:left;
+}
+
+.react-datepicker-wrapper {
+    float:left;
+    margin: 0 0.2em;
+}

@@ -37,7 +37,27 @@ module.exports = {
     },
 
     getTimeVars: function (period) {
-        let timeDiff;
+	let timeframe = period.toString(); 
+	if(timeframe.endsWith("h")||timeframe.endsWith("d")||timeframe.endsWith("w")||timeframe.endsWith("m")||timeframe.endsWith("y"))
+        {
+                var ch = timeframe.substring(0, timeframe.length - 1);
+                var dmy = timeframe.charAt(timeframe.length - 1);
+                timeframe = parseFloat(ch);
+                switch(dmy){
+                        case 'h': timeframe*= 60*60; break;
+                        case 'd': timeframe*= 86400; break;
+                        case 'w': timeframe*= 86400*7; break;
+                        case 'm': timeframe*= 86400*31; break;
+                        case 'y': timeframe*= 86400*365;
+                }
+                timeframe = Math.round(timeframe);
+        }
+        else{
+                timeframe = parseFloat(timeframe);
+                timeframe = Math.round(timeframe);
+        }
+ 	
+	let timeDiff = timeframe;
         let summaryWindow;
         if (period == '1h') {
             timeDiff = 60*60 * 1;
@@ -70,13 +90,16 @@ module.exports = {
             timeDiff = 86400*365;
             summaryWindow = 86400;
         }
+	else{
+                summaryWindow = 86400;
+        }        
+        //period = timeframe;
         let timeRange = {
             timeDiff: timeDiff,
             summaryWindow: summaryWindow,
             timeframe: period
         };
         return timeRange;
-
     }
 
 };

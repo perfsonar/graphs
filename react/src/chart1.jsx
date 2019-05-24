@@ -6,7 +6,7 @@ import GraphDataStore from "./GraphDataStore";
 import GraphUtilities from "./GraphUtilities";
 
 
-import { AreaChart, Brush, Charts, ChartContainer, ChartRow, YAxis, LineChart, ScatterChart, Highlighter, Resizable, Legend, styler } from "react-timeseries-charts";
+import { AreaChart, Brush, Baseline, Charts, ChartContainer, ChartRow, YAxis, LineChart, ScatterChart, Highlighter, Resizable, Legend, styler } from "react-timeseries-charts";
 
 import { TimeSeries, TimeRange, Event } from "pondjs";
 import { Pipeline } from "pondjs";
@@ -87,6 +87,29 @@ const subtypesToChart = [
         label: "Failures"
     }
 ];
+
+const baselineStyle = {
+    line: {
+        stroke: "steelblue",
+        strokeWidth: 1,
+        opacity: 0.4,
+        strokeDasharray: "none"
+    },
+    label: {
+        fill: "steelblue"
+    }
+};
+
+const baselineStyleLite = {
+    line: {
+        stroke: "steelblue",
+        strokeWidth: 1,
+        opacity: 0.5
+    },
+    label: {
+        fill: "steelblue"
+    }
+};
 
 
 const scheme = {
@@ -1481,22 +1504,23 @@ export default React.createClass({
 			}
 			charts[type].chartRows.push(
                            <ChartRow height={chartRow.height} debug={false} visible={visibleType}>
-                            <YAxis
-                                key={"axis" + type}
-                                id={"axis" + type}
-                                label={label + " (" + ipv + ")"}
-                                style={axisLabelStyle}
-                                labelOffset={offsets.label}
-                                className="yaxis-label"
-                                format={format}
-                                min={0}
-                                max={max}
-                                width={80} type="linear" align="left" />
-                            <Charts>
-                            {charts[type][ipv]}
-                            </Charts>
-                            </ChartRow>//</div>
-                            );
+                                <YAxis
+                                    key={"axis" + type}
+                                    id={"axis" + type}
+                                    label={label + " (" + ipv + ")"}
+                                    style={axisLabelStyle}
+                                    labelOffset={offsets.label}
+                                    className="yaxis-label"
+                                    format={format}
+                                    min={0}
+                                    max={max}
+                                    width={80} type="linear" align="left" />
+                                <Charts>
+                                {charts[type][ipv]}
+                                <Baseline axis={"axis" + type} style={baselineStyle} value={max} position="right"/>
+                                </Charts>
+                           </ChartRow>
+		            );
 
                     if ( this.state.showBrush === true ) {
                         // push the chartrows for the brush charts
@@ -1795,7 +1819,7 @@ export default React.createClass({
         data.responseJSON = {};
         data.responseJSON.detail = "No data found in the measurement archive";
         this.setState({dataError: data, loading: false});
-        console.log("Handling empty data");
+        //console.log("Handling empty data");
 
     },
     componentWillReceiveProps( nextProps ) {
