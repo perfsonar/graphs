@@ -240,6 +240,14 @@ export default React.createClass({
                     updateTimerange={this.handleTimerangeChange}
                     ma_url={this.state.ma_url}
                 />
+		    <div className="graph-wrapper">
+                       	<div className="checkboxes"> 
+                        <span style={{marginRight: 1 + 'em'}}>Show/hide chart rows </span>
+                           <input type="checkbox" name="Tpt" onChange={this.hideTpt.bind(this)} defaultChecked={true}/> <b>Throughput</b> <div className="divider"/>
+                           <input type="checkbox" name="Loss" onChange={this.hideLoss.bind(this)} defaultChecked={true}/> <b>Packet Loss</b><div className="divider"/>
+                           <input type="checkbox" name="Late" onChange={this.hideLate.bind(this)} defaultChecked={true}/> <b>Latency</b><div className="divider"/>
+                        </div>    		
+		   </div>  
 
                     {/* GRAPH: Select Data*/}
                     <div className="graph-filters">
@@ -344,13 +352,6 @@ export default React.createClass({
                         </div>
                     </div>
 		    
-		    <div className="graph-wrapper">
-                       	<div className="checkboxes"> 
-                           <input type="checkbox" name="Tpt" onChange={this.hideTpt.bind(this)} defaultChecked={true}/> <b>Throughput</b> <div className="divider"/>
-                           <input type="checkbox" name="Loss" onChange={this.hideLoss.bind(this)} defaultChecked={true}/> <b>Packet Loss</b><div className="divider"/>
-                           <input type="checkbox" name="Late" onChange={this.hideLate.bind(this)} defaultChecked={true}/> <b>Latency</b><div className="divider"/>
-                        </div>    		
-		   </div>  
 
 
                     {/* GRAPH: Graph Wrapper */}
