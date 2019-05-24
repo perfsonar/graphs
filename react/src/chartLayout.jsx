@@ -3,6 +3,9 @@ import _ from "underscore";
 
 import Chart1 from "./chart1.jsx";
 import AdvSet from "./AdvSet.jsx";
+import { hiddenTpt } from "./chart1.jsx";
+import { hiddenLoss } from "./chart1.jsx";
+import { hiddenLate } from "./chart1.jsx";
 import ChartHeader from "./ChartHeader";
 import HostInfoStore from "./HostInfoStore";
 import GraphUtilities from "./GraphUtilities";
@@ -20,7 +23,7 @@ const defaults = {
     summaryWindow: 3600,
     start: now - 86400*7,
     end: now,
-    timeframe: "1w",
+    timeframe: "30d",
 };
 
 const scheme = {
@@ -64,6 +67,10 @@ const ipv4Style = {
     color: ipv4Color
 }
 
+//Values to hide or show the sections on selecting the checkboxes 
+var hidTpt = true;
+var hidPac = true;
+var hidLat = true;
 
 const reverseStyles = {
     value: {
@@ -241,10 +248,19 @@ export default React.createClass({
                     updateTimerange={this.handleTimerangeChange}
                     ma_url={this.state.ma_url}
                 />
+		    <div className="graph-wrapper">
+                       	<div className="checkboxes"> 
+                        <span style={{marginRight: 1 + 'em'}}>Show/hide chart rows </span>
+                           <input type="checkbox" name="Tpt" onChange={this.hideTpt.bind(this)} defaultChecked={true}/> <b>Throughput</b> <div className="divider"/>
+                           <input type="checkbox" name="Loss" onChange={this.hideLoss.bind(this)} defaultChecked={true}/> <b>Packet Loss</b><div className="divider"/>
+                           <input type="checkbox" name="Late" onChange={this.hideLate.bind(this)} defaultChecked={true}/> <b>Latency</b><div className="divider"/>
+                        </div>    		
+		   </div>  
 
                     {/* GRAPH: Select Data*/}
                     <div className="graph-filters">
-                        <div className="graph-filter left">
+                        
+			<div className="graph-filter left">
                             <ul className=" graph-filter__list">
                                 <li className={"graph-filter__item graph-filter__item throughput-tcp " + this.getActiveClass( this.state.active["eventType_throughput_protocol_tcp_"] )}>
                                     <a href="#" onClick={this.toggleType.bind(this, {eventType: "throughput", protocol: "tcp"})}>Tput (TCP)</a>
@@ -358,6 +374,7 @@ export default React.createClass({
                             </ul>
                         </div>
                     </div>
+		    
 
 
                     {/* GRAPH: Graph Wrapper */}
@@ -379,7 +396,10 @@ export default React.createClass({
                                         ipversion={this.state.ipversion}
                                         updateHiddenItems={this.handleHiddenItemsChange}
                                         itemsToHide={this.state.itemsToHide}
-                                        ref="chart1"
+                                        showTpt = {this.state.hidTpt}
+					showPac = {this.state.hidPac}
+					showLat = {this.state.hidLat}
+					ref="chart1"
                                     />
                                 </div>
                     </div>
@@ -453,13 +473,35 @@ export default React.createClass({
 
     },
 
+    hideTpt: function(tpt){
+	this.setState({hidTpt: tpt.target.checked});
+	//console.log(tpt.target.checked);
+    },
+
+    hideLoss: function(loss){
+        this.setState({hidPac: loss.target.checked});
+        //console.log(loss.target.checked);
+    },
+
+    hideLate: function(late){
+        this.setState({hidLat: late.target.checked});
+        //console.log(late.target.checked);
+    },
+
+
     getQueryString: function() {
         var qs = this.props.location.query;
-
-        // get hash values
+	// get hash values
         let hash = this.props.location.hash;
         let hashRe = /^#/;
-        hash = hash.replace( hashRe, "");
+	let timeFlag = 0;
+	let timeframe = defaults.timeframe
+        if((qs.timeframe != undefined) && (qs.timeframe.length != 0)){
+		timeframe = qs.timeframe;
+	}
+	//console.log(qs);
+	//console.log(timeframe);	
+	hash = hash.replace( hashRe, "");
 
         let hashPairs = hash.split("&");
         let hashObj = {};
@@ -482,7 +524,7 @@ export default React.createClass({
         let displaysetdest = qs.displaysetdest;
         let start = defaults.start;
         let end = defaults.end;
-        let timeframe = defaults.timeframe;
+        //let timeframe = defaults.timeframe;
         let tool = qs.tool;
         let agent = qs.agent || [];
         let summaryWindow = qs.summaryWindow;
@@ -495,19 +537,29 @@ export default React.createClass({
 
         }
 
-        let timeVars = GraphUtilities.getTimeVars( timeframe );
-
-        if ( typeof hashObj.start != "undefined" ) {
-            start = hashObj.start;
-        } else if ( typeof hashObj.start_ts != "undefined" ) {
-            start = hashObj.start_ts;
+	////////
+	/*	*/
+	let timeVars = GraphUtilities.getTimeVars( timeframe );
+	timeframe = Math.round(timeVars.timeDiff);
+	//console.log("after math");
+        //console.log(timeframe);
+	if((typeof hashObj.start == "undefined") && (typeof hashObj.end == "undefined")){
+                start = parseInt(start);
+                end = parseInt(end);
+                timeframe = end - start;
         }
 
-        if ( typeof hashObj.end != "undefined" ) {
-            end = hashObj.end;
-        } else if ( typeof hashObj.end_ts != "undefined" ) {
-            end = hashObj.end_ts;
+        else if(typeof hashObj.start == "undefined"){
+                start = parseInt(hashObj.end) - timeframe;
         }
+
+        else if(typeof hashObj.end == "undefined"){
+                end = parseInt(hashObj.start) + timeframe;
+        }
+        else{
+                timeframe = parseInt(hashObj.end) - parseInt(hashObj.start);
+        }	
+
 
         if ( typeof qs.ipversion != "undefined" ) {
             ipversion = qs.ipversion;
@@ -516,7 +568,7 @@ export default React.createClass({
         if ( typeof hashObj.summaryWindow != "undefined" ) {
             summaryWindow = hashObj.summaryWindow;
         }
-
+	
         if ( typeof summaryWindow == "undefined" ) {
             //summaryWindow = 3600;
             summaryWindow = timeVars.summaryWindow;

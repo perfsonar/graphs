@@ -61,7 +61,7 @@
 }
 
 .graph-filter__item.graph-filter__item--blue-active a {
-    background-color: #0076b4;
+    background-color: #ff0000;
 }
 
 .graph-filter__item.graph-filter__item--forward.active a, .graph-filter__item.graph-filter__item--reverse.active a, .graph-filter__item.graph-filter__item--failures.active a, .graph-filter__item.graph-filter__item.packet-retransmits.active a
@@ -139,6 +139,16 @@
 
 .graph-wrapper {
 
+}
+
+.checkboxes {
+      text-align:left;
+}
+
+.divider{
+    width:50px;
+    height:auto;
+    display: inline-block;
 }
 
 .graph-header {
