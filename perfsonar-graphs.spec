@@ -31,6 +31,7 @@ Requires:		perl(IO::File)
 Requires:		perl(JSON)
 Requires:		perl(JSON::XS)
 Requires:		perl(Log::Log4perl)
+Requires:		perl(LWP::UserAgent)
 Requires:		perl(Mouse)
 Requires:		perl(NetAddr::IP)
 Requires:		perl(Net::DNS)
@@ -58,7 +59,7 @@ The perfSONAR Graphs package is a series of simple web-based GUIs that
 interact with the perfSONAR services to locate and display datasets.
 
 %pre
-/usr/sbin/groupadd perfsonar 2> /dev/null || :
+/usr/sbin/groupadd -r perfsonar 2> /dev/null || :
 /usr/sbin/useradd -g perfsonar -r -s /sbin/nologin -c "perfSONAR User" -d /tmp perfsonar 2> /dev/null || :
 
 %prep

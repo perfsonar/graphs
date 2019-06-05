@@ -4,9 +4,9 @@ import moment from "moment";
 import Markdown from "react-markdown";
 import GraphDataStore from "./GraphDataStore";
 import GraphUtilities from "./GraphUtilities";
-import d3 from "d3";
 
-import { AreaChart, Brush, Charts, ChartContainer, ChartRow, YAxis, LineChart, ScatterChart, Highlighter, Resizable, Legend, styler } from "react-timeseries-charts";
+
+import { AreaChart, Brush, Baseline, Charts, ChartContainer, ChartRow, YAxis, LineChart, ScatterChart, Highlighter, Resizable, Legend, styler } from "react-timeseries-charts";
 
 import { TimeSeries, TimeRange, Event } from "pondjs";
 import { Pipeline } from "pondjs";
@@ -81,13 +81,35 @@ const typesToChart = [
         unit: "ms",
     }
 ];
-
 const subtypesToChart = [
     {
         name: "failures",
         label: "Failures"
     }
 ];
+
+const baselineStyle = {
+    line: {
+        stroke: "steelblue",
+        strokeWidth: 1,
+        opacity: 0.4,
+        strokeDasharray: "none"
+    },
+    label: {
+        fill: "steelblue"
+    }
+};
+
+const baselineStyleLite = {
+    line: {
+        stroke: "steelblue",
+        strokeWidth: 1,
+        opacity: 0.5
+    },
+    label: {
+        fill: "steelblue"
+    }
+};
 
 
 const scheme = {
@@ -323,7 +345,7 @@ export default React.createClass({
             initialLoading: true,
             lockToolTip: false,
             toolTipWidth: null,
-            ttCollapse: {
+	    ttCollapse: {
                 throughput: false,
                 loss: false,
                 latency: false,
@@ -335,6 +357,7 @@ export default React.createClass({
             //trackerValues: {}
         };
     },
+    
     handleSelectionChanged(point) {
         this.setState({
             selection: point
@@ -607,7 +630,7 @@ export default React.createClass({
                         if ( typeof row.properties.mainEventType == "undefined" ) {
                             continue;
                         }
-
+						
                         let hide = false;
                         FAILUREITEMS:
                         for( let j in failureItemsToHide ) {
@@ -672,7 +695,13 @@ export default React.createClass({
                     let tool = this.getTool( row );
                     let protocol = this.getProtocol( row );
 
-                    // get retrans values
+		    //get test params
+		    let bwParallel = this.getTestParam(row, "bw-parallel-streams");
+		    let bwTarget = this.getTestParam(row, "bw-target-bandwidth");                    
+		    let ipTransport = this.getTestParam(row, "ip-transport-protocol");
+		    let timeDuration = this.getTestParam(row, "time-duration");
+
+		    // get retrans values
                     let retransFilter = {
                         eventType: "packet-retransmits",
                         ipversion: ipversion,
@@ -708,7 +737,29 @@ export default React.createClass({
                             <li className={this.getTTItemClass("throughput")}>{dir} <SIValue value={this._formatZero( row.value )} digits={2} />bits/s{protocol}{retransLabel}{tool}</li>
 
                             );
+		    if (bwParallel != ""){
+			throughputItems.push(
+                            <li className={this.getTTItemClass("throughput")}> &nbsp;&nbsp;&nbsp;&nbsp;bw-parallel-streams: {bwParallel}</li>
+                            );	
+		    }
+			
+		    if (bwTarget != ""){
+                        throughputItems.push(
+                            <li className={this.getTTItemClass("throughput")}> &nbsp;&nbsp;&nbsp;&nbsp;bw-target-bandwidth: {bwTarget} bits/s</li>
+                            );
+                    }
+		    
+		    if (timeDuration != ""){
+                        throughputItems.push(
+                            <li className={this.getTTItemClass("throughput")}> &nbsp;&nbsp;&nbsp;&nbsp;time-duration: {timeDuration} s</li>
+                            );
+                    }
 
+		    if (ipTransport != ""){
+                        throughputItems.push(
+                            <li className={this.getTTItemClass("throughput")}> &nbsp;&nbsp;&nbsp;&nbsp;ip-transport-protocol: {ipTransport}</li>
+                            );
+                    }
                 }
 
                 // GET LOSS DATA
@@ -785,6 +836,14 @@ export default React.createClass({
 
                     let tool = this.getTool( latRow );
 
+		    //get test parameters
+		    let sampleSize = this.getTestParam(latRow, "sample-size");
+                    let ipPacket = this.getTestParam(latRow, "ip-packet-padding");
+                    let timeProbe = this.getTestParam(latRow, "time-probe-interval");
+                    let sampleBucket = this.getTestParam(latRow, "sample-bucket-width");
+		    let ipTransport = this.getTestParam(latRow, "ip-transport-protocol");
+                    let timeDuration = this.getTestParam(latRow, "time-duration");
+			
                     let owampVal = latRow.value.toFixed(1);
                     if ( Math.abs( owampVal ) < 1 ) {
                         owampVal = latRow.value.toFixed(2);
@@ -796,10 +855,52 @@ export default React.createClass({
                             <li className={this.getTTItemClass("latency")}>{dir} {owampVal} ms {label}{tool}</li>
 
                             );
+		    if(sampleSize != ""){
+			latencyItems.push(
+				<li className={this.getTTItemClass("latency")}> &nbsp;&nbsp;&nbsp;&nbsp;sample-size: {sampleSize} bytes</li>
+			);
+		    }
+		    
+		    if(ipPacket != ""){
+                        latencyItems.push(
+                                <li className={this.getTTItemClass("latency")}>&nbsp;&nbsp;&nbsp;&nbsp;ip-packet-padding: {ipPacket} bytes</li>
+                        );
+                    }
+        	        	
+		    if(timeProbe != ""){
+                        latencyItems.push(
+                                <li className={this.getTTItemClass("latency")}>&nbsp;&nbsp;&nbsp;&nbsp;time-probe-interval: {timeProbe} s</li>
+                        );
+                    }
+			
+		    if(sampleBucket != ""){
+                        latencyItems.push(
+                                <li className={this.getTTItemClass("latency")}>&nbsp;&nbsp;&nbsp;&nbsp;sample-bucket-width: {sampleBucket} s</li>
+                        );
+                    }
 
+		    if(ipTransport != ""){
+                        latencyItems.push(
+                                <li className={this.getTTItemClass("latency")}>&nbsp;&nbsp;&nbsp;&nbsp;ip-transport-protocol: {ipTransport}</li>
+                        );
+                    }
+
+		    if(timeDuration != ""){
+                        latencyItems.push(
+                                <li className={this.getTTItemClass("latency")}>&nbsp;&nbsp;&nbsp;&nbsp;time-duration: {timeDuration} s</li>
+                        );
+                    }
+		    
                 }
-
-                if ( throughputItems.length > 0 ) {
+		//console.log(this.props.showTpt);
+                var showT = true;
+		if(this.props.showTpt == null){
+			showT = true;
+		}
+		else{
+			showT = this.props.showTpt;
+		} 
+		if ( (throughputItems.length > 0) && (showT) ) {
                     tooltipItems["throughput"].push(
                                     <li className="graph-values-popover__item">
                                         <ul>
@@ -813,7 +914,14 @@ export default React.createClass({
                     );
 
                 }
-                if ( lossItems.length > 0 ) {
+		var showP = true;
+                if(this.props.showPac == null){
+                        showP = true;
+                }
+                else{
+                        showP = this.props.showPac;
+                }
+                if ( (lossItems.length > 0) && (showP)) {
                     tooltipItems["loss"].push(
                                         <li className="graph-values-popover__item">
                                             <ul>
@@ -827,7 +935,14 @@ export default React.createClass({
                             );
 
                 }
-                if ( latencyItems.length > 0 ) {
+		var showL = true;
+                if(this.props.showLat == null){
+                        showL = true;
+                }
+                else{
+                        showL = this.props.showLat;
+                }
+                if ( (latencyItems.length > 0) && (showL)) {
                     tooltipItems["latency"].push(
                                         <li className="graph-values-popover__item">
                                             <ul>
@@ -1261,7 +1376,7 @@ export default React.createClass({
                                             series={series}
                                             style={getChartStyle( properties )} smooth={false} breakLine={true}
                                             radius={4.0}
-                                            columns={ [ "value" ] }
+					    columns={ [ "value" ] }
                                             highlighted={this.state.highlight}
                                         />
 
@@ -1446,26 +1561,37 @@ export default React.createClass({
                         }
 
                     }
-
-                    // push the chartrows for the main charts
-                    charts[type].chartRows.push(
-                            <ChartRow height={chartRow.height} debug={false}>
-                            <YAxis
-                                key={"axis" + type}
-                                id={"axis" + type}
-                                label={label + " (" + ipv + ")"}
-                                style={axisLabelStyle}
-                                labelOffset={offsets.label}
-                                className="yaxis-label"
-                                format={format}
-                                min={0}
-                                max={max}
-                                width={80} type="linear" align="left" />
-                            <Charts>
-                            {charts[type][ipv]}
-                            </Charts>
-                            </ChartRow>
-                            );
+			//console.log(this.props.showTpt);
+		
+		     	var visibleType = true;
+			if(type == "latency"){
+				visibleType = this.props.showLat;
+			}
+			else if(type == "loss"){
+				visibleType = this.props.showPac;
+			}
+  			else{
+				visibleType = this.props.showTpt;
+			}
+			charts[type].chartRows.push(
+                           <ChartRow height={chartRow.height} debug={false} visible={visibleType}>
+                                <YAxis
+                                    key={"axis" + type}
+                                    id={"axis" + type}
+                                    label={label + " (" + ipv + ")"}
+                                    style={axisLabelStyle}
+                                    labelOffset={offsets.label}
+                                    className="yaxis-label"
+                                    format={format}
+                                    min={0}
+                                    max={max}
+                                    width={80} type="linear" align="left" />
+                                <Charts>
+                                {charts[type][ipv]}
+                                <Baseline axis={"axis" + type} style={baselineStyle} value={max} position="right"/>
+                                </Charts>
+                           </ChartRow>
+		            );
 
                     if ( this.state.showBrush === true ) {
                         // push the chartrows for the brush charts
@@ -1663,7 +1789,7 @@ export default React.createClass({
             this.setState({timerange: this.state.initialTimerange, brushrange: null});
         }
     },
-
+   
     handleCloseTooltipClick( event ) {
         event.preventDefault();
         this.setState({ lockToolTip: false, tracker: null });
@@ -1721,8 +1847,7 @@ export default React.createClass({
         let agent = this.props.agent;
         let displaysetsrc = this.props.displaysetsrc;
         let displaysetdest = this.props.displaysetdest;
-
-        let summaryWindow = this.props.summaryWindow;
+	let summaryWindow = this.props.summaryWindow;
 
         let params = {
             tool: tool,
@@ -1765,7 +1890,7 @@ export default React.createClass({
         data.responseJSON = {};
         data.responseJSON.detail = "No data found in the measurement archive";
         this.setState({dataError: data, loading: false});
-        console.log("Handling empty data");
+        //console.log("Handling empty data");
 
     },
     componentWillReceiveProps( nextProps ) {
@@ -1818,6 +1943,18 @@ export default React.createClass({
 
         return tool;
     },
+
+    getTestParam( row, test ) {
+        let testParam;
+	testParam = row.properties[test];
+
+        if ( typeof testParam == "undefined" || testParam == "" ) {
+            testParam = "";
+        }
+
+        return testParam;
+    },
+
 
     getProtocol( row ) {
         let protocol = "";
