@@ -31,6 +31,7 @@ export default React.createClass({
             end: this.props.end,
             timeframe: this.props.timeframe,
             summaryWindow: 3600,
+	    customrange: true,
             interfaceInfo: null,
             traceInfo: [],
             pageURL: window.location.href
@@ -121,13 +122,13 @@ export default React.createClass({
                     <div className="overview overview--pad">
                         <div className="row">
                             {/* GRAPH: Source */}
-                            <div className="medium-3 columns">
+                            <div className="medium-4 columns">
                                 {this.renderHostList("source", "Source")}
                             </div>
 
                             {/* GRAPH: Destination */}
 
-                            <div className="medium-3 columns">
+                            <div className="medium-4 columns">
                                 {this.renderHostList("dest", "Destination")}
                             </div>
 
@@ -136,29 +137,42 @@ export default React.createClass({
 			    <style>
                                         {`.graph-temp {
                                         	display: flex;
-                                        
+                                 		align-items: flex-start;
+						       
                                         }
 					
-					.flowflex{
-						flex-flow: row wrap;
-							
-					}
-					
 					.box-range{
-                                                flex-shrink:2;
+                                                flex-basis:auto;
+						margin:10px;
                                          } `}
                              </style>
-			    <div className="medium-6 columns">
+			    <div className="medium-4 columns">
                                 <label className="hostLabel">Report range</label>
                                 <br/>
-				<div className="graph-temp flowflex">
-				<div className="box-range">
+							
 				<button id="headerTimePrevious" className="button-quiet button-timechange" onClick={this.handlePageChange.bind(this, "previous")}>
                                 <i className="fa fa-arrow-left" aria-hidden="true"></i>
                                 </button>
-				</div>
+							
+                                <select className="no-margin" name="timeperiod" id="timeperiod" onChange={this.changeTimePeriod} value={this.state.timeframe}>
+                                    <option selected disabled>Choose</option>
+                                    <option value="12h">12 hrs</option>
+                                    <option value="1d">1 day</option>
+                                    <option value="3d">3 days</option>
+                                    <option value="1w">1 week</option>
+                                    <option value="1m">1 month</option>
+                                    <option value="1y">1 year</option>
+                                    <option value="custom">Custom Range</option>
+                                </select>
+                        				
+                                <button className="button-quiet button-timechange" onClick={this.handlePageChange.bind(this, "next")}>
+                                <i className="fa fa-arrow-right" aria-hidden="true"></i>
+                                </button>
+                                	
 				
-				
+				<br/>
+				<br/>	
+				<div className="graph-temp">
 				<style>
           				{`.react-datepicker__time-container .react-datepicker__time .react-datepicker__time-box ul.react-datepicker__time-list {
             				padding-left: 0;
@@ -169,6 +183,7 @@ export default React.createClass({
 				<DatePicker
   					selected={this.state.startDate}
   					onChange={this.handleStart}
+					disabled={this.state.customrange}
 					showTimeSelect
     					placeholderText="From"
 					timeFormat="HH:mm"
@@ -181,26 +196,24 @@ export default React.createClass({
 				<DatePicker
                                         selected={this.state.endDate}
                                         onChange={this.handleEnd}
+					disabled={this.state.customrange}
                                         showTimeSelect
                                         placeholderText="To"
 					timeFormat="HH:mm"
                                         timeIntervals={15}
                                         dateFormat="YYYY-MM-DD HH:mm"
-                                        timeCaption="Time"
+                                       	timeCaption="Time"
                                 />
 				</div>
 
 				<div className="box-range">
-				<button className="button-quiet button-timechange" onClick={this.changeTimePeriod}>
+				<button className="button-quiet button-timechange" disabled={this.state.customrange} onClick={this.changeTimePeriod}>
                                <b> Submit</b>
                                 </button>
 				</div>
-				<div className="box-range">
-                                <button className="button-quiet button-timechange" onClick={this.handlePageChange.bind(this, "next")}>
-                                <i className="fa fa-arrow-right" aria-hidden="true"></i>
-                                </button>
-				</div>
+				
                                 </div>
+				
 				<div>
 				
                                 <span className="timerange_holder">
@@ -239,10 +252,36 @@ export default React.createClass({
 
     changeTimePeriod: function( event ) {
         
-	let start = Math.round(this.state.startDate.toDate().getTime() / 1000);
-        let end = Math.round(this.state.endDate.toDate().getTime() / 1000);
-        //this.setState({	start : Math.round(this.state.startDate.toDate().getTime() / 1000) });
-	//this.setState({ end : Math.round(this.state.endDate.toDate().getTime() / 1000) }); 
+	let period = event.target.value;
+	let flag = 0;
+	switch(period) {
+		case '12h': flag = 1; break;
+		case '1d': flag = 1; break;
+		case '3d': flag = 1; break;
+		case '1w': flag = 1; break;
+		case '1m': flag = 1; break;
+		case '1y': flag = 1; break;
+		case 'custom': flag = 2; 	
+	}
+	console.log("flag is " + flag);
+	console.log("period is "+ period);
+	let start; 
+	let end;
+	let timeDiff;
+	let summaryWindow;
+	let newStart;
+	let newEnd;
+	
+	if(flag == 2){
+		this.state.customrange = false;//setting this to false enables the datetime picker
+	}	
+
+	if(flag == 0){
+	
+	start = Math.round(this.state.startDate.toDate().getTime() / 1000);
+
+	end  = Math.round(this.state.endDate.toDate().getTime() / 1000);
+        
 	let now = Math.floor( new Date().getTime() / 1000 );
 	let temp;
 	let initend = end;
@@ -264,12 +303,13 @@ export default React.createClass({
 	else if( start > now){
 		start = now - temp;
                 end = now;
-	}		
-	let timeDiff = Math.abs(end - start);
+	}
+				
+	timeDiff = Math.abs(end - start);
 	this.state.start = start;
 	this.state.end = end;
 	this.state.timeframe = timeDiff;
-	let summaryWindow; 
+	summaryWindow; 
 	if(timeDiff< 86400){
 		summaryWindow = 0;	
 	}
@@ -282,14 +322,33 @@ export default React.createClass({
 	else{
                 summaryWindow = 86400;
         } 
-        let half = timeDiff / 2;
-	//console.log("\nstart iss "+ (this.state.startDate.toDate().getTime() / 1000));
-	//console.log("\nend is "+ end);
-	//console.log("\ntemp is "+ temp);
-	//console.log("\nnow is "+ now);
+        let half = timeDiff / 2;	
+	newEnd = end;
+	newStart = start;
 	
-	let newEnd = end;
-	let newStart = start;
+	}//considers datepicker
+
+	if(flag == 1){
+		this.state.customrange = true;
+		let vars = GraphUtilities.getTimeVars(period);
+		timeDiff = vars.timeDiff;
+		summaryWindow = vars.summaryWindow;
+		let half = timeDiff / 2;
+		start = this.state.start;
+		end = this.state.end;
+		let middle = ( start + end ) / 2;
+		let now = Math.floor( new Date().getTime() / 1000 );
+		newEnd = middle + half;
+		if ( newEnd > now ) {
+			newEnd = now;
+		}
+		if ( newEnd > now - timeDiff ) {
+			newEnd = now;
+		}
+		newStart = newEnd - timeDiff;
+		
+	}//considers drop-down
+	
 	let options = {
             timeframe: timeDiff,//period,
             start: newStart,
