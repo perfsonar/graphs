@@ -62,6 +62,9 @@ module.exports = {
         if (period == '1h') {
             timeDiff = 60*60 * 1;
             summaryWindow = 0;
+        } else if (period == '4h') {
+            timeDiff = 60*60 * 4;
+            summaryWindow = 0;
         } else if (period == '12h') {
             timeDiff = 60*60 * 12;
             summaryWindow = 0;
