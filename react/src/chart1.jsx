@@ -5,7 +5,6 @@ import Markdown from "react-markdown";
 import GraphDataStore from "./GraphDataStore";
 import GraphUtilities from "./GraphUtilities";
 
-
 import { AreaChart, Brush, Baseline, Charts, ChartContainer, ChartRow, YAxis, LineChart, ScatterChart, Highlighter, Resizable, Legend, styler } from "react-timeseries-charts";
 
 import { TimeSeries, TimeRange, Event } from "pondjs";
