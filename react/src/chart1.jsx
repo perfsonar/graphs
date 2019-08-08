@@ -736,29 +736,32 @@ export default React.createClass({
                             <li className={this.getTTItemClass("throughput")}>{dir} <SIValue value={this._formatZero( row.value )} digits={2} />bits/s{protocol}{retransLabel}{tool}</li>
 
                             );
-		    if (bwParallel != ""){
-			throughputItems.push(
-                            <li className={this.getTTItemClass("throughput")}> &nbsp;&nbsp;&nbsp;&nbsp;bw-parallel-streams: {bwParallel}</li>
-                            );	
-		    }
+		    if(this.props.showParams){
+		    	
+			if (bwParallel != ""){
+				throughputItems.push(
+                            	<li className={this.getTTItemClass("throughput")}> &nbsp;&nbsp;&nbsp;&nbsp;bw-parallel-streams: {bwParallel}</li>
+                            	);	
+		    	}
 			
-		    if (bwTarget != ""){
-                        throughputItems.push(
-                            <li className={this.getTTItemClass("throughput")}> &nbsp;&nbsp;&nbsp;&nbsp;bw-target-bandwidth: {bwTarget} bits/s</li>
-                            );
-                    }
+		    	if (bwTarget != ""){
+                        	throughputItems.push(
+                            	<li className={this.getTTItemClass("throughput")}> &nbsp;&nbsp;&nbsp;&nbsp;bw-target-bandwidth: {bwTarget} bits/s</li>
+                            	);
+                    	}
 		    
-		    if (timeDuration != ""){
-                        throughputItems.push(
-                            <li className={this.getTTItemClass("throughput")}> &nbsp;&nbsp;&nbsp;&nbsp;time-duration: {timeDuration} s</li>
-                            );
-                    }
+		    	if (timeDuration != ""){
+                        	throughputItems.push(
+                            	<li className={this.getTTItemClass("throughput")}> &nbsp;&nbsp;&nbsp;&nbsp;time-duration: {timeDuration} s</li>
+                            	);
+                    	}
 
-		    if (ipTransport != ""){
-                        throughputItems.push(
-                            <li className={this.getTTItemClass("throughput")}> &nbsp;&nbsp;&nbsp;&nbsp;ip-transport-protocol: {ipTransport}</li>
-                            );
-                    }
+		    	if (ipTransport != ""){
+                        	throughputItems.push(
+                            	<li className={this.getTTItemClass("throughput")}> &nbsp;&nbsp;&nbsp;&nbsp;ip-transport-protocol: {ipTransport}</li>
+                            	);
+                    	}
+		    }
                 }
 
                 // GET LOSS DATA
@@ -854,41 +857,43 @@ export default React.createClass({
                             <li className={this.getTTItemClass("latency")}>{dir} {owampVal} ms {label}{tool}</li>
 
                             );
-		    if(sampleSize != ""){
-			latencyItems.push(
-				<li className={this.getTTItemClass("latency")}> &nbsp;&nbsp;&nbsp;&nbsp;sample-size: {sampleSize} bytes</li>
-			);
-		    }
+		    if(this.props.showParams){
+		    	if(sampleSize != ""){
+				latencyItems.push(
+					<li className={this.getTTItemClass("latency")}> &nbsp;&nbsp;&nbsp;&nbsp;sample-size: {sampleSize} bytes</li>
+				);
+		    	}
 		    
-		    if(ipPacket != ""){
-                        latencyItems.push(
-                                <li className={this.getTTItemClass("latency")}>&nbsp;&nbsp;&nbsp;&nbsp;ip-packet-padding: {ipPacket} bytes</li>
-                        );
-                    }
+		    	if(ipPacket != ""){
+                        	latencyItems.push(
+                                	<li className={this.getTTItemClass("latency")}>&nbsp;&nbsp;&nbsp;&nbsp;ip-packet-padding: {ipPacket} bytes</li>
+                        	);
+                    	}
         	        	
-		    if(timeProbe != ""){
-                        latencyItems.push(
-                                <li className={this.getTTItemClass("latency")}>&nbsp;&nbsp;&nbsp;&nbsp;time-probe-interval: {timeProbe} s</li>
-                        );
-                    }
+		    	if(timeProbe != ""){
+                        	latencyItems.push(
+                                	<li className={this.getTTItemClass("latency")}>&nbsp;&nbsp;&nbsp;&nbsp;time-probe-interval: {timeProbe} s</li>
+                        	);
+                    	}
 			
-		    if(sampleBucket != ""){
-                        latencyItems.push(
-                                <li className={this.getTTItemClass("latency")}>&nbsp;&nbsp;&nbsp;&nbsp;sample-bucket-width: {sampleBucket} s</li>
-                        );
-                    }
+		    	if(sampleBucket != ""){
+                        	latencyItems.push(
+                                	<li className={this.getTTItemClass("latency")}>&nbsp;&nbsp;&nbsp;&nbsp;sample-bucket-width: {sampleBucket} s</li>
+                        	);
+                    	}
 
-		    if(ipTransport != ""){
-                        latencyItems.push(
-                                <li className={this.getTTItemClass("latency")}>&nbsp;&nbsp;&nbsp;&nbsp;ip-transport-protocol: {ipTransport}</li>
-                        );
-                    }
+		    	if(ipTransport != ""){
+                        	latencyItems.push(
+                                	<li className={this.getTTItemClass("latency")}>&nbsp;&nbsp;&nbsp;&nbsp;ip-transport-protocol: {ipTransport}</li>
+                        	);
+                    	}
 
-		    if(timeDuration != ""){
-                        latencyItems.push(
-                                <li className={this.getTTItemClass("latency")}>&nbsp;&nbsp;&nbsp;&nbsp;time-duration: {timeDuration} s</li>
-                        );
-                    }
+		    	if(timeDuration != ""){
+                        	latencyItems.push(
+                                	<li className={this.getTTItemClass("latency")}>&nbsp;&nbsp;&nbsp;&nbsp;time-duration: {timeDuration} s</li>
+                        	);
+                    	}
+		    }
 		    
                 }
 		//console.log(this.props.showTpt);
