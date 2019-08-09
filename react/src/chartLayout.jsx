@@ -164,6 +164,7 @@ export default React.createClass({
             ipversion: newState.ipversion,
             hashValues: newState.hashValues,
 	    showPopup: newState.showPopup,
+	    showTestParam: newState.showTestParam,
 	    active: newState.active
         };
     },
@@ -216,6 +217,14 @@ export default React.createClass({
     	this.setState({
       	showPopup: !this.state.showPopup
     	});
+    },
+
+    showParam() {
+	this.setState({
+	showTestParam: !this.state.showTestParam
+	});
+	//console.log("showparam now ");
+	//console.log(this.state.showTestParam);
     },
 
     getActiveClass: function ( value ) {
@@ -344,7 +353,9 @@ export default React.createClass({
           					<AdvSet
             					text='Close Me'
             					summaryWindow={this.state.summaryWindow}
-						closePopup={this.togglePopup}
+						closePopup={this.togglePopup.bind(this)}
+						showTestp={this.showParam.bind(this)}
+						showT={this.state.showTestParam}
           					/>
 
           					: null
@@ -399,6 +410,7 @@ export default React.createClass({
                                         showTpt = {this.state.hidTpt}
 					showPac = {this.state.hidPac}
 					showLat = {this.state.hidLat}
+					showParams = {this.state.showTestParam}
 					ref="chart1"
                                     />
                                 </div>
@@ -499,8 +511,7 @@ export default React.createClass({
         if((qs.timeframe != undefined) && (qs.timeframe.length != 0)){
 		timeframe = qs.timeframe;
 	}
-	//console.log(qs);
-	//console.log(timeframe);	
+		
 	hash = hash.replace( hashRe, "");
 
         let hashPairs = hash.split("&");
@@ -530,23 +541,20 @@ export default React.createClass({
         let summaryWindow = qs.summaryWindow;
 
         let ipversion;
-        //let timeRange = this.getTimeVars( defaults.timeframe );
-        //
+                
         if ( "timeframe" in hashObj && hashObj.timeframe != "" ) {
             timeframe = hashObj.timeframe;
 
         }
 
-	////////
-	/*	*/
 	let timeVars = GraphUtilities.getTimeVars( timeframe );
 	timeframe = Math.round(timeVars.timeDiff);
-	//console.log("after math");
-        //console.log(timeframe);
+	
 	if((typeof hashObj.start == "undefined") && (typeof hashObj.end == "undefined")){
-                start = parseInt(start);
+                //start = parseInt(start);
                 end = parseInt(end);
-                timeframe = end - start;
+                //timeframe = end - start;
+                start = end - timeframe;
         }
 
         else if(typeof hashObj.start == "undefined"){
@@ -679,10 +687,7 @@ export default React.createClass({
 
         }
 
-
-
-        // Create the new state object
-        const newState = {
+	const newState = {
             src:    src,
             dst:    dst,
             displaysetsrc:    displaysetsrc,
@@ -699,6 +704,7 @@ export default React.createClass({
             ipversion: ipversion,
             timeframe: timeframe,
             hashValues: hashObj,
+	    showTestParam: false,
 	    showPopup: false,
         };
 
