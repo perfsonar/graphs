@@ -211,7 +211,7 @@ export default React.createClass({
 
         //return false;
     },
-	
+
 
     togglePopup() {
     	this.setState({
@@ -260,15 +260,15 @@ export default React.createClass({
 		    <div className="graph-wrapper">
                        	<div className="checkboxes"> 
                         <span style={{marginRight: 1 + 'em'}}>Show/hide chart rows </span>
-                           <input type="checkbox" name="Tpt" onChange={this.hideTpt.bind(this)} defaultChecked={true}/> <b>Throughput</b> <div className="divider"/>
-                           <input type="checkbox" name="Loss" onChange={this.hideLoss.bind(this)} defaultChecked={true}/> <b>Packet Loss</b><div className="divider"/>
-                           <input type="checkbox" name="Late" onChange={this.hideLate.bind(this)} defaultChecked={true}/> <b>Latency</b><div className="divider"/>
-                        </div>    		
-		   </div>  
+                           <input type="checkbox" name="Tpt" onChange={this.hideTpt} defaultChecked={true}/> <b>Throughput</b> <div className="divider"/>
+                           <input type="checkbox" name="Loss" onChange={this.hideLoss} defaultChecked={true}/> <b>Packet Loss</b><div className="divider"/>
+                           <input type="checkbox" name="Late" onChange={this.hideLate} defaultChecked={true}/> <b>Latency</b><div className="divider"/>
+                        </div>
+		   </div>
 
                     {/* GRAPH: Select Data*/}
                     <div className="graph-filters">
-                        
+
 			<div className="graph-filter left">
                             <ul className=" graph-filter__list">
                                 <li className={"graph-filter__item graph-filter__item throughput-tcp " + this.getActiveClass( this.state.active["eventType_throughput_protocol_tcp_"] )}>
@@ -303,7 +303,7 @@ export default React.createClass({
                                 </li>
                             </ul>
                         </div>
-			
+
 
 
                         <div className="graph-filter right hidden">
@@ -347,7 +347,7 @@ export default React.createClass({
                         <div className="graph-filter right">
                             <ul className=" graph-filter__list">
                                 <li className="graph-filter__item graph-filter__item--forward active">
-					<a href="#" onClick={this.togglePopup.bind(this)}><i className="fa fa-cog fa-fw" aria-hidden="true"></i>&nbsp; Settings
+					<a href="#" onClick={this.togglePopup}><i className="fa fa-cog fa-fw" aria-hidden="true"></i>&nbsp; Settings
 					</a>
 					{this.state.showPopup ? 
           					<AdvSet
@@ -576,7 +576,7 @@ export default React.createClass({
         if ( typeof hashObj.summaryWindow != "undefined" ) {
             summaryWindow = hashObj.summaryWindow;
         }
-	
+
         if ( typeof summaryWindow == "undefined" ) {
             //summaryWindow = 3600;
             summaryWindow = timeVars.summaryWindow;
@@ -611,7 +611,7 @@ export default React.createClass({
                 ma_urls[i] = new_url;
             }
         }
-        
+
         //reverse URLs
         let ma_urls_reverse = qs.reverseurl || ma_urls;
         if ( !$.isArray( ma_urls_reverse ) ) {

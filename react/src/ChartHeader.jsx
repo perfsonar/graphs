@@ -133,27 +133,14 @@ export default React.createClass({
                             </div>
 
                             {/* GRAPH: Reporting range */}
-                            
-			    <style>
-                                        {`.graph-temp {
-                                        	display: flex;
-                                 		align-items: flex-start;
-						       
-                                        }
-					
-					.box-range{
-                                                flex-basis:auto;
-						margin:10px;
-                                         } `}
-                             </style>
-			    <div className="medium-4 columns">
+
+			    <div className="medium-4 columns" id="dateRangeColumn">
                                 <label className="hostLabel">Report range</label>
-                                <br/>
-							
+
 				<button id="headerTimePrevious" className="button-quiet button-timechange" onClick={this.handlePageChange.bind(this, "previous")}>
                                 <i className="fa fa-arrow-left" aria-hidden="true"></i>
                                 </button>
-							
+
                                 <select className="no-margin" name="timeperiod" id="timeperiod" onChange={this.changeTimePeriod} value={this.state.timeframe}>
                                     <option selected disabled>Choose</option>
                                     <option value="12h">12 hrs</option>
@@ -164,21 +151,16 @@ export default React.createClass({
                                     <option value="1y">1 year</option>
                                     <option value="custom">Custom Range</option>
                                 </select>
-                        				
+
                                 <button className="button-quiet button-timechange" onClick={this.handlePageChange.bind(this, "next")}>
                                 <i className="fa fa-arrow-right" aria-hidden="true"></i>
                                 </button>
-                                	
-				
+
+                                {/*
 				<br/>
-				<br/>	
+				<br/>
+                */}
 				<div className="graph-temp">
-				<style>
-          				{`.react-datepicker__time-container .react-datepicker__time .react-datepicker__time-box ul.react-datepicker__time-list {
-            				padding-left: 0;
-            				padding-right: 0;
-          				}`}
-        			</style>
 			  	<div className="box-range">
 				<DatePicker
   					selected={this.state.startDate}
@@ -186,13 +168,13 @@ export default React.createClass({
 					disabled={this.state.customrange}
 					showTimeSelect
     					placeholderText="From"
-					timeFormat="HH:mm"
+                        timeFormat="HH:mm"
     					timeIntervals={15}
     					dateFormat="YYYY-MM-DD HH:mm"
-    					timeCaption="time" 
+    					timeCaption="time"
 				/>
-				</div>		
-			        <div className="box-range">                        
+				</div>
+			        <div className="box-range">
 				<DatePicker
                                         selected={this.state.endDate}
                                         onChange={this.handleEnd}
@@ -219,7 +201,7 @@ export default React.createClass({
                                 <span className="timerange_holder">
                                     
 				    { (new Date(this.state.start * 1000)).toUTCString() } 
-                                    <br />
+                                    &nbsp;
                                     
                                  </span>
                                  <span className="timerange_holder">
@@ -228,7 +210,7 @@ export default React.createClass({
                                 <span className="timerange_holder">
                                     
                                     { (new Date(this.state.end * 1000)).toUTCString() }
-				    <br />
+				    &nbsp;
                                     
                                 </span> 
                                 </div>
