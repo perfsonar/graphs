@@ -527,11 +527,6 @@ module.exports = {
         let results = $.grep( data, function( e, i ) {
             let found = true;
 
-            if ( e.properties.eventType == "failures" ) {
-                //console.log("found failures!", e, "ipversion", e.properties.ipversion);
-
-            }
-
             for (var key in filters ) {
                 let val = filters[key];
 

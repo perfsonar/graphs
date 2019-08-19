@@ -2,6 +2,10 @@ import React from "react";
 import _ from "underscore";
 
 import Chart1 from "./chart1.jsx";
+import AdvSet from "./AdvSet.jsx";
+import { hiddenTpt } from "./chart1.jsx";
+import { hiddenLoss } from "./chart1.jsx";
+import { hiddenLate } from "./chart1.jsx";
 import ChartHeader from "./ChartHeader";
 import HostInfoStore from "./HostInfoStore";
 import GraphUtilities from "./GraphUtilities";
@@ -19,7 +23,7 @@ const defaults = {
     summaryWindow: 3600,
     start: now - 86400*7,
     end: now,
-    timeframe: "1w",
+    timeframe: "30d",
 };
 
 const scheme = {
@@ -63,6 +67,10 @@ const ipv4Style = {
     color: ipv4Color
 }
 
+//Values to hide or show the sections on selecting the checkboxes 
+var hidTpt = true;
+var hidPac = true;
+var hidLat = true;
 
 const reverseStyles = {
     value: {
@@ -155,7 +163,9 @@ export default React.createClass({
             tool: newState.tool,
             ipversion: newState.ipversion,
             hashValues: newState.hashValues,
-            active: newState.active
+	    showPopup: newState.showPopup,
+	    showTestParam: newState.showTestParam,
+	    active: newState.active
         };
     },
     contextTypes: {
@@ -203,6 +213,20 @@ export default React.createClass({
     },
 
 
+    togglePopup() {
+    	this.setState({
+      	showPopup: !this.state.showPopup
+    	});
+    },
+
+    showParam() {
+	this.setState({
+	showTestParam: !this.state.showTestParam
+	});
+	//console.log("showparam now ");
+	//console.log(this.state.showTestParam);
+    },
+
     getActiveClass: function ( value ) {
         if ( value === true ) {
             return "active";
@@ -233,10 +257,19 @@ export default React.createClass({
                     updateTimerange={this.handleTimerangeChange}
                     ma_url={this.state.ma_url}
                 />
+		    <div className="graph-wrapper">
+                       	<div className="checkboxes"> 
+                        <span style={{marginRight: 1 + 'em'}}>Show/hide chart rows </span>
+                           <input type="checkbox" name="Tpt" onChange={this.hideTpt} defaultChecked={true}/> <b>Throughput</b> <div className="divider"/>
+                           <input type="checkbox" name="Loss" onChange={this.hideLoss} defaultChecked={true}/> <b>Packet Loss</b><div className="divider"/>
+                           <input type="checkbox" name="Late" onChange={this.hideLate} defaultChecked={true}/> <b>Latency</b><div className="divider"/>
+                        </div>
+		   </div>
 
                     {/* GRAPH: Select Data*/}
                     <div className="graph-filters">
-                        <div className="graph-filter left">
+
+			<div className="graph-filter left">
                             <ul className=" graph-filter__list">
                                 <li className={"graph-filter__item graph-filter__item throughput-tcp " + this.getActiveClass( this.state.active["eventType_throughput_protocol_tcp_"] )}>
                                     <a href="#" onClick={this.toggleType.bind(this, {eventType: "throughput", protocol: "tcp"})}>Tput (TCP)</a>
@@ -270,6 +303,8 @@ export default React.createClass({
                                 </li>
                             </ul>
                         </div>
+
+
 
                         <div className="graph-filter right hidden">
                               <a href="#" className="graph-settings sidebar-popover-toggle js-sidebar-popover-toggle"><i className="fa fa-gear"></i></a>
@@ -311,7 +346,22 @@ export default React.createClass({
 
                         <div className="graph-filter right">
                             <ul className=" graph-filter__list">
-                                <li className={"graph-filter__item graph-filter__item--forward " + this.getActiveClass( this.state.active["direction_forward_"] ) }>
+                                <li className="graph-filter__item graph-filter__item--forward active">
+					<a href="#" onClick={this.togglePopup}><i className="fa fa-cog fa-fw" aria-hidden="true"></i>&nbsp; Settings
+					</a>
+					{this.state.showPopup ? 
+          					<AdvSet
+            					text='Close Me'
+            					summaryWindow={this.state.summaryWindow}
+						closePopup={this.togglePopup.bind(this)}
+						showTestp={this.showParam.bind(this)}
+						showT={this.state.showTestParam}
+          					/>
+
+          					: null
+        				}
+				</li>
+				<li className={"graph-filter__item graph-filter__item--forward " + this.getActiveClass( this.state.active["direction_forward_"] ) }>
                                     <a href="#" onClick={this.toggleType.bind(this, {direction: "forward"})}>Forward
                                     <svg width="18" height="4" className="direction-label">
                                           <line x1="0" y1="2" x2="18" y2="2" stroke="white" strokeWidth="3" />
@@ -335,6 +385,7 @@ export default React.createClass({
                             </ul>
                         </div>
                     </div>
+		    
 
 
                     {/* GRAPH: Graph Wrapper */}
@@ -356,7 +407,11 @@ export default React.createClass({
                                         ipversion={this.state.ipversion}
                                         updateHiddenItems={this.handleHiddenItemsChange}
                                         itemsToHide={this.state.itemsToHide}
-                                        ref="chart1"
+                                        showTpt = {this.state.hidTpt}
+					showPac = {this.state.hidPac}
+					showLat = {this.state.hidLat}
+					showParams = {this.state.showTestParam}
+					ref="chart1"
                                     />
                                 </div>
                     </div>
@@ -430,13 +485,34 @@ export default React.createClass({
 
     },
 
+    hideTpt: function(tpt){
+	this.setState({hidTpt: tpt.target.checked});
+	//console.log(tpt.target.checked);
+    },
+
+    hideLoss: function(loss){
+        this.setState({hidPac: loss.target.checked});
+        //console.log(loss.target.checked);
+    },
+
+    hideLate: function(late){
+        this.setState({hidLat: late.target.checked});
+        //console.log(late.target.checked);
+    },
+
+
     getQueryString: function() {
         var qs = this.props.location.query;
-
-        // get hash values
+	// get hash values
         let hash = this.props.location.hash;
         let hashRe = /^#/;
-        hash = hash.replace( hashRe, "");
+	let timeFlag = 0;
+	let timeframe = defaults.timeframe
+        if((qs.timeframe != undefined) && (qs.timeframe.length != 0)){
+		timeframe = qs.timeframe;
+	}
+		
+	hash = hash.replace( hashRe, "");
 
         let hashPairs = hash.split("&");
         let hashObj = {};
@@ -459,32 +535,39 @@ export default React.createClass({
         let displaysetdest = qs.displaysetdest;
         let start = defaults.start;
         let end = defaults.end;
-        let timeframe = defaults.timeframe;
+        //let timeframe = defaults.timeframe;
         let tool = qs.tool;
         let agent = qs.agent || [];
         let summaryWindow = qs.summaryWindow;
 
         let ipversion;
-        //let timeRange = this.getTimeVars( defaults.timeframe );
-        //
+                
         if ( "timeframe" in hashObj && hashObj.timeframe != "" ) {
             timeframe = hashObj.timeframe;
 
         }
 
-        let timeVars = GraphUtilities.getTimeVars( timeframe );
-
-        if ( typeof hashObj.start != "undefined" ) {
-            start = hashObj.start;
-        } else if ( typeof hashObj.start_ts != "undefined" ) {
-            start = hashObj.start_ts;
+	let timeVars = GraphUtilities.getTimeVars( timeframe );
+	timeframe = Math.round(timeVars.timeDiff);
+	
+	if((typeof hashObj.start == "undefined") && (typeof hashObj.end == "undefined")){
+                //start = parseInt(start);
+                end = parseInt(end);
+                //timeframe = end - start;
+                start = end - timeframe;
         }
 
-        if ( typeof hashObj.end != "undefined" ) {
-            end = hashObj.end;
-        } else if ( typeof hashObj.end_ts != "undefined" ) {
-            end = hashObj.end_ts;
+        else if(typeof hashObj.start == "undefined"){
+                start = parseInt(hashObj.end) - timeframe;
         }
+
+        else if(typeof hashObj.end == "undefined"){
+                end = parseInt(hashObj.start) + timeframe;
+        }
+        else{
+                timeframe = parseInt(hashObj.end) - parseInt(hashObj.start);
+        }	
+
 
         if ( typeof qs.ipversion != "undefined" ) {
             ipversion = qs.ipversion;
@@ -528,7 +611,7 @@ export default React.createClass({
                 ma_urls[i] = new_url;
             }
         }
-        
+
         //reverse URLs
         let ma_urls_reverse = qs.reverseurl || ma_urls;
         if ( !$.isArray( ma_urls_reverse ) ) {
@@ -604,10 +687,7 @@ export default React.createClass({
 
         }
 
-
-
-        // Create the new state object
-        const newState = {
+	const newState = {
             src:    src,
             dst:    dst,
             displaysetsrc:    displaysetsrc,
@@ -624,6 +704,8 @@ export default React.createClass({
             ipversion: ipversion,
             timeframe: timeframe,
             hashValues: hashObj,
+	    showTestParam: false,
+	    showPopup: false,
         };
 
         this.updateURLHash( hashObj );

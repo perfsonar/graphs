@@ -20,7 +20,8 @@ use Socket6;
 use Data::Validate::IP;
 use Log::Log4perl qw(get_logger :easy :levels);
 use URI;
-
+use Try::Tiny;
+use LWP::UserAgent;
 #my $bin = "$RealBin";
 #warn "bin: $bin";
 
@@ -45,11 +46,42 @@ use SimpleLookupService::QueryObjects::Network::InterfaceQueryObject;
 # library for getting host information
 use perfSONAR_PS::Utils::Host qw( discover_primary_address get_ethernet_interfaces get_interface_addresses_by_type is_ip_or_hostname is_web_url );
 
+# variable to act as dns cache for dns lookups
+my %dns_cache;
+
 my $basedir = "$FindBin::Bin";
+
+my $ua = LWP::UserAgent->new;
+$ua->ssl_opts( "verify_hostname" => 0);
 
 my $cgi = new CGI;
 
 my $action = $cgi->param('action') || error("Missing required parameter \"action\", must specify data or tests", 400);
+
+#json file reader for reading ssl certificate flag from the configuration file
+my $sslcertjson;
+my $configfile = "/etc/perfsonar/graphs.json";
+#flag set to 1 only if the certificate config file exists
+my $config_set = 0;
+my $config;
+if(-e $configfile){
+  local $/;
+  open my $fh, "<", $configfile;
+  $sslcertjson = <$fh>;
+  close $fh;
+
+  $config_set = 1;
+  
+  try{
+	$config = decode_json($sslcertjson);
+  }  catch{
+	warn 'The json file used is invalid, please use correct json syntax while editing ' . $configfile ;
+  }
+
+
+}
+
+######
 
 if ($action eq 'data'){
     get_data();
@@ -89,12 +121,25 @@ sub cgi_multi_param {
     }
 }
 
+#######
+
+######
 # Fallback proxy for esmond requests for esmond instances that don't have CORS enabled
 sub get_ma_data {
-    my $url        = $cgi->param('url');
+    my $url = $cgi->param('url');
 
     if ( not defined $url ) {
         error("No URL specified", 400);
+    }
+
+
+    #if config_set is set to 1, the certificate config file exists
+    if($config_set){
+        #if ssl certificate ignore is set to false in etc/perfsonar/graphs.json file
+        if( defined($config->{'ssl_cert_ignore'}) &&   $config->{'ssl_cert_ignore'} eq 'false' ){
+            $ua->ssl_opts( "verify_hostname" => 1);
+        }
+
     }
 
     # Make sure the URL looks like an esmond URL -- starts with http or https and looks like
@@ -1250,15 +1295,31 @@ sub host_info {
         # if $host is IP address, do DNS lookup
         if (is_ipv4($host) || is_ipv6($host)) {
             $results->{$key . '_ip'} = $host;
-
-            my ( @names ) = reverse_dns( $host, 1 );
-            $results->{$key . '_host'} = $names[0];
+	
+	    if(exists($dns_cache{$host . ' '. 'name'})){
+                $results->{$key . '_host'} = $dns_cache{$host . ' '. 'name'}[0];
+            }
+            else{
+                my ( @names ) = reverse_dns( $host, 1 );
+                $dns_cache{$host . ' '. 'name'} = [@names];
+                $results->{$key . '_host'} = $names[0];
+            }
+	                      
 
         } else {
             $results->{$key . '_host'} = $host;
             $results->{$key . '_ip'} = '';
-            my @addresses = resolve_address($host);
-            my $ip_count = 0;
+            
+	    my @addresses;
+            if(exists($dns_cache{$host})){
+                @addresses = @{$dns_cache{$host}};
+            }
+            else{
+                @addresses = resolve_address($host);
+                $dns_cache{$host} = [@addresses];
+            }
+            
+	    my $ip_count = 0;
             foreach my $address(@addresses){
                 if($ipversion && $ipversion == 4){
                     next unless(is_ipv4($address));
