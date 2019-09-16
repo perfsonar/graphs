@@ -1370,7 +1370,7 @@ export default React.createClass({
                                 }
 
                             }
-
+			    
                             if ( esmondName == "packet-retransmits" ) {
 
                                 charts[type][ipv].push(
@@ -1378,7 +1378,7 @@ export default React.createClass({
                                             key={type + "retrans" + Math.floor( Math.random() )}
                                             axis={"axis" + type}
                                             series={series}
-                                            style={getChartStyle( properties )} smooth={false} breakLine={true}
+                                            style={getChartStyle( properties )} smooth={false} breakLine={this.props.interpolate}
                                             radius={4.0}
 					    columns={ [ "value" ] }
                                             highlighted={this.state.highlight}
@@ -1388,10 +1388,11 @@ export default React.createClass({
                             } else {
 
                                 // push the charts for the main charts
-                                charts[type][ipv].push(
+                                //console.log("Interpolate value is "+ this.props.interpolate);
+				charts[type][ipv].push(
                                         <LineChart key={type + Math.floor( Math.random() )}
                                         axis={"axis" + type} series={series}
-                                        style={getChartStyle( properties )} smooth={false} breakLine={true}
+                                        style={getChartStyle( properties )} smooth={false} breakLine={this.props.interpolate}
                                         min={0}
                                         onClick={this.handleClick}
                                         columns={[ "value" ]} />

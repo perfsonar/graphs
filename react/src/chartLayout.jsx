@@ -165,6 +165,7 @@ export default React.createClass({
             hashValues: newState.hashValues,
 	    showPopup: newState.showPopup,
 	    showTestParam: newState.showTestParam,
+	    interpolate: newState.interpolate,
 	    active: newState.active
         };
     },
@@ -225,6 +226,14 @@ export default React.createClass({
 	});
 	//console.log("showparam now ");
 	//console.log(this.state.showTestParam);
+    },
+
+    //to toggle between interpolating long gaps in the graphs
+    interPol() {
+        this.setState({
+        interpolate: !this.state.interpolate
+        });
+        //console.log("interpolate value ");
     },
 
     getActiveClass: function ( value ) {
@@ -356,6 +365,8 @@ export default React.createClass({
 						closePopup={this.togglePopup.bind(this)}
 						showTestp={this.showParam.bind(this)}
 						showT={this.state.showTestParam}
+						interpF={this.interPol.bind(this)}
+						interp={this.state.interpolate}
           					/>
 
           					: null
@@ -411,6 +422,7 @@ export default React.createClass({
 					showPac = {this.state.hidPac}
 					showLat = {this.state.hidLat}
 					showParams = {this.state.showTestParam}
+					interpolate = {this.state.interpolate}
 					ref="chart1"
                                     />
                                 </div>
@@ -705,6 +717,7 @@ export default React.createClass({
             timeframe: timeframe,
             hashValues: hashObj,
 	    showTestParam: false,
+	    interpolate: false,
 	    showPopup: false,
         };
 
