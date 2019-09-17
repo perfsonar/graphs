@@ -14,8 +14,11 @@ describe("Validate HTML of main homepage", function() {
             var results = w3cjs.validate({
                 file: file,
                 callback: function(err, res) {
-                    if ( res.messages.length > 0 ) {
+                    if ( res && res.messages.length > 0 ) {
                         console.log("validation messages", res);
+
+                    } else {
+                        //console.log("no validation errors found");
 
                     }
                     assert.empty( res.messages );
