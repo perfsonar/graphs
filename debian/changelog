@@ -1,8 +1,8 @@
-perfsonar-toolkit-graphs (4.2.1~a1.0-1) perfsonar-4.2-snapshot; urgency=low
+perfsonar-toolkit-graphs (4.2.1-1) perfsonar-4.2; urgency=low
 
   * New upstream version.
 
- -- Antoine Delvaux <antoine.delvaux@man.poznan.pl>  Sun, 25 Aug 2019 18:07:05 +0000
+ -- perfSONAR developers <debian@perfsonar.net>  Fri, 27 Sep 2019 13:16:38 -0400
 
 perfsonar-toolkit-graphs (4.2.0-1) perfsonar-minor-staging; urgency=low
 
