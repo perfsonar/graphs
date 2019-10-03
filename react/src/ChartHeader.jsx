@@ -31,7 +31,8 @@ export default React.createClass({
             end: this.props.end,
             timeframe: this.props.timeframe,
             summaryWindow: 3600,
-	    customrange: true,
+            customrange: true,
+            timesel: null,
             interfaceInfo: null,
             traceInfo: [],
             pageURL: window.location.href
@@ -141,8 +142,8 @@ export default React.createClass({
                                 <i className="fa fa-arrow-left" aria-hidden="true"></i>
                                 </button>
 
-                                <select className="no-margin" name="timeperiod" id="timeperiod" onChange={this.changeTimePeriod} value={this.state.timeframe}>
-                                    <option selected disabled>Choose</option>
+                                <select className="no-margin" name="timeperiod" id="timeperiod" onChange={this.changeTimePeriod} value={this.state.timesel}>
+                                    <option disabled>Choose</option>
                                     <option value="12h">12 hrs</option>
                                     <option value="1d">1 day</option>
                                     <option value="3d">3 days</option>
@@ -507,6 +508,21 @@ export default React.createClass({
         if ( ! "timeframe" in options ) {
             options.timeframe = this.state.timeframe;
         }
+
+        var timesel = GraphUtilities.convertSecondsToAbbrev( options.timeframe ) || "custom";
+
+        if ( timesel == "custom" ) {
+            //this.state.customrange = false;
+            options.customrange = false;
+            //options.startDate = moment( options.start * 1000 );
+            //options.endDate = moment( options.end * 1000 );
+            //options.startDate = this.state.startDate;
+            //options.endDate = this.state.endDate;
+        }
+
+
+        options.timesel = timesel;
+        console.log("handling Timerange Change", options);
         this.setState( options );
         this.props.updateTimerange( options, noupdateURL );
         emitter.emit("timerangeChange");
@@ -524,7 +540,9 @@ export default React.createClass({
         let options = {};
 
         let timeframe = this.state.timeframe || "1w";
+        //let timesel = this.state.timesel;
         let timeVars = GraphUtilities.getTimeVars( timeframe );
+        console.log("timeVars", timeVars);
         let diff = timeVars.timeDiff;
         let summaryWindow = timeVars.summaryWindow;
 
@@ -532,16 +550,18 @@ export default React.createClass({
         let newEnd = now;
         let newStart =  newEnd - diff;
 
-        if ( typeof this.props.start != "undefined" ) {
-            newStart = this.props.start;
+
+        if ( ( typeof this.state.start ) != "undefined" ) {
+            newStart = this.state.start;
         }
-        if ( typeof this.props.end != "undefined" ) {
-            newEnd = this.props.end;
+        if ( ( typeof this.state.end ) != "undefined" ) {
+            newEnd = this.state.end;
         }
 
         options.start = newStart;
         options.end = newEnd;
         options.timeframe = timeframe;
+        //options.timesel = timesel;
         options.summaryWindow = summaryWindow;
 
         this.handleTimerangeChange( options, true );
