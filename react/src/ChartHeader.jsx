@@ -31,7 +31,8 @@ export default React.createClass({
             end: this.props.end,
             timeframe: this.props.timeframe,
             summaryWindow: 3600,
-	    customrange: true,
+            customrange: true,
+            timesel: null,
             interfaceInfo: null,
             traceInfo: [],
             pageURL: window.location.href
@@ -54,17 +55,16 @@ export default React.createClass({
     },
 
     handleStart(date) {
-    this.setState({
-      startDate: date
-    });
-   
-  },
+        this.setState({
+            start: date
+        });
+    },
 	
     handleEnd(date) {
-    this.setState({
-      endDate: date
-    });
-  },
+        this.setState({
+            end: date
+        });
+    },
 
 
     render() {
@@ -72,20 +72,18 @@ export default React.createClass({
 	let endDate;
 	if(typeof this.state.startDate != "undefined"){
 		startDate = this.state.startDate.toDate();
-	}
-	else{
-		startDate = this.state.startDate;
+	} else {
+		startDate = this.state.start;
 	}
 	if(typeof this.state.endDate != "undefined"){
                 endDate = this.state.endDate.toDate();
+        } else {
+                endDate = this.state.end;
         }
-        else{
-                endDate = this.state.endDate;
-        }
-	//let startDate = new Date( this.state.start * 1000 );
-        //let endDate = new Date( this.state.end * 1000 );
+    /*
         let startMoment = moment( startDate );
         let endMoment = moment( endDate );
+        */
 
         let startDateString = "";
         if ( startDate !== null && typeof startDate != "undefined" ) {
@@ -105,6 +103,10 @@ export default React.createClass({
 
         let date = "ddd MM/DD/YYYY";
         let time = "HH:mm:ss";
+
+
+        let startDateTest = moment( this.state.start*1000 );
+        let endDateTest = moment( this.state.end*1000 );
 
         return (
 
@@ -141,8 +143,8 @@ export default React.createClass({
                                 <i className="fa fa-arrow-left" aria-hidden="true"></i>
                                 </button>
 
-                                <select className="no-margin" name="timeperiod" id="timeperiod" onChange={this.changeTimePeriod} value={this.state.timeframe}>
-                                    <option selected disabled>Choose</option>
+                                <select className="no-margin" name="timeperiod" id="timeperiod" onChange={this.changeTimePeriod} value={this.state.timesel}>
+                                    <option disabled>Choose</option>
                                     <option value="12h">12 hrs</option>
                                     <option value="1d">1 day</option>
                                     <option value="3d">3 days</option>
@@ -162,30 +164,33 @@ export default React.createClass({
                 */}
 				<div className="graph-temp">
 			  	<div className="box-range">
+                {/* selected={this.state.startDate} */}
+                
 				<DatePicker
   					selected={this.state.startDate}
   					onChange={this.handleStart}
 					disabled={this.state.customrange}
 					showTimeSelect
-    					placeholderText="From"
-                        timeFormat="HH:mm"
-    					timeIntervals={15}
-    					dateFormat="YYYY-MM-DD HH:mm"
-    					timeCaption="time"
+    				placeholderText={startDateTest}
+                    timeFormat="HH:mm"
+    				timeIntervals={15}
+    				dateFormat="YYYY-MM-DD HH:mm"
+    				timeCaption="time"
 				/>
 				</div>
 			        <div className="box-range">
+                {/*selected={this.state.endDate}*/}
 				<DatePicker
-                                        selected={this.state.endDate}
-                                        onChange={this.handleEnd}
+                    selected={this.state.endDate}
+                    onChange={this.handleEnd}
 					disabled={this.state.customrange}
-                                        showTimeSelect
-                                        placeholderText="To"
+                    showTimeSelect
+                    placeholderText={endDateTest}
 					timeFormat="HH:mm"
-                                        timeIntervals={15}
-                                        dateFormat="YYYY-MM-DD HH:mm"
-                                       	timeCaption="Time"
-                                />
+                    timeIntervals={15}
+                    dateFormat="YYYY-MM-DD HH:mm"
+                    timeCaption="Time"
+                />
 				</div>
 
 				<div className="box-range">
@@ -193,33 +198,34 @@ export default React.createClass({
                                <b> Submit</b>
                                 </button>
 				</div>
-				
+
                                 </div>
-				
+
 				<div>
-				
+
                                 <span className="timerange_holder">
-                                    
-				    { (new Date(this.state.start * 1000)).toUTCString() } 
+
+				    { (new Date(this.state.start * 1000)).toUTCString() }
                                     &nbsp;
-                                    
+
                                  </span>
                                  <span className="timerange_holder">
                                          to
                                 </span>
                                 <span className="timerange_holder">
-                                    
+
                                     { (new Date(this.state.end * 1000)).toUTCString() }
-				    &nbsp;
-                                    
-                                </span> 
+
+                                    &nbsp;
+
+                                </span>
                                 </div>
 
                             </div>
-				
-                        </div> 
+
+                        </div>
 				{/* End row */}
-                    </div> 
+                    </div>
 				{/* End overview */}
 
         {/* End chartHeader */}
@@ -245,17 +251,37 @@ export default React.createClass({
 		case '1y': flag = 1; break;
 		case 'custom': flag = 2; 	
 	}
-	console.log("flag is " + flag);
-	console.log("period is "+ period);
 	let start; 
 	let end;
 	let timeDiff;
 	let summaryWindow;
 	let newStart;
 	let newEnd;
-	
+
 	if(flag == 2){
 		this.state.customrange = false;//setting this to false enables the datetime picker
+        start = Math.round(this.state.startDate.toDate().getTime() / 1000);
+
+        end  = Math.round(this.state.endDate.toDate().getTime() / 1000);
+        newEnd = end;
+        newStart = start;
+
+        if ( period == "custom" ) {
+            timeDiff = Math.abs(end - start);
+
+        }
+        if(timeDiff< 86400){
+            summaryWindow = 0;	
+        }
+        else if((timeDiff >= 86400) && (timeDiff<= 86400*3)){
+            summaryWindow = 300;	
+        }
+        else if((timeDiff > 86400*3) && (timeDiff<= 86400*31)){
+            summaryWindow = 3600;
+        }
+        else{
+            summaryWindow = 86400;
+        } 
 	}	
 
     if(flag == 0){
@@ -291,7 +317,7 @@ export default React.createClass({
         this.state.start = start;
         this.state.end = end;
         this.state.timeframe = timeDiff;
-        summaryWindow; 
+        //summaryWindow; 
         if(timeDiff< 86400){
             summaryWindow = 0;	
         }
@@ -480,20 +506,19 @@ export default React.createClass({
     },
     handlePageChange: function( direction ) {
         let timeVars = GraphUtilities.getTimeVars( this.state.timeframe );
-        //console.log("In handle page change "+ timeVars.timeDiff);
-	let diff = timeVars.timeDiff;
+        let diff = timeVars.timeDiff;
         let newStart;
         let newEnd;
         let now = Math.floor( new Date().getTime() / 1000 );
         if ( direction == "next" ) {
             //console.log("time to be "+ this.state.end);
-	    newEnd = this.state.end + diff;
+            newEnd = this.state.end + diff;
             //newEnd = Math.round(this.state.endDate.toDate().getTime() / 1000) + diff;
-	    newStart = newEnd - diff;
+            newStart = newEnd - diff;
         } else if ( direction == "previous" ) {
             newEnd = this.state.end - diff;
             //newEnd = Math.round(this.state.endDate.toDate().getTime() / 1000) - diff;
-	    newStart = newEnd - diff;
+            newStart = newEnd - diff;
         }
         if ( newStart >= now || newEnd >= now ) {
             newEnd = now;
@@ -507,6 +532,22 @@ export default React.createClass({
         if ( ! "timeframe" in options ) {
             options.timeframe = this.state.timeframe;
         }
+
+        var timesel = GraphUtilities.convertSecondsToAbbrev( options.timeframe ) || "custom";
+
+        if ( timesel == "custom" ) {
+            //this.state.customrange = false;
+            options.customrange = false;
+            //options.startDate = moment( options.start * 1000 );
+            //options.endDate = moment( options.end * 1000 );
+            //options.startDate = this.state.startDate;
+            //options.endDate = this.state.endDate;
+        }
+
+
+        options.timesel = timesel;
+        options.startDate = moment( options.start*1000 );
+        options.endDate = moment( options.end*1000 );
         this.setState( options );
         this.props.updateTimerange( options, noupdateURL );
         emitter.emit("timerangeChange");
@@ -524,6 +565,7 @@ export default React.createClass({
         let options = {};
 
         let timeframe = this.state.timeframe || "1w";
+        //let timesel = this.state.timesel;
         let timeVars = GraphUtilities.getTimeVars( timeframe );
         let diff = timeVars.timeDiff;
         let summaryWindow = timeVars.summaryWindow;
@@ -532,16 +574,18 @@ export default React.createClass({
         let newEnd = now;
         let newStart =  newEnd - diff;
 
-        if ( typeof this.props.start != "undefined" ) {
-            newStart = this.props.start;
+
+        if ( ( typeof this.state.start ) != "undefined" ) {
+            newStart = this.state.start;
         }
-        if ( typeof this.props.end != "undefined" ) {
-            newEnd = this.props.end;
+        if ( ( typeof this.state.end ) != "undefined" ) {
+            newEnd = this.state.end;
         }
 
         options.start = newStart;
         options.end = newEnd;
         options.timeframe = timeframe;
+        //options.timesel = timesel;
         options.summaryWindow = summaryWindow;
 
         this.handleTimerangeChange( options, true );

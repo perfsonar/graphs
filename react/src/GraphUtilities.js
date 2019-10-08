@@ -36,28 +36,46 @@ module.exports = {
 
     },
 
+    convertSecondsToAbbrev: function( seconds ) {
+        var week = 86400*7;
+        var lookup = {
+            3600: '1h',
+            86400: '1d',
+            259200: '3d',
+            604800: '1w',
+            2678400: '1m',
+            31536000: '1y'
+        };
+
+        var abbrev = lookup[ seconds ];
+
+        return abbrev;
+
+
+    },
+
     getTimeVars: function (period) {
-	let timeframe = period.toString(); 
-	if(timeframe.endsWith("h")||timeframe.endsWith("d")||timeframe.endsWith("w")||timeframe.endsWith("m")||timeframe.endsWith("y"))
+        let timeframe = period.toString(); 
+        if(timeframe.endsWith("h")||timeframe.endsWith("d")||timeframe.endsWith("w")||timeframe.endsWith("m")||timeframe.endsWith("y"))
         {
-                var ch = timeframe.substring(0, timeframe.length - 1);
-                var dmy = timeframe.charAt(timeframe.length - 1);
-                timeframe = parseFloat(ch);
-                switch(dmy){
-                        case 'h': timeframe*= 60*60; break;
-                        case 'd': timeframe*= 86400; break;
-                        case 'w': timeframe*= 86400*7; break;
-                        case 'm': timeframe*= 86400*31; break;
-                        case 'y': timeframe*= 86400*365;
-                }
-                timeframe = Math.round(timeframe);
+            var ch = timeframe.substring(0, timeframe.length - 1);
+            var dmy = timeframe.charAt(timeframe.length - 1);
+            timeframe = parseFloat(ch);
+            switch(dmy){
+                case 'h': timeframe*= 60*60; break;
+                case 'd': timeframe*= 86400; break;
+                case 'w': timeframe*= 86400*7; break;
+                case 'm': timeframe*= 86400*31; break;
+                case 'y': timeframe*= 86400*365;
+            }
+            timeframe = Math.round(timeframe);
         }
         else{
-                timeframe = parseFloat(timeframe);
-                timeframe = Math.round(timeframe);
+            timeframe = parseFloat(timeframe);
+            timeframe = Math.round(timeframe);
         }
- 	
-	let timeDiff = timeframe;
+
+        let timeDiff = timeframe;
         let summaryWindow;
         if (period == '1h') {
             timeDiff = 60*60 * 1;
@@ -93,8 +111,8 @@ module.exports = {
             timeDiff = 86400*365;
             summaryWindow = 86400;
         }
-	else{
-                summaryWindow = 86400;
+        else{
+            summaryWindow = 86400;
         }        
         //period = timeframe;
         let timeRange = {

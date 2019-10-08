@@ -7,6 +7,8 @@ perfsonar-toolkit-graphs (4.3.0~a1.0-1) perfsonar-4.3-snapshot; urgency=low
 perfsonar-toolkit-graphs (4.2.0-1) perfsonar-minor-staging; urgency=low
 
   * New upstream version.
+  * Adding dependency to libwww-perl
+  * Building on Stretch
 
  -- Andy Lake <andy@es.net>  Thu, 15 Aug 2019 01:10:22 +0000
 

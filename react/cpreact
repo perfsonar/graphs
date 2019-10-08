@@ -2,5 +2,7 @@
 echo "Copying files ..."
 date
 mkdir -p ../html/jquery
-cp -R node_modules/jquery/dist ../html/public/jquery
-cp -R public/* ../html/public/
+cp -Rf node_modules/jquery/dist ../html/public/jquery
+#cp -Rf public/* ../html/public/
+cp -f public/* ../html/public/
+cp -Rf public/jquery ../html/public/
