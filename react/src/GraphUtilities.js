@@ -56,7 +56,6 @@ module.exports = {
 
     getTimeVars: function (period) {
         let timeframe = period.toString(); 
-        console.log("timeframe in graphutil", timeframe);
         if(timeframe.endsWith("h")||timeframe.endsWith("d")||timeframe.endsWith("w")||timeframe.endsWith("m")||timeframe.endsWith("y"))
         {
             var ch = timeframe.substring(0, timeframe.length - 1);

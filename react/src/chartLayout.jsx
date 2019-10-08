@@ -148,7 +148,6 @@ export default React.createClass({
         var newState = this.getQueryString();
         newState.start_formatted = new Date( newState.start*1000 );
         newState.end_formatted = new Date( newState.end*1000 );
-        console.log("newState initial", newState);
         return {
             title: text,
             src: newState.src,
@@ -216,18 +215,16 @@ export default React.createClass({
     },
 
 
-    togglePopup() {
+    togglePopup: function() {
     	this.setState({
       	showPopup: !this.state.showPopup
     	});
     },
 
-    showParam() {
-	this.setState({
-	showTestParam: !this.state.showTestParam
-	});
-	//console.log("showparam now ");
-	//console.log(this.state.showTestParam);
+    showParam: function() {
+        this.setState({
+            showTestParam: !this.state.showTestParam
+        });
     },
 
     getActiveClass: function ( value ) {
@@ -411,10 +408,10 @@ export default React.createClass({
                                         updateHiddenItems={this.handleHiddenItemsChange}
                                         itemsToHide={this.state.itemsToHide}
                                         showTpt = {this.state.hidTpt}
-					showPac = {this.state.hidPac}
-					showLat = {this.state.hidLat}
-					showParams = {this.state.showTestParam}
-					ref="chart1"
+                                        showPac = {this.state.hidPac}
+                                        showLat = {this.state.hidLat}
+                                        showParams = {this.state.showTestParam}
+                                        ref="chart1"
                                     />
                                 </div>
                     </div>
@@ -486,18 +483,15 @@ export default React.createClass({
     },
 
     hideTpt: function(tpt){
-	this.setState({hidTpt: tpt.target.checked});
-	//console.log(tpt.target.checked);
+        this.setState({hidTpt: tpt.target.checked});
     },
 
     hideLoss: function(loss){
         this.setState({hidPac: loss.target.checked});
-        //console.log(loss.target.checked);
     },
 
     hideLate: function(late){
         this.setState({hidLat: late.target.checked});
-        //console.log(late.target.checked);
     },
 
 
@@ -526,10 +520,6 @@ export default React.createClass({
             }
             hashObj[key] = val;
         }
-
-        console.log("hashObj", hashObj);
-        console.log("hashObj start", new Date( hashObj.start*1000 ));
-        console.log("hashObj end", new Date( hashObj.end*1000 ));
 
         let src = qs.source;
         let dst = qs.dest;
@@ -586,9 +576,6 @@ export default React.createClass({
             summaryWindow = timeVars.summaryWindow;
 
         }
-
-        console.log("initial start", start);
-        console.log("initial end", end);
 
         hashObj.start = start;
         hashObj.end = end;
