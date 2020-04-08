@@ -9,6 +9,9 @@ html/js/dojo
 node_modules
 npm-debug.log
 examples-bundle.js
+# Temp files
 .*.swo
 .*.swn
 .*.swp
+# Vagrant
+.vagrant/
