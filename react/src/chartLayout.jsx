@@ -71,6 +71,7 @@ const ipv4Style = {
 var hidTpt = true;
 var hidPac = true;
 var hidLat = true;
+var hidRes = true;
 
 const reverseStyles = {
     value: {
@@ -112,6 +113,8 @@ const showHideAliasesLongToShort = {
     "eventType_packet-loss-rate_mainTestType_throughput_": "loss_throughput",
     "eventType_histogram-owdelay_": "latency_owdelay",
     "eventType_histogram-rtt_": "latency_ping",
+    "eventType_pscheduler-raw_pscheduler-test-type_http_": "pscheduler-raw_http",
+    "eventType_pscheduler-raw_pscheduler-test-type_dns_": "pscheduler-raw_dns",
     "direction_forward_": "forward",
     "direction_reverse_": "reverse",
     "eventType_failures_": "failures",
@@ -193,16 +196,20 @@ export default React.createClass({
         this.setState({ active: active, itemsToHide: newItems } );
 
         let activeHash = this.state.hashValues;
+
         for(let key in active) {
             let show = active[key];
             let shortKey = showHideAliasesLongToShort[key];
-            if (! show ) {
+
+           if (! show ) {
                 activeHash["hide_" + shortKey] = !active[key];
             } else {
                 delete activeHash["hide_" + shortKey];
             }
 
+
         }
+
         this.setState( { hashValues: activeHash } );
         this.setHashVals( activeHash );
         //this.setHashVals( newItems );
@@ -263,6 +270,7 @@ export default React.createClass({
                            <input type="checkbox" name="Tpt" onChange={this.hideTpt} defaultChecked={true}/> <b>Throughput</b> <div className="divider"/>
                            <input type="checkbox" name="Loss" onChange={this.hideLoss} defaultChecked={true}/> <b>Packet Loss</b><div className="divider"/>
                            <input type="checkbox" name="Late" onChange={this.hideLate} defaultChecked={true}/> <b>Latency</b><div className="divider"/>
+    					   <input type="checkbox" name="Dns" onChange={this.hideResp} defaultChecked={true}/> <b>Application Response Time</b><div className="divider"/>
                         </div>
 		   </div>
 
@@ -301,6 +309,13 @@ export default React.createClass({
                                 <li className={"graph-filter__item ipv4 " + this.getActiveClass( this.state.active["eventType_histogram-rtt_"])} >
                                     <a href="#" onClick={this.toggleType.bind(this, {eventType: "histogram-rtt"})}>Latency (rtt)</a>
                                 </li>
+								<li className={"graph-filter__item graph-filter__item pscheduler-raw-dns " + this.getActiveClass( this.state.active["eventType_pscheduler-raw_pscheduler-test-type_dns_"] )}>
+                                    <a href="#" onClick={this.toggleType.bind(this, {eventType: "pscheduler-raw", "pscheduler-test-type": "dns"})}>DNS</a>
+                                </li>
+                                <li className={"graph-filter__item graph-filter__item pscheduler-raw-http " + this.getActiveClass( this.state.active["eventType_pscheduler-raw_pscheduler-test-type_http_"])} >
+                                    <a href="#" onClick={this.toggleType.bind(this, {eventType: "pscheduler-raw", "pscheduler-test-type": "http"})}>HTTP</a>
+                                </li>
+ 								
                             </ul>
                         </div>
 
@@ -390,8 +405,7 @@ export default React.createClass({
 
                     {/* GRAPH: Graph Wrapper */}
                     <div className="graph-wrapper">
-
-                                <div className="graphholder">
+						          <div className="graphholder">
                                     <Chart1
                                         src={this.state.src}
                                         dst={this.state.dst}
@@ -410,9 +424,11 @@ export default React.createClass({
                                         showTpt = {this.state.hidTpt}
                                         showPac = {this.state.hidPac}
                                         showLat = {this.state.hidLat}
-                                        showParams = {this.state.showTestParam}
+ 										showRes = {this.state.hidRes}
+  										showParams = {this.state.showTestParam}
                                         ref="chart1"
                                     />
+                                    
                                 </div>
                     </div>
 
@@ -492,6 +508,9 @@ export default React.createClass({
 
     hideLate: function(late){
         this.setState({hidLat: late.target.checked});
+    },
+     hideResp: function(resp){
+       this.setState({hidRes: resp.target.checked});
     },
 
 
@@ -628,7 +647,8 @@ export default React.createClass({
         let re = /^hide_(.+)$/;
         let underscoreRe = /_$/;
 
-        let newItems = {};
+  
+let newItems = {};
         //let active = {}; // this.state.active;
         let active = {
             "eventType_throughput_protocol_tcp_": true,
@@ -637,6 +657,8 @@ export default React.createClass({
             "eventType_packet-loss-rate_mainTestType_throughput_": true,
             "eventType_histogram-owdelay_": true,
             "eventType_histogram-rtt_": true,
+            "eventType_pscheduler-raw_pscheduler-test-type_http_": true,
+            "eventType_pscheduler-raw_pscheduler-test-type_dns_": true,
             "direction_forward_": true,
             "direction_reverse_": true,
             "eventType_failures_": true,

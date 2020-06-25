@@ -32,7 +32,7 @@ let lossTypes = [ 'packet-loss-rate', 'packet-count-lost', 'packet-count-sent', 
 module.exports = {
 
     maURL: null,
-
+    
     initVars: function() {
         chartMetadata = [];
         chartData = [];
@@ -47,9 +47,9 @@ module.exports = {
         this.useProxy = false;
         this.summaryWindow = 3600;
         this.eventTypeStats = {};
-
+        
         this.eventTypes = ['throughput', 'histogram-owdelay', 'packet-loss-rate',
-                    'packet-loss-rate-bidir',
+                    'packet-loss-rate-bidir', 'pscheduler-raw', 
                     'packet-count-lost', 'packet-count-sent', 'packet-count-lost-bidir',
                     'packet-retransmits', 'histogram-rtt', 'failures'];
         this.dataFilters = [];
@@ -63,7 +63,17 @@ module.exports = {
         end = endInput;
         let src_is_displayset = 0;
         let dest_is_displayset = 0;
-        
+  
+        //{console.log("--------getHostPairMetadata(graphdatastore)------ dests: ", dests);}
+        //{console.log("--------getHostPairMetadata(graphdatastore)------ displaysetsrc: ", displaysetsrc);}
+        //{console.log("--------getHostPairMetadata(graphdatastore)------ displaysetdest: ", displaysetdest);}
+        //{console.log("--------getHostPairMetadata(graphdatastore)------ startInput: ", startInput);}
+        //{console.log("--------getHostPairMetadata(graphdatastore)------ endInput: ", endInput);}
+        //{console.log("--------getHostPairMetadata(graphdatastore)------ ma_url: ", ma_url);}
+        //{console.log("--------getHostPairMetadata(graphdatastore)------ ma_url_reverse: ", ma_url_reverse);}
+        //{console.log("--------getHostPairMetadata(graphdatastore)------ params: ", params);}
+        //{console.log("--------getHostPairMetadata(graphdatastore)------ summaryWindow: ", summaryWindow);}
+         
         this.initVars();
 
         this.summaryWindow = summaryWindow;
@@ -102,6 +112,7 @@ module.exports = {
             let directions = [ [ sources[i], dests[i], src_is_displayset,  dest_is_displayset],
                 [ dests[i], sources[i], dest_is_displayset, src_is_displayset] ];
             let direction = [ "forward", "reverse" ];
+           
             for( let j in directions ) {
                 let src = directions[j][0];
                 let dst = directions[j][1];
@@ -110,6 +121,8 @@ module.exports = {
                 
                 let base_url = ( direction[j] == "forward" ? ma_url[i] : ma_url_reverse[i]);
                 let url = base_url;
+                let pschedulerDnsUrl = base_url;
+                let pschedulerHttpUrl = base_url;
                 
                 if(use_displaysetsrc){
                     url += "?pscheduler-reference-display-set-source=" + src;
@@ -121,7 +134,7 @@ module.exports = {
                 }else{
                     url += "&destination=" + dst;
                 }
-
+       
                 if ( params !== null && typeof params != "undefined" ) {
                     for(let name in params) {
                         let val = params[name];
@@ -141,7 +154,7 @@ module.exports = {
                             } else if ( val[i] == 6 ) {
                                 url += "&dns-match-rule=only-v6";
                             } else {
-                                //console.log("INVALID IPVERSION " . val[i], "src", src);
+                                //{console.log("INVALID IPVERSION " . val[i], "src", src);}
 
                             }
                         } else if ( name == "agent" ) {
@@ -152,10 +165,20 @@ module.exports = {
 
                     }
                 }
-
-
+                
+                pschedulerDnsUrl += "?format=json&pscheduler-test-type=dns";
+                pschedulerHttpUrl += "?format=json&pscheduler-test-type=http";
+                              
+                pschedulerDnsUrl += "&measurement-agent=" + src;
+               	pschedulerDnsUrl += "&pscheduler-dns-query=" + dst;
+               	
+               	pschedulerHttpUrl += "&measurement-agent=" + src;
+               	pschedulerHttpUrl += "&pscheduler-http-url=" + dst;
+            
                 url = this.getMAURL( url );
-
+                pschedulerDnsUrl = this.getMAURL( pschedulerDnsUrl );
+                pschedulerHttpUrl = this.getMAURL( pschedulerHttpUrl );
+                
                 // Make sure we don't retrieve the same URL twice
 
                 if ( metadataURLs[url] ) {
@@ -165,44 +188,100 @@ module.exports = {
                     metadataURLs[url] = 1;
 
                 }
+                
+                if ( metadataURLs[pschedulerDnsUrl] ) {
+                    continue;
 
+                } else {
+                    metadataURLs[pschedulerDnsUrl] = 1;
+
+                }
+                
+                if ( metadataURLs[pschedulerHttpUrl] ) {
+                    continue;
+
+                } else {
+                    metadataURLs[pschedulerHttpUrl] = 1;
+
+                }
+                
                 this.serverRequest = $.get( url, function(data) {
                     this.handleMetadataResponse(data, direction[j], base_url );
-                }.bind(this))
-                .fail(function( data ) {
-                    // if we get an error, try the cgi instead 
-                    // and set a new flag, useProxy  and make
-                    // all requests through the proxy CGI
-                    console.log("status error code", data.status);
-                    if ( data.status == 404 ||  data.status == 0 ) {
-                        this.useProxy = true;
-                        console.log("CORS attempt failed; using CGI fallback proxy (performance will be impacted)");
-                        url = this.getMAURL( url );
-                        this.serverRequest = $.get( url, function(data) {
-                            this.handleMetadataResponse(data, direction[j], base_url );
-                        }.bind(this))
-                        .fail(function( data ) {
-                            this.handleMetadataError( data );
-                            console.log("Proxy failed");
+                	}.bind(this))
+                		.fail(function( data ) {
+                			if ( data.status == 404 ||  data.status == 0 ) {
+                				this.useProxy = true;
+                				url = this.getMAURL( url );
+                				this.serverRequest = $.get( url, function(data) {
+                					this.handleMetadataResponse(data, direction[j], base_url );
+                					}.bind(this))
+                					.fail(function( data ) {
+                						this.handleMetadataError( data );
                         }.bind(this)
                         )
-
-
-                        } else {
+                  } else {
                             this.handleMetadataError( data );
+                    }
+
+                        }.bind(this)
+                );
+                
+               reqCount++;
+            	
+                this.serverRequest = $.get( pschedulerDnsUrl, function(pschedulerDnsData) {
+                	
+                   this.handleMetadataResponse(pschedulerDnsData, direction[j], base_url);
+                }.bind(this))
+                .fail(function( pschedulerDnsData ) {
+                    if ( pschedulerDnsData.status == 404 ||  pschedulerDnsData.status == 0 ) {
+                        this.useProxy = true;
+                        pschedulerDnsUrl = this.getMAURL( pschedulerDnsUrl );
+                        this.serverRequest = $.get( pschedulerDnsUrl, function(pschedulerDnsData) {
+                         this.handleMetadataResponse(pschedulerDnsData, direction[j], base_url );
+                        }.bind(this))
+                        .fail(function( pschedulerDnsData ) {
+                            this.handleMetadataError( pschedulerDnsData );
+                         }.bind(this)
+                        )
+                   } else {
+                            this.handleMetadataError( pschedulerDnsData );
+                }
+                   }.bind(this)
+                );
+                
+                reqCount++;
+                
+                 this.serverRequest = $.get( pschedulerHttpUrl, function(pschedulerHttpData) {
+                   this.handleMetadataResponse(pschedulerHttpData, direction[j], base_url);
+                }.bind(this))
+                .fail(function( pschedulerHttpData ) {
+                    if ( pschedulerHttpData.status == 404 ||  pschedulerHttpData.status == 0 ) {
+                        this.useProxy = true;
+                        pschedulerHttpUrl = this.getMAURL( pschedulerHttpUrl );
+                        this.serverRequest = $.get( pschedulerHttpUrl, function(pschedulerHttpData) {
+                         this.handleMetadataResponse(pschedulerHttpData, direction[j], base_url );
+                        }.bind(this))
+                        .fail(function( pschedulerHttpData ) {
+                            this.handleMetadataError( pschedulerHttpData );
+                         }.bind(this)
+                        )
+                   } else {
+                            this.handleMetadataError( pschedulerHttpData );
 
                         }
 
                         }.bind(this)
                 );
-
+                
                 reqCount++;
+                 
             }
+            
         }
 },
     getMAURL( url ) {
-
-        let proxy = this.parseUrl( proxyURL );
+	
+      let proxy = this.parseUrl( proxyURL );
 
         if ( this.useProxy ) {
             url = encodeURIComponent( url );
@@ -223,16 +302,18 @@ module.exports = {
 
     },
     handleMetadataResponse: function( data, direction, maURL ) {
+    	
         //data.label = label;
         for(let i in data) {
             data[i].direction = direction;
         }
+       
         $.merge( chartMetadata, data );
         completedReqs++;
         if ( completedReqs == reqCount ) {
             let endTime = Date.now();
             let duration = ( endTime - startTime ) / 1000;
-            //console.log("COMPLETED ALL", reqCount, " REQUESTS in", duration);
+            //{console.log("COMPLETED ALL", reqCount, " REQUESTS in", duration);}
             completedReqs = 0;
             reqCount = 0;
             if ( chartMetadata.length == 0 ) {
@@ -242,17 +323,16 @@ module.exports = {
             }
             data = this.filterEventTypes( chartMetadata );
             data = this.getData( chartMetadata, maURL );
-            //console.log("chartMetadata", chartMetadata);
-
+ 
         } else {
-            //console.log("completed " + completedReqs + " requests out of " + reqCount );
 
         }
 
-
     },
+    
+     
     filterEventTypes: function( data, eventTypesParam ) {
-        //let eventTypes = this.getEventTypes( eventTypesParam );
+       //let eventTypes = this.getEventTypes( eventTypesParam );
         let eventTypes = this.getEventTypes();
 
         let tests = $.map( data, function( test, i ) {
@@ -327,8 +407,10 @@ module.exports = {
         let multipleTypes = [ "histogram-rtt", "histogram-owdelay" ];
 
             dataReqCount = 0;
+           
             for(let i in metaData) {
                 let datum = metaData[i];
+                
                 let direction = datum.direction;
                 for( let j in datum["event-types"] ) {
                     let eventTypeObj = datum["event-types"][j];
@@ -342,7 +424,7 @@ module.exports = {
                         //could cause missing data if polling results from multiple archives
                         url = this.parseUrl( maURL ).origin;
                     }
-                
+                    
                     let source = datum.source;
 
                     let addr = ipaddr.parse( source );
@@ -351,7 +433,7 @@ module.exports = {
                     if ( ipaddr.isValid( source ) ) {
                         ipversion = addr.kind( source ).substring(3);
                     } else {
-                        //console.log("invalid IP address");
+                        //{console.log("invalid IP address");}
 
                     }
 
@@ -364,11 +446,11 @@ module.exports = {
                             return summary["summary-type"] == summaryType && summary["summary-window"] == that.summaryWindow;
                         });
                         if ( win.length > 1 ) {
-                            console.log("WEIRD: multiple summary windows found. This should not happen.");
+                            //{console.log("WEIRD: multiple summary windows found. This should not happen.");}
                         } else if ( win.length == 1 ) {
                             uri = win[0].uri;
                         } else {
-                            //console.log("no summary windows found");
+                            //{console.log("no summary windows found");}
                             if ( eventType == "histogram-rtt" ) {
                                 if ( that.summaryWindow == "300" ) {
                                     let win = $.grep( summaries, function( summary, k ) {
@@ -396,11 +478,11 @@ module.exports = {
 
                         // TODO: allow lower summary windows
                         if ( win.length > 1 ) {
-                            //console.log("WEIRD: multiple summary windows found. This should not happen.", win);
+                            //{console.log("WEIRD: multiple summary windows found. This should not happen.", win);}
                         } else if ( win.length == 1 ) {
                             uri = win[0].uri;
                         } else {
-                            //console.log("no summary windows found", summaryWindow, eventType, win);
+                            //{console.log("no summary windows found", summaryWindow, eventType, win);}
                         }
 
 
@@ -411,6 +493,8 @@ module.exports = {
                     }
                     uri += "?time-start=" + start + "&time-end=" + end;
                     url += uri;
+                    
+               
 
                     // If using CORS proxy
                     if ( this.useProxy ) {
@@ -432,16 +516,15 @@ module.exports = {
                     row.ipversion = ipversion;
 
                     dataReqCount++;
-
-                    this.serverRequest = $.get( url, function(data) {
-                        this.handleDataResponse(data, eventType, row);
+                    
+                   this.serverRequest = $.get( url, function(data) {
+                       this.handleDataResponse(data, eventType, row);
                     }.bind(this))
                     .fail(function( data ) {
-                        console.log("get data failed; skipping this collection");
+                       ///{console.log("get data failed; skipping this collection");}
                         this.handleDataResponse(null);
                     }.bind(this));
-
-
+       
                 }
             }
 
@@ -462,16 +545,15 @@ module.exports = {
         if ( completedDataReqs >= dataReqCount ) {
             let endTime = Date.now();
             let duration = ( endTime - startTime ) / 1000;
-            //console.log("COMPLETED ALL DATA ", dataReqCount, " REQUESTS in", duration);
-
+     
             // TODO: change this so it creates the esmond time series upon completion of each request, rather than after all requests has completed
 
             chartData = this.esmondToTimeSeries( chartData );
 
             endTime = Date.now();
             duration = ( endTime - startTime ) / 1000;
-            //console.log("COMPLETED CREATING TIMESERIES in " , duration);
-            //console.log("chartData: ", chartData);
+            //{console.log("COMPLETED CREATING TIMESERIES in " , duration);}
+            //{console.log("chartData: ", chartData);}
 
             var self = this;
 
@@ -487,7 +569,7 @@ module.exports = {
 
 
         } else {
-            //console.log("handled " + completedDataReqs + " out of " + dataReqCount + " data requests");
+            //{console.log("handled " + completedDataReqs + " out of " + dataReqCount + " data requests");}
 
         }
     },
@@ -512,44 +594,35 @@ module.exports = {
             //return [];
 
         }
-
-        //console.log("filterz", filters);
-        //console.log("itemzToHide", itemsToHide);
-/*
-                 for(let f in data ) {
-                    if ( data[f].properties.eventType == "failures" ) {
-                        console.log("found failures!", data[f]);
-
-                    }
-
-                }
-*/
-        let results = $.grep( data, function( e, i ) {
+           
+            let results = $.grep( data, function( e, i ) {
             let found = true;
-
+   
             for (var key in filters ) {
                 let val = filters[key];
-
+       
                 if ( ( key in e.properties ) && e.properties[key] == val ) {
                     found = found && true;
                 } else {
-                    return false;
+                   return false;
                 }
             }
             return found;
         });
 
-
+  
         let filteredResults;
         // Filter out items in the itemsToHide array
         if ( typeof itemsToHide != "undefined" && Object.keys( itemsToHide ).length > 0 ) {
             filteredResults = $.grep( results, function( e, i ) {
+    
                 let show = false;
                 for ( var j in itemsToHide ) {
+                 	              	
                     let found = 0;
                     let item = itemsToHide[j];
                     for( var key in item ) {
-                        let val = item[key];
+                       let val = item[key];
                         let f = filters;
                         if ( filters.eventType == "failures"
                                 //&& e.properties.mainEventType == filters.mainEventType
@@ -571,6 +644,7 @@ module.exports = {
                                 found++;
                                 return false;
                             } else {
+                            	
                                 show = true;;
                             }
                             //return false;
@@ -592,11 +666,11 @@ module.exports = {
                 return show;
             });
         } else {
-            filteredResults = results;
+           filteredResults = results;
 
         }
-
-        return filteredResults;
+        
+       return filteredResults;
 
     },
 
@@ -606,7 +680,7 @@ module.exports = {
         let results = this.filterData( data, filters, itemsToHide );
         let min;
         let max;
-
+        
         let self = this;
         $.each( results, function( i, val ) {
             let values = val.values;
@@ -623,7 +697,7 @@ module.exports = {
             min: min,
             max: max
         };
-
+        
         return {
             stats: stats,
             results: results
@@ -643,7 +717,7 @@ module.exports = {
             return min;
     },
     getMax: function( val1, val2 ) {
-            // Get the max of the provided values
+           // Get the max of the provided values
             let max;
             if ( !isNaN( Math.max( val1, val2 ) ) ) {
                 max = Math.max( val1, val2 );
@@ -692,6 +766,7 @@ module.exports = {
         }
         return;
     },
+    
     esmondToTimeSeries: function( inputData ) {
         let outputData = {};
         let output = [];
@@ -699,8 +774,8 @@ module.exports = {
         if ( ( typeof inputData == "undefined" ) || inputData.length == 0 ) {
             return [];
         }
-
-        // loop through non-failures first, find maxes
+        
+       // loop through non-failures first, find maxes
         // then do failures and scale values
         $.each( inputData, function( index, datum ) {
             let max;
@@ -713,6 +788,7 @@ module.exports = {
             let direction = datum.direction;
             let protocol = datum.protocol;
             let bucketwidth = datum.bucketwidth;
+            
             if ( eventType == "failures" ) {
                 return true;
             }
@@ -748,13 +824,40 @@ module.exports = {
                 return true;
 
             }
-
+        
             $.each(datum.data, function( valIndex, val ) {
                 const ts = val["ts"];
                 const timestamp = new moment(new Date(ts * 1000)); // 'Date' expects milliseconds
                 let failureValue = null;
                 let value = val["val"];
-                if ( eventType == 'histogram-owdelay') {
+                
+                
+                if (  eventType == 'pscheduler-raw' ){
+                	
+                	let durationString = value.time;
+                                   
+                    var iso8601DurationRegex = /(-)?P(?:([.,\d]+)Y)?(?:([.,\d]+)M)?(?:([.,\d]+)W)?(?:([.,\d]+)D)?T(?:([.,\d]+)H)?(?:([.,\d]+)M)?(?:([.,\d]+)S)?/;
+
+                    window.parseISO8601Duration = function (iso8601Duration) {
+                        var matches = iso8601Duration.match(iso8601DurationRegex);
+
+                        return {
+                            sign: matches[1] === undefined ? '+' : '-',
+                            years: matches[2] === undefined ? 0 : matches[2],
+                            months: matches[3] === undefined ? 0 : matches[3],
+                            weeks: matches[4] === undefined ? 0 : matches[4],
+                            days: matches[5] === undefined ? 0 : matches[5],
+                            hours: matches[6] === undefined ? 0 : matches[6],
+                            minutes: matches[7] === undefined ? 0 : matches[7],
+                            seconds: matches[8] === undefined ? 0 : matches[8]
+                        };
+                    };
+                    
+                    value = window.parseISO8601Duration(durationString).seconds;
+                    
+                }
+                
+                if ( eventType == 'histogram-owdelay' ) {
                     value = val["val"].minimum;
                     if(bucketwidth){
                         value = value * bucketwidth / 0.001; //convert to milliseconds
@@ -775,7 +878,7 @@ module.exports = {
                 }
 
                 if (value <= 0 && eventType != "histogram-owdelay" ) {
-                    //console.log("VALUE IS ZERO OR LESS", Date());
+                    //{console.log("VALUE IS ZERO OR LESS", Date());}
                     value = 0.000000001;
                 }
                 if ( eventType == "failures" ) {
@@ -783,7 +886,7 @@ module.exports = {
                     failureValue = value;
 
                 } else if ( isNaN(value) ) {
-                    //console.log("VALUE IS NaN", eventType);
+                    //{console.log("VALUE IS NaN", eventType);}
                 }
                 if ( failureValue != null ) {
                     let failureObj = {
@@ -817,6 +920,11 @@ module.exports = {
 
 
             let ipversion = datum.ipversion;
+            
+            
+            {console.log("--------ipversion: ", ipversion);}
+            
+            
 
             outputData[ eventType ].max = max;
             outputData[ eventType ].min = min;
@@ -905,7 +1013,8 @@ module.exports = {
             row.values = failureSeries;
             output.push(row);
         });
-        return output;
+        
+         return output;
     },
     scaleValues: function( series, maxVal ) {
         var seriesMax = series.max();
@@ -927,12 +1036,15 @@ module.exports = {
 
 
     },
+    
     eventTypeToTestType: function( eventType ) {
         let testType;
         if (eventType == "histogram-owdelay" || eventType == "histogram-rtt" ){
             testType = "latency";
         } else if ( eventType == "throughput" || eventType == "packet-retransmits") {
             testType = "throughput";
+        } else if ( eventType == "pscheduler-raw") {
+            testType = "response";
         } else if ( lossTypes.indexOf( eventType ) > -1 ) {
             testType = "loss";
         }
@@ -1011,8 +1123,6 @@ module.exports = {
 
                     }
                 }
-
-
 
             });
             deleteIndices = deleteIndices.concat( indices );
