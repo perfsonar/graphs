@@ -1662,7 +1662,7 @@ export default React.createClass({
 			else if(type == "loss"){
 				visibleType = this.props.showPac;
 			}
-  			else if(type == "tpt"){  
+  			else if(type == "throughput"){  
 			visibleType =  this.props.showTpt;
 			}
 			else{

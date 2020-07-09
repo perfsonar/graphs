@@ -921,12 +921,7 @@ module.exports = {
 
             let ipversion = datum.ipversion;
             
-            
-            {console.log("--------ipversion: ", ipversion);}
-            
-            
-
-            outputData[ eventType ].max = max;
+           outputData[ eventType ].max = max;
             outputData[ eventType ].min = min;
 
             let row = {};
