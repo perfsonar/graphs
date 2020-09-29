@@ -1,4 +1,20 @@
 #!/bin/bash
 
+# First: specific steps for rebuilding the React bundle.js
+# Install NodeJS
+curl -sL https://rpm.nodesource.com/setup_10.x | sudo bash -
+sudo yum install -y nodejs
+
+# Build our React bundle
+pushd /vagrant/react
+make clean
+npm install
+npm test
+make lint
+make webpack
+make deploy
+popd
+
+# Then: handover to usual RPM building script
 psrpm_build_perl perfsonar-graphs
 

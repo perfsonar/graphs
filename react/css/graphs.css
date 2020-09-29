@@ -95,6 +95,14 @@
     background-color: #2b9f78;
 }
 
+.graph-filter__item.graph-filter__item.pscheduler-raw-dns.active a {
+    background-color: #cc7dbe;
+}
+
+.graph-filter__item.graph-filter__item.pscheduler-raw-http.active a {
+    background-color: #2b9f78;
+}
+
 .graph-filter__item.graph-filter__item.loss-ping.active.active a {
     /*background-color: #f0e442; */  /* light yellow */
     /* background-color: #d55e00; */ /* vermillion */
@@ -316,8 +324,10 @@
     padding-top: 4em;
     margin: 10px;
     flex-grow: 1;
+    /*
     //justify-content: center;
     //align-content: center;
+    */
 }
 
 div.graphholder div.small-2.columns {

@@ -71,6 +71,7 @@ const ipv4Style = {
 var hidTpt = true;
 var hidPac = true;
 var hidLat = true;
+var hidRes = true;
 
 const reverseStyles = {
     value: {
@@ -112,6 +113,8 @@ const showHideAliasesLongToShort = {
     "eventType_packet-loss-rate_mainTestType_throughput_": "loss_throughput",
     "eventType_histogram-owdelay_": "latency_owdelay",
     "eventType_histogram-rtt_": "latency_ping",
+    "eventType_pscheduler-raw_pscheduler-test-type_http_": "pscheduler-raw_http",
+    "eventType_pscheduler-raw_pscheduler-test-type_dns_": "pscheduler-raw_dns",
     "direction_forward_": "forward",
     "direction_reverse_": "reverse",
     "eventType_failures_": "failures",
@@ -146,6 +149,8 @@ export default React.createClass({
 
     getInitialState() {
         var newState = this.getQueryString();
+        newState.start_formatted = new Date( newState.start*1000 );
+        newState.end_formatted = new Date( newState.end*1000 );
         return {
             title: text,
             src: newState.src,
@@ -163,9 +168,9 @@ export default React.createClass({
             tool: newState.tool,
             ipversion: newState.ipversion,
             hashValues: newState.hashValues,
-	    showPopup: newState.showPopup,
-	    showTestParam: newState.showTestParam,
-	    active: newState.active
+            showPopup: newState.showPopup,
+            showTestParam: newState.showTestParam,
+            active: newState.active
         };
     },
     contextTypes: {
@@ -191,16 +196,20 @@ export default React.createClass({
         this.setState({ active: active, itemsToHide: newItems } );
 
         let activeHash = this.state.hashValues;
+
         for(let key in active) {
             let show = active[key];
             let shortKey = showHideAliasesLongToShort[key];
-            if (! show ) {
+
+           if (! show ) {
                 activeHash["hide_" + shortKey] = !active[key];
             } else {
                 delete activeHash["hide_" + shortKey];
             }
 
+
         }
+
         this.setState( { hashValues: activeHash } );
         this.setHashVals( activeHash );
         //this.setHashVals( newItems );
@@ -213,18 +222,16 @@ export default React.createClass({
     },
 
 
-    togglePopup() {
+    togglePopup: function() {
     	this.setState({
       	showPopup: !this.state.showPopup
     	});
     },
 
-    showParam() {
-	this.setState({
-	showTestParam: !this.state.showTestParam
-	});
-	//console.log("showparam now ");
-	//console.log(this.state.showTestParam);
+    showParam: function() {
+        this.setState({
+            showTestParam: !this.state.showTestParam
+        });
     },
 
     getActiveClass: function ( value ) {
@@ -263,6 +270,7 @@ export default React.createClass({
                            <input type="checkbox" name="Tpt" onChange={this.hideTpt} defaultChecked={true}/> <b>Throughput</b> <div className="divider"/>
                            <input type="checkbox" name="Loss" onChange={this.hideLoss} defaultChecked={true}/> <b>Packet Loss</b><div className="divider"/>
                            <input type="checkbox" name="Late" onChange={this.hideLate} defaultChecked={true}/> <b>Latency</b><div className="divider"/>
+    					   <input type="checkbox" name="Dns" onChange={this.hideResp} defaultChecked={true}/> <b>Application Response Time</b><div className="divider"/>
                         </div>
 		   </div>
 
@@ -301,6 +309,13 @@ export default React.createClass({
                                 <li className={"graph-filter__item ipv4 " + this.getActiveClass( this.state.active["eventType_histogram-rtt_"])} >
                                     <a href="#" onClick={this.toggleType.bind(this, {eventType: "histogram-rtt"})}>Latency (rtt)</a>
                                 </li>
+								<li className={"graph-filter__item graph-filter__item pscheduler-raw-dns " + this.getActiveClass( this.state.active["eventType_pscheduler-raw_pscheduler-test-type_dns_"] )}>
+                                    <a href="#" onClick={this.toggleType.bind(this, {eventType: "pscheduler-raw", "pscheduler-test-type": "dns"})}>DNS</a>
+                                </li>
+                                <li className={"graph-filter__item graph-filter__item pscheduler-raw-http " + this.getActiveClass( this.state.active["eventType_pscheduler-raw_pscheduler-test-type_http_"])} >
+                                    <a href="#" onClick={this.toggleType.bind(this, {eventType: "pscheduler-raw", "pscheduler-test-type": "http"})}>HTTP</a>
+                                </li>
+ 								
                             </ul>
                         </div>
 
@@ -390,8 +405,7 @@ export default React.createClass({
 
                     {/* GRAPH: Graph Wrapper */}
                     <div className="graph-wrapper">
-
-                                <div className="graphholder">
+						          <div className="graphholder">
                                     <Chart1
                                         src={this.state.src}
                                         dst={this.state.dst}
@@ -408,11 +422,13 @@ export default React.createClass({
                                         updateHiddenItems={this.handleHiddenItemsChange}
                                         itemsToHide={this.state.itemsToHide}
                                         showTpt = {this.state.hidTpt}
-					showPac = {this.state.hidPac}
-					showLat = {this.state.hidLat}
-					showParams = {this.state.showTestParam}
-					ref="chart1"
+                                        showPac = {this.state.hidPac}
+                                        showLat = {this.state.hidLat}
+ 										showRes = {this.state.hidRes}
+  										showParams = {this.state.showTestParam}
+                                        ref="chart1"
                                     />
+                                    
                                 </div>
                     </div>
 
@@ -433,11 +449,6 @@ export default React.createClass({
         }
 
     },
-/*
-    componentWillUnmount: function() {
-        ChartHeader.unsubscribe("timeframeChange", this.handleTimerangeChange);
-    },
-    */
 
     handleTimerangeChange: function( newTime, noupdateURL ) {
         let timeVars = GraphUtilities.getTimeVars( newTime.timeframe );
@@ -455,7 +466,9 @@ export default React.createClass({
         }
 
         this.setState( newTime );
-        this.setHashVals( newTime );
+        //if ( ! noupdateURL ) {
+            this.setHashVals( newTime );
+        //}
     },
 
     setHashVals: function( options ) {
@@ -486,33 +499,33 @@ export default React.createClass({
     },
 
     hideTpt: function(tpt){
-	this.setState({hidTpt: tpt.target.checked});
-	//console.log(tpt.target.checked);
+        this.setState({hidTpt: tpt.target.checked});
     },
 
     hideLoss: function(loss){
         this.setState({hidPac: loss.target.checked});
-        //console.log(loss.target.checked);
     },
 
     hideLate: function(late){
         this.setState({hidLat: late.target.checked});
-        //console.log(late.target.checked);
+    },
+     hideResp: function(resp){
+       this.setState({hidRes: resp.target.checked});
     },
 
 
     getQueryString: function() {
         var qs = this.props.location.query;
-	// get hash values
+        // get hash values
         let hash = this.props.location.hash;
         let hashRe = /^#/;
-	let timeFlag = 0;
-	let timeframe = defaults.timeframe
-        if((qs.timeframe != undefined) && (qs.timeframe.length != 0)){
-		timeframe = qs.timeframe;
-	}
-		
-	hash = hash.replace( hashRe, "");
+        let timeFlag = 0;
+        let timeframe = defaults.timeframe
+            if((qs.timeframe != undefined) && (qs.timeframe.length != 0)){
+                timeframe = qs.timeframe;
+            }
+
+        hash = hash.replace( hashRe, "");
 
         let hashPairs = hash.split("&");
         let hashObj = {};
@@ -527,8 +540,6 @@ export default React.createClass({
             hashObj[key] = val;
         }
 
-
-
         let src = qs.source;
         let dst = qs.dest;
         let displaysetsrc = qs.displaysetsrc;
@@ -541,31 +552,33 @@ export default React.createClass({
         let summaryWindow = qs.summaryWindow;
 
         let ipversion;
-                
+
         if ( "timeframe" in hashObj && hashObj.timeframe != "" ) {
             timeframe = hashObj.timeframe;
 
         }
 
-	let timeVars = GraphUtilities.getTimeVars( timeframe );
-	timeframe = Math.round(timeVars.timeDiff);
-	
-	if((typeof hashObj.start == "undefined") && (typeof hashObj.end == "undefined")){
-                //start = parseInt(start);
-                end = parseInt(end);
-                //timeframe = end - start;
-                start = end - timeframe;
+        let timeVars = GraphUtilities.getTimeVars( timeframe );
+        timeframe = Math.round(timeVars.timeDiff);
+
+        if((typeof hashObj.start == "undefined") && (typeof hashObj.end == "undefined")){
+            //start = parseInt(start);
+            end = parseInt(end);
+            //timeframe = end - start;
+            start = end - timeframe;
         }
 
         else if(typeof hashObj.start == "undefined"){
-                start = parseInt(hashObj.end) - timeframe;
+            start = parseInt(hashObj.end) - timeframe;
         }
 
         else if(typeof hashObj.end == "undefined"){
-                end = parseInt(hashObj.start) + timeframe;
+            end = parseInt(hashObj.start) + timeframe;
         }
         else{
-                timeframe = parseInt(hashObj.end) - parseInt(hashObj.start);
+            timeframe = parseInt(hashObj.end) - parseInt(hashObj.start);
+            start = hashObj.start;
+            end = hashObj.end;
         }	
 
 
@@ -634,20 +647,23 @@ export default React.createClass({
         let re = /^hide_(.+)$/;
         let underscoreRe = /_$/;
 
-        let newItems = {};
+  
+let newItems = {};
         //let active = {}; // this.state.active;
         let active = {
-                "eventType_throughput_protocol_tcp_": true,
-                "eventType_throughput_protocol_udp_": true,
-                "eventType_packet-loss-rate_mainEventType_histogram-owdelay_": true,
-                "eventType_packet-loss-rate_mainTestType_throughput_": true,
-                "eventType_histogram-owdelay_": true,
-                "eventType_histogram-rtt_": true,
-                "direction_forward_": true,
-                "direction_reverse_": true,
-                "eventType_failures_": true,
-                "eventType_packet-retransmits_": true,
-                "eventType_packet-loss-rate-bidir_": true
+            "eventType_throughput_protocol_tcp_": true,
+            "eventType_throughput_protocol_udp_": true,
+            "eventType_packet-loss-rate_mainEventType_histogram-owdelay_": true,
+            "eventType_packet-loss-rate_mainTestType_throughput_": true,
+            "eventType_histogram-owdelay_": true,
+            "eventType_histogram-rtt_": true,
+            "eventType_pscheduler-raw_pscheduler-test-type_http_": true,
+            "eventType_pscheduler-raw_pscheduler-test-type_dns_": true,
+            "direction_forward_": true,
+            "direction_reverse_": true,
+            "eventType_failures_": true,
+            "eventType_packet-retransmits_": true,
+            "eventType_packet-loss-rate-bidir_": true
         };
 
         let itemsToHide = {};
@@ -687,10 +703,10 @@ export default React.createClass({
 
         }
 
-	const newState = {
+        const newState = {
             src:    src,
             dst:    dst,
-            displaysetsrc:    displaysetsrc,
+            displaysetsrc:     displaysetsrc,
             displaysetdest:    displaysetdest,
             start:  start,
             end:    end,
@@ -704,11 +720,11 @@ export default React.createClass({
             ipversion: ipversion,
             timeframe: timeframe,
             hashValues: hashObj,
-	    showTestParam: false,
-	    showPopup: false,
+            showTestParam: false,
+            showPopup: false
         };
 
-        this.updateURLHash( hashObj );
+        //this.updateURLHash( hashObj );
 
         HostInfoStore.retrieveHostInfo( src, dst );
 
