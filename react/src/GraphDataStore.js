@@ -20,6 +20,7 @@ let end; // = Math.ceil( Date.now() / 1000 );
 let dayDiff = 0;
 let splitCall = false;
 let loopcounter = 0;
+let loopIteration = 0;
 let differencePerCall = 0;
 let loopstart = [];
 let loopfinish = [];
@@ -65,6 +66,17 @@ module.exports = {
         this.dataFilters = [];
         this.itemsToHide = [];
         this.errorData = null;
+        
+        loopIteration = 0;
+        
+        loopcounter = 4;
+        
+        for ( loopIteration = 0;  loopIteration < loopcounter; loopIteration++) {
+        
+        	 loopstart[loopIteration] = 0;
+             loopfinish[loopIteration] = 0;
+        
+        }
 
     },
 
@@ -86,41 +98,16 @@ module.exports = {
         {console.log("--------getHostPairMetadata(graphdatastore)------ summaryWindow: ", summaryWindow);}
         */
         
-         this.initVars();
+        this.initVars();
 
         this.summaryWindow = summaryWindow;
-        
-        loopstart[0] = 0;
-        loopfinish[0] = 0;
-        loopstart[1] = 0;
-        loopfinish[1] = 0;
-        loopstart[2] = 0;
-        loopfinish[2] = 0;
-        loopstart[3] = 0;
-        loopfinish[3] = 0;
-        loopstart[4] = 0;
-        loopfinish[4] = 0;
-        loopstart[5] = 0;
-        loopfinish[5] = 0;
-        loopstart[6] = 0;
-        loopfinish[6] = 0;
-        loopstart[7] = 0;
-        loopfinish[7] = 0;
-        loopstart[8] = 0;
-        loopfinish[8] = 0;
-        loopstart[9] = 0;
-        loopfinish[9] = 0;
-        loopstart[10] = 0;
-        loopfinish[10] = 0;
-        loopstart[11] = 0;
-        loopfinish[11] = 0;
         
         dayDiff = endInput - startInput;
         
         startNum = Number(start);
         endNum = Number(end);
         
-        //8035200 is equal to 3 months
+        //8035200 is equal to 3 months - this is to decide on weather or not to split dns / http calls into (4) time slices
        
         if ( dayDiff > 8035200 ) {
         	
@@ -260,7 +247,7 @@ module.exports = {
 
                 }
                 
-                this.serverRequest = $.get( url, function(data) {
+                 this.serverRequest = $.get( url, function(data) {
                     this.handleMetadataResponse(data, direction[j], base_url );
                 	}.bind(this))
                 		.fail(function( data ) {
@@ -282,8 +269,8 @@ module.exports = {
                 );
                 
                reqCount++;
-           	   
-              this.serverRequest = $.get( pschedulerDnsUrl, function(pschedulerDnsData) {
+               
+               this.serverRequest = $.get( pschedulerDnsUrl, function(pschedulerDnsData) {
                 	
                    this.handleMetadataResponse(pschedulerDnsData, direction[j], base_url);
                 }.bind(this))
@@ -486,6 +473,8 @@ module.exports = {
                         url = this.parseUrl( maURL ).origin;
                     }
                     
+                    let storedUrl = url;
+                    
                     let source = datum.source;
 
                     let addr = ipaddr.parse( source );
@@ -553,7 +542,18 @@ module.exports = {
                         uri = eventTypeObj["base-uri"];
                     }
                     
-                    if ( urlPPT == "dns" ||  urlPPT == "http" ) {
+                    loopIteration = 0;
+                    
+                    loopcounter = 4;
+                    
+                    for ( loopIteration = 0;  loopIteration < loopcounter; loopIteration++) {
+                    
+                    	 loopstart[loopIteration] = 0;
+                         loopfinish[loopIteration] = 0;
+                    
+                    }
+                    
+                   if ( urlPPT == "dns" ||  urlPPT == "http" ) {
                     	if (splitCall) {
                     		
                     		loopcounter = 4;
@@ -569,56 +569,13 @@ module.exports = {
                      	    loopstart[3] = startNum + (differencePerCall * 3) + 1;
                      	    loopfinish[3] = endNum;
                      	    
-                     	    /*
-                    	   	loopfinish[3] = startNum + (differencePerCall * 4); 
-                    	   	loopstart[4] = startNum + (differencePerCall * 4) + 1;
-                     	   	loopfinish[4] =  startNum + (differencePerCall * 5);
-                     	   	loopstart[5] = startNum + (differencePerCall * 5) + 1;
-                     	   	loopfinish[5] = startNum + (differencePerCall * 6); 
-                     	    loopstart[6] = startNum + (differencePerCall * 6) + 1;
-                    	   	loopfinish[6] =  startNum + (differencePerCall * 7);
-                    	   	loopstart[7] = startNum + (differencePerCall * 7) + 1;
-                    	   	loopfinish[7] = startNum + (differencePerCall * 8); 
-                    	   	loopstart[8] = startNum + (differencePerCall * 8) + 1;
-                     	   	loopfinish[8] =  startNum + (differencePerCall * 9);
-                     	   	loopstart[9] = startNum + (differencePerCall * 9) + 1;
-                     	   	loopfinish[9] = startNum + (differencePerCall * 10); 
-                     	    loopstart[10] = startNum + (differencePerCall * 10) + 1;
-                    	   	loopfinish[10] =  startNum + (differencePerCall * 11);
-                    	   	loopstart[11] = startNum + (differencePerCall * 11) + 1;
-                    	   	loopfinish[11] = endNum;
-                    	   	*/
                     	} else {
                     		
                     		loopcounter = 1;
                         	
                         	loopstart[0] = startNum;
                             loopfinish[0] = endNum;
-                            loopstart[1] = 0;
-                            loopfinish[1] = 0;
-                            loopstart[2] = 0;
-                            loopfinish[2] = 0;
-                            loopstart[3] = 0;
-                            loopfinish[3] = 0;
-                            /*
-                            loopstart[4] = 0;
-                            loopfinish[4] = 0;
-                            loopstart[5] = 0;
-                            loopfinish[5] = 0;
-                            loopstart[6] = 0;
-                            loopfinish[6] = 0;
-                            loopstart[7] = 0;
-                            loopfinish[7] = 0;
-                            loopstart[8] = 0;
-                            loopfinish[8] = 0;
-                            loopstart[9] = 0;
-                            loopfinish[9] = 0;
-                            loopstart[10] = 0;
-                            loopfinish[10] = 0;
-                            loopstart[11] = 0;
-                            loopfinish[11] = 0;
-                            */
-                    		
+                     		
                     	}
                     	
                     } else {
@@ -627,30 +584,6 @@ module.exports = {
                     	
                     	loopstart[0] = startNum;
                         loopfinish[0] = endNum;
-                        loopstart[1] = 0;
-                        loopfinish[1] = 0;
-                        loopstart[2] = 0;
-                        loopfinish[2] = 0;
-                        loopstart[3] = 0;
-                        loopfinish[3] = 0;
-                        /*
-                        loopstart[4] = 0;
-                        loopfinish[4] = 0;
-                        loopstart[5] = 0;
-                        loopfinish[5] = 0;
-                        loopstart[6] = 0;
-                        loopfinish[6] = 0;
-                        loopstart[7] = 0;
-                        loopfinish[7] = 0;
-                        loopstart[8] = 0;
-                        loopfinish[8] = 0;
-                        loopstart[9] = 0;
-                        loopfinish[9] = 0;
-                        loopstart[10] = 0;
-                        loopfinish[10] = 0;
-                        loopstart[11] = 0;
-                        loopfinish[11] = 0;
-                        */
                     	
                     }
                     
@@ -664,16 +597,11 @@ module.exports = {
                         end = loopfinish[kount];
                     
                         
+                        url = storedUrl;
                         uri = loopUri;
                         uri += "?time-start=" + start + "&time-end=" + end;
                         url += uri;
-                       
-                        
-                        {console.log("--------getData(graphdatastore)------ kount : ", kount);}
-                        {console.log("--------getData(graphdatastore)------ url: ", url);}
-                        {console.log("--------getData(graphdatastore)------ test type : ", urlPPT);}
-                   
-
+                  
                         // If using CORS proxy
                         if ( this.useProxy ) {
                         	url = encodeURIComponent( url );
@@ -693,28 +621,23 @@ module.exports = {
                         row.protocol = datum["ip-transport-protocol"];
                         row.bucketwidth = datum["sample-bucket-width"];
                         row.ipversion = ipversion;
-
+       
                         dataReqCount++;
-                    
-                        {console.log("--------getData(graphdatastore)------ row : ", row);}
-                        {console.log("--------getData(graphdatastore)------ get data now");}
                         this.serverRequest = $.get( url, function(data) {
                         	this.handleDataResponse(data, eventType, row);
                         }.bind(this))
                         .fail(function( data ) {
-                        	{console.log("*************** get data failed; skipping this collection");}
+                        //	{console.log("*************** get data failed; skipping this collection");}
                         	this.handleDataResponse(null);
                         }.bind(this));
-       
-                    }
+                        
+                     }
                     
                 }
             }
   
     },
     handleDataResponse: function( data, eventType, datum ) {
-    	  {console.log("--------handleDataResponse(graphdatastore)------ data: ",data);}
-    	  {console.log("--------handleDataResponse(graphdatastore)------ eventType: ",eventType);}
         if ( data !== null ) {
             let direction = datum.direction;
             let protocol = datum.protocol;
@@ -727,19 +650,19 @@ module.exports = {
             }
         }
         completedDataReqs++;
-        if ( completedDataReqs >= dataReqCount ) {
+       if ( completedDataReqs >= dataReqCount ) {
+        	
             let endTime = Date.now();
             let duration = ( endTime - startTime ) / 1000;
      
             // TODO: change this so it creates the esmond time series upon completion of each request, rather than after all requests has completed
-
+            
             chartData = this.esmondToTimeSeries( chartData );
 
             endTime = Date.now();
             duration = ( endTime - startTime ) / 1000;
-            {console.log("COMPLETED CREATING TIMESERIES in " , duration);}
-            {console.log("chartData: ", chartData);}
-
+           // {console.log("COMPLETED CREATING TIMESERIES in " , duration);}
+     
             var self = this;
 
             if ( chartData.length > 0 ) {
