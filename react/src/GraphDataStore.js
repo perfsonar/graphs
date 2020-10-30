@@ -17,6 +17,16 @@ let startTime = Date.now();
 let start;// = Math.floor( Date.now() - 7 * 86400 / 1000 );
 let end; // = Math.ceil( Date.now() / 1000 );
 
+let dayDiff = 0;
+let splitCall = false;
+let loopcounter = 0;
+let loopIteration = 0;
+let differencePerCall = 0;
+let loopstart = [];
+let loopfinish = [];
+let startNum = 0;
+let endNum = 0;
+
 let chartMetadata = [];
 let chartData = [];
 let maURLs = [];
@@ -48,6 +58,7 @@ module.exports = {
         this.summaryWindow = 3600;
         this.eventTypeStats = {};
         
+        
         this.eventTypes = ['throughput', 'histogram-owdelay', 'packet-loss-rate',
                     'packet-loss-rate-bidir', 'pscheduler-raw', 
                     'packet-count-lost', 'packet-count-sent', 'packet-count-lost-bidir',
@@ -55,6 +66,17 @@ module.exports = {
         this.dataFilters = [];
         this.itemsToHide = [];
         this.errorData = null;
+        
+        loopIteration = 0;
+        
+        loopcounter = 4;
+        
+        for ( loopIteration = 0;  loopIteration < loopcounter; loopIteration++) {
+        
+        	 loopstart[loopIteration] = 0;
+             loopfinish[loopIteration] = 0;
+        
+        }
 
     },
 
@@ -63,21 +85,39 @@ module.exports = {
         end = endInput;
         let src_is_displayset = 0;
         let dest_is_displayset = 0;
-  
-        //{console.log("--------getHostPairMetadata(graphdatastore)------ dests: ", dests);}
-        //{console.log("--------getHostPairMetadata(graphdatastore)------ displaysetsrc: ", displaysetsrc);}
-        //{console.log("--------getHostPairMetadata(graphdatastore)------ displaysetdest: ", displaysetdest);}
-        //{console.log("--------getHostPairMetadata(graphdatastore)------ startInput: ", startInput);}
-        //{console.log("--------getHostPairMetadata(graphdatastore)------ endInput: ", endInput);}
-        //{console.log("--------getHostPairMetadata(graphdatastore)------ ma_url: ", ma_url);}
-        //{console.log("--------getHostPairMetadata(graphdatastore)------ ma_url_reverse: ", ma_url_reverse);}
-        //{console.log("--------getHostPairMetadata(graphdatastore)------ params: ", params);}
-        //{console.log("--------getHostPairMetadata(graphdatastore)------ summaryWindow: ", summaryWindow);}
-         
+    
+        /*
+        {console.log("--------getHostPairMetadata(graphdatastore)------ dests: ", dests);}
+        {console.log("--------getHostPairMetadata(graphdatastore)------ displaysetsrc: ", displaysetsrc);}
+        {console.log("--------getHostPairMetadata(graphdatastore)------ displaysetdest: ", displaysetdest);}
+        {console.log("--------getHostPairMetadata(graphdatastore)------ startInput: ", startInput);}
+        {console.log("--------getHostPairMetadata(graphdatastore)------ endInput: ", endInput);}
+        {console.log("--------getHostPairMetadata(graphdatastore)------ ma_url: ", ma_url);}
+        {console.log("--------getHostPairMetadata(graphdatastore)------ ma_url_reverse: ", ma_url_reverse);}
+        {console.log("--------getHostPairMetadata(graphdatastore)------ params: ", params);}
+        {console.log("--------getHostPairMetadata(graphdatastore)------ summaryWindow: ", summaryWindow);}
+        */
+        
         this.initVars();
 
         this.summaryWindow = summaryWindow;
         
+        dayDiff = endInput - startInput;
+        
+        startNum = Number(start);
+        endNum = Number(end);
+        
+        //8035200 is equal to 3 months - this is to decide on weather or not to split dns / http calls into (4) time slices
+       
+        if ( dayDiff > 8035200 ) {
+        	
+     	   	splitCall = true;
+     	       	   
+        } else {
+        
+        	splitCall = false;
+        }
+       
         if ( displaysetsrc ) {
             sources = [ displaysetsrc ];
             src_is_displayset = 1;
@@ -109,11 +149,13 @@ module.exports = {
 
 
         for( let i in sources ) {
+        	
             let directions = [ [ sources[i], dests[i], src_is_displayset,  dest_is_displayset],
                 [ dests[i], sources[i], dest_is_displayset, src_is_displayset] ];
             let direction = [ "forward", "reverse" ];
            
             for( let j in directions ) {
+            	
                 let src = directions[j][0];
                 let dst = directions[j][1];
                 let use_displaysetsrc = directions[j][2];
@@ -205,7 +247,7 @@ module.exports = {
 
                 }
                 
-                this.serverRequest = $.get( url, function(data) {
+                 this.serverRequest = $.get( url, function(data) {
                     this.handleMetadataResponse(data, direction[j], base_url );
                 	}.bind(this))
                 		.fail(function( data ) {
@@ -227,8 +269,8 @@ module.exports = {
                 );
                 
                reqCount++;
-            	
-                this.serverRequest = $.get( pschedulerDnsUrl, function(pschedulerDnsData) {
+               
+               this.serverRequest = $.get( pschedulerDnsUrl, function(pschedulerDnsData) {
                 	
                    this.handleMetadataResponse(pschedulerDnsData, direction[j], base_url);
                 }.bind(this))
@@ -274,10 +316,11 @@ module.exports = {
                 );
                 
                 reqCount++;
-                 
+                
             }
             
         }
+       
 },
     getMAURL( url ) {
 	
@@ -303,7 +346,7 @@ module.exports = {
     },
     handleMetadataResponse: function( data, direction, maURL ) {
     	
-        //data.label = label;
+       //data.label = label;
         for(let i in data) {
             data[i].direction = direction;
         }
@@ -321,6 +364,7 @@ module.exports = {
                 return;
 
             }
+            
             data = this.filterEventTypes( chartMetadata );
             data = this.getData( chartMetadata, maURL );
  
@@ -402,18 +446,22 @@ module.exports = {
         }
     })(),
     getData: function( metaData, maURL ) {
+    	
         let summaryWindow = this.summaryWindow; 
         let defaultSummaryType = "aggregation"; // TODO: allow other aggregate types
         let multipleTypes = [ "histogram-rtt", "histogram-owdelay" ];
-
+ 
             dataReqCount = 0;
            
             for(let i in metaData) {
                 let datum = metaData[i];
                 
                 let direction = datum.direction;
+                let urlPPT = datum["pscheduler-test-type"];
+                 
                 for( let j in datum["event-types"] ) {
-                    let eventTypeObj = datum["event-types"][j];
+                
+                	let eventTypeObj = datum["event-types"][j];
                     let eventType = eventTypeObj["event-type"];
                     let summaries = eventTypeObj["summaries"];
                     let summaryType = defaultSummaryType;
@@ -424,6 +472,8 @@ module.exports = {
                         //could cause missing data if polling results from multiple archives
                         url = this.parseUrl( maURL ).origin;
                     }
+                    
+                    let storedUrl = url;
                     
                     let source = datum.source;
 
@@ -491,43 +541,101 @@ module.exports = {
                     if ( uri === null ) {
                         uri = eventTypeObj["base-uri"];
                     }
-                    uri += "?time-start=" + start + "&time-end=" + end;
-                    url += uri;
                     
-               
-
-                    // If using CORS proxy
-                    if ( this.useProxy ) {
-                        url = encodeURIComponent( url );
-                        url = proxyURL + url;
+                    loopIteration = 0;
+                    
+                    loopcounter = 4;
+                    
+                    for ( loopIteration = 0;  loopIteration < loopcounter; loopIteration++) {
+                    
+                    	 loopstart[loopIteration] = 0;
+                         loopfinish[loopIteration] = 0;
+                    
                     }
-
-                    // Make sure we don't retrieve the same URL twice
-                    if ( dataURLs[url] ) {
-                        //continue;
-
+                    
+                   if ( urlPPT == "dns" ||  urlPPT == "http" ) {
+                    	if (splitCall) {
+                    		
+                    		loopcounter = 4;
+                    		
+                    		differencePerCall = Math.ceil(dayDiff / 4);
+           	              
+                     	   	loopstart[0] = startNum;
+                     	   	loopfinish[0] = startNum + differencePerCall;
+                     	   	loopstart[1] = startNum + differencePerCall + 1;
+                     	   	loopfinish[1] =  startNum + (differencePerCall * 2);
+                     	   	loopstart[2] = startNum + (differencePerCall * 2) + 1;
+                     	   	loopfinish[2] = startNum + (differencePerCall * 3); 
+                     	    loopstart[3] = startNum + (differencePerCall * 3) + 1;
+                     	    loopfinish[3] = endNum;
+                     	    
+                    	} else {
+                    		
+                    		loopcounter = 1;
+                        	
+                        	loopstart[0] = startNum;
+                            loopfinish[0] = endNum;
+                     		
+                    	}
+                    	
                     } else {
-                        dataURLs[url] = 1;
-
+                    	
+                    	loopcounter = 1;
+                    	
+                    	loopstart[0] = startNum;
+                        loopfinish[0] = endNum;
+                    	
                     }
-                    let row = pruneDatum( datum );
-                    row.protocol = datum["ip-transport-protocol"];
-                    row.bucketwidth = datum["sample-bucket-width"];
-                    row.ipversion = ipversion;
-
-                    dataReqCount++;
                     
-                   this.serverRequest = $.get( url, function(data) {
-                       this.handleDataResponse(data, eventType, row);
-                    }.bind(this))
-                    .fail(function( data ) {
-                       ///{console.log("get data failed; skipping this collection");}
-                        this.handleDataResponse(null);
-                    }.bind(this));
+                    let kount = 0;
+                    
+                    let loopUri = uri;
+                    
+                    for ( kount = 0;  kount < loopcounter; kount++) {
+                        
+                        start = loopstart[kount];
+                        end = loopfinish[kount];
+                    
+                        
+                        url = storedUrl;
+                        uri = loopUri;
+                        uri += "?time-start=" + start + "&time-end=" + end;
+                        url += uri;
+                  
+                        // If using CORS proxy
+                        if ( this.useProxy ) {
+                        	url = encodeURIComponent( url );
+                        	url = proxyURL + url;
+                        }
+
+                        // Make sure we don't retrieve the same URL twice
+                        if ( dataURLs[url] ) {
+                        	//continue;
+
+                        } else {
+                        	dataURLs[url] = 1;
+
+                        }
+                    
+                        let row = pruneDatum( datum );
+                        row.protocol = datum["ip-transport-protocol"];
+                        row.bucketwidth = datum["sample-bucket-width"];
+                        row.ipversion = ipversion;
        
+                        dataReqCount++;
+                        this.serverRequest = $.get( url, function(data) {
+                        	this.handleDataResponse(data, eventType, row);
+                        }.bind(this))
+                        .fail(function( data ) {
+                        //	{console.log("*************** get data failed; skipping this collection");}
+                        	this.handleDataResponse(null);
+                        }.bind(this));
+                        
+                     }
+                    
                 }
             }
-
+  
     },
     handleDataResponse: function( data, eventType, datum ) {
         if ( data !== null ) {
@@ -542,19 +650,19 @@ module.exports = {
             }
         }
         completedDataReqs++;
-        if ( completedDataReqs >= dataReqCount ) {
+       if ( completedDataReqs >= dataReqCount ) {
+        	
             let endTime = Date.now();
             let duration = ( endTime - startTime ) / 1000;
      
             // TODO: change this so it creates the esmond time series upon completion of each request, rather than after all requests has completed
-
+            
             chartData = this.esmondToTimeSeries( chartData );
 
             endTime = Date.now();
             duration = ( endTime - startTime ) / 1000;
-            //{console.log("COMPLETED CREATING TIMESERIES in " , duration);}
-            //{console.log("chartData: ", chartData);}
-
+           // {console.log("COMPLETED CREATING TIMESERIES in " , duration);}
+     
             var self = this;
 
             if ( chartData.length > 0 ) {
