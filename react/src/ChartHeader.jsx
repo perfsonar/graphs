@@ -56,13 +56,15 @@ export default React.createClass({
 
     handleStart(date) {
         this.setState({
-            start: date
+            start: date / 1000,
+            startDate: moment( date )
         });
     },
 	
     handleEnd(date) {
         this.setState({
-            end: date
+            end: date / 1000,
+            endDate: moment( date )
         });
     },
 
@@ -240,7 +242,7 @@ export default React.createClass({
 
     changeTimePeriod: function( event ) {
         
-	let period = event.target.value;
+	let period = event.target.value || "custom";
 	let flag = 0;
 	switch(period) {
 		case '12h': flag = 1; break;
@@ -249,7 +251,7 @@ export default React.createClass({
 		case '1w': flag = 1; break;
 		case '1m': flag = 1; break;
 		case '1y': flag = 1; break;
-		case 'custom': flag = 2; 	
+		case 'custom': flag = 2; break;
 	}
 	let start; 
 	let end;
@@ -361,7 +363,8 @@ export default React.createClass({
             timeframe: timeDiff,//period,
             start: newStart,
             end: newEnd,
-            summaryWindow: summaryWindow
+            summaryWindow: summaryWindow,
+            period: period
         };
         this.handleTimerangeChange( options );
     },
@@ -535,19 +538,23 @@ export default React.createClass({
 
         var timesel = GraphUtilities.convertSecondsToAbbrev( options.timeframe ) || "custom";
 
-        if ( timesel == "custom" ) {
+
+        if ( timesel == "custom" || options.period == "custom" ) {
             //this.state.customrange = false;
             options.customrange = false;
-            //options.startDate = moment( options.start * 1000 );
-            //options.endDate = moment( options.end * 1000 );
-            //options.startDate = this.state.startDate;
-            //options.endDate = this.state.endDate;
+            options.timesel = "custom";
+            options.startDate = moment( options.start * 1000 );
+            options.endDate = moment( options.end * 1000 );
+            //options.startDate = moment( this.state.startDate * 1000 );
+            //options.endDate = moment( this.state.endDate * 1000 );
+        } else {
+            options.timesel = timesel;
+            options.startDate = moment( options.start*1000 );
+            options.endDate = moment( options.end*1000 );
+
         }
 
 
-        options.timesel = timesel;
-        options.startDate = moment( options.start*1000 );
-        options.endDate = moment( options.end*1000 );
         this.setState( options );
         this.props.updateTimerange( options, noupdateURL );
         emitter.emit("timerangeChange");
