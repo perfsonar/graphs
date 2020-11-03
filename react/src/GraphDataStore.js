@@ -69,7 +69,7 @@ module.exports = {
         
         loopIteration = 0;
         
-        loopcounter = 4;
+        loopcounter = 12;
         
         for ( loopIteration = 0;  loopIteration < loopcounter; loopIteration++) {
         
@@ -107,9 +107,9 @@ module.exports = {
         startNum = Number(start);
         endNum = Number(end);
         
-        //8035200 is equal to 3 months - this is to decide on weather or not to split dns / http calls into (4) time slices
+        //2678400 is equal to 1 month - this is to decide on weather or not to split dns / http calls into (12) time slices
        
-        if ( dayDiff > 8035200 ) {
+        if ( dayDiff > 2678400 ) {
         	
      	   	splitCall = true;
      	       	   
@@ -544,7 +544,7 @@ module.exports = {
                     
                     loopIteration = 0;
                     
-                    loopcounter = 4;
+                    loopcounter = 12;
                     
                     for ( loopIteration = 0;  loopIteration < loopcounter; loopIteration++) {
                     
@@ -556,9 +556,9 @@ module.exports = {
                    if ( urlPPT == "dns" ||  urlPPT == "http" ) {
                     	if (splitCall) {
                     		
-                    		loopcounter = 4;
+                    		loopcounter = 12;
                     		
-                    		differencePerCall = Math.ceil(dayDiff / 4);
+                    		differencePerCall = Math.ceil(dayDiff / 12);
            	              
                      	   	loopstart[0] = startNum;
                      	   	loopfinish[0] = startNum + differencePerCall;
@@ -567,7 +567,25 @@ module.exports = {
                      	   	loopstart[2] = startNum + (differencePerCall * 2) + 1;
                      	   	loopfinish[2] = startNum + (differencePerCall * 3); 
                      	    loopstart[3] = startNum + (differencePerCall * 3) + 1;
-                     	    loopfinish[3] = endNum;
+                     	    //loopfinish[3] = endNum;
+                     	   	loopfinish[3] = startNum + (differencePerCall * 4); 
+                    	   	loopstart[4] = startNum + (differencePerCall * 4) + 1;
+                     	   	loopfinish[4] =  startNum + (differencePerCall * 5);
+                     	   	loopstart[5] = startNum + (differencePerCall * 5) + 1;
+                     	   	loopfinish[5] = startNum + (differencePerCall * 6); 
+                     	    loopstart[6] = startNum + (differencePerCall * 6) + 1;
+                     	    //loopfinish[6] =  endNum;
+                     	   	loopfinish[6] =  startNum + (differencePerCall * 7);
+                    	   	loopstart[7] = startNum + (differencePerCall * 7) + 1;
+                    	   	loopfinish[7] = startNum + (differencePerCall * 8); 
+                    	   	loopstart[8] = startNum + (differencePerCall * 8) + 1;
+                     	   	loopfinish[8] =  startNum + (differencePerCall * 9);
+                     	   	loopstart[9] = startNum + (differencePerCall * 9) + 1;
+                     	   	loopfinish[9] = startNum + (differencePerCall * 10); 
+                     	    loopstart[10] = startNum + (differencePerCall * 10) + 1;
+                    	   	loopfinish[10] =  startNum + (differencePerCall * 11);
+                    	   	loopstart[11] = startNum + (differencePerCall * 11) + 1;
+                    	   	loopfinish[11] = endNum;
                      	    
                     	} else {
                     		
@@ -939,8 +957,7 @@ module.exports = {
                 let failureValue = null;
                 let value = val["val"];
                 
-                
-                if (  eventType == 'pscheduler-raw' ){
+                 if (  eventType == 'pscheduler-raw' ){
                 	
                 	let durationString = value.time;
                                    
