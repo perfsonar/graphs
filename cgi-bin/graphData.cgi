@@ -158,8 +158,12 @@ sub get_ma_data {
             my $message = $res->body;
             print $message;
         } else {
-            # if there is an error, return the error message and code
-            error($res->message, $res->code);
+            # return generic message if error. Do not provide details to avoid SSRF
+            error("Error contacting esmond archive");
+            # Uncomment below for debugging only. Do not use in production 
+            # because can lad to SSRF (i.e. can use to figure out what ports 
+            # on other hosts this server can reach)
+            #error($res->message, $res->code);
         }
     } else {
         # url does not appear to be a valid esmond archive
@@ -461,7 +465,8 @@ sub _get_test_data {
     my $metadata = $client->get_metadata();
 
     if ($client->error){
-        error("Error reaching MA: " . $client->error);
+        #Don't print error to avoid SSRF. After this should better in clear to print better errors since call worked.
+        error("Error getting MA metadata");
         return undef;
     }
 
@@ -649,7 +654,7 @@ sub check_traceroute_data {
 							      filters => $filter);
 
     my $metadata = $client->get_metadata();
-    error($client->error) if ($client->error);
+    error("Unable to get traceroute metadata") if ($client->error);
 
     HOSTS: foreach my $metadatum (@$metadata) {
         push @$metadata_out, $metadatum->{data};
@@ -736,7 +741,7 @@ sub get_test_list {
 							      filters => $filter);
 
     my $metadata = $client->get_metadata();
-    error($client->error) if ($client->error);
+    error("Unable to get test list metadata") if ($client->error);
 
     my $results;
     my %hosts;
@@ -856,7 +861,7 @@ sub get_tests {
     #$filter->offset(0);
     my $metadata = $client->get_metadata();
     $total_metadata += Time::HiRes::tv_interval($start_time);
-    error($client->error) if ($client->error);
+    error("Unable to get tests metadata ") if ($client->error);
 
     my %results;
 
