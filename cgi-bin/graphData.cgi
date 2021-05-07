@@ -59,26 +59,35 @@ my $cgi = new CGI;
 my $action = $cgi->param('action') || error("Missing required parameter \"action\", must specify data or tests", 400);
 
 #json file reader for reading ssl certificate flag from the configuration file
-my $sslcertjson;
-my $configfile = "/etc/perfsonar/graphs.json";
+my $configjson;
+my $configfile = "/usr/lib/perfsonar/graphs/etc/graphs.json";
 #flag set to 1 only if the certificate config file exists
 my $config_set = 0;
 my $config;
 if(-e $configfile){
   local $/;
   open my $fh, "<", $configfile;
-  $sslcertjson = <$fh>;
+  $configjson = <$fh>;
   close $fh;
 
   $config_set = 1;
   
-  try{
-	$config = decode_json($sslcertjson);
-  }  catch{
-	warn 'The json file used is invalid, please use correct json syntax while editing ' . $configfile ;
+
+  eval{ $config = decode_json($configjson); };
+  if($@){
+      error("Graph configuration error", 400);
   }
 
-
+  #validate potential url fields against whitelist
+  if ($config->{"url_whitelist"}) {
+    #Build whitelist hash
+    my %whitelist_map = ();
+    foreach my $wlhost(@{$config->{"url_whitelist"}}){
+        $whitelist_map{$wlhost} = 1;
+    }
+    whitelist_url("url", \%whitelist_map);
+    whitelist_url("reverseurl", \%whitelist_map);
+  }
 }
 
 ######
@@ -118,6 +127,33 @@ sub cgi_multi_param {
         return $cgi->multi_param($param);
     } else {
         return $cgi->param($param);
+    }
+}
+
+sub whitelist_url {
+    my ($param, $whitelist) = @_;
+
+    #if no param then we are good
+    return unless($param);
+
+    #Normalize as list
+    my $param_list = [];
+    if ($cgi->can('multi_param')) {
+        $param_list = $cgi->multi_param($param);
+    } else {
+        $param_list = [ $cgi->param($param) ];
+    }
+
+    #check all urls
+    foreach my $p(@{$param_list}){
+        my $p_uri;
+        eval { $p_uri = new URI($p); };
+        if($@){
+            error("URL is not a valid URI", 400)
+        }
+        unless($whitelist->{$p_uri->host}) {
+            error("URL is not in whitelist", 400);
+        }
     }
 }
 
