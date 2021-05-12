@@ -30,7 +30,7 @@
     "react": "^0.14.9",
     "react-timeseries-charts": "^0.15.4",
     "react-datepicker": "^0.55.0",
-    "underscore": "^1.7.0"
+    "underscore": "^1.12.1"
   },
   "peerDependencies": {},
   "devDependencies": {
