@@ -383,6 +383,17 @@ export default React.createClass({
                     trace_url += '&epselect=' + trace_data.traceroute_uri;
         return trace_url;
     },
+    getTraceTreeURL: function(i) {
+        let trace_data = this.state.traceInfo[i];
+        if ( typeof trace_data == "undefined" ) {
+            return;
+        }
+
+        var ma = new URL(trace_data.ma_url);
+        var tt_url = '/perfsonar-tracetree/?';
+        tt_url += 'mahost=' + ma.origin + trace_data.traceroute_uri;
+        return tt_url;
+    },
     renderHostList: function( type, label ) {
         if ( this.state.showHostSelectors ) {
             return (
@@ -426,6 +437,7 @@ export default React.createClass({
         let trace = this.state.traceInfo;
         let display = "hiddenTrace";
         let traceURL = this.getTraceURL( i );
+        let tracetreeURL = this.getTraceTreeURL( i );
         if ( i in trace && traceURL != "" ) {
             if ( trace[i].has_traceroute == 1 ) {
                 display = "blockTrace";
@@ -468,6 +480,9 @@ export default React.createClass({
                     </li>
                     <li className={"sidebar-popover__item " + display}>
                         <span className="sidebar-popover__param"><a href={traceURL} target="_blank">View traceroute graph</a></span>
+                    </li>
+                    <li className={"sidebar-popover__item " + display}>
+                        <span className="sidebar-popover__param"><a href={tracetreeURL} target="_blank">View tracetree graph</a></span>
                     </li>
                 </ul>
             </div>
