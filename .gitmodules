@@ -1,6 +1,6 @@
 [submodule "toolkit"]
-	path = toolkit
+	path = graphs/perfsonar-graphs/toolkit
 	url = https://github.com/perfsonar/toolkit
 [submodule "shared"]
-	path = shared
+	path = graphs/perfsonar-graphs/shared
 	url = https://github.com/perfsonar/perl-shared

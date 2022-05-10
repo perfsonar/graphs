@@ -15,3 +15,6 @@ examples-bundle.js
 .*.swp
 # Vagrant
 .vagrant/
+unibuild-log
+unibuild-work/
+unibuild-repo/

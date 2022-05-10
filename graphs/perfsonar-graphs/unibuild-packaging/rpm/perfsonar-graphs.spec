@@ -14,7 +14,7 @@ Summary:		perfSONAR Graphs
 License:		ASL 2.0
 Group:			Development/Libraries
 URL:			http://www.perfsonar.net
-Source0:		perfsonar-graphs-%{version}.%{perfsonar_auto_relnum}.tar.gz
+Source0:		perfsonar-graphs-%{version}.tar.gz
 BuildRoot:		%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildArch:		noarch
 BuildRequires: nodejs
@@ -63,7 +63,7 @@ interact with the perfSONAR services to locate and display datasets.
 /usr/sbin/useradd -g perfsonar -r -s /sbin/nologin -c "perfSONAR User" -d /tmp perfsonar 2> /dev/null || :
 
 %prep
-%setup -q -n perfsonar-graphs-%{version}.%{perfsonar_auto_relnum}
+%setup -q -n perfsonar-graphs-%{version}
 
 %build
 
