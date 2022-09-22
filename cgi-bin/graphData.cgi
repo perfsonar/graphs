@@ -178,16 +178,17 @@ sub get_ma_data {
 
     }
 
-    # Make sure the URL looks like an esmond URL -- starts with http or https and looks like
-    # http://host/esmond/perfsonar/archive/[something]
-    # this should be url encoded
-    if ( $url =~ m|^https?://[^/]+/esmond/perfsonar/archive| ) {
+    # Force the URL to a path of /esmond/perfsonar/archive/
+    my $url_obj = new URI($url);
+    $url_obj->path('/esmond/perfsonar/archive/');
+    #check for https or https - actually checked by is_web_url, but also check here.
+    if($url_obj->scheme eq 'http' || $url_obj->scheme eq 'https'){
+        $url = "$url_obj";
         # perform http GET on the URL
         my $res = send_http_request(connection_type => 'GET',
-                url => $url,
-                timeout => 60
-            );
-
+            url => $url,
+            timeout => 60
+        );
         # success
         if ( $res->is_success ) {
             print $cgi->header('application/json');
@@ -202,11 +203,9 @@ sub get_ma_data {
             #error($res->message, $res->code);
         }
     } else {
-        # url does not appear to be a valid esmond archive
-        warn "URL is not a valid esmond archive: $url";
-        error("URL is not a valid esmond archive");
+        error("URL must be http or https", 400);
     }
-
+    
 }
 
 sub get_data {
