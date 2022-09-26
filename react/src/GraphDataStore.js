@@ -31,6 +31,7 @@ let chartMetadata = [];
 let chartData = [];
 let maURLs = [];
 let maURLsReverse = [];
+let urlWhitelist = [];
 
 let metadataURLs = {};
 let dataURLs = {};
@@ -38,6 +39,8 @@ let dataURLs = {};
 let proxyURL = '/perfsonar-graphs/cgi-bin/graphData.cgi?action=ma_data&url=';
 
 let lossTypes = [ 'packet-loss-rate', 'packet-count-lost', 'packet-count-sent', 'packet-count-lost-bidir', 'packet-loss-rate-bidir' ];
+
+let config_url = '/perfsonar-graphs/graphs.json'
 
 module.exports = {
 
@@ -66,7 +69,13 @@ module.exports = {
         this.dataFilters = [];
         this.itemsToHide = [];
         this.errorData = null;
-        
+        //load config containing whitelist
+        $.ajaxSetup({ async: false });
+        $.getJSON(config_url, function(json) {
+            urlWhitelist = json.url_whitelist || []
+        });
+        $.ajaxSetup({ async: true });
+
         loopIteration = 0;
         
         loopcounter = 12;
@@ -323,7 +332,6 @@ module.exports = {
        
 },
     getMAURL( url ) {
-	
       let proxy = this.parseUrl( proxyURL );
 
         if ( this.useProxy ) {
@@ -331,6 +339,12 @@ module.exports = {
             url = proxyURL + url;
         }
         let urlObj = this.parseUrl( url );
+        //check whitelist
+        if ( !(urlWhitelist.length == 0 || urlWhitelist.includes(urlObj.host)) ){
+            console.log(urlObj.host + " is not in URL whitelist");
+            emitter.emit(urlObj.host + " is not in URL whitelist");
+            return;
+        }
         url = urlObj.origin + urlObj.pathname + urlObj.search;
         return url;
 
