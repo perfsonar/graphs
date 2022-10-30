@@ -17,19 +17,5 @@ changecom()dnl
 # family in with the sources, it will not be built.
 #
 
-# Build dependencies
-submodules/bundles/common
-submodules/minor-packages/perl-CGI-Ajax
-submodules/minor-packages/perl-Data-Validate-Domain
-submodules/minor-packages/perl-Data-Validate-IP
-submodules/minor-packages/perl-Hash-Merge
-submodules/minor-packages/perl-IPC-DirQueue
-submodules/minor-packages/perl-JSON-Validator
-submodules/minor-packages/perl-Net-Traceroute
-
-# Build the first set of the libperfsonar packages
-submodules/perl-shared/libperfsonar
-submodules/psTracerouteViewer/traceroute-viewer
-
 # Build main package
 graphs
