@@ -3,7 +3,7 @@ ROOTPATH=/usr/lib/perfsonar/graphs
 CONFIGPATH=${ROOTPATH}/etc
 LIBPATH=/usr/lib/perfsonar/lib
 GRAPHLIBPATH=/usr/lib/perfsonar/graphs/lib
-PERFSONAR_AUTO_VERSION=4.4.5
+PERFSONAR_AUTO_VERSION=4.4.6
 PERFSONAR_AUTO_RELNUM=1
 VERSION=${PERFSONAR_AUTO_VERSION}
 RELEASE=${PERFSONAR_AUTO_RELNUM}
@@ -23,6 +23,7 @@ install:
 	for i in `cat MANIFEST | grep ^etc/ | sed "s/^etc\///"`; do  mkdir -p `dirname $(CONFIGPATH)/$${i}`; if [ -e $(CONFIGPATH)/$${i} ]; then install -m 640 -c etc/$${i} $(CONFIGPATH)/$${i}.new; else install -m 640 -c etc/$${i} $(CONFIGPATH)/$${i}; fi; done
 	sed -i 's:.RealBin/\.\./lib:${LIBPATH}:g' ${ROOTPATH}/cgi-bin/*
 	sed -i 's:.RealBin/lib:${GRAPHLIBPATH}:g' ${ROOTPATH}/cgi-bin/*
+	ln -s ${ROOTPATH}/etc/graphs.json ${ROOTPATH}/html/graphs.json
 
 test:
 	    PERL_DL_NONLAZY=1 /usr/bin/perl "-MExtUtils::Command::MM" "-e" "test_harness(0)" t/*.t

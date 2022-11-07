@@ -11,6 +11,7 @@
   "license": "ISC",
   "dependencies": {
     "axios": "^0.21.1",
+    "babel": "^6.23.0",
     "babel-polyfill": "~6.22.0",
     "babel-runtime": "^6.5.0",
     "body-parser": "^1.15.0",
@@ -28,11 +29,10 @@
     "paths-js": "^0.3.4",
     "pondjs": "^0.7.2",
     "react": "^0.14.9",
-    "react-timeseries-charts": "^0.15.4",
     "react-datepicker": "^0.55.0",
+    "react-timeseries-charts": "^0.15.4",
     "underscore": "^1.12.1"
   },
-  "peerDependencies": {},
   "devDependencies": {
     "babel-cli": "^6.5.1",
     "babel-core": "^6.5.2",
@@ -65,7 +65,7 @@
     "style-loader": "^0.13.0",
     "url-loader": "^0.5.7",
     "w3cjs": "^0.4.0",
-    "webpack": "^1.13.3",
+    "webpack": "^1.15.0",
     "webpack-dev-server": "^1.14.1",
     "webpack-strip": "^0.1.0",
     "xmlhttprequest": "^1.8.0"
