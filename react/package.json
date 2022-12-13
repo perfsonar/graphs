@@ -16,7 +16,7 @@
     "babel-runtime": "^6.5.0",
     "body-parser": "^1.15.0",
     "es6-promise": "^3.2.1",
-    "express": "^4.13.4",
+    "express": "^4.17.3",
     "flexbox-react": "^2.1.0",
     "http-proxy": "^1.18.1",
     "inline-style-prefixer": "~4.0.2",
