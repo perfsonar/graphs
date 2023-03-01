@@ -53,7 +53,7 @@
     "file-loader": "^0.8.5",
     "history": "^1.13.1",
     "json-loader": "^0.5.4",
-    "mocha": "^3.2.0",
+    "mocha": "^10.2.0",
     "moxios": "^0.4.0",
     "raw-loader": "^0.5.1",
     "react-docgen": "^2.4.0",
@@ -65,8 +65,8 @@
     "style-loader": "^0.13.0",
     "url-loader": "^0.5.7",
     "w3cjs": "^0.4.0",
-    "webpack": "^1.15.0",
-    "webpack-dev-server": "^1.14.1",
+    "webpack": "^5.75.0",
+    "webpack-dev-server": "^4.11.1",
     "webpack-strip": "^0.1.0",
     "xmlhttprequest": "^1.8.0"
   }
