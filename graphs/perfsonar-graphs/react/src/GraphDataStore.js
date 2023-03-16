@@ -260,7 +260,7 @@ module.exports = {
                     this.handleMetadataResponse(data, direction[j], base_url );
                 	}.bind(this))
                 		.fail(function( data ) {
-                			if ( data.status == 404 ||  data.status == 0 ) {
+                			if ( data.status > 299 ||  data.status == 0 ) {
                 				this.useProxy = true;
                 				url = this.getMAURL( url );
                 				this.serverRequest = $.get( url, function(data) {
@@ -284,7 +284,7 @@ module.exports = {
                    this.handleMetadataResponse(pschedulerDnsData, direction[j], base_url);
                 }.bind(this))
                 .fail(function( pschedulerDnsData ) {
-                    if ( pschedulerDnsData.status == 404 ||  pschedulerDnsData.status == 0 ) {
+                    if ( pschedulerDnsData.status > 299 ||  pschedulerDnsData.status == 0 ) {
                         this.useProxy = true;
                         pschedulerDnsUrl = this.getMAURL( pschedulerDnsUrl );
                         this.serverRequest = $.get( pschedulerDnsUrl, function(pschedulerDnsData) {
@@ -306,7 +306,7 @@ module.exports = {
                    this.handleMetadataResponse(pschedulerHttpData, direction[j], base_url);
                 }.bind(this))
                 .fail(function( pschedulerHttpData ) {
-                    if ( pschedulerHttpData.status == 404 ||  pschedulerHttpData.status == 0 ) {
+                    if ( pschedulerHttpData.status > 299 ||  pschedulerHttpData.status == 0 ) {
                         this.useProxy = true;
                         pschedulerHttpUrl = this.getMAURL( pschedulerHttpUrl );
                         this.serverRequest = $.get( pschedulerHttpUrl, function(pschedulerHttpData) {
