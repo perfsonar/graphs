@@ -2,7 +2,33 @@
 
 Graphs that show perfSONAR active measurement results taken from a measurement archive. In some cases they will also suplement the graphs with informaion from the Lookup Service to provide additional context in debugging. Graphs are capable of showing data ranging from throughput, loss, one-way delay, and much more. 
 
-*Note: The contents of this repository were formerly known as the serviceTest package*
+## Building the Javascript
+
+Currently the Javascript is packged using webpack and the resulting bundle.js files are kept in this repo. To build those:
+
+```
+# start a unibuild container
+wget https://raw.githubusercontent.com/perfsonar/unibuild/main/docker-envs/docker-compose.yml
+
+# cd to react dir
+cd graphs/perfsonar-graphs/react
+docker compose up -d el7
+
+# remove old build files
+make clean
+
+# enable devtoolset-3 for building on CentOS 6 only
+npm install --force   
+
+# run linter
+make lint
+
+# build using webpack (production)
+make webpack
+
+# copy build files to where they need to be
+make deploy
+```
 
 ##Getting the Code
 You may checkout the code with the following command:
