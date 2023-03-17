@@ -25,6 +25,8 @@ make lint
 
 # build using webpack (production)
 make webpack
+# Altenatively run 'make dev' if you want console.log output to show up
+
 
 # copy build files to where they need to be
 make deploy

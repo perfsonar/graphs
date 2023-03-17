@@ -260,9 +260,9 @@ module.exports = {
                     this.handleMetadataResponse(data, direction[j], base_url );
                 	}.bind(this))
                 		.fail(function( data ) {
-                			if ( data.status > 299 ||  data.status == 0 ) {
                 				this.useProxy = true;
                 				url = this.getMAURL( url );
+                                console.log("Failure handling url="+url)
                 				this.serverRequest = $.get( url, function(data) {
                 					this.handleMetadataResponse(data, direction[j], base_url );
                 					}.bind(this))
@@ -270,10 +270,6 @@ module.exports = {
                 						this.handleMetadataError( data );
                         }.bind(this)
                         )
-                  } else {
-                            this.handleMetadataError( data );
-                    }
-
                         }.bind(this)
                 );
                 
@@ -284,9 +280,10 @@ module.exports = {
                    this.handleMetadataResponse(pschedulerDnsData, direction[j], base_url);
                 }.bind(this))
                 .fail(function( pschedulerDnsData ) {
-                    if ( pschedulerDnsData.status > 299 ||  pschedulerDnsData.status == 0 ) {
+                        console.log("Failure handling maUrl="+pschedulerDnsUrl)
                         this.useProxy = true;
                         pschedulerDnsUrl = this.getMAURL( pschedulerDnsUrl );
+                        console.log("Why did DNS URL get updated="+pschedulerDnsUrl)
                         this.serverRequest = $.get( pschedulerDnsUrl, function(pschedulerDnsData) {
                          this.handleMetadataResponse(pschedulerDnsData, direction[j], base_url );
                         }.bind(this))
@@ -294,9 +291,6 @@ module.exports = {
                             this.handleMetadataError( pschedulerDnsData );
                          }.bind(this)
                         )
-                   } else {
-                            this.handleMetadataError( pschedulerDnsData );
-                }
                    }.bind(this)
                 );
                 
@@ -306,9 +300,9 @@ module.exports = {
                    this.handleMetadataResponse(pschedulerHttpData, direction[j], base_url);
                 }.bind(this))
                 .fail(function( pschedulerHttpData ) {
-                    if ( pschedulerHttpData.status > 299 ||  pschedulerHttpData.status == 0 ) {
                         this.useProxy = true;
                         pschedulerHttpUrl = this.getMAURL( pschedulerHttpUrl );
+                        console.log("Failure handling http url="+pschedulerHttpUrl)
                         this.serverRequest = $.get( pschedulerHttpUrl, function(pschedulerHttpData) {
                          this.handleMetadataResponse(pschedulerHttpData, direction[j], base_url );
                         }.bind(this))
@@ -316,11 +310,6 @@ module.exports = {
                             this.handleMetadataError( pschedulerHttpData );
                          }.bind(this)
                         )
-                   } else {
-                            this.handleMetadataError( pschedulerHttpData );
-
-                        }
-
                         }.bind(this)
                 );
                 
@@ -367,6 +356,7 @@ module.exports = {
        
         $.merge( chartMetadata, data );
         completedReqs++;
+        console.log("completedReqs=", completedReqs, "reqCount=", reqCount);
         if ( completedReqs == reqCount ) {
             let endTime = Date.now();
             let duration = ( endTime - startTime ) / 1000;
@@ -380,8 +370,9 @@ module.exports = {
             }
             
             data = this.filterEventTypes( chartMetadata );
+            console.log("data1=", data);
             data = this.getData( chartMetadata, maURL );
- 
+            console.log("data2=", data);
         } else {
 
         }
@@ -657,9 +648,11 @@ module.exports = {
        
                         dataReqCount++;
                         this.serverRequest = $.get( url, function(data) {
+                            console.log("DATA url=" + url);
                         	this.handleDataResponse(data, eventType, row);
                         }.bind(this))
                         .fail(function( data ) {
+                            console.log("FAIL_DATA url=" + url);
                         //	{console.log("*************** get data failed; skipping this collection");}
                         	this.handleDataResponse(null);
                         }.bind(this));
@@ -671,6 +664,7 @@ module.exports = {
   
     },
     handleDataResponse: function( data, eventType, datum ) {
+        //console.log("date.response=" + data);
         if ( data !== null ) {
             let direction = datum.direction;
             let protocol = datum.protocol;
@@ -683,6 +677,7 @@ module.exports = {
             }
         }
         completedDataReqs++;
+        console.log("completedDataReqs=", completedDataReqs, "dataReqCount=", dataReqCount);
        if ( completedDataReqs >= dataReqCount ) {
         	
             let endTime = Date.now();
@@ -691,7 +686,8 @@ module.exports = {
             // TODO: change this so it creates the esmond time series upon completion of each request, rather than after all requests has completed
             
             chartData = this.esmondToTimeSeries( chartData );
-
+            console.log("chartData=", chartData);
+            
             endTime = Date.now();
             duration = ( endTime - startTime ) / 1000;
            // {console.log("COMPLETED CREATING TIMESERIES in " , duration);}
@@ -1357,3 +1353,4 @@ let pruneDatum = function( oldDatum ) {
         }
         return datum;
     };
+

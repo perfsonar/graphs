@@ -178,11 +178,13 @@ sub get_ma_data {
 
     }
 
-    # Force the URL to a path of /esmond/perfsonar/archive/
     my $url_obj = new URI($url);
-    $url_obj->path('/esmond/perfsonar/archive/');
-    #check for https or https - actually checked by is_web_url, but also check here.
-    if($url_obj->scheme eq 'http' || $url_obj->scheme eq 'https'){
+    if($url_obj->path !~ /\/esmond\/perfsonar\/archive(\/[-a-zA-z0-9])*\/?(\?([-a-zA-Z0-9]=[-a-zA-Z0-9_])+)?/){
+        # Force the URL to a path starting /esmond/perfsonar/archive/ and followed by alpha-numeric + hyphen path and get params
+        # don't allow anything 
+        error("URL path must start with /esmond/perfsonar/archive and follow a valid esmond format");
+    }elsif($url_obj->scheme eq 'http' || $url_obj->scheme eq 'https'){
+        #check for https or https - actually checked by is_web_url, but also check here.
         $url = "$url_obj";
         # perform http GET on the URL
         my $res = send_http_request(connection_type => 'GET',
@@ -1391,4 +1393,5 @@ sub error {
 
     exit 1;
 }
+
 
