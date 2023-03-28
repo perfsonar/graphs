@@ -2,7 +2,7 @@ Source: perfsonar-toolkit-graphs
 Section: net
 Priority: optional
 Maintainer: perfSONAR developers <debian@perfsonar.net>
-Uploaders: Antoine Delvaux <antoine.delvaux@man.poznan.pl>
+Uploaders: Lætitia Delvaux <adelvaux@man.poznan.pl>
 Build-Depends: debhelper (>= 10), quilt, dh-exec
 Standards-Version: 3.9.8
 Homepage: http://www.perfsonar.net/
