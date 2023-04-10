@@ -5,7 +5,7 @@
 %define apacheconf apache-perfsonar-graphs.conf
 
 %define perfsonar_auto_version 5.0.0
-%define perfsonar_auto_relnum 0.b2.2
+%define perfsonar_auto_relnum 0.b2.8
 
 Name:			perfsonar-graphs
 Version:		%{perfsonar_auto_version}
