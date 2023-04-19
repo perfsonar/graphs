@@ -15,7 +15,7 @@ cd graphs/perfsonar-graphs/react
 docker compose up -d el7
 
 # remove old build files
-make clean
+make clean-js
 
 # enable devtoolset-3 for building on CentOS 6 only
 npm install --force   
