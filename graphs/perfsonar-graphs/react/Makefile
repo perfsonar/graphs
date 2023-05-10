@@ -26,9 +26,10 @@ rebuild-all: clean all
 deps:
 	npm install
 
-clean-all: clean clean-deps
+clean-all: clean-js clean-deps
 
-clean:
+# This target as been renamed to not be called automatically by Unibuild
+clean-js:
 	find public/ -maxdepth 1 -name bundle.* -type f -exec rm {} \;
 	find ../html/public/ -maxdepth 1 -type f -exec rm {} \;
 
