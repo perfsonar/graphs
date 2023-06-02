@@ -19,8 +19,6 @@ BuildRoot:		%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildArch:		noarch
 BuildRequires: nodejs
 Requires:		perl
-Requires:		perl(AnyEvent) >= 4.81
-Requires:		perl(AnyEvent::HTTP)
 Requires:		perl(CGI)
 Requires:		perl(Data::Validate::IP)
 Requires:		perl(Data::UUID)
