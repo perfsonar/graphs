@@ -8,4 +8,4 @@ jobs:
       
     steps:
       - name: git repo
-        run: git clone https://github.com/perfsonar/graphs.git
+        run: yum list intsalled | grep git
