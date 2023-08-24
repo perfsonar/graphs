@@ -8,4 +8,4 @@ jobs:
       
     steps:
       - name: git repo
-        run: docker ps -a
+        run: 
