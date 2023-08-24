@@ -1,7 +1,7 @@
 name: nightly
 on: push
 jobs:
-  my-job:
+  setup-containers:
     strategy:
       #fail-fast: true
       matrix:
@@ -16,8 +16,17 @@ jobs:
     steps:
        - name: Copy repo
          uses: actions/checkout@v2
+ 
        - name: install dependancies repo
+         if: ${{ matrix.os }} == 'el7'
          run: yum -y install -y http://linux.mirrors.es.net/perfsonar/${{ matrix.os }}/x86_64/5/packages/perfsonar-repo-0.11-1.noarch.rpm
+
+       - name: install deps
+         if: ${{ matrix.os }} == 'el8'
+         run: dnf -y install -y http://linux.mirrors.es.net/perfsonar/${{ matrix.os }}/x86_64/5/packages/perfsonar-repo-0.11-1.noarch.rpm
+       - name: install deps
+         if: ${{ matrix.os }} == 'el9'
+         run: dnf -y install -y http://linux.mirrors.es.net/perfsonar/${{ matrix.os }}/x86_64/5/packages/perfsonar-repo-0.11-1.noarch.rpm
        
        - name: make
          run: make
