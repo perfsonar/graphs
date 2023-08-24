@@ -8,4 +8,4 @@ jobs:
       
     steps:
       - name: my-step
-        run: ls
+        run: cd graphs;make
