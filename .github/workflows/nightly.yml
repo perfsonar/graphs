@@ -8,7 +8,7 @@ jobs:
       
     steps:
       - name: list
-        run: ls -al 
+        run: ls -al;pwd
         
       - name: install git
         run: dnf -y install git
