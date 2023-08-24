@@ -8,4 +8,4 @@ jobs:
       
     steps:
       - name: my-step
-        run: make
+        run: cd unibuild;make
