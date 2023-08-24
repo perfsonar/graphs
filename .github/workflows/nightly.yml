@@ -8,4 +8,4 @@ jobs:
       
     steps:
       - name: my-step
-        run: cd unibuild;make
+        run: ls
