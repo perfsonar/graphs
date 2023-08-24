@@ -17,7 +17,7 @@ jobs:
         run: git clone https://github.com/perfsonar/graphs.git
 
       - name: install dependancies repo
-        run: dnf -y install -y https://perfsonar-dev3.grnoc.iu.edu/nightly/el/9/x86_64/perfsonar/minor/packages/perfsonar-repo-nightly-minor-0.11-0.20230721201931.el9.noarch.rpm
+        run: dnf -y install -y http://linux.mirrors.es.net/perfsonar/el9/x86_64/5/packages/perfsonar-repo-0.11-1.noarch.rpm
      
       - name: make
         working-directory: ./graphs
