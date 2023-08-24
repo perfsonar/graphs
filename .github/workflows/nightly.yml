@@ -8,7 +8,7 @@ jobs:
       
     steps:
       - name: install git
-          run: dnf -y install git
+        run: dnf -y install git
       
       - name: git repo
-          run: git clone https://github.com/perfsonar/graphs.git
+        run: git clone https://github.com/perfsonar/graphs.git
