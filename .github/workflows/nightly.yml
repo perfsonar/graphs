@@ -7,7 +7,7 @@ on:
 jobs:
   build:
 
-    runs-on: unbuntu-latest
+    runs-on: self-hosted
     container: 
       image: ghcr.io/perfsonar/unibuild/el8:latest
 
