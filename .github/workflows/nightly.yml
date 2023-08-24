@@ -3,6 +3,9 @@ on: push
 jobs:
   my-job:
     runs-on: ubuntu-latest
+    container: 
+      image: ghcr.io/perfsonar/unibuild/el9:latest
+      
     steps:
       - name: my-step
-        run: echo "Hello World!"
+        run: make
