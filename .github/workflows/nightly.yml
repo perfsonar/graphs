@@ -8,7 +8,8 @@ on:
 jobs:
   build:
 
-    runs-on: ghcr.io/perfsonar/unibuild/el8:latest
+    runs-on: unbuntu-latest
+    container: ghcr.io/perfsonar/unibuild/el8:latest
 
     steps:
     - uses: actions/checkout@v3
