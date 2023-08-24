@@ -1,7 +1,6 @@
 name: Nightly build
 
-on:
-  push:
+on: [push]
   
 jobs:
   build:
