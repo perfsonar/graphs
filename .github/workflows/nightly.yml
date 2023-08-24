@@ -12,3 +12,7 @@ jobs:
       
       - name: git repo
         run: git clone https://github.com/perfsonar/graphs.git
+        
+      - name: make
+        working-directory: ./graphs
+        run: make
