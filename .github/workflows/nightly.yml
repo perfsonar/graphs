@@ -7,6 +7,9 @@ jobs:
       image: ghcr.io/perfsonar/unibuild/el9:latest
       
     steps:
+      - name: list
+        run: ls -al 
+        
       - name: install git
         run: dnf -y install git
       
