@@ -8,4 +8,4 @@ jobs:
       
     steps:
       - name: git repo
-        run: lsb_release -a
+        run: docker ps -a
