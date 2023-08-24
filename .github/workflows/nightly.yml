@@ -1,33 +1,34 @@
 name: nightly
 on: push
 jobs:
-  strategy:
-   fail-fast: true
-    matrix:
-        os: [ 'el7', 'el8', 'el9', 'd10', 'd12', 'u18', 'u20' ]
   my-job:
-    runs-on: ubuntu-latest
- 
-    container: 
-      image: ghcr.io/perfsonar/unibuild/{{ matrix.os }}:latest
+    strategy:
+      fail-fast: true
+      matrix:
+          os: [ 'el7', 'el8', 'el9', 'd10', 'd12', 'u18', 'u20' ]
       
-    steps:
-      - name: Copy repo
-        uses: actions/checkout@2
-
-      - name: install dependancies repo
-        run: dnf -y install -y http://linux.mirrors.es.net/perfsonar/el9/x86_64/5/packages/perfsonar-repo-0.11-1.noarch.rpm
-     
-      - name: make
-        working-directory: ./graphs
-        run: make
-
-      - name: make
-        working-directory: ./graphs
-        run: tar -cvf graphs.tar ./unibuild-repo
-
-      - name: Archive RPM
-        uses: actions/upload-artfact@2
-        with:
-         name: perf-reop
-         path: graphs.tar
+      runs-on: ubuntu-latest
+   
+      container: 
+        image: ghcr.io/perfsonar/unibuild/{{ matrix.os }}:latest
+        
+      steps:
+        - name: Copy repo
+          uses: actions/checkout@2
+  
+        - name: install dependancies repo
+          run: dnf -y install -y http://linux.mirrors.es.net/perfsonar/el9/x86_64/5/packages/perfsonar-repo-0.11-1.noarch.rpm
+       
+        - name: make
+          working-directory: ./graphs
+          run: make
+  
+        - name: make
+          working-directory: ./graphs
+          run: tar -cvf graphs.tar ./unibuild-repo
+  
+        - name: Archive RPM
+          uses: actions/upload-artfact@2
+          with:
+          name: perf-reop
+          path: graphs.tar
