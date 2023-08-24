@@ -7,5 +7,8 @@ jobs:
       image: ghcr.io/perfsonar/unibuild/el9:latest
       
     steps:
+      - name: install git
+          run: dnf -y install git
+      
       - name: git repo
-        run: 
+          run: git clone https://github.com/perfsonar/graphs.git
