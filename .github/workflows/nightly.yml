@@ -27,7 +27,7 @@ jobs:
          run: tar -cvf graphs.tar ./unibuild-repo
   
        - name: Archive RPM
-         uses: actions/upload-artfact@2
+         uses: actions/upload-artfact@v2
          with:
            name: perf-reop
            path: graphs.tar
