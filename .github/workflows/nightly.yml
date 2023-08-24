@@ -20,11 +20,9 @@ jobs:
          run: dnf -y install -y http://linux.mirrors.es.net/perfsonar/${{ matrix.os }}/x86_64/5/packages/perfsonar-repo-0.11-1.noarch.rpm
        
        - name: make
-         working-directory: ./graphs
          run: make
   
-       - name: make
-         working-directory: ./graphs
+       - name: tar files
          run: tar -cvf graphs.tar ./unibuild-repo
   
        - name: Archive RPM
