@@ -4,8 +4,8 @@
 # cron/apache entries are located in the 'etc' directory
 %define apacheconf apache-perfsonar-graphs.conf
 
-%define perfsonar_auto_version 5.0.5
-%define perfsonar_auto_relnum 1
+%define perfsonar_auto_version 5.0.6
+%define perfsonar_auto_relnum 0.a1.0
 
 Name:			perfsonar-graphs
 Version:		%{perfsonar_auto_version}
