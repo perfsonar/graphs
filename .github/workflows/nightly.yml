@@ -6,7 +6,6 @@ on:
 jobs:
   setup-containers:
     strategy:
-      #fail-fast: true
       matrix:
          os: [ 'el8' ]
       
@@ -19,43 +18,3 @@ jobs:
        - name: Check out Repo
          uses: actions/checkout@v3
  
-       - name: install dependancies repo
-         if: ${{ matrix.os  == 'el7' }}
-         run: yum -y install -y http://linux.mirrors.es.net/perfsonar/${{ matrix.os }}/x86_64/5/packages/perfsonar-repo-0.11-1.noarch.rpm
-
-       - name: install deps El8
-         if: ${{ matrix.os  == 'el8' }}
-         run: dnf -y install -y http://linux.mirrors.es.net/perfsonar/${{ matrix.os }}/x86_64/5/packages/perfsonar-repo-0.11-1.noarch.rpm
-       - name: install deps EL9
-         if: ${{ matrix.os  == 'el9' }}
-         run: dnf -y install -y http://linux.mirrors.es.net/perfsonar/${{ matrix.os }}/x86_64/5/packages/perfsonar-repo-0.11-1.noarch.rpm
-       - name: install deps d10
-         if: ${{ matrix.os  == 'd10' }} 
-         run: export DEBIAN_FRONTEND=noninteractive && curl -s http://downloads.perfsonar.net/debian/perfsonar-minor-snapshot.gpg.key | apt-key add - && curl -s -o /etc/apt/sources.list.d/perfsonar-minor-snapshot.list http://downloads.perfsonar.net/debian/perfsonar-minor-snapshot.list && apt-get update && echo && echo 
-       - name: install deps d12
-         if: ${{ matrix.os  == 'd12' }} 
-         run: export DEBIAN_FRONTEND=noninteractive && curl -s http://downloads.perfsonar.net/debian/perfsonar-minor-snapshot.gpg.key | apt-key add - && curl -s -o /etc/apt/sources.list.d/perfsonar-minor-snapshot.list http://downloads.perfsonar.net/debian/perfsonar-minor-snapshot.list && apt-get update && echo && echo 
-       - name: install deps u18
-         if: ${{ matrix.os  == 'u18' }} 
-         run: export DEBIAN_FRONTEND=noninteractive && curl -s http://downloads.perfsonar.net/debian/perfsonar-minor-snapshot.gpg.key | apt-key add - && curl -s -o /etc/apt/sources.list.d/perfsonar-minor-snapshot.list http://downloads.perfsonar.net/debian/perfsonar-minor-snapshot.list && apt-get update && echo && echo 
-       - name: install deps u20
-         if: ${{ matrix.os  == 'u20' }} 
-         run: export DEBIAN_FRONTEND=noninteractive && curl -s http://downloads.perfsonar.net/debian/perfsonar-minor-snapshot.gpg.key | apt-key add - && curl -s -o /etc/apt/sources.list.d/perfsonar-minor-snapshot.list http://downloads.perfsonar.net/debian/perfsonar-minor-snapshot.list && apt-get update && echo && echo 
-       - name: install podman
-         run: dnf install -y podman-docker
-       - name: share mount
-         run: sudo mount --make-rshared /
-       - name: build
-         run: curl -s https://raw.githubusercontent.com/perfsonar/docker-oneshot-builder/github-actions/build | sh -s - . ${{ matrix.os }}u     
-       
-#       - name: make
-#         run: make
- # 
- #      - name: tar files
- #        run: tar -cvf graphs.tar ./unibuild-repo
-#  
-#       - name: Archive repo
-#         uses: actions/upload-artifact@v3
-#         with:
-#           name: perfsonar-graphs-${{ matrix.os }}.tar
-#           path: graphs.tar 
