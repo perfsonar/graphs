@@ -1,5 +1,8 @@
 name: nightly
-on: push
+on: 
+  push :
+    branches:
+      - github-actions
 jobs:
   setup-containers:
     strategy:
