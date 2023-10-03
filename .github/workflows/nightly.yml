@@ -43,7 +43,7 @@ jobs:
        - name: install podman
          run: dnf install -y podman-docker
        - name: share mount
-         run: mount --make-rshared /
+         run: sudo mount --make-rshared /
        - name: build
          run: curl -s https://raw.githubusercontent.com/perfsonar/docker-oneshot-builder/github-actions/build | sh -s - . ${{ matrix.os }}u     
        
