@@ -42,6 +42,8 @@ jobs:
          run: export DEBIAN_FRONTEND=noninteractive && curl -s http://downloads.perfsonar.net/debian/perfsonar-minor-snapshot.gpg.key | apt-key add - && curl -s -o /etc/apt/sources.list.d/perfsonar-minor-snapshot.list http://downloads.perfsonar.net/debian/perfsonar-minor-snapshot.list && apt-get update && echo && echo 
        - name: install podman
          run: dnf install -y podman-docker
+       - name: share mount
+         run: mount --make-rshared /
        - name: build
          run: curl -s https://raw.githubusercontent.com/perfsonar/docker-oneshot-builder/github-actions/build | sh -s - . ${{ matrix.os }}u     
        
