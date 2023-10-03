@@ -5,7 +5,9 @@ jobs:
     strategy:
       #fail-fast: true
       matrix:
-          os: [  'el7', 'el8', 'el9', 'd10', 'd12', 'u18', 'u20' ]
+           os: [    'el8', 'el9'   ]
+
+         # os: [  'el7', 'el8', 'el9', 'd10', 'd12', 'u18', 'u20' ]
       
     runs-on: ubuntu-latest
    
@@ -40,7 +42,7 @@ jobs:
          run: export DEBIAN_FRONTEND=noninteractive && curl -s http://downloads.perfsonar.net/debian/perfsonar-minor-snapshot.gpg.key | apt-key add - && curl -s -o /etc/apt/sources.list.d/perfsonar-minor-snapshot.list http://downloads.perfsonar.net/debian/perfsonar-minor-snapshot.list && apt-get update && echo && echo 
 
        - name: build
-         run: curl -s https://raw.githubusercontent.com/perfsonar/project/master/toolbox/jenkins/perfsonar-oneshot | sh -s -      
+         run: curl -s https://raw.githubusercontent.com/perfsonar/docker-oneshot-builder/github-actions/build | sh -s -      
        
 #       - name: make
 #         run: make
