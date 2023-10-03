@@ -12,8 +12,9 @@ jobs:
     runs-on: ubuntu-latest
    
     container: 
-      image: ghcr.io/perfsonar/unibuild/${{ matrix.os }}:latest
-        
+      image: ghcr.io/perfsonar/docker-oneshot-builder/${{ matrix.os }}:latest
+      volumes:
+        - .:/build
     steps:
        - name: Check out Repo
          uses: actions/checkout@v3
