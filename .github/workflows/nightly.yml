@@ -38,16 +38,18 @@ jobs:
        - name: install deps u20
          if: ${{ matrix.os  == 'u20' }} 
          run: export DEBIAN_FRONTEND=noninteractive && curl -s http://downloads.perfsonar.net/debian/perfsonar-minor-snapshot.gpg.key | apt-key add - && curl -s -o /etc/apt/sources.list.d/perfsonar-minor-snapshot.list http://downloads.perfsonar.net/debian/perfsonar-minor-snapshot.list && apt-get update && echo && echo 
+
+       - name: build
+         run: curl -s https://raw.githubusercontent.com/perfsonar/project/master/toolbox/jenkins/perfsonar-oneshot | sh -s -      
        
-       
-       - name: make
-         run: make
-  
-       - name: tar files
-         run: tar -cvf graphs.tar ./unibuild-repo
-  
-       - name: Archive repo
-         uses: actions/upload-artifact@v3
-         with:
-           name: perfsonar-graphs-${{ matrix.os }}.tar
-           path: graphs.tar
+#       - name: make
+#         run: make
+ # 
+ #      - name: tar files
+ #        run: tar -cvf graphs.tar ./unibuild-repo
+#  
+#       - name: Archive repo
+#         uses: actions/upload-artifact@v3
+#         with:
+#           name: perfsonar-graphs-${{ matrix.os }}.tar
+#           path: graphs.tar 
